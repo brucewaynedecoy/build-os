@@ -1,2 +1,3 @@
-# build-os
-File system-based OS for discovery, testing, requirements capture, and documentation
+# Build OS
+
+System and platform discovery, testing, and design system

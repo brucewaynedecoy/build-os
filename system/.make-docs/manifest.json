@@ -1,0 +1,315 @@
+{
+  "schemaVersion": 1,
+  "packageName": "make-docs",
+  "packageVersion": "0.1.0",
+  "updatedAt": "2026-06-03T13:03:23.750Z",
+  "profileId": "4757a4e744aa64f9",
+  "selections": {
+    "capabilities": {
+      "designs": true,
+      "plans": true,
+      "prd": true,
+      "work": true
+    },
+    "harnesses": {
+      "claude-code": true,
+      "codex": true
+    },
+    "skills": false,
+    "skillScope": "project",
+    "selectedSkills": []
+  },
+  "effectiveCapabilities": [
+    "designs",
+    "plans",
+    "prd",
+    "work"
+  ],
+  "files": {
+    ".make-docs/scripts/check_path_hygiene.py": {
+      "hash": "be2eac13966e77a10d5743b97fc38c6cb60822f0629158007dbe8ab1629f3db4",
+      "sourceId": "file:.make-docs/scripts/check_path_hygiene.py"
+    },
+    "AGENTS.md": {
+      "hash": "699053532e624a4a9d9e43a51c48879e59f15b3078adbb72ec22e22ca7680b8d",
+      "sourceId": "build:AGENTS.md"
+    },
+    "CLAUDE.md": {
+      "hash": "699053532e624a4a9d9e43a51c48879e59f15b3078adbb72ec22e22ca7680b8d",
+      "sourceId": "build:CLAUDE.md"
+    },
+    "docs/AGENTS.md": {
+      "hash": "1ca9ecd2571033a148b4d08a93d0fbdfd71d21670bc09788843a896b821480cd",
+      "sourceId": "build:docs/AGENTS.md"
+    },
+    "docs/assets/AGENTS.md": {
+      "hash": "e999038882aebfdf9c5aa59a27f579e1d6ed18672a9f0d578d495e43f6ff3bcd",
+      "sourceId": "build:docs/assets/AGENTS.md"
+    },
+    "docs/assets/archive/AGENTS.md": {
+      "hash": "17ebeb4698683b2e4e19912976369cf2ce6c2b5e535909c0f922960f4543f795",
+      "sourceId": "build:docs/assets/archive/AGENTS.md"
+    },
+    "docs/assets/archive/CLAUDE.md": {
+      "hash": "17ebeb4698683b2e4e19912976369cf2ce6c2b5e535909c0f922960f4543f795",
+      "sourceId": "build:docs/assets/archive/CLAUDE.md"
+    },
+    "docs/assets/CLAUDE.md": {
+      "hash": "e999038882aebfdf9c5aa59a27f579e1d6ed18672a9f0d578d495e43f6ff3bcd",
+      "sourceId": "build:docs/assets/CLAUDE.md"
+    },
+    "docs/assets/history/AGENTS.md": {
+      "hash": "321501dd5562e8c1a1858bcdf620186aa6eaaf7172d5602db92e5e3efe21346d",
+      "sourceId": "build:docs/assets/history/AGENTS.md"
+    },
+    "docs/assets/history/CLAUDE.md": {
+      "hash": "321501dd5562e8c1a1858bcdf620186aa6eaaf7172d5602db92e5e3efe21346d",
+      "sourceId": "build:docs/assets/history/CLAUDE.md"
+    },
+    "docs/assets/prompts/AGENTS.md": {
+      "hash": "e48f05603a264e5c3c9be7afe874df01e78fe7b6c2feaa20e76798111671b65b",
+      "sourceId": "build:docs/assets/prompts/AGENTS.md"
+    },
+    "docs/assets/prompts/CLAUDE.md": {
+      "hash": "e48f05603a264e5c3c9be7afe874df01e78fe7b6c2feaa20e76798111671b65b",
+      "sourceId": "build:docs/assets/prompts/CLAUDE.md"
+    },
+    "docs/assets/prompts/designs-to-plan-change.prompt.md": {
+      "hash": "9b03dc5a99ad94507e4a0426ebb38ed705c4a041078befb9acb7abfcd785f7d2",
+      "sourceId": "file:docs/assets/prompts/designs-to-plan-change.prompt.md"
+    },
+    "docs/assets/prompts/designs-to-plan.prompt.md": {
+      "hash": "8d6b34567ffe96ed55fec96124643ba550c350c09fb2f5817926e5592dd08bf4",
+      "sourceId": "file:docs/assets/prompts/designs-to-plan.prompt.md"
+    },
+    "docs/assets/prompts/docs-path-hygiene-cleanup.prompt.md": {
+      "hash": "55001c9bb0a664e6a7e1aed0787c6730b3a4f2738ded9437f04f838b0d63b98b",
+      "sourceId": "file:docs/assets/prompts/docs-path-hygiene-cleanup.prompt.md"
+    },
+    "docs/assets/prompts/plan-to-prd-change.prompt.md": {
+      "hash": "ded0f1f0ac172412c21d2e69d15619e1b50903a3ca4fb5a17fa0723f5e8f41dd",
+      "sourceId": "file:docs/assets/prompts/plan-to-prd-change.prompt.md"
+    },
+    "docs/assets/prompts/plan-to-prd-green-field.prompt.md": {
+      "hash": "10dfb0396eac2b11fa6d31183852aa880106b0f0a04c92a1010d5b4a4795283f",
+      "sourceId": "file:docs/assets/prompts/plan-to-prd-green-field.prompt.md"
+    },
+    "docs/assets/prompts/prd-change-to-work.prompt.md": {
+      "hash": "e3855bf500605f2bed9240895333f9de04189d3ddbcaa755eafeb94d2c00bad8",
+      "sourceId": "file:docs/assets/prompts/prd-change-to-work.prompt.md"
+    },
+    "docs/assets/prompts/prd-to-work-full-prd.prompt.md": {
+      "hash": "cb5aa03bf4978043a843f0ad9a1c7301b2472585370f3c14c7fbee0c33721cdf",
+      "sourceId": "file:docs/assets/prompts/prd-to-work-full-prd.prompt.md"
+    },
+    "docs/assets/prompts/prd-to-work-prd-feature.prompt.md": {
+      "hash": "454efb0cb51c6f162559c3c975be215362b4758ff809591b3e6bdaedbec29c15",
+      "sourceId": "file:docs/assets/prompts/prd-to-work-prd-feature.prompt.md"
+    },
+    "docs/assets/prompts/request-to-design.prompt.md": {
+      "hash": "b25802d8c68629bc68fa2fb1bbe809469ffb920d1ad589c58062a33e8c079258",
+      "sourceId": "file:docs/assets/prompts/request-to-design.prompt.md"
+    },
+    "docs/assets/prompts/session-to-history-record.prompt.md": {
+      "hash": "a490f8a96f209f480ed62e8222bb09f7d7b93c906cb54383796f9efd6db26576",
+      "sourceId": "file:docs/assets/prompts/session-to-history-record.prompt.md"
+    },
+    "docs/assets/prompts/update-readme-green-field.prompt.md": {
+      "hash": "2f695d40b34cf7d6c484401afc26584f834050d368fe38ba52c45ee3b2544fbf",
+      "sourceId": "file:docs/assets/prompts/update-readme-green-field.prompt.md"
+    },
+    "docs/assets/prompts/work-to-commit-message.prompt.md": {
+      "hash": "56dbb6f724d75217b854a33bec3ca7731ffebde9220710b2fb33e53680da3f35",
+      "sourceId": "file:docs/assets/prompts/work-to-commit-message.prompt.md"
+    },
+    "docs/assets/prompts/work-to-guides.prompt.md": {
+      "hash": "3a3e962865099b9ce0c96a510dbfec12921e98e434f63cb087c3a91a8e9c7b1a",
+      "sourceId": "file:docs/assets/prompts/work-to-guides.prompt.md"
+    },
+    "docs/assets/references/AGENTS.md": {
+      "hash": "1980e7a5c642863bce980b20ad7b0b5539aa8f15061d2ac95dab6619e6a61a6a",
+      "sourceId": "build:docs/assets/references/AGENTS.md"
+    },
+    "docs/assets/references/CLAUDE.md": {
+      "hash": "1980e7a5c642863bce980b20ad7b0b5539aa8f15061d2ac95dab6619e6a61a6a",
+      "sourceId": "build:docs/assets/references/CLAUDE.md"
+    },
+    "docs/assets/references/commit-message-convention.md": {
+      "hash": "d46751ab8ba7b6addb93c65ddb1e385564510bed5df7a48b1a4c8a9f80da8bc8",
+      "sourceId": "file:docs/assets/references/commit-message-convention.md"
+    },
+    "docs/assets/references/design-contract.md": {
+      "hash": "b8827b262d64e14d10737ac43e970a8da9d0673fa04c407dfefe1033b826cab4",
+      "sourceId": "build:docs/assets/references/design-contract.md"
+    },
+    "docs/assets/references/design-workflow.md": {
+      "hash": "bb26b28a2d7e6515d433f05811d798ca9fcdb2737189e0254702813e467120fb",
+      "sourceId": "build:docs/assets/references/design-workflow.md"
+    },
+    "docs/assets/references/execution-workflow.md": {
+      "hash": "c151d7dfe62226c5d18c6a7062c6064c0f6dfeebb5d27c22eaeebe44d09c7853",
+      "sourceId": "file:docs/assets/references/execution-workflow.md"
+    },
+    "docs/assets/references/guide-contract.md": {
+      "hash": "fdf2361dda659c2acb17147b6338ed076c335fb8399649de92c3fbffe2611f76",
+      "sourceId": "file:docs/assets/references/guide-contract.md"
+    },
+    "docs/assets/references/harness-capability-matrix.md": {
+      "hash": "20bf1ab3931a34f6cc7714376f2236fc44c4d74b4a6265fc2536b482290b44f2",
+      "sourceId": "file:docs/assets/references/harness-capability-matrix.md"
+    },
+    "docs/assets/references/history-record-contract.md": {
+      "hash": "6a3a4aa74e7c151cf60fae7904e4a7f357d31afc058926b9300930bc264bb276",
+      "sourceId": "file:docs/assets/references/history-record-contract.md"
+    },
+    "docs/assets/references/output-contract.md": {
+      "hash": "832a4f542fb722eaed87e5b65920e35dc1928b8d4f9835a987489f25dd3db1f6",
+      "sourceId": "file:docs/assets/references/output-contract.md"
+    },
+    "docs/assets/references/path-and-link-hygiene.md": {
+      "hash": "d1e63f6a061c0b501efc15969a840ce0ab57b9301b158f3ce7baf00ae9b3770b",
+      "sourceId": "file:docs/assets/references/path-and-link-hygiene.md"
+    },
+    "docs/assets/references/planning-workflow.md": {
+      "hash": "5558ad39510da5919aa97a6588f475f1f1c9d14968a5ce26bd98e3018cd65faf",
+      "sourceId": "file:docs/assets/references/planning-workflow.md"
+    },
+    "docs/assets/references/prd-change-management.md": {
+      "hash": "e9bac9e52e0e1be561768e5d887aaa89dff4b9429c322049006c178d34610228",
+      "sourceId": "file:docs/assets/references/prd-change-management.md"
+    },
+    "docs/assets/references/wave-model.md": {
+      "hash": "935f9fb21f9155c52f25a2be69d1ed88dca0c047a5b7d26cd7ea0a33702ddced",
+      "sourceId": "file:docs/assets/references/wave-model.md"
+    },
+    "docs/assets/templates/AGENTS.md": {
+      "hash": "d403948c023bee819cb7a7ac37858d5baeb48452278dd1485014db385b2b8e48",
+      "sourceId": "build:docs/assets/templates/AGENTS.md"
+    },
+    "docs/assets/templates/CLAUDE.md": {
+      "hash": "d403948c023bee819cb7a7ac37858d5baeb48452278dd1485014db385b2b8e48",
+      "sourceId": "build:docs/assets/templates/CLAUDE.md"
+    },
+    "docs/assets/templates/design.md": {
+      "hash": "cccd0a516cc8d2e0c2f7c30ea26a771965759dd5af482253d4684d2a9b856c76",
+      "sourceId": "build:docs/assets/templates/design.md"
+    },
+    "docs/assets/templates/guide-developer.md": {
+      "hash": "0a463c35f4ce931ccee4b9100424e7fcf04cc8891744437f16c9fa1d9b28872b",
+      "sourceId": "file:docs/assets/templates/guide-developer.md"
+    },
+    "docs/assets/templates/guide-user.md": {
+      "hash": "c734ab506b56dd5bf39ee4402d46d8662cbb6b0708f6da30dcb77b23988ae6e3",
+      "sourceId": "file:docs/assets/templates/guide-user.md"
+    },
+    "docs/assets/templates/history-record.md": {
+      "hash": "65787ef3c7f98cc37a9ab67e8a976bf1b579a495c321aa503ebf44b2f80c3a63",
+      "sourceId": "file:docs/assets/templates/history-record.md"
+    },
+    "docs/assets/templates/plan-overview.md": {
+      "hash": "ad731eb21113eec90cde198a8a0a11f219470bcaf0d12cb9a949cf6809ee4c62",
+      "sourceId": "file:docs/assets/templates/plan-overview.md"
+    },
+    "docs/assets/templates/plan-prd-change.md": {
+      "hash": "98dafbb3e6046bdde75082eb9601abce71c3d01cfc59d12b3f879938c3cbcabb",
+      "sourceId": "file:docs/assets/templates/plan-prd-change.md"
+    },
+    "docs/assets/templates/plan-prd-decompose.md": {
+      "hash": "1d2f1008e5292132e92a482be6f9c8391c742c3c6bab6a20395e723a698c7051",
+      "sourceId": "file:docs/assets/templates/plan-prd-decompose.md"
+    },
+    "docs/assets/templates/plan-prd.md": {
+      "hash": "71208e00bc607c68893d454978a5b9798a7def4d520d2cc4652323a82cde2cc6",
+      "sourceId": "file:docs/assets/templates/plan-prd.md"
+    },
+    "docs/assets/templates/prd-architecture.md": {
+      "hash": "5164164db7c057c44768bf7255bb2c29d752bca9194902497149bf112da35f84",
+      "sourceId": "file:docs/assets/templates/prd-architecture.md"
+    },
+    "docs/assets/templates/prd-change-addition.md": {
+      "hash": "51cc8014437991d47453ffebc968cd18304f2d17af5b652f97cd51e264d9aa57",
+      "sourceId": "file:docs/assets/templates/prd-change-addition.md"
+    },
+    "docs/assets/templates/prd-change-revision.md": {
+      "hash": "f1faad7030cf6b993eb1da37c68e399829ea906e5e06f84dce99a3464b3673ed",
+      "sourceId": "file:docs/assets/templates/prd-change-revision.md"
+    },
+    "docs/assets/templates/prd-glossary.md": {
+      "hash": "24f00b9547a61b5fff157563b83e1aa8d457277f5e4d0a9b3297a4bc439428df",
+      "sourceId": "file:docs/assets/templates/prd-glossary.md"
+    },
+    "docs/assets/templates/prd-index.md": {
+      "hash": "e2f06f89dbc6a6cbcb312ed697ce0a01c2fd5cd678a9963c3c3635f5e3511d7e",
+      "sourceId": "file:docs/assets/templates/prd-index.md"
+    },
+    "docs/assets/templates/prd-overview.md": {
+      "hash": "61eb0cc330b1f71d4a9b9373cd73dc4eddb84099398cf82fa7c1ef29cebb0f3a",
+      "sourceId": "file:docs/assets/templates/prd-overview.md"
+    },
+    "docs/assets/templates/prd-reference.md": {
+      "hash": "cc7f5fbd68a186ba307349756638baeb56b65c7346bd0069c9c615fb96379f9d",
+      "sourceId": "file:docs/assets/templates/prd-reference.md"
+    },
+    "docs/assets/templates/prd-risk-register.md": {
+      "hash": "5e3b7a845f5cc25bbcc118231e146b9a7dc09225e6dc958596c5d2f39b736579",
+      "sourceId": "file:docs/assets/templates/prd-risk-register.md"
+    },
+    "docs/assets/templates/prd-subsystem.md": {
+      "hash": "0e554252985624713ed3255ed590931fd92dd713cd364479b1bab1478ea9aff7",
+      "sourceId": "file:docs/assets/templates/prd-subsystem.md"
+    },
+    "docs/assets/templates/work-index.md": {
+      "hash": "caeac40a8a1eba2924073f460b769cfa16ca4a1015b2ef062f179b0c5238291c",
+      "sourceId": "file:docs/assets/templates/work-index.md"
+    },
+    "docs/assets/templates/work-phase.md": {
+      "hash": "16b75220ce342586d6bc1ebe47ad16e42346a80c1fa779a2f1d677d081cf7cf6",
+      "sourceId": "file:docs/assets/templates/work-phase.md"
+    },
+    "docs/CLAUDE.md": {
+      "hash": "1ca9ecd2571033a148b4d08a93d0fbdfd71d21670bc09788843a896b821480cd",
+      "sourceId": "build:docs/CLAUDE.md"
+    },
+    "docs/designs/AGENTS.md": {
+      "hash": "300cb98ce1280c2072af37401b13d021ca8424879b40afbfbf9b054ba32ef7d1",
+      "sourceId": "file:docs/designs/AGENTS.md"
+    },
+    "docs/designs/CLAUDE.md": {
+      "hash": "300cb98ce1280c2072af37401b13d021ca8424879b40afbfbf9b054ba32ef7d1",
+      "sourceId": "file:docs/designs/CLAUDE.md"
+    },
+    "docs/guides/AGENTS.md": {
+      "hash": "774cd884a902f34ceaa18f9d96bf2b543fc4a4b1109d64953359144055faf9d1",
+      "sourceId": "build:docs/guides/AGENTS.md"
+    },
+    "docs/guides/CLAUDE.md": {
+      "hash": "774cd884a902f34ceaa18f9d96bf2b543fc4a4b1109d64953359144055faf9d1",
+      "sourceId": "build:docs/guides/CLAUDE.md"
+    },
+    "docs/plans/AGENTS.md": {
+      "hash": "b022884cb614ac6e6e5f40014e2d75978621f459246a48062bda180423f5dc6d",
+      "sourceId": "file:docs/plans/AGENTS.md"
+    },
+    "docs/plans/CLAUDE.md": {
+      "hash": "b022884cb614ac6e6e5f40014e2d75978621f459246a48062bda180423f5dc6d",
+      "sourceId": "file:docs/plans/CLAUDE.md"
+    },
+    "docs/prd/AGENTS.md": {
+      "hash": "9fd5fc64e79e7612b67100adc316d90743bcd6974bd25a2d2d5eb604d95e6976",
+      "sourceId": "file:docs/prd/AGENTS.md"
+    },
+    "docs/prd/CLAUDE.md": {
+      "hash": "9fd5fc64e79e7612b67100adc316d90743bcd6974bd25a2d2d5eb604d95e6976",
+      "sourceId": "file:docs/prd/CLAUDE.md"
+    },
+    "docs/work/AGENTS.md": {
+      "hash": "24e00dcad7eef9347af435a0184b81f354991c12529515c171c949042a954741",
+      "sourceId": "file:docs/work/AGENTS.md"
+    },
+    "docs/work/CLAUDE.md": {
+      "hash": "24e00dcad7eef9347af435a0184b81f354991c12529515c171c949042a954741",
+      "sourceId": "file:docs/work/CLAUDE.md"
+    }
+  },
+  "skillFiles": []
+}
