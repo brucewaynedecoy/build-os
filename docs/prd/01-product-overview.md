@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Build OS is a filesystem-based, agent-operable "operating system" a team adopts to run discovery, testing, requirements capture, design, and backlogging against a target system, platform, or application. It exists to turn unstructured source material and hands-on exploration into verified, reproducible knowledge and engineering-ready artifacts, while staying git-native and reviewable. Its first application is the Hitachi × John Deere engagement around Microsoft's Dynamics Rental on Dynamics 365 Finance & Operations.
+Build OS is a filesystem-based, agent-operable "operating system" a team adopts to run discovery, testing, requirements capture, design, and backlogging against a target system, platform, or application. It exists to turn unstructured source material and hands-on exploration into verified, reproducible knowledge and engineering-ready artifacts, while staying git-native and reviewable. Its first validation scenario is a representative enterprise application discovery effort with multiple configured environments.
 
 ## Users
 
@@ -46,7 +46,7 @@ Code anchors:
 
 ### Change Notes
 
-- Superseded by [13 Adopter-Owned Config Surface](./13-adopter-owned-config-surface.md): adopter-owned `system/.os/config/instance.yaml`, `systems`, `environments`, `owners`, and config/frontmatter validation replace the concrete first-engagement scoped values as the effective requirement.
+- Superseded by [13 Adopter-Owned Config Surface](./13-adopter-owned-config-surface.md): adopter-owned `system/.os/config/instance.yaml`, `systems`, `environments`, `owners`, and config/frontmatter validation replace the concrete scoped placeholders as the effective requirement.
 
 ## Source Anchors
 

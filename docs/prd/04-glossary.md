@@ -10,7 +10,7 @@ Define the canonical vocabulary used across the Build OS PRD set so humans and c
 | --- | --- | --- |
 | Build OS | The general-purpose, filesystem-based, agent-operable discovery/testing/design system shipped under `system/`. | `README.md` |
 | Build layer | `docs/` — how *we* build the system. One of the three spaces. | make-docs tree |
-| Target docs | `system/docs/` — outputs *about the target system*, for the engagement. | make-docs tree |
+| Target docs | `system/docs/` — outputs *about the configured target system*, for the adopter. | make-docs tree |
 | Pillar | One of Convert, Playbooks, Workspace. | `02-architecture-overview.md` |
 | Flow A / B / C | Intake / Discovery / Planning-Engineering; the three chained flows. | `02-architecture-overview.md` |
 | Convert | Deterministic, tool-first transform of a source into a clean text/CSV twin; no structuring. | `07-intake-and-conversion.md` |
@@ -24,7 +24,7 @@ Define the canonical vocabulary used across the Build OS PRD set so humans and c
 | Run record | Immutable artifact of one execution in `system/workspace/runs/<id>/`. | `10-…` |
 | Raw / Qualified finding | A finding observed in a run / confirmed by a deterministic repeatable test in `system/workspace/findings/<id>/`. | `10-…` |
 | Capability / Requirement / Finding | Descriptive (what the product can do) / normative (what the adopter needs) / empirical (what was observed). | `08-data-and-extraction.md` |
-| Capability gap / Bug | A requirement with no capability / a capability that misbehaves. | engagement deliverables |
+| Capability gap / Bug | A requirement with no capability / a capability that misbehaves. | adopter deliverables |
 | Layered canonicity | Structured fields canonical in `.os/data/*.jsonl`; narrative canonical in `system/docs/`; overlaps generated. | `08-…` |
 | make-docs boundary | The four externally-managed trees that must not be modified directly. | `05-spaces-boundary-and-shipping.md` |
 

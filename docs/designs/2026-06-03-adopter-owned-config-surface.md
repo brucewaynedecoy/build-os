@@ -7,7 +7,7 @@
 ## Purpose
 
 Define how Build OS instances let adopting teams configure their own systems, environments, and
-ownership vocabulary without baking engagement-specific values into reusable contracts, templates,
+ownership vocabulary without baking instance-specific values into reusable contracts, templates,
 playbooks, or data records.
 
 ## Context
@@ -108,7 +108,7 @@ The config contract should require:
 - Unique slug IDs within each top-level collection.
 - `environments[].systems` entries that reference configured `systems[].id` values.
 - `defaults.*` values that reference configured IDs and remain optional per artifact contract.
-- No customer-, vendor-, product-, or engagement-specific values in reusable templates or contracts.
+- No customer-, vendor-, product-, or instance-specific values in reusable templates or contracts.
 
 The playbook contract should change its scoped frontmatter rows from the current fixed `env` / `for`
 enum to config-backed fields:
@@ -147,7 +147,7 @@ called independently by future index builders or repository hygiene scripts.
 Rejected because it puts adopter vocabulary in reusable Build OS contracts and guarantees leakage
 into future instances.
 
-**Seed templates with first-engagement values and instruct adopters to replace them.**
+**Seed templates with instance-specific values and instruct adopters to replace them.**
 Rejected because examples in authoritative contracts become de facto requirements for agents and
 validators.
 

@@ -43,7 +43,7 @@ Code anchors:
 
 **To close**: A decision recorded here and reflected in the stage-automation work.
 
-### Q-002 Generalizing engagement-specific tag values
+### Q-002 Generalizing instance-specific tag values
 
 | Status | Decision | Follow-Up |
 | --- | --- | --- |
@@ -51,7 +51,7 @@ Code anchors:
 
 **Question**: How should an adopter configure the vocabulary used to scope artifacts to systems, environments, and accountable owners?
 
-**Why it matters**: Build OS ships as a general-purpose tool; hard-coded adopter, system, or engagement values would leak into reusable contracts, playbooks, data records, and generated indexes.
+**Why it matters**: Build OS ships as a general-purpose tool; hard-coded adopter, system, or instance values would leak into reusable contracts, playbooks, data records, and generated indexes.
 
 **Decision**: Add an adopter-owned `system/.os/config/instance.yaml` backed by `system/.os/contracts/config-contract.md` and seeded from `system/.os/templates/instance-config.yaml`. Reusable Build OS contracts define field shape and lookup rules; the instance config owns concrete `systems`, `environments`, and `owners` IDs.
 

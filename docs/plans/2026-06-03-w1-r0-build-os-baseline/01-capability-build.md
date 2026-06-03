@@ -78,7 +78,7 @@
 
 ## Cross-cutting
 
-- **Tagging:** `env` (`vanilla`/`deere`/`both`) and `for` (`microsoft`/`deere`/`both`) applied across
-  artifacts; a hygiene check.
+- **Scoping:** configured `systems`, `environments`, and `owners` lists applied across artifacts;
+  a hygiene check.
 - **Open decision (Q4):** promotion **enforcement** — documented convention vs. tooling/machinery.
   Recorded as an open question; does not block the backlog.

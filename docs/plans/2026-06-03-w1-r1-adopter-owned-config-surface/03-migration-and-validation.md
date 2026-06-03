@@ -38,7 +38,7 @@
 - The validator fails duplicate IDs, invalid slug IDs, missing referenced systems, and invalid default references.
 - The frontmatter hygiene check accepts configured `systems`, `environments`, and `owners` lists.
 - The frontmatter hygiene check reports legacy `env` and `for` fields once migration is active.
-- Active scoped docs/contracts no longer prescribe fixed first-engagement vocabulary.
+- Active scoped docs/contracts no longer prescribe fixed instance-specific vocabulary.
 - Any remaining references to legacy terms are either historical notes, explicit migration notes, or planned cleanup items.
 
 ## Execution Notes

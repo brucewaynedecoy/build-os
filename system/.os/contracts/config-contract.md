@@ -13,7 +13,7 @@ Authority for `config/instance.yaml`, the adopter-owned configuration file that 
 ## Ownership Boundary
 
 - `config/instance.yaml` is adopter-owned and may contain the deployed instance's real system, environment, and owner values.
-- Reusable contracts and templates must stay neutral and must not contain customer-, vendor-, product-, or engagement-specific values.
+- Reusable contracts and templates must stay neutral and must not contain customer-, vendor-, product-, or instance-specific values.
 - Artifact contracts must reference configured IDs from `config/instance.yaml`; they must not define their own scoped-value enums.
 
 ## Required Shape
@@ -82,7 +82,7 @@ Legacy scoped fields such as `env`, `for`, `envs`, and `target_systems` are not 
 
 - `templates/instance-config.yaml` must be copyable directly to `config/instance.yaml`.
 - The template must include neutral example IDs for `systems`, `environments`, `owners`, and `defaults`.
-- The template must not include adopter-, vendor-, product-, or engagement-specific examples.
+- The template must not include adopter-, vendor-, product-, or instance-specific examples.
 - New instances should replace example IDs and labels before using Build OS against a real target system.
 
 ## Intended Follow-On

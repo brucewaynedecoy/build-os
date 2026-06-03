@@ -10,9 +10,9 @@ This document captures the architecture of the system we are building — **Buil
 a general-purpose, filesystem-based, agent-operable "operating system" a team adopts to run
 discovery, testing, requirements capture, design, and backlogging against *any* target system,
 platform, or application.
-Its first, driving application is the Hitachi Solutions × John Deere engagement around Microsoft's
-first-party Rental solution on Dynamics 365 Finance & Operations, which motivates and validates the
-design.
+Its first validation scenario is a representative enterprise application discovery effort with
+multiple configured environments, which motivates and validates the design without making the
+architecture adopter-specific.
 It exists so that planning, PRD generation, and backlog work can proceed from a single,
 agreed decision record rather than from scattered notes.
 
@@ -23,8 +23,7 @@ central discipline of the design.
 The **build layer** (`./docs/`, this tree) is how *we* design and track building the system.
 The **system** (`./system/`) is the tool we ship.
 The system has its own **target docs** (`./system/docs/`) where its users capture discovery and
-design outputs *about their target system* — for the first engagement, Microsoft's Dynamics
-Rental; these are the engagement deliverables.
+design outputs *about their target system*; these are the adopter's deliverables.
 
 Both documentation trees are powered by the **make-docs** plug-in and look structurally
 identical, so routing must make the boundary impossible to miss.
@@ -102,11 +101,10 @@ each carrying a common envelope and a per-type sequence ID (`REQ-001`, `RUN-001`
 their contracts live in `system/.os/contracts/`.
 The three knowledge types answer different questions and carry different truths:
 **capability** is *descriptive* (what the product can do — the matrix);
-**requirement** is *normative* (what Deere needs);
+**requirement** is *normative* (what the adopter needs);
 **finding** is *empirical* (what we observed).
 The gaps between them are the deliverable: a **capability gap** is a requirement with no
-satisfying capability; a **bug** is a capability that misbehaves — the engagement's
-vanilla-environment deliverables.
+satisfying capability; a **bug** is a capability that misbehaves in a configured environment.
 
 ### 8 · Contracts
 

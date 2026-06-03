@@ -53,7 +53,7 @@ These fields must be plural lists where artifacts can apply to multiple configur
 
 Configured IDs must be stable slugs, unique within their collection, and referenced explicitly. `environments[].systems` entries must reference configured `systems[].id` values. `defaults.systems`, `defaults.environments`, and `defaults.owners` must reference configured IDs when present.
 
-Reusable Build OS templates and contracts must not contain customer-, vendor-, product-, or engagement-specific configured values. The starter template may contain neutral example IDs only.
+Reusable Build OS templates and contracts must not contain customer-, vendor-, product-, or instance-specific configured values. The starter template may contain neutral example IDs only.
 
 Frontmatter and structured rows that carry scoped metadata must use `systems`, `environments`, and `owners` as list fields. Empty lists are allowed only when the specific artifact contract permits system-neutral, environment-neutral, or owner-neutral scope.
 

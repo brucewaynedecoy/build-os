@@ -19,7 +19,7 @@
 | Workstream | Owner | Output | Notes |
 | --- | --- | --- | --- |
 | Config contract | Worker B | `system/.os/contracts/config-contract.md` | Define `version`, `instance`, `systems`, `environments`, `owners`, `defaults`, ID rules, and cross-reference rules. |
-| Starter template | Worker B | `system/.os/templates/instance-config.yaml` | Use neutral example IDs only; no adopter-, vendor-, or engagement-specific examples. |
+| Starter template | Worker B | `system/.os/templates/instance-config.yaml` | Use neutral example IDs only; no adopter-, vendor-, or instance-specific examples. |
 | Canonical config | Worker B | `system/.os/config/instance.yaml` | Seed from the template so a fresh Build OS instance validates immediately. |
 | Router updates | Worker B | `system/.os/AGENTS.md`, `system/.os/contracts/AGENTS.md`, `system/.os/templates/AGENTS.md` | Add config routing without restating contract details. |
 
@@ -27,7 +27,7 @@
 
 - P1 must define the effective PRD language for config-backed vocabulary.
 - The config contract must land before scoped field migration so validators and frontmatter changes have an authority to cite.
-- The starter template and canonical config should be kept neutral and should not use historical first-engagement values.
+- The starter template and canonical config should be kept neutral and should not use historical instance-specific values.
 
 ## Acceptance Checks
 
