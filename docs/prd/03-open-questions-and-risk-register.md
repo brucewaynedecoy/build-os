@@ -47,19 +47,23 @@ Code anchors:
 
 | Status | Decision | Follow-Up |
 | --- | --- | --- |
-| Open | None yet | Revisit when a second adopter appears |
+| Closed | Use adopter-owned config under the operational layer for systems, environments, and owners | Implement the config contract, starter template, and scoped-field migration |
 
-**Question**: The `env` values (`vanilla`/`deere`) and `for` values (`microsoft`/`deere`) are specific to the first engagement. How should an adopter configure their own tag vocabularies?
+**Question**: How should an adopter configure the vocabulary used to scope artifacts to systems, environments, and accountable owners?
 
-**Why it matters**: Build OS ships as a general-purpose tool; hard-coded engagement values would leak into every adopter's data.
+**Why it matters**: Build OS ships as a general-purpose tool; hard-coded adopter, system, or engagement values would leak into reusable contracts, playbooks, data records, and generated indexes.
 
-**Recommendation**: Make tag vocabularies a per-adopter configuration surface; keep the first engagement's values as the seeded example.
+**Decision**: Add an adopter-owned `system/.os/config/instance.yaml` backed by `system/.os/contracts/config-contract.md` and seeded from `system/.os/templates/instance-config.yaml`. Reusable Build OS contracts define field shape and lookup rules; the instance config owns concrete `systems`, `environments`, and `owners` IDs.
 
-**To close**: A configuration mechanism for tag vocabularies.
+**Closure rationale**: The config surface keeps reusable Build OS docs and contracts neutral while still giving each deployed instance a single authoritative place to describe its target systems, operating environments, and ownership model. Replace legacy scoped frontmatter names with `systems`, `environments`, and `owners`; do not continue `env` or `for` as contract vocabulary.
 
 Code anchors:
 
 - `system/.os/contracts/playbook-contract.md`
+- `system/.os/contracts/config-contract.md` (planned)
+- `system/.os/config/instance.yaml` (planned)
+- `system/.os/templates/instance-config.yaml` (planned)
+- `docs/designs/2026-06-03-adopter-owned-config-surface.md`
 
 ## Rebuild Risks
 
