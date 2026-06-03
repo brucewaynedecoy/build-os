@@ -53,6 +53,10 @@ Code anchors:
 - `system/.os/contracts/`
 - `system/AGENTS.md`
 
+### Change Notes
+
+- Superseded by [13 Adopter-Owned Config Surface](./13-adopter-owned-config-surface.md): fixed scoped frontmatter vocabulary such as `env` and `for` is no longer the effective contract vocabulary. Scoped artifacts use config-backed `systems`, `environments`, and `owners`, with adopter values owned by `system/.os/config/instance.yaml` and shaped by `system/.os/contracts/config-contract.md`.
+
 ## Source Anchors
 
 - `docs/designs/2026-06-03-build-os-architecture.md`

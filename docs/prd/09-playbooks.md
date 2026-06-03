@@ -35,6 +35,10 @@ Code anchors:
 
 - `system/.os/contracts/playbook-contract.md`
 
+### Change Notes
+
+- Superseded by [13 Adopter-Owned Config Surface](./13-adopter-owned-config-surface.md): playbook scoped frontmatter no longer uses `env`/`for` or sentinel values such as `both` as effective contract vocabulary. Playbooks use `systems`, `environments`, and `owners` as config-backed lists of configured IDs.
+
 ## Integrations
 
 `targets` reference entity IDs from `08`; active playbooks are run in `10`; guardrails are surfaced through routers (`06`); `playbooks.json` indexes them.

@@ -32,6 +32,10 @@ Code anchors:
 
 - `system/playbooks/administrative/respect-make-docs-plugin-boundary.md`
 
+### Change Notes
+
+- Superseded by [13 Adopter-Owned Config Surface](./13-adopter-owned-config-surface.md): Flow C handoffs no longer pass `env`/`for` tags as effective scoped metadata. They pass config-backed `systems`, `environments`, and `owners` lists along with the finding ID and qualification anchor.
+
 ## Integrations
 
 Consumes qualified findings (`10`); enters the make-docs pipeline in `system/docs/` (designs → plans → prd → work). Triggered by a stage-mover (`12`).

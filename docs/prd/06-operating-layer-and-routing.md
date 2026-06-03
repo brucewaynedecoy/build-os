@@ -28,6 +28,10 @@ Code anchors:
 - `system/.os/AGENTS.md`
 - `system/.os/templates/guardrail-playbook.md`
 
+### Change Notes
+
+- Enhanced by [13 Adopter-Owned Config Surface](./13-adopter-owned-config-surface.md): `.os/` also owns `config/` as the adopter-controlled operational configuration surface. `system/.os/config/instance.yaml`, `system/.os/contracts/config-contract.md`, `system/.os/templates/instance-config.yaml`, and `system/.os/scripts/validate_config.py` are part of the operating-layer authority for scoped values.
+
 ## Contracts and Data
 
 `AGENTS.md` is canonical; the sibling `CLAUDE.md` only points to it. Routers never restate rules — authority lives in `.os/contracts/`. Contracts encode forward-routing, so playbook → run-record → finding → design propels itself. The `.os/` router is the operating entry point, reachable from the co-owned `system/AGENTS.md` pointer.

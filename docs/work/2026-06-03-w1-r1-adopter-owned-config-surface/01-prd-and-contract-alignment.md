@@ -23,10 +23,10 @@ This phase evolves the active PRD namespace in place. It adds a new PRD change d
 
 ### Tasks
 
-- [ ] t1: Create `docs/prd/13-adopter-owned-config-surface.md` from `docs/assets/templates/prd-change-addition.md`.
-- [ ] t2: Capture the config capability: `system/.os/config/instance.yaml`, `system/.os/contracts/config-contract.md`, `system/.os/templates/instance-config.yaml`, and `system/.os/scripts/validate_config.py`.
-- [ ] t3: State the effective scoped field vocabulary: `systems`, `environments`, and `owners`; explicitly supersede `env`, `for`, `envs`, `target_systems`, and sentinel values such as `both` as contract vocabulary.
-- [ ] t4: Define validation requirements for config IDs, cross-references, defaults, and frontmatter hygiene.
+- [x] t1: Create `docs/prd/13-adopter-owned-config-surface.md` from `docs/assets/templates/prd-change-addition.md`.
+- [x] t2: Capture the config capability: `system/.os/config/instance.yaml`, `system/.os/contracts/config-contract.md`, `system/.os/templates/instance-config.yaml`, and `system/.os/scripts/validate_config.py`.
+- [x] t3: State the effective scoped field vocabulary: `systems`, `environments`, and `owners`; explicitly supersede `env`, `for`, `envs`, `target_systems`, and sentinel values such as `both` as contract vocabulary.
+- [x] t4: Define validation requirements for config IDs, cross-references, defaults, and frontmatter hygiene.
 
 ### Acceptance criteria
 
@@ -43,13 +43,13 @@ This phase evolves the active PRD namespace in place. It adds a new PRD change d
 
 ### Tasks
 
-- [ ] t5: Update `docs/prd/00-index.md` to include `13-adopter-owned-config-surface.md` and its related baseline docs.
-- [ ] t6: Add `### Change Notes` to `docs/prd/02-architecture-overview.md` explaining `system/.os/config/` and config-backed scoped fields.
-- [ ] t7: Add `### Change Notes` to `docs/prd/06-operating-layer-and-routing.md` describing config as an operational authority alongside contracts, templates, indexes, data, and scripts.
-- [ ] t8: Add `### Change Notes` to `docs/prd/08-data-and-extraction.md` requiring scoped structured rows to use configured `systems`, `environments`, and `owners`.
-- [ ] t9: Add `### Change Notes` to `docs/prd/09-playbooks.md` replacing `env`/`for` playbook frontmatter with config-backed scoped lists.
-- [ ] t10: Add `### Change Notes` to `docs/prd/10-discovery-runs-and-qualification.md`, `docs/prd/11-flow-c-integration.md`, and `docs/prd/12-stage-automation.md` for scoped metadata propagation and validation.
-- [ ] t11: Leave Q-002 closed, updating `docs/prd/03-open-questions-and-risk-register.md` only if execution discovers new drift.
+- [x] t5: Update `docs/prd/00-index.md` to include `13-adopter-owned-config-surface.md` and its related baseline docs.
+- [x] t6: Add `### Change Notes` to `docs/prd/02-architecture-overview.md` explaining `system/.os/config/` and config-backed scoped fields.
+- [x] t7: Add `### Change Notes` to `docs/prd/06-operating-layer-and-routing.md` describing config as an operational authority alongside contracts, templates, indexes, data, and scripts.
+- [x] t8: Add `### Change Notes` to `docs/prd/08-data-and-extraction.md` requiring scoped structured rows to use configured `systems`, `environments`, and `owners`.
+- [x] t9: Add `### Change Notes` to `docs/prd/09-playbooks.md` replacing `env`/`for` playbook frontmatter with config-backed scoped lists.
+- [x] t10: Add `### Change Notes` to `docs/prd/10-discovery-runs-and-qualification.md`, `docs/prd/11-flow-c-integration.md`, and `docs/prd/12-stage-automation.md` for scoped metadata propagation and validation.
+- [x] t11: Leave Q-002 closed, updating `docs/prd/03-open-questions-and-risk-register.md` only if execution discovers new drift.
 
 ### Acceptance criteria
 

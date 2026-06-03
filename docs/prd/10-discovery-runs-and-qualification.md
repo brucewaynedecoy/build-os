@@ -34,6 +34,10 @@ Code anchors:
 
 - `system/.os/contracts/` (run-record, finding contracts)
 
+### Change Notes
+
+- Enhanced by [13 Adopter-Owned Config Surface](./13-adopter-owned-config-surface.md): run and finding records that carry scoped metadata propagate `systems`, `environments`, and `owners` as configured ID lists. Qualification and promotion must preserve those lists rather than translating them back to legacy scoped fields.
+
 ## Integrations
 
 Consumes active playbooks (`09`) and `workspace/datasets/` fixtures; writes structured rows to `08`; feeds Flow C (`11`). Uses the external computer-use harness (`system/docs/assets/references/harness-capability-matrix.md`).

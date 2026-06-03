@@ -34,6 +34,10 @@ Code anchors:
 
 - `system/.os/contracts/` (entity-records, extraction contracts)
 
+### Change Notes
+
+- Enhanced by [13 Adopter-Owned Config Surface](./13-adopter-owned-config-surface.md): structured rows that carry scoped metadata use `systems`, `environments`, and `owners` as config-backed list fields. Those values resolve to configured IDs in `system/.os/config/instance.yaml`, and validators reject legacy scoped fields or unconfigured IDs after the migration lands.
+
 ## Integrations
 
 Reads converted twins from `07`; supplies entity IDs as playbook `targets` (`09`); is written to by extraction and by run/finding promotion (`10`).

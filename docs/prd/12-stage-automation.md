@@ -32,6 +32,10 @@ Code anchors:
 
 - `system/playbooks/administrative/respect-make-docs-plugin-boundary.md`
 
+### Change Notes
+
+- Enhanced by [13 Adopter-Owned Config Surface](./13-adopter-owned-config-surface.md): stage-movers must run or respect `system/.os/scripts/validate_config.py` for config-backed scoped metadata and frontmatter hygiene. Automation should fail on legacy scoped fields or unconfigured `systems`, `environments`, and `owners` IDs after the migration lands.
+
 ## Integrations
 
 Connects `07`→`08`, `10`→`10` (qualification), and `10`→`11`. Depends on those stages existing first; this subsystem is implemented last.
