@@ -6,6 +6,8 @@ restating them elsewhere. **Not** an output target. Do not modify contracts unle
 
 ## Contracts
 
+- [`config-contract.md`](config-contract.md) — adopter-owned instance config (`systems`,
+  `environments`, `owners`, and defaults).
 - [`playbook-contract.md`](playbook-contract.md) — playbooks (incl. the guardrail variant).
 - _to be added: entity-records, run-record, finding, converted-source, extraction._
 

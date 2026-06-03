@@ -1,0 +1,37 @@
+version: 1
+
+instance:
+  id: example-instance
+  name: Example Build OS Instance
+
+systems:
+  - id: primary-system
+    name: Primary System
+    description: The main system this Build OS instance is used to understand.
+
+environments:
+  - id: baseline
+    name: Baseline
+    systems:
+      - primary-system
+    description: A baseline or reference environment for comparison.
+  - id: customized
+    name: Customized
+    systems:
+      - primary-system
+    description: An adopter-specific configured environment.
+
+owners:
+  - id: adopter-team
+    name: Adopter Team
+    kind: team
+  - id: platform-owner
+    name: Platform Owner
+    kind: team
+
+defaults:
+  systems:
+    - primary-system
+  environments:
+    - baseline
+  owners: []

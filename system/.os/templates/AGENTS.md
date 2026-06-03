@@ -7,4 +7,6 @@ template, then conform it to its contract.
 ## Templates
 
 - [`guardrail-playbook.md`](guardrail-playbook.md) — guardrail playbook shape.
+- [`instance-config.yaml`](instance-config.yaml) — neutral starter for
+  [`../config/instance.yaml`](../config/instance.yaml).
 - _to be added: procedure-playbook, run-record, finding._

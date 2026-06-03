@@ -20,11 +20,11 @@ This phase creates the config contract, starter template, canonical config file,
 
 ### Tasks
 
-- [ ] t1: Create `system/.os/contracts/config-contract.md` defining `version`, `instance`, `systems`, `environments`, `owners`, and `defaults`.
-- [ ] t2: Specify ID rules in the config contract: stable slug IDs, uniqueness within each collection, and no adopter-specific values in reusable contracts or templates.
-- [ ] t3: Specify cross-reference rules in the config contract for `environments[].systems` and `defaults.*`.
-- [ ] t4: Create `system/.os/templates/instance-config.yaml` with neutral example IDs and labels.
-- [ ] t5: Ensure the starter template can be copied directly into `system/.os/config/instance.yaml`.
+- [x] t1: Create `system/.os/contracts/config-contract.md` defining `version`, `instance`, `systems`, `environments`, `owners`, and `defaults`.
+- [x] t2: Specify ID rules in the config contract: stable slug IDs, uniqueness within each collection, and no adopter-specific values in reusable contracts or templates.
+- [x] t3: Specify cross-reference rules in the config contract for `environments[].systems` and `defaults.*`.
+- [x] t4: Create `system/.os/templates/instance-config.yaml` with neutral example IDs and labels.
+- [x] t5: Ensure the starter template can be copied directly into `system/.os/config/instance.yaml`.
 
 ### Acceptance criteria
 
@@ -41,12 +41,12 @@ This phase creates the config contract, starter template, canonical config file,
 
 ### Tasks
 
-- [ ] t6: Create `system/.os/config/instance.yaml` from the neutral starter template.
-- [ ] t7: Add or update a router for `system/.os/config/` that describes the directory as adopter-owned configuration.
-- [ ] t8: Update `system/.os/AGENTS.md` to route config work to `config/`, `contracts/config-contract.md`, and `templates/instance-config.yaml`.
-- [ ] t9: Update `system/.os/contracts/AGENTS.md` to list `config-contract.md`.
-- [ ] t10: Update `system/.os/templates/AGENTS.md` to list `instance-config.yaml`.
-- [ ] t11: Add matching `CLAUDE.md` pointers only where the local router convention requires them.
+- [x] t6: Create `system/.os/config/instance.yaml` from the neutral starter template.
+- [x] t7: Add or update a router for `system/.os/config/` that describes the directory as adopter-owned configuration.
+- [x] t8: Update `system/.os/AGENTS.md` to route config work to `config/`, `contracts/config-contract.md`, and `templates/instance-config.yaml`.
+- [x] t9: Update `system/.os/contracts/AGENTS.md` to list `config-contract.md`.
+- [x] t10: Update `system/.os/templates/AGENTS.md` to list `instance-config.yaml`.
+- [x] t11: Add matching `CLAUDE.md` pointers only where the local router convention requires them.
 
 ### Acceptance criteria
 

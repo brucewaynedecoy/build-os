@@ -8,6 +8,8 @@ not deliverables. Read only what your task needs.
 - `contracts/` — the **authority** for every artifact type (entity records, playbook, run-record,
   finding, converted-source, extraction). Read the specific contract before creating that
   artifact. Not an output target.
+- `config/` — adopter-owned instance configuration for configured systems, environments, and
+  owners. Read `contracts/config-contract.md` before editing.
 - `templates/` — starting shapes to copy. Authority is in `contracts/`.
 - `indexes/` — derived catalogs (`playbooks.json`, `references.json`); rebuildable, not canonical.
 - `data/` — system data **about the discovery process** (NDJSON/CSV): entity records + candidate
@@ -18,6 +20,9 @@ not deliverables. Read only what your task needs.
 
 - **Author or run a playbook** → [`../playbooks/`](../playbooks/) (read
   [`contracts/playbook-contract.md`](contracts/playbook-contract.md) first).
+- **Configure systems, environments, or owners** → [`config/`](config/) (read
+  [`contracts/config-contract.md`](contracts/config-contract.md), start from
+  [`templates/instance-config.yaml`](templates/instance-config.yaml) for a fresh instance).
 - **Intake a source** → convert under [`../assets/`](../assets/), then extract into `data/`.
 - **Record a run / qualify a finding** → `../workspace/runs/` and `../workspace/findings/`.
 - **Promote a qualified finding to a design** → cross into `../docs/` and obey **its** router
