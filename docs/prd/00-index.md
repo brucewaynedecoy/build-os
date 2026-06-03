@@ -18,7 +18,7 @@ This PRD set is the descriptive source-of-truth for **Build OS** — a general-p
 | Document | Kind | Status | Related Docs | Focus |
 | --- | --- | --- | --- | --- |
 | `00-index.md` | `core` | `active` | `—` | Explain the PRD set and how to read it |
-| `01-product-overview.md` | `core` | `active` | `—` | Purpose, users, capabilities, boundaries, limitations |
+| `01-product-overview.md` | `core` | `active` | `13` | Purpose, users, capabilities, boundaries, limitations |
 | `02-architecture-overview.md` | `core` | `active` | `13` | Topology, modules, runtime boundaries, data flow, config |
 | `03-open-questions-and-risk-register.md` | `core` | `active` | `13` | Drift, open questions, rebuild risks |
 | `04-glossary.md` | `core` | `active` | `—` | Canonical terms |

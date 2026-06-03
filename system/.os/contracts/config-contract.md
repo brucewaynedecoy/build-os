@@ -87,12 +87,10 @@ Legacy scoped fields such as `env`, `for`, `envs`, and `target_systems` are not 
 
 ## Intended Follow-On
 
-After editing `config/instance.yaml`, run the config validator from the repository root once
-available:
+After editing `config/instance.yaml`, run the config and frontmatter validator from the repository
+root:
 
 - `python3 system/.os/scripts/validate_config.py`
-
-Until that validator exists, check this contract manually before relying on configured IDs in playbooks, data rows, run records, findings, indexes, or docs handoffs.
 
 ## Link Rules
 

@@ -37,7 +37,7 @@ Define the per-entity NDJSON store in `.os/data/`, implement candidate staging a
 
 - [ ] t4: Build `system/.os/indexes/playbooks.json` from playbook frontmatter (derived).
 - [ ] t5: Enforce layered canonicity — structured fields canonical in `.os/data`; narrative references entity IDs; overlapping doc tables generated, not hand-maintained.
-- [ ] t6: Apply `env`/`for` tags across entity rows and add a hygiene check.
+- [ ] t6: Apply configured `systems`, `environments`, and `owners` lists across entity rows and add a hygiene check.
 
 ### Acceptance criteria
 

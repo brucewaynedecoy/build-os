@@ -14,7 +14,7 @@ not deliverables. Read only what your task needs.
 - `indexes/` — derived catalogs (`playbooks.json`, `references.json`); rebuildable, not canonical.
 - `data/` — system data **about the discovery process** (NDJSON/CSV): entity records + candidate
   staging. Not deliverables.
-- `scripts/` — deterministic system processes (converters, index builders).
+- `scripts/` — deterministic system processes (converters, index builders, validators).
 
 ## Routing by task
 
@@ -23,6 +23,8 @@ not deliverables. Read only what your task needs.
 - **Configure systems, environments, or owners** → [`config/`](config/) (read
   [`contracts/config-contract.md`](contracts/config-contract.md), start from
   [`templates/instance-config.yaml`](templates/instance-config.yaml) for a fresh instance).
+- **Validate config or scoped frontmatter** → run
+  [`scripts/validate_config.py`](scripts/validate_config.py).
 - **Intake a source** → convert under [`../assets/`](../assets/), then extract into `data/`.
 - **Record a run / qualify a finding** → `../workspace/runs/` and `../workspace/findings/`.
 - **Promote a qualified finding to a design** → cross into `../docs/` and obey **its** router

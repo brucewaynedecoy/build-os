@@ -7,10 +7,12 @@ state_nature: guardrail
 status: active
 audience: both
 harness: [none]
-env: both
-for: both
+systems: []
+environments: []
+owners: []
 targets: []
 produces: []
+source_anchor: null
 version: 1.0.0
 related:
   - ../../../docs/designs/2026-06-03-build-os-architecture.md

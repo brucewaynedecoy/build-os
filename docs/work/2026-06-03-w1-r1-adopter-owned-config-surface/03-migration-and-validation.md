@@ -22,11 +22,11 @@ This phase updates the playbook contract and scoped artifacts to use `systems`, 
 
 ### Tasks
 
-- [ ] t1: Update `system/.os/contracts/playbook-contract.md` to replace the fixed `env`/`for` row with `systems`, `environments`, and `owners` list fields.
-- [ ] t2: Migrate scoped frontmatter in `system/playbooks/**/*.md` to configured `systems`, `environments`, and `owners` IDs.
-- [ ] t3: Update data contract drafts or placeholders so entity rows, run records, findings, generated indexes, and handoff metadata use the same configured field names.
-- [ ] t4: Update any work or PRD references that still prescribe fixed scoped vocabulary after the effective PRD change lands.
-- [ ] t5: Preserve explicit migration notes where legacy terms need to be mentioned for transition context.
+- [x] t1: Update `system/.os/contracts/playbook-contract.md` to replace the fixed `env`/`for` row with `systems`, `environments`, and `owners` list fields.
+- [x] t2: Migrate scoped frontmatter in `system/playbooks/**/*.md` to configured `systems`, `environments`, and `owners` IDs.
+- [x] t3: Update data contract drafts or placeholders so entity rows, run records, findings, generated indexes, and handoff metadata use the same configured field names.
+- [x] t4: Update any work or PRD references that still prescribe fixed scoped vocabulary after the effective PRD change lands.
+- [x] t5: Preserve explicit migration notes where legacy terms need to be mentioned for transition context.
 
 ### Acceptance criteria
 
@@ -44,11 +44,11 @@ This phase updates the playbook contract and scoped artifacts to use `systems`, 
 
 ### Tasks
 
-- [ ] t6: Implement `system/.os/scripts/validate_config.py`.
-- [ ] t7: Validate config shape against `system/.os/contracts/config-contract.md`.
-- [ ] t8: Check unique IDs, slug format, `environments[].systems` references, and `defaults.*` references.
-- [ ] t9: Add script output that reports precise file paths and field paths for validation failures.
-- [ ] t10: Add focused tests or built-in test fixtures for duplicate IDs, invalid slugs, missing references, and invalid defaults.
+- [x] t6: Implement `system/.os/scripts/validate_config.py`.
+- [x] t7: Validate config shape against `system/.os/contracts/config-contract.md`.
+- [x] t8: Check unique IDs, slug format, `environments[].systems` references, and `defaults.*` references.
+- [x] t9: Add script output that reports precise file paths and field paths for validation failures.
+- [x] t10: Add focused tests or built-in test fixtures for duplicate IDs, invalid slugs, missing references, and invalid defaults.
 
 ### Acceptance criteria
 
@@ -64,11 +64,11 @@ This phase updates the playbook contract and scoped artifacts to use `systems`, 
 
 ### Tasks
 
-- [ ] t11: Add frontmatter parsing for playbooks and other scoped Markdown artifacts.
-- [ ] t12: Verify `systems`, `environments`, and `owners` are lists of configured IDs.
-- [ ] t13: Reject legacy scoped fields `env` and `for` once migration is active.
-- [ ] t14: Structure the hygiene check so future index builders can call it independently from broad repository validation.
-- [ ] t15: Add validation notes or help text documenting how to run config validation and frontmatter hygiene.
+- [x] t11: Add frontmatter parsing for playbooks and other scoped Markdown artifacts.
+- [x] t12: Verify `systems`, `environments`, and `owners` are lists of configured IDs.
+- [x] t13: Reject legacy scoped fields `env` and `for` once migration is active.
+- [x] t14: Structure the hygiene check so future index builders can call it independently from broad repository validation.
+- [x] t15: Add validation notes or help text documenting how to run config validation and frontmatter hygiene.
 
 ### Acceptance criteria
 
@@ -86,11 +86,11 @@ This phase updates the playbook contract and scoped artifacts to use `systems`, 
 
 ### Tasks
 
-- [ ] t16: Run `python3 system/.os/scripts/validate_config.py` and capture pass/fail status in the phase closeout.
-- [ ] t17: Run docs path hygiene after PRD, work, and contract updates.
-- [ ] t18: Scan active docs/contracts for remaining fixed scoped vocabulary and classify any remaining matches.
-- [ ] t19: Refresh `jdocmunch` after docs updates and `jcodemunch` after script or contract-adjacent code updates if available.
-- [ ] t20: Record any unresolved migration debt in the PRD risk register or phase closeout instead of leaving it implicit.
+- [x] t16: Run `python3 system/.os/scripts/validate_config.py` and capture pass/fail status in the phase closeout.
+- [x] t17: Run docs path hygiene after PRD, work, and contract updates.
+- [x] t18: Scan active docs/contracts for remaining fixed scoped vocabulary and classify any remaining matches.
+- [x] t19: Refresh `jdocmunch` after docs updates and `jcodemunch` after script or contract-adjacent code updates if available.
+- [x] t20: Record any unresolved migration debt in the PRD risk register or phase closeout instead of leaving it implicit.
 
 ### Acceptance criteria
 
@@ -103,3 +103,9 @@ This phase updates the playbook contract and scoped artifacts to use `systems`, 
 
 - Stages 1-3.
 - Completed PRD and contract updates from prior phases.
+
+## Closeout Notes
+
+- `python3 system/.os/scripts/validate_config.py` passes against `system/.os/config/instance.yaml`, `system/playbooks/**/*.md`, and `system/.os/templates/*playbook*.md`.
+- Remaining fixed-vocabulary mentions are retained only in PRD/work change-note or migration contexts that explain the superseded `env`/`for` vocabulary; active operational contracts and scoped frontmatter use `systems`, `environments`, and `owners`.
+- No unresolved migration debt was added to the PRD risk register.

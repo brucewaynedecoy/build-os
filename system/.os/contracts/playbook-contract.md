@@ -25,12 +25,18 @@ guides a human or agent. Apply this contract to newly authored playbooks and to 
 | `status` | `draft` \| `reviewed` \| `active` \| `archived` | review-to-activate; only `active` runs/enforces |
 | `audience` | `human` \| `agent` \| `both` | |
 | `harness` | list: `browser`, `computer-use`, `mcp`, `shell`, `none` | see make-docs `harness-capability-matrix.md` |
-| `env` / `for` | `vanilla\|deere\|both` / `microsoft\|deere\|both` | |
+| `systems` | list of configured `systems[].id` values | may be empty only when the playbook is system-neutral; see `config-contract.md` |
+| `environments` | list of configured `environments[].id` values | explicit list; do not use sentinel values |
+| `owners` | list of configured `owners[].id` values | empty when ownership is not applicable |
 | `targets` | list of entity ids (REQ/CAP/TC) | may be empty |
 | `produces` | list: `run-record`, `dataset`, `finding`, … | empty for guardrails |
 | `source_anchor` | `path#id` \| null | if minted by an extraction |
 | `version` | semver | |
 | `related` | list of links / ids | |
+
+Migration note: legacy scoped fields such as `env`, `for`, `envs`, and `target_systems` are rejected
+for new or migrated playbooks. Use `systems`, `environments`, and `owners` with configured IDs from
+`../config/instance.yaml`.
 
 ## Required Body — procedure playbooks (`stateful` / `standing`)
 

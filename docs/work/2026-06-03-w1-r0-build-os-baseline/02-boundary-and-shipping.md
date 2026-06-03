@@ -19,7 +19,7 @@ Harden the make-docs plug-in boundary with active guardrails, augment the co-own
 
 - [x] t1: Author and activate `PB-001` (respect the make-docs plug-in boundary).
 - [x] t2: Augment the co-owned `system/AGENTS.md` (+ `CLAUDE.md`) with the `.os/` operating-layer pointer, append-only.
-- [ ] t3: Add an `env`/`for` tagging guardrail (or convention doc) so artifacts consistently carry `env` (`vanilla`/`deere`/`both`) and `for` (`microsoft`/`deere`/`both`).
+- [ ] t3: Add a scoped-tagging guardrail (or convention doc) so artifacts consistently carry configured `systems`, `environments`, and `owners` lists from `system/.os/config/instance.yaml`.
 
 ### Acceptance criteria
 

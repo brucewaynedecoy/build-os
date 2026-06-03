@@ -38,11 +38,15 @@ Code anchors:
 
 ## Current Limitations
 
-Build OS is greenfield: only the first slice (operating-layer routers, the playbook contract, and the boundary guardrail) is built. Intake, the data layer, discovery/qualification, Flow C, and stage automation are designed but not yet implemented. The first engagement's `env` values (`vanilla`/`deere`) are concrete rather than generalized for arbitrary adopters.
+Build OS is greenfield: only the first slice (operating-layer routers, the playbook contract, and the boundary guardrail) is built. Intake, the data layer, discovery/qualification, Flow C, and stage automation are designed but not yet implemented. The adopter-owned config surface now generalizes scoped vocabulary; downstream data, discovery, and handoff surfaces still need implementation to use it end to end.
 
 Code anchors:
 
 - `docs/work/2026-06-03-w1-r0-build-os-baseline/00-index.md`
+
+### Change Notes
+
+- Superseded by [13 Adopter-Owned Config Surface](./13-adopter-owned-config-surface.md): adopter-owned `system/.os/config/instance.yaml`, `systems`, `environments`, `owners`, and config/frontmatter validation replace the concrete first-engagement scoped values as the effective requirement.
 
 ## Source Anchors
 

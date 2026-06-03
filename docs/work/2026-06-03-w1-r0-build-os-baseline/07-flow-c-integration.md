@@ -18,7 +18,7 @@ Implement the promotion path from a qualified finding to a design under `system/
 ### Tasks
 
 - [ ] t1: Implement the qualified-finding → `system/docs/designs/` promotion that reads the make-docs design workflow, contract, and template, then writes only through that router.
-- [ ] t2: Pass the required inputs into the hand-off (finding id, qualification test anchor, `env`/`for` tags).
+- [ ] t2: Pass the required inputs into the hand-off (finding id, qualification test anchor, configured `systems`, `environments`, and `owners` lists).
 - [ ] t3: Wire the finding contract's `Intended Follow-On` ("Next Step") to point at the make-docs design router.
 
 ### Acceptance criteria
