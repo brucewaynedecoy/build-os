@@ -29,10 +29,15 @@
 
 - **Goal:** deterministic, tool-first conversion of unstructured sources into clean text/CSV twins —
   no structuring.
-- **Deliverables:** a converter per source type (`docx`, `xlsx`, `pdf`, `html`, html-directory, `csv`)
-  in `.os/scripts/`; provenance frontmatter on every converted twin; the derived `references.json`
-  index; the `assets/` + `assets/converted/` routers.
-- **Depends on:** P1 (converted-source contract).
+- **Deliverables:** the `buildos-intake` Go CLI under `toolkits/buildos-intake/`; command surface
+  for conversion and reference-index rebuilds; local-only converter behavior for `docx`, `xlsx`,
+  `pdf`, `html`, html-directory, and `csv`; standard-library-first dependency policy with explicit
+  review for any third-party/native converter dependency; provenance frontmatter on every converted
+  twin under `system/assets/`; the derived `references.json` index; thin `.os/scripts/` wrappers or
+  command documentation; tests and docs updates.
+- **Depends on:** P1 (converted-source contract) and W1 R2 (toolkit CLI deployment standard).
+- **Status:** revised by W1 R2 — durable converter/index logic belongs in `buildos-intake`; `.os/scripts/`
+  is a wrapper/router surface only.
 
 ## P4 · Data layer & extraction
 

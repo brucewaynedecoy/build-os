@@ -12,7 +12,7 @@ This backlog implements Build OS in `./system/`, derived from [the baseline buil
 | --- | --- |
 | [01-foundation.md](./01-foundation.md) | Operating layer & contracts — complete `.os/contracts/*` and scaffold routers |
 | [02-boundary-and-shipping.md](./02-boundary-and-shipping.md) | Make-docs boundary guardrails, `system/.gitignore`, co-owned-router augmentation |
-| [03-intake-conversion.md](./03-intake-conversion.md) | Deterministic converters, provenance, `references.json` |
+| [03-intake-conversion.md](./03-intake-conversion.md) | `buildos-intake` Go CLI, thin wrappers, provenance, `references.json` |
 | [04-data-and-extraction.md](./04-data-and-extraction.md) | Entity JSONL, candidate staging, load-plans, `playbooks.json` |
 | [05-playbooks.md](./05-playbooks.md) | Playbook templates, category routers, seed playbooks, review-to-activate |
 | [06-discovery-runs-qualification.md](./06-discovery-runs-qualification.md) | Runs, finding qualification (Playwright), computer-use |

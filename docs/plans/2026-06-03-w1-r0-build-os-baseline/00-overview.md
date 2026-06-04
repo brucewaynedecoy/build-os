@@ -85,7 +85,7 @@ Capability areas and their dependency phases are detailed in
 | ----- | --------------- | ---------------- | ---------- |
 | P1 | Operating layer & contracts | remaining `.os/contracts/*`, scaffolded routers/dirs | — (extends built slice) |
 | P2 | Spaces, boundary & shipping | boundary guardrails, `system/.gitignore`, router augmentation | P1 |
-| P3 | Intake / conversion | converters per source type, provenance, `references.json` | P1 |
+| P3 | Intake / conversion | `buildos-intake` Go CLI, thin wrappers, provenance, `references.json` | P1, W1 R2 prerequisite |
 | P4 | Data layer & extraction | entity JSONL, candidate staging, load-plans, `playbooks.json` | P1, P3 |
 | P5 | Playbooks | templates, category routers, seed playbooks | P1, P4 |
 | P6 | Discovery, runs & qualification | `workspace/runs`+`findings`, Playwright qualification, computer-use | P4, P5 |
