@@ -12,6 +12,8 @@ applies-to:
 related:
   - "../../../system/.os/AGENTS.md"
   - "../../../system/.os/contracts/AGENTS.md"
+  - "../../../system/.os/contracts/config-contract.md"
+  - "../../../system/.os/contracts/playbook-contract.md"
   - "../../../system/.os/data/AGENTS.md"
   - "../../../system/.os/indexes/AGENTS.md"
   - "../../../system/.os/contracts/entity-records-contract.md"
@@ -19,17 +21,27 @@ related:
   - "../../../system/.os/contracts/finding-contract.md"
   - "../../../system/.os/contracts/converted-source-contract.md"
   - "../../../system/.os/contracts/extraction-contract.md"
+  - "../../../system/playbooks/administrative/respect-configured-scoped-metadata.md"
+  - "../../../system/.gitignore"
   - "../../work/2026-06-03-w1-r0-build-os-baseline/01-foundation.md"
+  - "../../work/2026-06-03-w1-r0-build-os-baseline/02-boundary-and-shipping.md"
   - "../../assets/history/2026-06-04-w1-r0-p1-operating-layer-contracts.md"
+  - "../../assets/history/2026-06-04-w1-r0-p2-spaces-boundary-shipping.md"
 ---
 
 # Maintaining Operating Layer Contracts
 
 ## Overview
 
-Use this guide when adding or changing Build OS operating-layer contracts, `.os` routers, or system-owned data/index routing. The current operating layer is contract first: contracts define authority, shape, lifecycle, and link rules; routers only tell contributors where to go next.
+Use this guide when adding or changing Build OS operating-layer contracts, `.os` routers, active
+guardrails, scoped metadata, or system-owned data/index routing. The current operating layer is
+contract first: contracts define authority, shape, lifecycle, and link rules; guardrails define
+always-on safety rules; routers only tell contributors where to go next.
 
-Coverage outcome: `developer`. The durable knowledge is maintainer-facing because it describes source-of-truth boundaries, extension points, validation, and safe-change rules. User-guide outcome: `none`, because P1 did not add a shipped user workflow.
+Coverage outcome: `developer`. The durable knowledge is maintainer-facing because it describes
+source-of-truth boundaries, extension points, validation, shipping boundaries, and safe-change
+rules. User-guide outcome: `none` for this guide because these surfaces do not create a shipped
+end-user workflow.
 
 ## Project Orientation
 
@@ -37,12 +49,16 @@ Coverage outcome: `developer`. The durable knowledge is maintainer-facing becaus
 - [../../../system/.os/contracts/AGENTS.md](../../../system/.os/contracts/AGENTS.md) lists authority contracts. Add a contract link here when a new authority contract lands.
 - [../../../system/.os/data/AGENTS.md](../../../system/.os/data/AGENTS.md) routes system-owned structured data. It points writers back to the relevant contract and keeps user datasets out of `.os/data`.
 - [../../../system/.os/indexes/AGENTS.md](../../../system/.os/indexes/AGENTS.md) routes rebuildable derived catalogs. Indexes are not authority.
+- [../../../system/playbooks/administrative/respect-configured-scoped-metadata.md](../../../system/playbooks/administrative/respect-configured-scoped-metadata.md) is the active guardrail for config-backed scoped metadata.
+- [../../../system/.gitignore](../../../system/.gitignore) is part of the shipped `system/` boundary. It ignores runtime ephemera only; data tracking or ignoring remains the adopter's choice.
 - `CLAUDE.md` files in these directories are one-line pointers to the matching `AGENTS.md`. Do not duplicate routing rules in them.
 
-The current P1 contract set is:
+The current operating-layer contract set includes:
 
 | Contract | Owns |
 | --- | --- |
+| [config-contract.md](../../../system/.os/contracts/config-contract.md) | Adopter-owned instance config shape, configured `systems`, `environments`, and `owners`, defaults, and scoped metadata reference rules. |
+| [playbook-contract.md](../../../system/.os/contracts/playbook-contract.md) | Playbook frontmatter, guardrail/procedure body shapes, lifecycle, and scoped metadata expectations for playbooks. |
 | [entity-records-contract.md](../../../system/.os/contracts/entity-records-contract.md) | Canonical `.os/data/*.jsonl` entity envelopes, ID prefixes, shared fields, per-type fields, and status vocabulary. |
 | [run-record-contract.md](../../../system/.os/contracts/run-record-contract.md) | Run artifact directories, immutable run evidence, outcome values, raw findings, and `.os/data/runs.jsonl` index fields. |
 | [finding-contract.md](../../../system/.os/contracts/finding-contract.md) | Raw to qualified to optional design lifecycle, deterministic qualification tests, and negative-finding qualification. |
@@ -56,14 +72,17 @@ The current P1 contract set is:
 3. Update the contract first when behavior needs a new authority rule. Keep the contract format consistent: `Purpose`, `Required Path`, `Required Shape/Fields`, lifecycle or status rules where relevant, `Intended Follow-On (Next Step)`, and `Link Rules`.
 4. Update the router only after the contract is correct. Routers should explain where to write and what contract to consult; they should not restate schema details.
 5. Keep `CLAUDE.md` as a pointer only.
-6. Do not create runtime `.jsonl` stores, populated indexes, run artifacts, or workspace datasets during a contract-only phase. Create those only when the active backlog phase explicitly asks for runtime artifacts.
-7. After the edit, update the active work backlog and history record only after validation.
+6. When changing scoped metadata, read `config-contract.md`, use `systems`, `environments`, and `owners` as list fields, and reference only configured IDs from `system/.os/config/instance.yaml` when scope applies.
+7. Do not create runtime `.jsonl` stores, populated indexes, run artifacts, or workspace datasets during a contract-only phase. Create those only when the active backlog phase explicitly asks for runtime artifacts.
+8. After the edit, update the active work backlog and history record only after validation.
 
 ## Safe-Change Rules
 
 - Treat contracts as authority and indexes as derived.
 - Preserve NDJSON, JSONL, or CSV as the only system-owned structured data formats under `.os/data`.
-- Keep user datasets out of `.os/data`; route them to the workspace dataset area when that workspace path is introduced by an implementation phase.
+- Keep user datasets out of `.os/data`; route them to `system/workspace/datasets/`.
+- Use configured scoped metadata fields: `systems`, `environments`, and `owners`. Do not use legacy fields such as `env`, `envs`, `for`, or `target_systems`, and do not invent local scoped-value enums.
+- Keep `system/.gitignore` runtime-only. It may ignore ephemera such as `node_modules/`, `.playwright/`, and `test-results/`, but it must not hide `.os/data/` or `workspace/datasets/` by default.
 - Do not add new ID prefixes without updating [entity-records-contract.md](../../../system/.os/contracts/entity-records-contract.md).
 - Do not add outcome, lifecycle, or status values in only one contract when another contract depends on the same vocabulary.
 - Do not write directly into make-docs managed `system/docs` trees unless the relevant router or phase explicitly permits it.
@@ -82,6 +101,8 @@ Then refresh the project documentation index and check links where practical. Re
 - valid relative links from new or changed documents
 - thin routers with no duplicated contract schema
 - one-line `CLAUDE.md` pointers
+- scoped metadata using `systems`, `environments`, and `owners` list fields backed by `system/.os/config/instance.yaml`
+- a runtime-only `system/.gitignore` that does not ignore `.os/data/` or `workspace/datasets/`
 - no generated runtime data in `.os/data`
 - no generated catalogs in `.os/indexes`
 - no direct edits to make-docs managed trees outside the phase scope
@@ -96,7 +117,7 @@ git diff --check
 
 If a router starts accumulating field definitions, move the field details into the owning contract and leave a short link in the router.
 
-If a new data file seems necessary, first decide whether it is authority data, a rebuildable index, a user dataset, or a run artifact. `.os/data` is for system-owned structured authority or index records only; `.os/indexes` is for derived catalogs only; run artifacts and user datasets belong under the workspace surface when those runtime paths are introduced.
+If a new data file seems necessary, first decide whether it is authority data, a rebuildable index, a user dataset, or a run artifact. `.os/data` is for system-owned structured authority or index records only; `.os/indexes` is for derived catalogs only; user datasets belong under `system/workspace/datasets/`.
 
 If link checking reports repository-wide noise, separate baseline failures from touched-file failures. Fix every broken link introduced by the current change, and record any unrelated baseline noise in the closeout instead of hiding it.
 
@@ -104,8 +125,13 @@ If link checking reports repository-wide noise, separate baseline failures from 
 
 - [P1 work backlog](../../work/2026-06-03-w1-r0-build-os-baseline/01-foundation.md)
 - [P1 history record](../../assets/history/2026-06-04-w1-r0-p1-operating-layer-contracts.md)
+- [P2 boundary and shipping backlog](../../work/2026-06-03-w1-r0-build-os-baseline/02-boundary-and-shipping.md)
+- [P2 history record](../../assets/history/2026-06-04-w1-r0-p2-spaces-boundary-shipping.md)
 - [Operating router](../../../system/.os/AGENTS.md)
 - [Contracts router](../../../system/.os/contracts/AGENTS.md)
+- [Config contract](../../../system/.os/contracts/config-contract.md)
+- [Playbook contract](../../../system/.os/contracts/playbook-contract.md)
+- [Configured scoped metadata guardrail](../../../system/playbooks/administrative/respect-configured-scoped-metadata.md)
 - [Data router](../../../system/.os/data/AGENTS.md)
 - [Indexes router](../../../system/.os/indexes/AGENTS.md)
 

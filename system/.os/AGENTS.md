@@ -35,6 +35,7 @@ not deliverables. Read only what your task needs.
 ## Guardrails in force (read before acting)
 
 - [Respect the make-docs plug-in boundary](../playbooks/administrative/respect-make-docs-plugin-boundary.md)
+- [Respect configured scoped metadata](../playbooks/administrative/respect-configured-scoped-metadata.md)
 
 ## Boundary
 

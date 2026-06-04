@@ -21,3 +21,4 @@ playbook's `category`; frontmatter carries `execution_mode` and `state_nature`.
 ## Guardrails in force
 
 - [administrative/respect-make-docs-plugin-boundary](administrative/respect-make-docs-plugin-boundary.md)
+- [administrative/respect-configured-scoped-metadata](administrative/respect-configured-scoped-metadata.md)

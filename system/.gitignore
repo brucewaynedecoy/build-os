@@ -1,0 +1,4 @@
+# Runtime ephemera only. Data tracking or ignoring is the adopter's choice.
+node_modules/
+.playwright/
+test-results/

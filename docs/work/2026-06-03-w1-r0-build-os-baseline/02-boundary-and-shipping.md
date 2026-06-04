@@ -19,7 +19,7 @@ Harden the make-docs plug-in boundary with active guardrails, augment the co-own
 
 - [x] t1: Author and activate `PB-001` (respect the make-docs plug-in boundary).
 - [x] t2: Augment the co-owned `system/AGENTS.md` (+ `CLAUDE.md`) with the `.os/` operating-layer pointer, append-only.
-- [ ] t3: Add a scoped-tagging guardrail (or convention doc) so artifacts consistently carry configured `systems`, `environments`, and `owners` lists from `system/.os/config/instance.yaml`.
+- [x] t3: Add a scoped-tagging guardrail (or convention doc) so artifacts consistently carry configured `systems`, `environments`, and `owners` lists from `system/.os/config/instance.yaml`.
 
 ### Acceptance criteria
 
@@ -34,8 +34,8 @@ Harden the make-docs plug-in boundary with active guardrails, augment the co-own
 
 ### Tasks
 
-- [ ] t4: Author `system/.gitignore` scoped to runtime ephemera only (`node_modules`, `.playwright`, `test-results`), with a comment that tracking or ignoring data is the adopter's choice.
-- [ ] t5: Add `.gitkeep` placeholders for user-owned dirs (`workspace/datasets/`) so the shipped `system/` tree is complete on first adoption.
+- [x] t4: Author `system/.gitignore` scoped to runtime ephemera only (`node_modules`, `.playwright`, `test-results`), with a comment that tracking or ignoring data is the adopter's choice.
+- [x] t5: Add `.gitkeep` placeholders for user-owned dirs (`workspace/datasets/`) so the shipped `system/` tree is complete on first adoption.
 
 ### Acceptance criteria
 
