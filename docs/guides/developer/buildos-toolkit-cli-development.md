@@ -17,7 +17,11 @@ related:
   - "../../prd/14-revise-deterministic-toolkit-deployment.md"
   - "../../../system/.os/contracts/converted-source-contract.md"
   - "../../../system/.os/contracts/intake-translation-contract.md"
+  - "../../../system/.os/contracts/playbook-contract.md"
+  - "../../../system/.os/indexes/AGENTS.md"
   - "../../../system/playbooks/administrative/manual-intake-conversion.md"
+  - "../../work/2026-06-03-w1-r0-build-os-baseline/04-data-and-extraction.md"
+  - "../../assets/history/2026-06-04-w1-r0-p4-data-layer-extraction.md"
   - "../../../toolkits/README.md"
   - "../../../toolkits/buildos-intake/README.md"
 ---
@@ -32,7 +36,7 @@ Coverage outcome: `developer`. This topic is maintainer-facing because it define
 
 ## Project Orientation
 
-- [../../../toolkits/](../../../toolkits/) is the source home for first-party deterministic CLI toolkits.
+- [../../../toolkits/README.md](../../../toolkits/README.md) is the source home overview for first-party deterministic CLI toolkits.
 - [../../../toolkits/AGENTS.md](../../../toolkits/AGENTS.md) is the top router for toolkit work.
 - Each toolkit directory should include a local `README.md`, `AGENTS.md`, and `CLAUDE.md`.
 - `system/.os/scripts/` remains the operational wrapper, command router, compatibility, and command documentation surface.
@@ -59,6 +63,7 @@ Third-party packages, native dependencies, generated parsers, service SDKs, or e
 ```sh
 buildos-intake convert --source <path>
 buildos-intake index references
+buildos-intake index playbooks
 ```
 
 The operating-layer wrapper is:
@@ -66,6 +71,7 @@ The operating-layer wrapper is:
 ```sh
 system/.os/scripts/buildos-intake convert --source <path>
 system/.os/scripts/buildos-intake index references
+system/.os/scripts/buildos-intake index playbooks
 ```
 
 P3 approved only two third-party Go dependencies for this toolkit: `golang.org/x/net/html` for HTML parsing and `github.com/ledongthuc/pdf` for rudimentary local PDF plain-text extraction. Do not add `pdftotext`, Poppler, OCR engines, external converter utilities, network calls, or service calls to the intake command surface without a new design and README packaging review.
@@ -75,6 +81,8 @@ Maintain intake behavior against the contracts, not only against command output:
 - Converted twins must follow [converted-source-contract.md](../../../system/.os/contracts/converted-source-contract.md) for path, frontmatter, provenance, and status.
 - Converted twin bodies and side artifacts must follow [intake-translation-contract.md](../../../system/.os/contracts/intake-translation-contract.md).
 - `convert` currently supports CSV, DOCX, XLSX, HTML, HTML-directory sources, and minimal PDF text extraction. If a source type or output shape changes, update contracts, tests, and wrapper-facing documentation in the same change.
+- `index references` scans converted twins under `system/assets/` and writes the derived `system/.os/indexes/references.json` catalog.
+- `index playbooks` scans Markdown playbooks under `system/playbooks/`, skips documents without playbook frontmatter, requires the playbook contract fields, sorts entries by `id`, and writes the derived `system/.os/indexes/playbooks.json` catalog.
 - Keep side artifacts under the same `system/assets/<source-slug>/` directory as the converted twin. Use deterministic relative references from the converted body. Prefer `media/` for copied images and `diagrams/` for inline SVG or Mermaid artifacts.
 - For HTML, preserve local and data-URI images when accessible, preserve inline SVG as `diagrams/*.svg`, and preserve Mermaid as `diagrams/*.mmd` plus fenced `mermaid` code in the Markdown body. Do not add diagram rendering to bitmap output unless a future design approves the renderer dependency.
 - Treat PDF extraction as best-effort plain text. Do not imply OCR, layout fidelity, table reconstruction, embedded-image extraction, or a future rich-PDF roadmap.
@@ -145,6 +153,13 @@ go test ./...
 go build ./...
 ```
 
+After changing an index builder, regenerate the affected catalog from the real checkout and then run repository validation. For playbooks:
+
+```sh
+go run ./cmd/buildos-intake index playbooks --repo-root ../.. --playbooks-root system/playbooks --output system/.os/indexes/playbooks.json
+python3 ../../system/.os/scripts/validate_config.py
+```
+
 After edits, refresh the project documentation and code indexes when the jdocmunch and jcodemunch MCP servers are available.
 
 ## Troubleshooting
@@ -155,6 +170,10 @@ If a toolkit needs network access, stop and write or update a design first. The 
 
 If a dependency is attractive but optional, prefer a standard-library implementation until the dependency materially improves correctness, supportability, or packaging risk.
 
+If `index playbooks` fails, inspect the reported playbook frontmatter before changing parser behavior. Administrative routers such as `AGENTS.md` should be skipped because they do not have playbook frontmatter; real playbooks should supply every required field in `playbook-contract.md`.
+
+If generated list fields become `null` or output order changes unexpectedly, fix the index builder or tests. Derived catalogs should remain deterministic and should serialize empty lists as arrays.
+
 If enterprise distribution concerns block a rollout, track them against R-003 in [03 Open Questions and Risk Register](../../prd/03-open-questions-and-risk-register.md) instead of hiding them inside a toolkit README.
 
 ## Related Resources
@@ -162,10 +181,13 @@ If enterprise distribution concerns block a rollout, track them against R-003 in
 - [Toolkit CLI deployment standard design](../../designs/2026-06-04-buildos-toolkit-cli-deployment-standard.md)
 - [make-docs import strategy design](../../designs/2026-06-04-make-docs-buildos-toolkit-cli-import-strategy.md)
 - [PRD 14 deterministic toolkit deployment revision](../../prd/14-revise-deterministic-toolkit-deployment.md)
+- [P4 data and extraction backlog](../../work/2026-06-03-w1-r0-build-os-baseline/04-data-and-extraction.md)
+- [P4 history record](../../assets/history/2026-06-04-w1-r0-p4-data-layer-extraction.md)
+- [Indexes router](../../../system/.os/indexes/AGENTS.md)
+- [Playbook contract](../../../system/.os/contracts/playbook-contract.md)
 - [Toolkits root README](../../../toolkits/README.md)
 - [Toolkits router](../../../toolkits/AGENTS.md)
 
 ## Future Coverage
 
 - Blocked by: expanded installer and release packaging. Update when `buildos-intake` has signed release artifacts, checksums, SBOM generation, and installer integration. Guide change: add enterprise deployment procedures and release checklist details.
-- Blocked by: enterprise installer and release hardening. Update when signing, checksums, SBOM generation, installer behavior, and package distribution are approved. Guide change: add release packaging and enterprise deployment procedures.

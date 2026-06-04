@@ -39,12 +39,16 @@ Code anchors:
 
 ## Data Flow
 
-Three chained flows: **A — Intake** (`convert → extract → candidates`); **B — Discovery** (`active playbook → run → raw finding → qualify → qualified finding`); **C — Planning/Engineering** (`qualified finding → design → plan → prd → work`). Two gates govern promotion: review-to-activate (instruments) and verify-to-promote (findings, where qualification = a deterministic repeatable test).
+Three chained flows: **A — Intake** (`convert → extract → draft entity and extraction rows`); **B — Discovery** (`active playbook → run → raw finding → qualify → qualified finding`); **C — Planning/Engineering** (`qualified finding → design → plan → prd → work`). Two gates govern promotion: review-to-activate (instruments) and verify-to-promote (findings, where qualification = a deterministic repeatable test).
 
 Code anchors:
 
 - `system/workspace/runs/`, `system/workspace/findings/`
 - `system/docs/designs/`
+
+### Change Notes
+
+- Revised by [15 Revise Extraction Draft Lifecycle](./15-revise-extraction-draft-lifecycle.md): Flow A extraction outputs use `draft` entity and extraction rows until promoted; `candidate` remains only a converted-source trust state where that contract applies.
 
 ## Configuration Surfaces
 

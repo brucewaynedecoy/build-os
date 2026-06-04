@@ -1,0 +1,80 @@
+{
+  "version": 1,
+  "playbooks": [
+    {
+      "id": "PB-001",
+      "path": "system/playbooks/administrative/respect-make-docs-plugin-boundary.md",
+      "title": "Respect the make-docs plug-in boundary",
+      "category": "administrative",
+      "execution_mode": "n/a",
+      "state_nature": "guardrail",
+      "status": "active",
+      "audience": "both",
+      "harness": [
+        "none"
+      ],
+      "systems": [],
+      "environments": [],
+      "owners": [],
+      "targets": [],
+      "produces": [],
+      "source_anchor": null,
+      "version": "1.0.0",
+      "related": [
+        "../../../docs/designs/2026-06-03-build-os-architecture.md"
+      ]
+    },
+    {
+      "id": "PB-002",
+      "path": "system/playbooks/administrative/respect-configured-scoped-metadata.md",
+      "title": "Respect configured scoped metadata",
+      "category": "administrative",
+      "execution_mode": "n/a",
+      "state_nature": "guardrail",
+      "status": "active",
+      "audience": "both",
+      "harness": [
+        "none"
+      ],
+      "systems": [],
+      "environments": [],
+      "owners": [],
+      "targets": [],
+      "produces": [],
+      "source_anchor": null,
+      "version": "1.0.0",
+      "related": [
+        "../../.os/contracts/config-contract.md",
+        "../../.os/contracts/playbook-contract.md",
+        "../../.os/scripts/validate_config.py"
+      ]
+    },
+    {
+      "id": "PB-003",
+      "path": "system/playbooks/administrative/manual-intake-conversion.md",
+      "title": "Manual intake conversion",
+      "category": "administrative",
+      "execution_mode": "explicit-steps",
+      "state_nature": "standing",
+      "status": "active",
+      "audience": "both",
+      "harness": [
+        "none"
+      ],
+      "systems": [],
+      "environments": [],
+      "owners": [],
+      "targets": [],
+      "produces": [
+        "converted-source"
+      ],
+      "source_anchor": null,
+      "version": "1.0.0",
+      "related": [
+        "../../.os/contracts/converted-source-contract.md",
+        "../../.os/contracts/intake-translation-contract.md",
+        "../../../toolkits/buildos-intake/README.md"
+      ]
+    }
+  ]
+}

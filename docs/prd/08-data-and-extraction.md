@@ -6,7 +6,7 @@ This subsystem is the plain-text knowledge layer and the smart ETL step that pop
 
 ## Scope
 
-Covered here: the `.os/data/` NDJSON entity store, candidate staging, extraction load-plans, the capability/requirement/finding model, layered canonicity, and the `playbooks.json` index. Conversion is in `07`; routing is in `06`.
+Covered here: the `.os/data/` NDJSON entity store, draft staging before promotion, extraction load-plans, the capability/requirement/finding model, layered canonicity, and the `playbooks.json` index. Conversion is in `07`; routing is in `06`.
 
 Code anchors:
 
@@ -17,7 +17,7 @@ Code anchors:
 | Component | Capability |
 | --- | --- |
 | Entity files (NDJSON) | `requirements`, `capabilities`, `personas`, `test-cases`, `results`, `runs`, `findings` with a common envelope + per-type IDs |
-| Candidate staging | `status: candidate` rows pending a gate |
+| Draft staging | `status: draft` rows pending a promotion gate |
 | `extractions.jsonl` | First-class load-plan: one source → every minted artifact |
 | `playbooks.json` | Derived catalog of instruments |
 
@@ -37,6 +37,7 @@ Code anchors:
 ### Change Notes
 
 - Enhanced by [13 Adopter-Owned Config Surface](./13-adopter-owned-config-surface.md): structured rows that carry scoped metadata use `systems`, `environments`, and `owners` as config-backed list fields. Those values resolve to configured IDs in `system/.os/config/instance.yaml`, and validators reject legacy scoped fields or unconfigured IDs after the migration lands.
+- Revised by [15 Revise Extraction Draft Lifecycle](./15-revise-extraction-draft-lifecycle.md): entity and extraction rows use `draft` as the pending lifecycle state, and non-`draft` rows require `doc_anchor` in addition to `source_anchor`.
 
 ## Integrations
 
@@ -48,7 +49,7 @@ Code anchors:
 
 ## Rebuild Notes
 
-Never reintroduce a binary store. Keep structured fields canonical in JSONL and avoid duplicating them into narrative docs. Extraction is smart and gated; its outputs are candidates regardless of destination.
+Never reintroduce a binary store. Keep structured fields canonical in JSONL and avoid duplicating them into narrative docs. Extraction is smart and gated; its outputs remain `draft` until promoted, regardless of destination.
 
 Code anchors:
 

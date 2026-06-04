@@ -4,10 +4,13 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any
 
 
@@ -26,6 +29,20 @@ CONTRACT_TERMS = (
     "defaults.environments",
     "defaults.owners",
 )
+ENTITY_FILE_SPECS: dict[str, tuple[str, str]] = {
+    "requirements.jsonl": ("requirement", "REQ"),
+    "capabilities.jsonl": ("capability", "CAP"),
+    "personas.jsonl": ("persona", "PER"),
+    "test-cases.jsonl": ("test-case", "TC"),
+    "results.jsonl": ("result", "RES"),
+    "runs.jsonl": ("run", "RUN"),
+    "findings.jsonl": ("finding", "FIND"),
+    "extractions.jsonl": ("extraction", "EXT"),
+}
+LIFECYCLE_STATUSES = frozenset(("draft", "active", "superseded", "archived"))
+ENTITY_ID_PREFIXES = ("REQ", "CAP", "PER", "TC", "RES", "RUN", "FIND", "EXT", "PB")
+ENTITY_ID_RE = re.compile(rf"^({'|'.join(ENTITY_ID_PREFIXES)})-[0-9]{{3,}}$")
+UTC_DATETIME_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$")
 
 
 @dataclass(frozen=True)
@@ -66,7 +83,9 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--repo-root", type=Path, default=repo_root)
     parser.add_argument("--config", type=Path, default=repo_root / "system/.os/config/instance.yaml")
     parser.add_argument("--contract", type=Path, default=repo_root / "system/.os/contracts/config-contract.md")
+    parser.add_argument("--data-dir", type=Path, default=repo_root / "system/.os/data")
     parser.add_argument("--skip-frontmatter", action="store_true")
+    parser.add_argument("--skip-data", action="store_true")
     parser.add_argument("--self-test", action="store_true")
     return parser.parse_args(argv)
 
@@ -401,6 +420,213 @@ def validate_frontmatter_data(path: Path, data: dict[str, Any], config_index: Co
     return findings
 
 
+def validate_entity_jsonl_files(data_dir: Path, config_index: ConfigIndex) -> list[Finding]:
+    findings: list[Finding] = []
+    for filename, (expected_type, prefix) in ENTITY_FILE_SPECS.items():
+        findings.extend(validate_entity_jsonl_file(data_dir / filename, expected_type, prefix, config_index))
+    return findings
+
+
+def validate_entity_jsonl_file(
+    path: Path,
+    expected_type: str,
+    prefix: str,
+    config_index: ConfigIndex,
+) -> list[Finding]:
+    if not path.exists():
+        return [Finding(path, "file", "canonical entity JSONL file is missing")]
+    if not path.is_file():
+        return [Finding(path, "file", "must be a JSONL file")]
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        return [Finding(path, "file", str(exc))]
+
+    findings: list[Finding] = []
+    seen_ids: dict[str, int] = {}
+    for line_number, raw_line in enumerate(lines, start=1):
+        line_field = f"line {line_number}"
+        if not raw_line.strip():
+            findings.append(Finding(path, line_field, "blank lines are not valid JSONL rows"))
+            continue
+        try:
+            row = json.loads(raw_line)
+        except json.JSONDecodeError as exc:
+            findings.append(Finding(path, line_field, f"invalid JSON: {exc.msg}"))
+            continue
+        if not isinstance(row, dict):
+            findings.append(Finding(path, line_field, "must be a JSON object"))
+            continue
+        row_id = row.get("id")
+        if isinstance(row_id, str):
+            if row_id in seen_ids:
+                findings.append(Finding(path, f"{line_field}.id", f"duplicates line {seen_ids[row_id]}.id"))
+            else:
+                seen_ids[row_id] = line_number
+        findings.extend(validate_entity_row(path, line_number, row, expected_type, prefix, config_index))
+    return findings
+
+
+def validate_entity_row(
+    path: Path,
+    line_number: int,
+    row: dict[str, Any],
+    expected_type: str,
+    prefix: str,
+    config_index: ConfigIndex,
+) -> list[Finding]:
+    findings: list[Finding] = []
+    base_field = f"line {line_number}"
+
+    row_type = row.get("type")
+    if row_type != expected_type:
+        findings.append(Finding(path, f"{base_field}.type", f"must be {expected_type!r} for this file"))
+
+    validate_prefixed_id(path, findings, row.get("id"), f"{base_field}.id", prefix)
+
+    status = row.get("status")
+    if not isinstance(status, str) or status not in LIFECYCLE_STATUSES:
+        allowed = ", ".join(sorted(LIFECYCLE_STATUSES))
+        findings.append(Finding(path, f"{base_field}.status", f"must be one of: {allowed}"))
+
+    validate_anchor_value(
+        path,
+        findings,
+        row.get("source_anchor"),
+        f"{base_field}.source_anchor",
+        required=True,
+        converted_source=expected_type == "extraction",
+    )
+
+    doc_anchor = row.get("doc_anchor")
+    if status in LIFECYCLE_STATUSES and status != "draft":
+        validate_anchor_value(
+            path,
+            findings,
+            doc_anchor,
+            f"{base_field}.doc_anchor",
+            required=True,
+            required_prefix="system/docs/",
+        )
+    elif "doc_anchor" in row and doc_anchor is not None:
+        validate_anchor_value(
+            path,
+            findings,
+            doc_anchor,
+            f"{base_field}.doc_anchor",
+            required=False,
+            required_prefix="system/docs/",
+        )
+
+    validate_scoped_entity_fields(path, findings, row, base_field, config_index)
+
+    if expected_type == "extraction":
+        validate_extraction_row(path, findings, row, base_field)
+
+    return findings
+
+
+def validate_prefixed_id(path: Path, findings: list[Finding], value: Any, field: str, prefix: str) -> None:
+    if not is_non_empty_string(value):
+        findings.append(Finding(path, field, f"must use {prefix}-NNN ID prefix"))
+        return
+    if not re.match(rf"^{re.escape(prefix)}-[0-9]{{3,}}$", value):
+        findings.append(Finding(path, field, f"must use {prefix}-NNN ID prefix"))
+
+
+def validate_anchor_value(
+    path: Path,
+    findings: list[Finding],
+    value: Any,
+    field: str,
+    *,
+    required: bool,
+    converted_source: bool = False,
+    required_prefix: str | None = None,
+) -> None:
+    if not is_non_empty_string(value):
+        message = "is required" if required else "must be a non-empty path#anchor reference when set"
+        findings.append(Finding(path, field, message))
+        return
+    if "#" not in value or value.endswith("#"):
+        findings.append(Finding(path, field, "must be a path#anchor reference"))
+    if converted_source and not value.startswith("system/assets/"):
+        findings.append(Finding(path, field, "must point to a converted source twin under system/assets/"))
+    if required_prefix is not None and not value.startswith(required_prefix):
+        findings.append(Finding(path, field, f"must point under {required_prefix}"))
+
+
+def validate_scoped_entity_fields(
+    path: Path,
+    findings: list[Finding],
+    row: dict[str, Any],
+    base_field: str,
+    config_index: ConfigIndex,
+) -> None:
+    allowed_by_field = {
+        "systems": config_index.systems,
+        "environments": config_index.environments,
+        "owners": config_index.owners,
+    }
+    for field, allowed in allowed_by_field.items():
+        if field not in row:
+            continue
+        values = row[field]
+        item_field = f"{base_field}.{field}"
+        if not isinstance(values, list):
+            findings.append(Finding(path, item_field, "must be a list"))
+            continue
+        validate_references(path, findings, values, set(allowed), item_field)
+
+
+def validate_extraction_row(path: Path, findings: list[Finding], row: dict[str, Any], base_field: str) -> None:
+    minted = row.get("minted")
+    if not isinstance(minted, list):
+        findings.append(Finding(path, f"{base_field}.minted", "must be a list of registered entity IDs"))
+    else:
+        for index, entity_id in enumerate(minted):
+            field = f"{base_field}.minted[{index}]"
+            if not is_non_empty_string(entity_id):
+                findings.append(Finding(path, field, "must be a registered entity ID"))
+            elif not ENTITY_ID_RE.match(entity_id):
+                findings.append(Finding(path, field, "must use a registered entity ID prefix"))
+
+    if not is_non_empty_string(row.get("extracted_by")):
+        findings.append(Finding(path, f"{base_field}.extracted_by", "must be a non-empty string"))
+
+    validate_utc_datetime(path, findings, row.get("extracted_at"), f"{base_field}.extracted_at")
+
+    dataset_refs = row.get("dataset_refs")
+    if dataset_refs is not None:
+        validate_string_list(path, findings, dataset_refs, f"{base_field}.dataset_refs")
+
+
+def validate_utc_datetime(path: Path, findings: list[Finding], value: Any, field: str) -> None:
+    if not is_non_empty_string(value):
+        findings.append(Finding(path, field, "must be an ISO 8601 UTC datetime"))
+        return
+    if not UTC_DATETIME_RE.match(value):
+        findings.append(Finding(path, field, "must be an ISO 8601 UTC datetime ending in Z"))
+        return
+    try:
+        datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        findings.append(Finding(path, field, "must be a valid ISO 8601 UTC datetime"))
+
+
+def validate_string_list(path: Path, findings: list[Finding], value: Any, field: str) -> None:
+    if not isinstance(value, list):
+        findings.append(Finding(path, field, "must be a list"))
+        return
+    for index, item in enumerate(value):
+        if not is_non_empty_string(item):
+            findings.append(Finding(path, f"{field}[{index}]", "must be a non-empty string"))
+
+
+def is_non_empty_string(value: Any) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
 def run_self_tests() -> int:
     base_config = """
 version: 1
@@ -429,6 +655,29 @@ defaults:
   owners:
     - adopter-team
 """
+    failures: list[str] = []
+
+    def formatted_findings(findings: list[Finding]) -> str:
+        return "\n".join(f"{finding.field}: {finding.message}" for finding in findings)
+
+    def expect_finding(name: str, findings: list[Finding], expected: str) -> None:
+        formatted = formatted_findings(findings)
+        if expected not in formatted:
+            failures.append(f"{name}: expected {expected!r}, got {formatted!r}")
+
+    def with_updates(row: dict[str, Any], **updates: Any) -> dict[str, Any]:
+        updated = dict(row)
+        updated.update(updates)
+        return updated
+
+    def without_field(row: dict[str, Any], field: str) -> dict[str, Any]:
+        updated = dict(row)
+        updated.pop(field, None)
+        return updated
+
+    def jsonl(row: Any) -> str:
+        return json.dumps(row, sort_keys=True) + "\n"
+
     cases = [
         (
             "duplicate IDs",
@@ -443,23 +692,95 @@ defaults:
         ("missing environment reference", base_config.replace("      - primary-system", "      - missing-system", 1), "unknown configured ID"),
         ("invalid default", base_config.replace("    - baseline", "    - missing-environment", 1), "unknown configured ID"),
     ]
-    failures: list[str] = []
     for name, text, expected in cases:
         data = parse_yaml_subset(text, Path(f"<self-test:{name}>"))
         findings, _ = validate_config_data(data, Path(f"<self-test:{name}>"))
-        formatted = "\n".join(f"{finding.field}: {finding.message}" for finding in findings)
-        if expected not in formatted:
-            failures.append(f"{name}: expected {expected!r}, got {formatted!r}")
+        expect_finding(name, findings, expected)
 
     valid_data = parse_yaml_subset(base_config, Path("<self-test:valid>"))
     valid_findings, index = validate_config_data(valid_data, Path("<self-test:valid>"))
     if valid_findings:
-        failures.append("valid config produced findings")
+        failures.append(f"valid config produced findings: {formatted_findings(valid_findings)!r}")
 
     legacy_frontmatter = {"env": "both", "for": "both", "systems": [], "environments": [], "owners": []}
     legacy_findings = validate_frontmatter_data(Path("<self-test:frontmatter>"), legacy_frontmatter, index)
     if not any(finding.field == "env" for finding in legacy_findings):
         failures.append("legacy frontmatter did not fail env")
+
+    valid_requirement = {
+        "id": "REQ-001",
+        "type": "requirement",
+        "status": "draft",
+        "source_anchor": "system/assets/source/converted.md#requirement-1",
+        "systems": ["primary-system"],
+        "environments": ["baseline"],
+        "owners": ["adopter-team"],
+    }
+    valid_extraction = {
+        "id": "EXT-001",
+        "type": "extraction",
+        "status": "draft",
+        "source_anchor": "system/assets/source/converted.md#fact-1",
+        "minted": ["REQ-001", "PB-001"],
+        "dataset_refs": ["system/workspace/datasets/example.csv"],
+        "extracted_by": "self-test",
+        "extracted_at": "2026-06-04T12:00:00Z",
+    }
+
+    def entity_findings(filename: str, text: str) -> list[Finding]:
+        expected_type, prefix = ENTITY_FILE_SPECS[filename]
+        with TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / filename
+            path.write_text(text, encoding="utf-8")
+            return validate_entity_jsonl_file(path, expected_type, prefix, index)
+
+    draft_findings = entity_findings("requirements.jsonl", jsonl(valid_requirement))
+    if draft_findings:
+        failures.append(f"valid draft entity produced findings: {formatted_findings(draft_findings)!r}")
+
+    promoted_requirement = with_updates(
+        valid_requirement,
+        status="active",
+        doc_anchor="system/docs/prd/08-data-and-extraction.md#contracts-and-data",
+    )
+    promoted_findings = entity_findings("requirements.jsonl", jsonl(promoted_requirement))
+    if promoted_findings:
+        failures.append(f"valid promoted entity produced findings: {formatted_findings(promoted_findings)!r}")
+
+    extraction_findings = entity_findings("extractions.jsonl", jsonl(valid_extraction))
+    if extraction_findings:
+        failures.append(f"valid extraction produced findings: {formatted_findings(extraction_findings)!r}")
+
+    entity_cases = [
+        ("invalid JSONL", "requirements.jsonl", '{"id":', "invalid JSON"),
+        ("non-object JSONL", "requirements.jsonl", jsonl([]), "must be a JSON object"),
+        ("file/type mismatch", "requirements.jsonl", jsonl(with_updates(valid_requirement, type="capability")), "must be 'requirement'"),
+        ("invalid ID prefix", "requirements.jsonl", jsonl(with_updates(valid_requirement, id="CAP-001")), "must use REQ-NNN"),
+        ("duplicate entity ID", "requirements.jsonl", jsonl(valid_requirement) + jsonl(valid_requirement), "duplicates line 1.id"),
+        ("candidate status rejected", "requirements.jsonl", jsonl(with_updates(valid_requirement, status="candidate")), "must be one of"),
+        ("unknown system", "requirements.jsonl", jsonl(with_updates(valid_requirement, systems=["missing-system"])), "unknown configured ID"),
+        ("unknown owner", "requirements.jsonl", jsonl(with_updates(valid_requirement, owners=["missing-owner"])), "unknown configured ID"),
+        ("missing source anchor", "requirements.jsonl", jsonl(without_field(valid_requirement, "source_anchor")), "source_anchor"),
+        ("promoted missing doc anchor", "requirements.jsonl", jsonl(with_updates(valid_requirement, status="active")), "doc_anchor"),
+        (
+            "bad promoted doc anchor",
+            "requirements.jsonl",
+            jsonl(with_updates(valid_requirement, status="active", doc_anchor="docs/prd/08-data-and-extraction.md#contracts-and-data")),
+            "system/docs/",
+        ),
+        ("bad extraction minted ID", "extractions.jsonl", jsonl(with_updates(valid_extraction, minted=["BAD-001"])), "registered entity ID prefix"),
+        (
+            "bad extraction source anchor",
+            "extractions.jsonl",
+            jsonl(with_updates(valid_extraction, source_anchor="system/docs/source.md#fact-1")),
+            "system/assets/",
+        ),
+        ("missing extracted_by", "extractions.jsonl", jsonl(without_field(valid_extraction, "extracted_by")), "extracted_by"),
+        ("invalid extracted_at", "extractions.jsonl", jsonl(with_updates(valid_extraction, extracted_at="2026-06-04 12:00:00")), "ISO 8601 UTC"),
+        ("bad dataset refs", "extractions.jsonl", jsonl(with_updates(valid_extraction, dataset_refs="dataset")), "dataset_refs"),
+    ]
+    for name, filename, text, expected in entity_cases:
+        expect_finding(name, entity_findings(filename, text), expected)
 
     if failures:
         for failure in failures:
@@ -480,13 +801,15 @@ def main(argv: list[str]) -> int:
     findings.extend(config_findings)
     if not args.skip_frontmatter:
         findings.extend(validate_frontmatter(root, config_index))
+    if not args.skip_data:
+        findings.extend(validate_entity_jsonl_files(args.data_dir, config_index))
 
     if findings:
         for finding in findings:
             print(finding.format(root), file=sys.stderr)
         print(f"FAIL: {len(findings)} validation error(s)", file=sys.stderr)
         return 1
-    print("OK: config and frontmatter hygiene passed")
+    print("OK: config, frontmatter, and entity data hygiene passed")
     return 0
 
 

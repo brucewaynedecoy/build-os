@@ -7,4 +7,5 @@ Derived system catalogs live here. Examples include `references.json` and `playb
 - Read indexes for navigation and lookup, not as source-of-truth records.
 - Rebuild the relevant catalog after source artifacts change.
 - Rebuild `references.json` with `buildos-intake index references` or `system/.os/scripts/buildos-intake index references`.
+- Rebuild `playbooks.json` with `buildos-intake index playbooks` or `system/.os/scripts/buildos-intake index playbooks`.
 - Resolve artifact shape and lifecycle questions in source artifacts and contracts, not here.

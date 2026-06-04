@@ -1,12 +1,13 @@
 # buildos-intake
 
-`buildos-intake` is the first-party Build OS intake and conversion toolkit. It converts supported local source inputs into provenance-stamped converted twins under `system/assets/` and rebuilds the derived references index.
+`buildos-intake` is the first-party Build OS intake and conversion toolkit. It converts supported local source inputs into provenance-stamped converted twins under `system/assets/` and rebuilds derived operating-layer indexes.
 
 ## Command Surface
 
 ```sh
 buildos-intake convert --source <path> [--repo-root .] [--assets-root system/assets] [--type auto|csv|docx|xlsx|pdf|html|html-dir] [--force] [--dry-run]
 buildos-intake index references [--repo-root .] [--assets-root system/assets] [--output system/.os/indexes/references.json]
+buildos-intake index playbooks [--repo-root .] [--playbooks-root system/playbooks] [--output system/.os/indexes/playbooks.json]
 ```
 
 Use the wrapper at `system/.os/scripts/buildos-intake` when operating through the Build OS script surface.
@@ -36,6 +37,8 @@ If a PDF conversion produces no usable text or cannot be trusted, treat that as 
 
 - Converted twin path, frontmatter, and status: [`system/.os/contracts/converted-source-contract.md`](../../system/.os/contracts/converted-source-contract.md)
 - Body translation and side artifacts: [`system/.os/contracts/intake-translation-contract.md`](../../system/.os/contracts/intake-translation-contract.md)
+- Playbook frontmatter and catalog inputs: [`system/.os/contracts/playbook-contract.md`](../../system/.os/contracts/playbook-contract.md)
+- Generated index ownership: [`system/.os/indexes/AGENTS.md`](../../system/.os/indexes/AGENTS.md)
 - Manual fallback procedure: [`system/playbooks/administrative/manual-intake-conversion.md`](../../system/playbooks/administrative/manual-intake-conversion.md)
 
 ## Dependencies
@@ -70,5 +73,6 @@ go build -o bin/buildos-intake ./cmd/buildos-intake
 - [Toolkit router](../AGENTS.md)
 - [Build OS Toolkit CLI Development](../../docs/guides/developer/buildos-toolkit-cli-development.md)
 - [PRD 07 Intake and Conversion](../../docs/prd/07-intake-and-conversion.md)
+- [P4 data and extraction backlog](../../docs/work/2026-06-03-w1-r0-build-os-baseline/04-data-and-extraction.md)
 - [PRD 14 deterministic toolkit deployment revision](../../docs/prd/14-revise-deterministic-toolkit-deployment.md)
 - [Toolkit CLI deployment standard design](../../docs/designs/2026-06-04-buildos-toolkit-cli-deployment-standard.md)

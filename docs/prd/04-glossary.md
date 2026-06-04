@@ -18,7 +18,7 @@ Define the canonical vocabulary used across the Build OS PRD set so humans and c
 | Playbook | A typed Markdown instrument that guides a human or agent. | `09-playbooks.md` |
 | State-nature | A playbook axis: `stateful` · `standing` · `guardrail`. | `system/.os/contracts/playbook-contract.md` |
 | Guardrail | A non-executing playbook that constrains behavior (Scope/Rules/Rationale). | `system/playbooks/administrative/` |
-| Candidate | A status (not a location): extracted/drafted but ungated. | — |
+| Draft | The pending lifecycle state for entity and extraction rows that are extracted or authored but not yet promoted. | `08-data-and-extraction.md`, `15-revise-extraction-draft-lifecycle.md` |
 | Review-to-activate | The editorial gate for instruments (`draft → reviewed → active`). | `09-playbooks.md` |
 | Verify-to-promote | The evidentiary gate for findings; satisfied by qualification. | `10-discovery-runs-and-qualification.md` |
 | Run record | Immutable artifact of one execution in `system/workspace/runs/<id>/`. | `10-…` |
@@ -27,6 +27,10 @@ Define the canonical vocabulary used across the Build OS PRD set so humans and c
 | Capability gap / Bug | A requirement with no capability / a capability that misbehaves. | adopter deliverables |
 | Layered canonicity | Structured fields canonical in `.os/data/*.jsonl`; narrative canonical in `system/docs/`; overlaps generated. | `08-…` |
 | make-docs boundary | The four externally-managed trees that must not be modified directly. | `05-spaces-boundary-and-shipping.md` |
+
+### Change Notes
+
+- Revised by [15 Revise Extraction Draft Lifecycle](./15-revise-extraction-draft-lifecycle.md): `draft` is the effective ungated lifecycle term for entity and extraction rows; `candidate` is not part of the `.os/data` entity lifecycle vocabulary.
 
 ## Source Anchors
 

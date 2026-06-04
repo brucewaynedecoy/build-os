@@ -2,6 +2,7 @@ package intake
 
 import (
 	"archive/zip"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -257,6 +258,131 @@ func TestBuildReferencesIndex(t *testing.T) {
 	}
 }
 
+func TestBuildPlaybooksIndex(t *testing.T) {
+	root := t.TempDir()
+	writePlaybook(t, root, "system/playbooks/testing/zeta.md", `---
+id: PB-010
+title: Zeta playbook
+category: testing
+execution_mode: explicit-steps
+state_nature: standing
+status: active
+audience: both
+harness: [shell, mcp]
+systems: [crm]
+environments: [dev, prod]
+owners: [qa]
+targets: [REQ-001, TC-002]
+produces: [run-record, finding]
+source_anchor: docs/prd/09-playbooks.md#scope
+version: 1.2.3
+related:
+  - ../../.os/contracts/playbook-contract.md
+  - docs/prd/09-playbooks.md
+---
+# Zeta
+`)
+	writePlaybook(t, root, "system/playbooks/testing/alpha.md", `---
+id: PB-002
+title: Alpha playbook
+category: testing
+execution_mode: n/a
+state_nature: guardrail
+status: active
+audience: agent
+harness: [none]
+systems: []
+environments: []
+owners: []
+targets: []
+produces: []
+source_anchor: null
+version: 1.0.0
+related: [REQ-002, docs/prd/09-playbooks.md]
+---
+## Scope
+`)
+	writePlaybook(t, root, "system/playbooks/testing/AGENTS.md", "# Router\n")
+
+	result, err := BuildPlaybooksIndex(IndexOptions{RepoRoot: root, PlaybooksRoot: "system/playbooks", Output: "system/.os/indexes/playbooks.json"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Count != 2 {
+		t.Fatalf("count=%d", result.Count)
+	}
+	data, err := os.ReadFile(result.OutputPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(data), `"systems": null`) {
+		t.Fatalf("empty list fields must serialize as arrays, got\n%s", string(data))
+	}
+	var index PlaybookIndex
+	if err := json.Unmarshal(data, &index); err != nil {
+		t.Fatal(err)
+	}
+	if index.Version != 1 {
+		t.Fatalf("version=%d", index.Version)
+	}
+	if len(index.Playbooks) != 2 {
+		t.Fatalf("playbooks=%d", len(index.Playbooks))
+	}
+	if got := index.Playbooks[0].ID + "," + index.Playbooks[1].ID; got != "PB-002,PB-010" {
+		t.Fatalf("sort order=%s", got)
+	}
+
+	alpha := index.Playbooks[0]
+	if alpha.Path != "system/playbooks/testing/alpha.md" {
+		t.Fatalf("alpha path=%q", alpha.Path)
+	}
+	for _, want := range []string{alpha.Title, alpha.Category, alpha.ExecutionMode, alpha.StateNature, alpha.Status, alpha.Audience, alpha.Version} {
+		if want == "" {
+			t.Fatalf("required scalar missing in %#v", alpha)
+		}
+	}
+	if alpha.SourceAnchor != nil {
+		t.Fatalf("source_anchor=%q", *alpha.SourceAnchor)
+	}
+	if len(alpha.Systems) != 0 || len(alpha.Environments) != 0 || len(alpha.Owners) != 0 || len(alpha.Targets) != 0 || len(alpha.Produces) != 0 {
+		t.Fatalf("empty bracket lists parsed incorrectly: %#v", alpha)
+	}
+	assertStringSlice(t, alpha.Harness, []string{"none"})
+	assertStringSlice(t, alpha.Related, []string{"REQ-002", "docs/prd/09-playbooks.md"})
+
+	zeta := index.Playbooks[1]
+	if zeta.SourceAnchor == nil || *zeta.SourceAnchor != "docs/prd/09-playbooks.md#scope" {
+		t.Fatalf("zeta source_anchor=%v", zeta.SourceAnchor)
+	}
+	assertStringSlice(t, zeta.Harness, []string{"shell", "mcp"})
+	assertStringSlice(t, zeta.Systems, []string{"crm"})
+	assertStringSlice(t, zeta.Environments, []string{"dev", "prod"})
+	assertStringSlice(t, zeta.Owners, []string{"qa"})
+	assertStringSlice(t, zeta.Targets, []string{"REQ-001", "TC-002"})
+	assertStringSlice(t, zeta.Produces, []string{"run-record", "finding"})
+	assertStringSlice(t, zeta.Related, []string{"../../.os/contracts/playbook-contract.md", "docs/prd/09-playbooks.md"})
+}
+
+func TestBuildPlaybooksIndexRejectsMissingRequiredFields(t *testing.T) {
+	root := t.TempDir()
+	writePlaybook(t, root, "system/playbooks/testing/broken.md", `---
+id: PB-099
+title: Broken playbook
+category: testing
+---
+# Broken
+`)
+	_, err := BuildPlaybooksIndex(IndexOptions{RepoRoot: root, PlaybooksRoot: "system/playbooks", Output: "system/.os/indexes/playbooks.json"})
+	if err == nil {
+		t.Fatal("expected missing required fields to fail")
+	}
+	for _, want := range []string{"broken.md", "execution_mode", "harness", "related"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Fatalf("missing %q in error %q", want, err.Error())
+		}
+	}
+}
+
 func TestPDFInvalidInputFails(t *testing.T) {
 	root := t.TempDir()
 	source := filepath.Join(root, "bad.pdf")
@@ -265,6 +391,29 @@ func TestPDFInvalidInputFails(t *testing.T) {
 	}
 	if _, err := Convert(ConvertOptions{RepoRoot: root, Source: "bad.pdf", AssetsRoot: "system/assets"}); err == nil {
 		t.Fatal("expected invalid pdf to fail")
+	}
+}
+
+func writePlaybook(t *testing.T, root, rel, body string) {
+	t.Helper()
+	path := filepath.Join(root, filepath.FromSlash(rel))
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func assertStringSlice(t *testing.T, got, want []string) {
+	t.Helper()
+	if len(got) != len(want) {
+		t.Fatalf("len(%#v)=%d want %d", got, len(got), len(want))
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("slice[%d]=%q want %q in %#v", i, got[i], want[i], got)
+		}
 	}
 }
 

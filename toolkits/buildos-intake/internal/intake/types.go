@@ -24,9 +24,10 @@ type ConvertResult struct {
 }
 
 type IndexOptions struct {
-	RepoRoot   string
-	AssetsRoot string
-	Output     string
+	RepoRoot      string
+	AssetsRoot    string
+	PlaybooksRoot string
+	Output        string
 }
 
 type IndexResult struct {
@@ -48,4 +49,29 @@ type ReferenceEntry struct {
 	Converter string `json:"converter"`
 	Timestamp string `json:"timestamp"`
 	Status    string `json:"status"`
+}
+
+type PlaybookIndex struct {
+	Version   int             `json:"version"`
+	Playbooks []PlaybookEntry `json:"playbooks"`
+}
+
+type PlaybookEntry struct {
+	ID            string   `json:"id"`
+	Path          string   `json:"path"`
+	Title         string   `json:"title"`
+	Category      string   `json:"category"`
+	ExecutionMode string   `json:"execution_mode"`
+	StateNature   string   `json:"state_nature"`
+	Status        string   `json:"status"`
+	Audience      string   `json:"audience"`
+	Harness       []string `json:"harness"`
+	Systems       []string `json:"systems"`
+	Environments  []string `json:"environments"`
+	Owners        []string `json:"owners"`
+	Targets       []string `json:"targets"`
+	Produces      []string `json:"produces"`
+	SourceAnchor  *string  `json:"source_anchor"`
+	Version       string   `json:"version"`
+	Related       []string `json:"related"`
 }

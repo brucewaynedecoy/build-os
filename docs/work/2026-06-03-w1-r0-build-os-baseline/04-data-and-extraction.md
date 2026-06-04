@@ -6,7 +6,7 @@ This phase delivers the plain-text knowledge layer and the smart ETL step that p
 
 ## Overview
 
-Define the per-entity NDJSON store in `.os/data/`, implement candidate staging and the capability/requirement/finding model, make extraction load-plans first-class, and build the derived `playbooks.json`. All data is plain text; structured fields are canonical here under layered canonicity.
+Define the per-entity NDJSON store in `.os/data/`, implement draft staging and the capability/requirement/finding model, make extraction load-plans first-class, and build the derived `playbooks.json`. All data is plain text; structured fields are canonical here under layered canonicity.
 
 ## Source PRD Docs
 
@@ -18,13 +18,13 @@ Define the per-entity NDJSON store in `.os/data/`, implement candidate staging a
 ### Tasks
 
 - [ ] t1: Define per-entity NDJSON files in `system/.os/data/` (`requirements`, `capabilities`, `personas`, `test-cases`, `results`, `runs`, `findings`) with the common envelope and per-type IDs.
-- [ ] t2: Implement candidate staging (`status: candidate`) and encode the capability/requirement/finding distinction (descriptive / normative / empirical).
+- [ ] t2: Implement draft staging (`status: draft`) and encode the capability/requirement/finding distinction (descriptive / normative / empirical).
 - [ ] t3: Implement first-class extraction load-plans in `system/.os/data/extractions.jsonl` (source_anchor, minted[], extracted_by/at).
 
 ### Acceptance criteria
 
 - All data is NDJSON/CSV — no SQLite or binary store.
-- Every row carries `source_anchor` and (when promoted) `doc_anchor`; candidate vs. promoted status is tracked.
+- Every row carries `source_anchor` and (when promoted) `doc_anchor`; draft vs. promoted status is tracked.
 - A single extraction can mint rows, playbooks, and/or datasets, all recorded in its load-plan.
 
 ### Dependencies

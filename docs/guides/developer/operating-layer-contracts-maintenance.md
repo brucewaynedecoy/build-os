@@ -25,32 +25,28 @@ related:
   - "../../../system/.gitignore"
   - "../../work/2026-06-03-w1-r0-build-os-baseline/01-foundation.md"
   - "../../work/2026-06-03-w1-r0-build-os-baseline/02-boundary-and-shipping.md"
+  - "../../work/2026-06-03-w1-r0-build-os-baseline/04-data-and-extraction.md"
   - "../../assets/history/2026-06-04-w1-r0-p1-operating-layer-contracts.md"
   - "../../assets/history/2026-06-04-w1-r0-p2-spaces-boundary-shipping.md"
+  - "../../assets/history/2026-06-04-w1-r0-p4-data-layer-extraction.md"
 ---
 
 # Maintaining Operating Layer Contracts
 
 ## Overview
 
-Use this guide when adding or changing Build OS operating-layer contracts, `.os` routers, active
-guardrails, scoped metadata, or system-owned data/index routing. The current operating layer is
-contract first: contracts define authority, shape, lifecycle, and link rules; guardrails define
-always-on safety rules; routers only tell contributors where to go next.
+Use this guide when adding or changing Build OS operating-layer contracts, `.os` routers, active guardrails, scoped metadata, or system-owned data/index routing. The current operating layer is contract first: contracts define authority, shape, lifecycle, and link rules; guardrails define always-on safety rules; routers only tell contributors where to go next.
 
-Coverage outcome: `developer`. The durable knowledge is maintainer-facing because it describes
-source-of-truth boundaries, extension points, validation, shipping boundaries, and safe-change
-rules. User-guide outcome: `none` for this guide because these surfaces do not create a shipped
-end-user workflow.
+Coverage outcome: `developer`. The durable knowledge is maintainer-facing because it describes source-of-truth boundaries, extension points, validation, shipping boundaries, and safe-change rules. User-guide outcome: `none` for this guide because these surfaces do not create a shipped end-user workflow.
 
 ## Project Orientation
 
 - [../../../system/.os/AGENTS.md](../../../system/.os/AGENTS.md) is the root operating-layer router. It should stay thin and route contributors to the more specific area router or contract.
 - [../../../system/.os/contracts/AGENTS.md](../../../system/.os/contracts/AGENTS.md) lists authority contracts. Add a contract link here when a new authority contract lands.
-- [../../../system/.os/data/AGENTS.md](../../../system/.os/data/AGENTS.md) routes system-owned structured data. It points writers back to the relevant contract and keeps user datasets out of `.os/data`.
-- [../../../system/.os/indexes/AGENTS.md](../../../system/.os/indexes/AGENTS.md) routes rebuildable derived catalogs. Indexes are not authority.
+- [../../../system/.os/data/AGENTS.md](../../../system/.os/data/AGENTS.md) routes system-owned structured JSONL files. It points writers back to the relevant contract, keeps user datasets out of `.os/data`, and treats empty canonical files as valid until converted source twins produce real rows.
+- [../../../system/.os/indexes/AGENTS.md](../../../system/.os/indexes/AGENTS.md) routes rebuildable derived catalogs such as `playbooks.json`. Indexes are not authority; maintain the rebuild command with the index contract.
 - [../../../system/playbooks/administrative/respect-configured-scoped-metadata.md](../../../system/playbooks/administrative/respect-configured-scoped-metadata.md) is the active guardrail for config-backed scoped metadata.
-- [../../../system/.gitignore](../../../system/.gitignore) is part of the shipped `system/` boundary. It ignores runtime ephemera only; data tracking or ignoring remains the adopter's choice.
+- `system/.gitignore` is part of the shipped `system/` boundary. It ignores runtime ephemera only; data tracking or ignoring remains the adopter's choice.
 - `CLAUDE.md` files in these directories are one-line pointers to the matching `AGENTS.md`. Do not duplicate routing rules in them.
 
 The current operating-layer contract set includes:
@@ -59,11 +55,11 @@ The current operating-layer contract set includes:
 | --- | --- |
 | [config-contract.md](../../../system/.os/contracts/config-contract.md) | Adopter-owned instance config shape, configured `systems`, `environments`, and `owners`, defaults, and scoped metadata reference rules. |
 | [playbook-contract.md](../../../system/.os/contracts/playbook-contract.md) | Playbook frontmatter, guardrail/procedure body shapes, lifecycle, and scoped metadata expectations for playbooks. |
-| [entity-records-contract.md](../../../system/.os/contracts/entity-records-contract.md) | Canonical `.os/data/*.jsonl` entity envelopes, ID prefixes, shared fields, per-type fields, and status vocabulary. |
+| [entity-records-contract.md](../../../system/.os/contracts/entity-records-contract.md) | Canonical `.os/data/*.jsonl` entity envelopes, ID prefixes, `source_anchor`, promoted `doc_anchor`, shared fields, per-type fields, and status vocabulary. |
 | [run-record-contract.md](../../../system/.os/contracts/run-record-contract.md) | Run artifact directories, immutable run evidence, outcome values, raw findings, and `.os/data/runs.jsonl` index fields. |
 | [finding-contract.md](../../../system/.os/contracts/finding-contract.md) | Raw to qualified to optional design lifecycle, deterministic qualification tests, and negative-finding qualification. |
 | [converted-source-contract.md](../../../system/.os/contracts/converted-source-contract.md) | Converted twin provenance frontmatter for source, hash, converter, timestamp, type, and status. |
-| [extraction-contract.md](../../../system/.os/contracts/extraction-contract.md) | Extraction records with source anchors, minted IDs, extractor identity, and extraction timestamps. |
+| [extraction-contract.md](../../../system/.os/contracts/extraction-contract.md) | Extraction rows with source anchors, minted entity or playbook IDs, optional dataset references, extractor identity, and extraction timestamps. |
 
 ## Development Workflow
 
@@ -73,8 +69,10 @@ The current operating-layer contract set includes:
 4. Update the router only after the contract is correct. Routers should explain where to write and what contract to consult; they should not restate schema details.
 5. Keep `CLAUDE.md` as a pointer only.
 6. When changing scoped metadata, read `config-contract.md`, use `systems`, `environments`, and `owners` as list fields, and reference only configured IDs from `system/.os/config/instance.yaml` when scope applies.
-7. Do not create runtime `.jsonl` stores, populated indexes, run artifacts, or workspace datasets during a contract-only phase. Create those only when the active backlog phase explicitly asks for runtime artifacts.
-8. After the edit, update the active work backlog and history record only after validation.
+7. When a phase creates canonical `.os/data` JSONL files, create the file shape first and keep rows empty unless converted source twins or other real source evidence exist.
+8. For entity rows, use the common envelope, require `source_anchor`, and require `doc_anchor` once `status` is not `draft`.
+9. Rebuild indexes with the command named by the owning router. Do not hand-maintain derived JSON catalogs.
+10. After the edit, update the active work backlog and history record only after validation.
 
 ## Safe-Change Rules
 
@@ -84,6 +82,9 @@ The current operating-layer contract set includes:
 - Use configured scoped metadata fields: `systems`, `environments`, and `owners`. Do not use legacy fields such as `env`, `envs`, `for`, or `target_systems`, and do not invent local scoped-value enums.
 - Keep `system/.gitignore` runtime-only. It may ignore ephemera such as `node_modules/`, `.playwright/`, and `test-results/`, but it must not hide `.os/data/` or `workspace/datasets/` by default.
 - Do not add new ID prefixes without updating [entity-records-contract.md](../../../system/.os/contracts/entity-records-contract.md).
+- Keep `draft` as the pending promotion state for entity and extraction rows. Do not introduce a separate `candidate` status unless the contract and PRD vocabulary are deliberately revised together.
+- Require `source_anchor` on every entity row. Require `doc_anchor` under `system/docs/` for rows promoted out of `draft`.
+- Keep `extractions.jsonl` load plans explicit about `minted` IDs, `extracted_by`, and `extracted_at`; use `dataset_refs` only for optional dataset paths.
 - Do not add outcome, lifecycle, or status values in only one contract when another contract depends on the same vocabulary.
 - Do not write directly into make-docs managed `system/docs` trees unless the relevant router or phase explicitly permits it.
 
@@ -103,8 +104,9 @@ Then refresh the project documentation index and check links where practical. Re
 - one-line `CLAUDE.md` pointers
 - scoped metadata using `systems`, `environments`, and `owners` list fields backed by `system/.os/config/instance.yaml`
 - a runtime-only `system/.gitignore` that does not ignore `.os/data/` or `workspace/datasets/`
-- no generated runtime data in `.os/data`
-- no generated catalogs in `.os/indexes`
+- no fabricated rows in canonical `.os/data/*.jsonl` files
+- populated entity rows with the expected file/type pairing, ID prefix, lifecycle status, anchors, and scoped IDs
+- generated catalogs only under `.os/indexes`, with a deterministic rebuild command and no authority-only fields invented in the index
 - no direct edits to make-docs managed trees outside the phase scope
 
 Finish with:
@@ -119,6 +121,10 @@ If a router starts accumulating field definitions, move the field details into t
 
 If a new data file seems necessary, first decide whether it is authority data, a rebuildable index, a user dataset, or a run artifact. `.os/data` is for system-owned structured authority or index records only; `.os/indexes` is for derived catalogs only; user datasets belong under `system/workspace/datasets/`.
 
+If `validate_config.py` reports a JSONL row failure, fix the source-of-truth row instead of suppressing validation. Common causes are file/type mismatches, bad ID prefixes, `candidate` status, missing `source_anchor`, missing promoted `doc_anchor`, or scoped IDs that are not configured in `system/.os/config/instance.yaml`.
+
+If a generated index is stale, rerun the owning rebuild command and inspect the deterministic order before editing the output. A generated index should be explainable from its source files.
+
 If link checking reports repository-wide noise, separate baseline failures from touched-file failures. Fix every broken link introduced by the current change, and record any unrelated baseline noise in the closeout instead of hiding it.
 
 ## Related Resources
@@ -127,16 +133,18 @@ If link checking reports repository-wide noise, separate baseline failures from 
 - [P1 history record](../../assets/history/2026-06-04-w1-r0-p1-operating-layer-contracts.md)
 - [P2 boundary and shipping backlog](../../work/2026-06-03-w1-r0-build-os-baseline/02-boundary-and-shipping.md)
 - [P2 history record](../../assets/history/2026-06-04-w1-r0-p2-spaces-boundary-shipping.md)
+- [P4 data and extraction backlog](../../work/2026-06-03-w1-r0-build-os-baseline/04-data-and-extraction.md)
+- [P4 history record](../../assets/history/2026-06-04-w1-r0-p4-data-layer-extraction.md)
 - [Operating router](../../../system/.os/AGENTS.md)
 - [Contracts router](../../../system/.os/contracts/AGENTS.md)
 - [Config contract](../../../system/.os/contracts/config-contract.md)
 - [Playbook contract](../../../system/.os/contracts/playbook-contract.md)
+- [Entity records contract](../../../system/.os/contracts/entity-records-contract.md)
+- [Extraction contract](../../../system/.os/contracts/extraction-contract.md)
 - [Configured scoped metadata guardrail](../../../system/playbooks/administrative/respect-configured-scoped-metadata.md)
 - [Data router](../../../system/.os/data/AGENTS.md)
 - [Indexes router](../../../system/.os/indexes/AGENTS.md)
 
 ## Future Coverage
 
-- Blocked by: Later phases that implement conversion scripts, discovery runs, finding qualification tests, extraction loaders, and generated index rebuilds.
-  Update when: those phases introduce runnable commands, generated artifacts, or operational recovery paths.
-  Guide change: Add command examples, generator ownership rules, artifact cleanup guidance, and troubleshooting for failed conversions or index rebuilds.
+- Blocked by: Later phases that implement discovery runs, finding qualification tests, extraction loaders, additional index rebuilds, and operational recovery paths. Update when: those phases introduce runnable commands, generated artifacts, or operational recovery paths. Guide change: Add command examples, generator ownership rules, artifact cleanup guidance, and troubleshooting for failed conversions or index rebuilds.

@@ -74,16 +74,27 @@ func runConvert(args []string) error {
 }
 
 func runIndex(args []string) error {
-	if len(args) == 0 || args[0] != "references" {
-		return fmt.Errorf("index requires subcommand references")
+	if len(args) == 0 {
+		return fmt.Errorf("index requires subcommand references or playbooks")
 	}
+	switch args[0] {
+	case "references":
+		return runIndexReferences(args[1:])
+	case "playbooks":
+		return runIndexPlaybooks(args[1:])
+	default:
+		return fmt.Errorf("index requires subcommand references or playbooks")
+	}
+}
+
+func runIndexReferences(args []string) error {
 	fs := flag.NewFlagSet("index references", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	var opts intake.IndexOptions
 	fs.StringVar(&opts.RepoRoot, "repo-root", ".", "repository root")
 	fs.StringVar(&opts.AssetsRoot, "assets-root", "system/assets", "converted asset root")
 	fs.StringVar(&opts.Output, "output", "system/.os/indexes/references.json", "references index output path")
-	if err := fs.Parse(args[1:]); err != nil {
+	if err := fs.Parse(args); err != nil {
 		return err
 	}
 
@@ -95,8 +106,28 @@ func runIndex(args []string) error {
 	return nil
 }
 
+func runIndexPlaybooks(args []string) error {
+	fs := flag.NewFlagSet("index playbooks", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	var opts intake.IndexOptions
+	fs.StringVar(&opts.RepoRoot, "repo-root", ".", "repository root")
+	fs.StringVar(&opts.PlaybooksRoot, "playbooks-root", "system/playbooks", "playbooks root")
+	fs.StringVar(&opts.Output, "output", "system/.os/indexes/playbooks.json", "playbooks index output path")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	result, err := intake.BuildPlaybooksIndex(opts)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("wrote %s (%d playbooks)\n", result.OutputPath, result.Count)
+	return nil
+}
+
 func printUsage(out *os.File) {
 	fmt.Fprintln(out, "Usage:")
 	fmt.Fprintln(out, "  buildos-intake convert --source <path> [--repo-root <path>] [--assets-root system/assets] [--type auto|csv|docx|xlsx|pdf|html|html-dir] [--force] [--dry-run]")
 	fmt.Fprintln(out, "  buildos-intake index references [--repo-root <path>] [--assets-root system/assets] [--output system/.os/indexes/references.json]")
+	fmt.Fprintln(out, "  buildos-intake index playbooks [--repo-root <path>] [--playbooks-root system/playbooks] [--output system/.os/indexes/playbooks.json]")
 }
