@@ -1,10 +1,8 @@
 # Build OS Toolkits
 
-`toolkits/` contains source and build metadata for first-party deterministic Build OS CLI toolkits.
-These toolkits are the durable implementation home for deterministic logic that should be packaged, installed, scanned, and invoked consistently.
+`toolkits/` contains source and build metadata for first-party deterministic Build OS CLI toolkits. These toolkits are the durable implementation home for deterministic logic that should be packaged, installed, scanned, and invoked consistently.
 
-`system/.os/scripts/` remains the operational wrapper, command router, compatibility, and command documentation surface.
-Scripts can call toolkit binaries, but new durable deterministic logic should not accumulate as unmanaged Python, Node, or shell implementations.
+`system/.os/scripts/` remains the operational wrapper, command router, compatibility, and command documentation surface. Scripts can call toolkit binaries, but new durable deterministic logic should not accumulate as unmanaged Python, Node, or shell implementations.
 
 ## Standards
 
@@ -22,7 +20,7 @@ Any third-party or native dependency must be documented in the owning toolkit RE
 
 | Toolkit | Binary | Status | Purpose |
 | --- | --- | --- | --- |
-| [buildos-intake](./buildos-intake/) | `buildos-intake` | Scaffold only | Planned intake, conversion, and reference-index toolkit for W1 R0 P3 |
+| [buildos-intake](./buildos-intake/) | `buildos-intake` | Initial implementation | Intake, conversion, and reference-index toolkit for W1 R0 P3 |
 
 ## Development Flow
 

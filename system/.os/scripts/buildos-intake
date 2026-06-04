@@ -1,0 +1,21 @@
+#!/usr/bin/env sh
+set -eu
+
+if [ "${BUILDOS_INTAKE_BIN:-}" ]; then
+  exec "$BUILDOS_INTAKE_BIN" "$@"
+fi
+
+if command -v buildos-intake >/dev/null 2>&1; then
+  exec buildos-intake "$@"
+fi
+
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+repo_root=$(CDPATH= cd -- "$script_dir/../../.." && pwd)
+local_bin="$repo_root/toolkits/buildos-intake/bin/buildos-intake"
+
+if [ -x "$local_bin" ]; then
+  exec "$local_bin" "$@"
+fi
+
+printf '%s\n' "buildos-intake binary not found. Install buildos-intake, set BUILDOS_INTAKE_BIN, or build $local_bin." >&2
+exit 127

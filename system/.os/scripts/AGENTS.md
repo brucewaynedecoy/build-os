@@ -1,14 +1,11 @@
 # Scripts Router (`.os/scripts`)
 
-Deterministic system processes live here. Scripts should read the relevant contract before
-validating or generating artifacts, and they should report precise file paths and field paths for
-operator action.
+This directory is the operating-layer wrapper, command router, compatibility, and command documentation surface. Durable deterministic toolkit logic should live under root `toolkits/` and be invoked here only through thin wrappers.
 
 ## Scripts
 
-- [`validate_config.py`](validate_config.py) — validates `config/instance.yaml` against
-  [`../contracts/config-contract.md`](../contracts/config-contract.md) and checks scoped Markdown
-  frontmatter hygiene for playbooks and playbook templates.
+- [`buildos-intake`](buildos-intake) — thin wrapper for the packaged `buildos-intake` toolkit.
+- [`validate_config.py`](validate_config.py) — validates `config/instance.yaml` against [`../contracts/config-contract.md`](../contracts/config-contract.md) and checks scoped frontmatter hygiene for playbooks and playbook templates.
 
 ## Use
 
@@ -19,3 +16,12 @@ python3 system/.os/scripts/validate_config.py
 ```
 
 Use `--self-test` to run the built-in invalid-config fixtures.
+
+For intake conversion and reference-index rebuilds:
+
+```sh
+system/.os/scripts/buildos-intake convert --source <path>
+system/.os/scripts/buildos-intake index references
+```
+
+The wrapper must remain a call-through to the binary. Do not add converter, parser, or indexing logic to the wrapper.

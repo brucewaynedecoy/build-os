@@ -12,13 +12,11 @@ Establish packaged first-party CLI toolkits as the Build OS standard for determi
 
 ## Baseline Being Revised or Removed
 
-The W1 R0 baseline treated `system/.os/scripts/` as the likely home for deterministic operating-layer implementations.
-That remains acceptable for small temporary validators and routers, but it is no longer the standard for new durable deterministic tooling.
+The W1 R0 baseline treated `system/.os/scripts/` as the likely home for deterministic operating-layer implementations. That remains acceptable for small temporary validators and routers, but it is no longer the standard for new durable deterministic tooling.
 
 ## Rationale
 
-Build OS is expected to run inside enterprise environments where unmanaged or unpackaged Python, Node, or shell scripts may be difficult to approve, scan, distribute, or support.
-Non-technical adopters also need tooling that can be installed and invoked without understanding local language runtimes.
+Build OS is expected to run inside enterprise environments where unmanaged or unpackaged Python, Node, or shell scripts may be difficult to approve, scan, distribute, or support. Non-technical adopters also need tooling that can be installed and invoked without understanding local language runtimes.
 
 The safer baseline is to keep deterministic logic in versioned, buildable first-party CLI toolkits, with scripts acting only as compatibility wrappers, command routers, and command documentation.
 
@@ -37,8 +35,7 @@ The safer baseline is to keep deterministic logic in versioned, buildable first-
 
 ## Initial Toolkit Target
 
-W1 R0 P3 intake/conversion work should implement converter/index logic through the `buildos-intake` toolkit instead of adding standalone converter scripts.
-The initial prerequisite adds only the scaffold and standards; converter behavior is still owned by the later W1 R0 P3 implementation.
+W1 R0 P3 intake/conversion work should implement converter/index logic through the `buildos-intake` toolkit instead of adding standalone converter scripts. The initial prerequisite added only the scaffold and standards; W1 R0 P3 now implements the initial toolkit behavior. That implementation keeps runtime processing local, uses only approved Go dependencies for HTML parsing and rudimentary PDF text extraction, and preserves `.os/scripts/` as a thin wrapper surface.
 
 ## Impacted Docs and Dependencies
 
@@ -57,6 +54,8 @@ This PRD revision should be referenced from the impacted baseline PRDs as a chan
 - `toolkits/`
 - `toolkits/buildos-intake/`
 - `system/.os/scripts/`
+- `system/.os/contracts/intake-translation-contract.md`
+- `system/playbooks/administrative/manual-intake-conversion.md`
 - `docs/guides/developer/buildos-toolkit-cli-development.md`
 - `docs/designs/2026-06-04-buildos-toolkit-cli-deployment-standard.md`
 - `docs/plans/2026-06-04-w1-r2-buildos-toolkit-cli-deployment-standard/`

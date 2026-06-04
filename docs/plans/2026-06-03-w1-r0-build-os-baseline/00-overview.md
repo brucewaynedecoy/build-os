@@ -8,26 +8,17 @@
 
 **Repository:** Build OS (`./`)
 
-**Purpose:** Provide a reviewable, prospective plan for building **Build OS** in `./system/` — the
-features/capabilities to implement, in dependency order — and for deriving the implementation work
-backlog (and, iteratively, the PRD source-of-truth) from it.
-Originating design: [`2026-06-03-build-os-architecture.md`](../../designs/2026-06-03-build-os-architecture.md).
+**Purpose:** Provide a reviewable, prospective plan for building **Build OS** in `./system/` — the features/capabilities to implement, in dependency order — and for deriving the implementation work backlog (and, iteratively, the PRD source-of-truth) from it. Originating design: [`2026-06-03-build-os-architecture.md`](../../designs/2026-06-03-build-os-architecture.md).
 
 ## Objective
 
-Decompose the approved Build OS architecture into implementable capability areas and a phased work
-backlog that an execution step can pick up.
-This is a greenfield build: `./system/` is largely unscaffolded apart from the first validated slice.
-The plan is complete when the capability set and dependency phasing are settled, the work-backlog
-placement and worker split are fixed, and every capability traces back to a decision in the design.
+Decompose the approved Build OS architecture into implementable capability areas and a phased work backlog that an execution step can pick up. This is a greenfield build: `./system/` is largely unscaffolded apart from the first validated slice. The plan is complete when the capability set and dependency phasing are settled, the work-backlog placement and worker split are fixed, and every capability traces back to a decision in the design.
 
 ## Coordinate Decision
 
 - Coordinate: `W1 R0`
 - Classification: `new-wave`
-- Evidence: the design's `## Intended Follow-On` declares `baseline-plan` with no `Coordinate
-  Handoff`; `docs/plans/`, `docs/prd/`, and `docs/work/` hold no prior artifacts; per the wave model
-  this defaults to `w1-r0`.
+- Evidence: the design's `## Intended Follow-On` declares `baseline-plan` with no `Coordinate Handoff`; `docs/plans/`, `docs/prd/`, and `docs/work/` hold no prior active Build OS rollout, so this defaults to `w1-r0`.
 
 ## Design Inputs
 
@@ -37,14 +28,12 @@ placement and worker split are fixed, and every capability traces back to a deci
 | Playbook contract (built) | Markdown | `system/.os/contracts/playbook-contract.md` | authoritative |
 | First slice — `PB-001` guardrail + operating routers + templates | Markdown | `system/.os/**`, `system/playbooks/**` | authoritative (validated) |
 
-Open questions surfaced by the inputs — to promote into `docs/prd/03-open-questions-and-risk-register.md`
-when the PRD pass runs: promotion **enforcement** (documented convention vs. tooling/machinery).
+Open questions surfaced by the inputs — to promote into `docs/prd/03-open-questions-and-risk-register.md` when the PRD pass runs: promotion **enforcement** (documented convention vs. tooling/machinery).
 
 ## Existing Codebase Context
 
 - Codebase status: greenfield <!-- system/ largely unscaffolded; build-layer make-docs installed; one validated slice exists -->
-- Integration constraints: respect the make-docs plug-in boundary (`PB-001`); `AGENTS.md`-canonical /
-  `CLAUDE.md`-pointer routers; plain-text data (NDJSON/CSV, no SQLite); layered canonicity.
+- Integration constraints: respect the make-docs plug-in boundary (`PB-001`); `AGENTS.md`-canonical / `CLAUDE.md`-pointer routers; plain-text data (NDJSON/CSV, Markdown) before heavier stores; configured scope metadata.
 - Discovery pass required: light — workers read the design + the first-slice contracts before writing.
 - Discovery scope if required: `system/.os/contracts/`, `system/playbooks/`, the design doc.
 
@@ -52,11 +41,9 @@ when the PRD pass runs: promotion **enforcement** (documented convention vs. too
 
 - Plan directory: `docs/plans/2026-06-03-w1-r0-build-os-baseline/`
   - entry point: `00-overview.md`
-  - phase files: `01-capability-build.md`, `02-derived-outputs.md`
+  - phase files: `01-capability-build.md`, `02-derived-outputs.md`, `03-intake-conversion.md`
 - **Active derived output — work backlog:** `docs/work/2026-06-03-w1-r0-build-os-baseline/`
-- **Deferred derived output — PRD source-of-truth:** `docs/prd/` (fixed core `00–04` + adaptive
-  per-capability docs); derivable from this plan, authored on a later/iterative pass — see
-  [`02-derived-outputs.md`](02-derived-outputs.md).
+- **Deferred derived output — PRD source-of-truth:** `docs/prd/` (fixed core `00–04` + adaptive per-capability docs); derivable from this plan, authored on a later PRD pass, and coordinated through [`02-derived-outputs.md`](02-derived-outputs.md).
 
 ## Existing PRD Handling
 
@@ -70,16 +57,14 @@ when the PRD pass runs: promotion **enforcement** (documented convention vs. too
 - Highest intended delegation tier: parallel agents → subagents → single-agent fallback (per harness)
 - Coordinator role: `coordination only`
 - Coordinator write scope: `none` when delegation is available
-- Coordinator responsibilities: preflight, approvals, routing, worker spawning, progress tracking,
-  blocker handling, final status reporting.
+- Coordinator responsibilities: preflight, approvals, routing, worker spawning, progress tracking, blocker handling, final status reporting.
 
 ## Scope & Phasing
 
 - Phasing strategy: incremental (mvp-then-iterate)
 - Phase boundaries driven by: technical dependency
 
-Capability areas and their dependency phases are detailed in
-[`01-capability-build.md`](01-capability-build.md). Summary:
+Capability areas and their dependency phases are detailed in [`01-capability-build.md`](01-capability-build.md). Summary:
 
 | Phase | Capability area | Key deliverables | Depends on |
 | ----- | --------------- | ---------------- | ---------- |
@@ -96,11 +81,7 @@ Cross-cutting throughout: `env`/`for` tagging; validation.
 
 ## Proposed Catalog
 
-The capability areas above are the unit of decomposition.
-Each maps to one work-backlog phase now, and to one adaptive PRD doc (`05`+) when the PRD pass runs,
-alongside the fixed PRD core (`00-index`, `01-product-overview`, `02-architecture-overview`,
-`03-open-questions-and-risk-register`, `04-glossary`).
-The tree stays flat — one doc per capability area is readable at this scale.
+The capability areas above are the unit of decomposition. Each maps to one work-backlog phase now, and to one adaptive PRD doc (`05`+) when the PRD pass runs, alongside the fixed PRD core (`00-index`, `01-product-overview`, `02-architecture-overview`, `03-open-questions-and-risk-register`, `04-glossary`). The tree stays flat — one doc per capability area is readable at this scale.
 
 ## Worker Ownership
 
@@ -117,17 +98,14 @@ The coordinator owns no document-writing task when delegation is available.
 
 ## MCP Strategy
 
-- Preferred servers available: jcodemunch (code), jdocmunch (docs) — confirm in-session per
-  `system/docs/assets/references/harness-capability-matrix.md`.
+- Preferred servers available: jcodemunch (code), jdocmunch (docs) — confirm in-session per `system/docs/assets/references/harness-capability-matrix.md`.
 - Fallback plan if unavailable: direct `Read`/`Grep` within the operational subtrees.
 
 ## Acceptance Criteria Guidance
 
 - Criteria style: checklist
 - Each backlog task carries acceptance criteria traceable to a specific design decision.
-- Non-functional concerns to address per capability: agent-operability, the determinism boundary
-  (convert vs. extract), git-native reviewability, plug-in-boundary safety, and progressive-disclosure
-  navigability.
+- Non-functional concerns to address per capability: agent-operability, the determinism boundary (convert vs. extract), git-native reviewability, plug-in-boundary discipline, and router navigability.
 
 ## Validation
 

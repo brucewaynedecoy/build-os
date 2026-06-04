@@ -15,7 +15,11 @@ related:
   - "../../designs/2026-06-04-buildos-toolkit-cli-deployment-standard.md"
   - "../../designs/2026-06-04-make-docs-buildos-toolkit-cli-import-strategy.md"
   - "../../prd/14-revise-deterministic-toolkit-deployment.md"
+  - "../../../system/.os/contracts/converted-source-contract.md"
+  - "../../../system/.os/contracts/intake-translation-contract.md"
+  - "../../../system/playbooks/administrative/manual-intake-conversion.md"
   - "../../../toolkits/README.md"
+  - "../../../toolkits/buildos-intake/README.md"
 ---
 
 # Build OS Toolkit CLI Development
@@ -24,9 +28,7 @@ related:
 
 Use this guide when creating a new first-party deterministic toolkit, revising an existing toolkit, or converting unmanaged deterministic scripts into packaged Build OS CLI tooling.
 
-Coverage outcome: `developer`.
-This topic is maintainer-facing because it defines source layout, dependency posture, local execution, packaging expectations, script-wrapper boundaries, validation, and agent handoff rules.
-User-guide outcome: `none` for this phase because no end-user `buildos-*` command has shipped yet.
+Coverage outcome: `developer`. This topic is maintainer-facing because it defines source layout, dependency posture, local execution, packaging expectations, script-wrapper boundaries, validation, and agent handoff rules. User-guide outcome: `none` for system docs guides in this phase. `buildos-intake` is an operating toolkit, and fallback operator guidance lives in `system/playbooks/administrative/manual-intake-conversion.md` instead of `system/docs/guides/user/`.
 
 ## Project Orientation
 
@@ -48,8 +50,35 @@ User-guide outcome: `none` for this phase because no end-user `buildos-*` comman
 | Script role | Thin wrapper, router, compatibility shim, or command documentation |
 | Network calls | Disallowed unless a design approves them and the CLI requires opt-in flags |
 
-Third-party packages, native dependencies, generated parsers, service SDKs, or external conversion engines require explicit rationale in the toolkit README.
-That rationale should include why the dependency is necessary, license notes, packaging implications, expected update cadence, and any enterprise review concerns.
+Third-party packages, native dependencies, generated parsers, service SDKs, or external conversion engines require explicit rationale in the toolkit README. That rationale should include why the dependency is necessary, license notes, packaging implications, expected update cadence, and any enterprise review concerns.
+
+## buildos-intake Reference
+
+`buildos-intake` is the first implemented toolkit and is the model for future deterministic toolkits.
+
+```sh
+buildos-intake convert --source <path>
+buildos-intake index references
+```
+
+The operating-layer wrapper is:
+
+```sh
+system/.os/scripts/buildos-intake convert --source <path>
+system/.os/scripts/buildos-intake index references
+```
+
+P3 approved only two third-party Go dependencies for this toolkit: `golang.org/x/net/html` for HTML parsing and `github.com/ledongthuc/pdf` for rudimentary local PDF plain-text extraction. Do not add `pdftotext`, Poppler, OCR engines, external converter utilities, network calls, or service calls to the intake command surface without a new design and README packaging review.
+
+Maintain intake behavior against the contracts, not only against command output:
+
+- Converted twins must follow [converted-source-contract.md](../../../system/.os/contracts/converted-source-contract.md) for path, frontmatter, provenance, and status.
+- Converted twin bodies and side artifacts must follow [intake-translation-contract.md](../../../system/.os/contracts/intake-translation-contract.md).
+- `convert` currently supports CSV, DOCX, XLSX, HTML, HTML-directory sources, and minimal PDF text extraction. If a source type or output shape changes, update contracts, tests, and wrapper-facing documentation in the same change.
+- Keep side artifacts under the same `system/assets/<source-slug>/` directory as the converted twin. Use deterministic relative references from the converted body. Prefer `media/` for copied images and `diagrams/` for inline SVG or Mermaid artifacts.
+- For HTML, preserve local and data-URI images when accessible, preserve inline SVG as `diagrams/*.svg`, and preserve Mermaid as `diagrams/*.mmd` plus fenced `mermaid` code in the Markdown body. Do not add diagram rendering to bitmap output unless a future design approves the renderer dependency.
+- Treat PDF extraction as best-effort plain text. Do not imply OCR, layout fidelity, table reconstruction, embedded-image extraction, or a future rich-PDF roadmap.
+- Keep manual and agent-assisted fallback aligned with [manual-intake-conversion.md](../../../system/playbooks/administrative/manual-intake-conversion.md) so hand-built converted twins look like automated ones.
 
 ## Create a New Toolkit
 
@@ -71,7 +100,8 @@ That rationale should include why the dependency is necessary, license notes, pa
 4. Prefer additive subcommands or flags over changing existing command semantics.
 5. If a dependency becomes necessary, update the toolkit README before landing code.
 6. Keep wrappers thin. A wrapper should not duplicate toolkit logic.
-7. Run toolkit tests, repository validators, and `git diff --check`.
+7. Add or update focused regression tests for changed command parsing, path derivation, hashing, frontmatter, conversion shape, side-artifact handling, and index rebuild behavior.
+8. Run toolkit tests, repository validators, and `git diff --check`.
 
 ## Convert an Existing Script
 
@@ -94,8 +124,7 @@ For larger toolkit work, use a coordinator plus focused workers:
 - Packaging worker: checks dependency posture, license notes, binary naming, and future installer implications.
 - Review worker: checks for boundary violations, especially edits under make-docs-owned assets or generated outputs.
 
-Do not parallelize work that depends on an unsettled command contract.
-For example, wrappers should wait until the toolkit worker and coordinator agree on subcommands, flags, exit codes, and output paths.
+Do not parallelize work that depends on an unsettled command contract. For example, wrappers should wait until the toolkit worker and coordinator agree on subcommands, flags, exit codes, and output paths.
 
 ## Validation
 
@@ -122,8 +151,7 @@ After edits, refresh the project documentation and code indexes when the jdocmun
 
 If a wrapper starts doing parsing, conversion, indexing, or validation logic, move that logic into the toolkit and leave the script as a call-through.
 
-If a toolkit needs network access, stop and write or update a design first.
-The design must state why local processing is insufficient, what opt-in flags enable the behavior, what data leaves the machine, and how failures are reported.
+If a toolkit needs network access, stop and write or update a design first. The design must state why local processing is insufficient, what opt-in flags enable the behavior, what data leaves the machine, and how failures are reported.
 
 If a dependency is attractive but optional, prefer a standard-library implementation until the dependency materially improves correctness, supportability, or packaging risk.
 
@@ -139,9 +167,5 @@ If enterprise distribution concerns block a rollout, track them against R-003 in
 
 ## Future Coverage
 
-- Blocked by: W1 R0 P3 intake/conversion toolkit implementation.
-  Update when: `buildos-intake` has real commands, tests, and build metadata.
-  Guide change: Add concrete command examples, exit-code rules, build/install steps, wrapper examples, and troubleshooting for conversion and index rebuild failures.
-- Blocked by: Enterprise installer and release hardening.
-  Update when: signing, checksums, SBOM generation, installer behavior, and package distribution are approved.
-  Guide change: Add release packaging and enterprise deployment procedures.
+- Blocked by: expanded installer and release packaging. Update when `buildos-intake` has signed release artifacts, checksums, SBOM generation, and installer integration. Guide change: add enterprise deployment procedures and release checklist details.
+- Blocked by: enterprise installer and release hardening. Update when signing, checksums, SBOM generation, installer behavior, and package distribution are approved. Guide change: add release packaging and enterprise deployment procedures.
