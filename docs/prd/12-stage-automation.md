@@ -24,6 +24,10 @@ Code anchors:
 
 - `system/.os/contracts/` (finding contract forward-routing)
 
+### Change Notes
+
+- Revised by [14 Revise Deterministic Toolkit Deployment](./14-revise-deterministic-toolkit-deployment.md): deterministic command runners should call packaged `buildos-*` toolkits where applicable, with script or slash-command surfaces acting as routers rather than unmanaged logic implementations.
+
 ## Contracts and Data
 
 Stage-movers are hooks and slash-commands, not prompt files (make-docs is deprecating prompts). Each respects its gate (review-to-activate, verify-to-promote) and never writes into a make-docs tree outside its router. They build on the forward-routing ("Next Step") declared in the contracts.
@@ -56,3 +60,4 @@ Code anchors:
 
 - `docs/designs/2026-06-03-build-os-architecture.md`
 - `docs/work/2026-06-03-w1-r0-build-os-baseline/08-stage-automation.md`
+- `docs/prd/14-revise-deterministic-toolkit-deployment.md`

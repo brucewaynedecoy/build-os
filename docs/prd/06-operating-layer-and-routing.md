@@ -19,7 +19,7 @@ Code anchors:
 | `.os/contracts/` | Authority for each artifact type; each contract carries an `Intended Follow-On` ("Next Step") |
 | `.os/templates/` | Copy-this starting shapes |
 | `.os/indexes/` | Derived catalogs (`playbooks.json`, `references.json`) |
-| `.os/scripts/` | Deterministic system processes |
+| `.os/scripts/` | Thin wrappers, command routers, compatibility shims, and command documentation for deterministic system processes |
 | Routers | Thin `AGENTS.md` dispatchers (`CLAUDE.md` is a one-line pointer) |
 
 Code anchors:
@@ -31,6 +31,7 @@ Code anchors:
 ### Change Notes
 
 - Enhanced by [13 Adopter-Owned Config Surface](./13-adopter-owned-config-surface.md): `.os/` also owns `config/` as the adopter-controlled operational configuration surface. `system/.os/config/instance.yaml`, `system/.os/contracts/config-contract.md`, `system/.os/templates/instance-config.yaml`, and `system/.os/scripts/validate_config.py` are part of the operating-layer authority for scoped values.
+- Revised by [14 Revise Deterministic Toolkit Deployment](./14-revise-deterministic-toolkit-deployment.md): `.os/scripts/` is no longer the default source home for new durable deterministic logic. New packaged first-party tooling should live under `toolkits/` and expose `buildos-*` binaries that scripts call or document.
 
 ## Contracts and Data
 
@@ -61,3 +62,4 @@ Code anchors:
 
 - `docs/designs/2026-06-03-build-os-architecture.md`
 - `docs/work/2026-06-03-w1-r0-build-os-baseline/01-foundation.md`
+- `docs/prd/14-revise-deterministic-toolkit-deployment.md`

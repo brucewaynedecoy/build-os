@@ -99,6 +99,25 @@ Code anchors:
 
 - `system/workspace/findings/`
 
+### R-003 Enterprise toolkit distribution hardening
+
+| Status | Decision | Follow-Up |
+| --- | --- | --- |
+| Open | None yet | Resolve before broad enterprise rollout of packaged Build OS toolkits |
+
+**Issue**: Build OS now standardizes durable deterministic logic as packaged `buildos-*` CLI toolkits, but the installer, code signing, checksum, SBOM, vulnerability scanning, and enterprise distribution posture is not yet specified.
+
+**Why it matters**: Enterprise adopters may block unmanaged binaries or unsigned artifacts even when unmanaged scripts have been removed. The toolkit standard lowers runtime and dependency risk, but distribution still needs a hardened release path.
+
+**Recommendation**: Treat unsigned local builds as development-only. Before broad adoption, define release artifacts, signing expectations, SBOM generation, checksum publication, installer behavior, and package-manager targets.
+
+**To close**: An approved enterprise distribution design and an implemented release pipeline for Build OS toolkit binaries.
+
+Code anchors:
+
+- `toolkits/`
+- `docs/designs/2026-06-04-buildos-toolkit-cli-deployment-standard.md`
+
 ## Source Anchors
 
 - `docs/designs/2026-06-03-build-os-architecture.md`

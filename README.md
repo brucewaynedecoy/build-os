@@ -10,10 +10,12 @@ usable by both human practitioners and agents.
 
 ## Repository Model
 
-This repository contains two related layers:
+This repository contains four related areas:
 
 - `docs/` is the build layer for this project. It records how Build OS itself is designed,
   planned, and implemented.
+- `toolkits/` is the source home for first-party deterministic CLI toolkits such as
+  `buildos-intake`.
 - `system/` is the reusable Build OS system that an adopting team operates.
 - `system/docs/` is the target-docs layer inside the shipped system. It is where adopters capture
   discovery, design, PRD, plan, and work artifacts about their own configured systems.
@@ -52,6 +54,8 @@ Those pillars support three chained flows:
 | `system/playbooks/` | Typed playbooks and guardrails. |
 | `system/workspace/` | Planned home for run records, findings, datasets, and execution artifacts. |
 | `system/docs/` | Adopter deliverables about configured target systems. |
+| `toolkits/` | Source and build metadata for first-party deterministic CLI toolkits. |
+| `toolkits/buildos-intake/` | Scaffold for the planned `buildos-intake` intake and conversion toolkit. |
 | `docs/designs/` | Build-layer design records for Build OS itself. |
 | `docs/prd/` | Build-layer product requirements for Build OS itself. |
 
@@ -78,6 +82,7 @@ Start with the router nearest the work:
   that artifact type.
 - For adopter-owned configuration, read `system/.os/contracts/config-contract.md` and validate
   changes with `system/.os/scripts/validate_config.py`.
+- For deterministic toolkit work, read `toolkits/AGENTS.md`, then the local toolkit router.
 - For build-layer planning, design, PRD, or work artifacts, use the corresponding router under
   `docs/`.
 - For target-system deliverables, cross into `system/docs/` and obey that make-docs router.
@@ -106,5 +111,7 @@ The current architecture and config-surface decisions are captured in:
 
 - `docs/designs/2026-06-03-build-os-architecture.md`
 - `docs/designs/2026-06-03-adopter-owned-config-surface.md`
+- `docs/designs/2026-06-04-buildos-toolkit-cli-deployment-standard.md`
+- `docs/designs/2026-06-04-make-docs-buildos-toolkit-cli-import-strategy.md`
 
 The active product requirements live under `docs/prd/`.

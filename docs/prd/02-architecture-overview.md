@@ -21,15 +21,17 @@ Code anchors:
 | `system/playbooks/` | Typed instruments by category |
 | `system/workspace/` | `datasets/` (user data), `runs/`, `findings/`, `scripts/` |
 | `system/docs/` | make-docs target-doc pipeline (designs → plans → prd → work) |
+| `toolkits/` | Source and build metadata for packaged first-party deterministic CLI toolkits |
 
 Code anchors:
 
 - `system/.os/AGENTS.md`
 - `system/playbooks/AGENTS.md`
+- `toolkits/AGENTS.md`
 
 ## Runtime Boundaries
 
-The hard boundary is the make-docs plug-in: the four trees (`docs/`, `system/docs/`, `.make-docs/`, `system/.make-docs/`) are externally managed and never modified directly; the top routers are co-owned (augment-only). Within `system/`, `convert` is deterministic (tools) while `extract` is smart (human/agent). Computer-use execution runs against the external target application.
+The hard boundary is the make-docs plug-in: the four trees (`docs/`, `system/docs/`, `.make-docs/`, `system/.make-docs/`) are externally managed and never modified directly; the top routers are co-owned (augment-only). Within `system/`, `convert` is deterministic (packaged tools with script wrappers) while `extract` is smart (human/agent). Computer-use execution runs against the external target application.
 
 Code anchors:
 
@@ -56,8 +58,10 @@ Code anchors:
 ### Change Notes
 
 - Superseded by [13 Adopter-Owned Config Surface](./13-adopter-owned-config-surface.md): fixed scoped frontmatter vocabulary such as `env` and `for` is no longer the effective contract vocabulary. Scoped artifacts use config-backed `systems`, `environments`, and `owners`, with adopter values owned by `system/.os/config/instance.yaml` and shaped by `system/.os/contracts/config-contract.md`.
+- Revised by [14 Revise Deterministic Toolkit Deployment](./14-revise-deterministic-toolkit-deployment.md): durable deterministic execution tooling is sourced under `toolkits/`, built as packaged `buildos-*` CLIs, and reached from operational scripts where wrapper or router compatibility is needed.
 
 ## Source Anchors
 
 - `docs/designs/2026-06-03-build-os-architecture.md`
 - `system/.os/`, `system/workspace/`
+- `toolkits/`
