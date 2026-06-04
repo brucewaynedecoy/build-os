@@ -18,11 +18,11 @@ Author the remaining artifact contracts in `system/.os/contracts/` and scaffold 
 ### Tasks
 
 - [x] t1: Author `system/.os/contracts/playbook-contract.md` (frontmatter axes, lifecycle, guardrail variant).
-- [ ] t2: Author the entity-records contract (common envelope, ID prefix registry, status vocab, per-type fields for requirement/capability/persona/test-case/result/run/finding/extraction).
-- [ ] t3: Author the run-record contract (`workspace/runs/<id>/` artifact shape + `runs.jsonl` index fields).
-- [ ] t4: Author the finding contract (raw → qualified → design lifecycle; qualification = deterministic repeatable test; forward-routing "Next Step" to the make-docs design router).
-- [ ] t5: Author the converted-source provenance contract (frontmatter: source, sha256, converter, timestamp, type, status).
-- [ ] t6: Author the extraction load-plan contract (`extractions.jsonl`: source_anchor, minted[], extracted_by/at).
+- [x] t2: Author the entity-records contract (common envelope, ID prefix registry, status vocab, per-type fields for requirement/capability/persona/test-case/result/run/finding/extraction).
+- [x] t3: Author the run-record contract (`workspace/runs/<id>/` artifact shape + `runs.jsonl` index fields).
+- [x] t4: Author the finding contract (raw → qualified → design lifecycle; qualification = deterministic repeatable test; forward-routing "Next Step" to the make-docs design router).
+- [x] t5: Author the converted-source provenance contract (frontmatter: source, sha256, converter, timestamp, type, status).
+- [x] t6: Author the extraction load-plan contract (`extractions.jsonl`: source_anchor, minted[], extracted_by/at).
 
 ### Acceptance criteria
 
@@ -40,8 +40,8 @@ Author the remaining artifact contracts in `system/.os/contracts/` and scaffold 
 
 - [x] t7: Operating router `system/.os/AGENTS.md` (+ `CLAUDE.md` pointer).
 - [x] t8: `.os/contracts/` and `.os/templates/` routers (+ `CLAUDE.md` pointers).
-- [ ] t9: Scaffold `.os/data/` and `.os/indexes/` routers.
-- [ ] t10: Scaffold `.os/scripts/` router.
+- [x] t9: Scaffold `.os/data/` and `.os/indexes/` routers.
+- [x] t10: Scaffold `.os/scripts/` router.
 
 ### Acceptance criteria
 

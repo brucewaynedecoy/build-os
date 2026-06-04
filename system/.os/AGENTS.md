@@ -11,9 +11,8 @@ not deliverables. Read only what your task needs.
 - `config/` — adopter-owned instance configuration for configured systems, environments, and
   owners. Read `contracts/config-contract.md` before editing.
 - `templates/` — starting shapes to copy. Authority is in `contracts/`.
-- `indexes/` — derived catalogs (`playbooks.json`, `references.json`); rebuildable, not canonical.
-- `data/` — system data **about the discovery process** (NDJSON/CSV): entity records + candidate
-  staging. Not deliverables.
+- `indexes/` — derived catalogs; use `indexes/` for routing.
+- `data/` — system-owned structured discovery data; use `data/` for routing.
 - `scripts/` — deterministic system processes (converters, index builders, validators).
 
 ## Routing by task
@@ -25,8 +24,11 @@ not deliverables. Read only what your task needs.
   [`templates/instance-config.yaml`](templates/instance-config.yaml) for a fresh instance).
 - **Validate config or scoped frontmatter** → run
   [`scripts/validate_config.py`](scripts/validate_config.py).
-- **Intake a source** → convert under [`../assets/`](../assets/), then extract into `data/`.
-- **Record a run / qualify a finding** → `../workspace/runs/` and `../workspace/findings/`.
+- **Intake a source** → convert under [`../assets/`](../assets/), then extract through `data/`.
+- **Write system discovery data** → `data/`.
+- **Use or rebuild derived catalogs** → `indexes/`.
+- **Record a run / qualify a finding** → `../workspace/runs/` and `../workspace/findings/`;
+  index structured system records through `data/`.
 - **Promote a qualified finding to a design** → cross into `../docs/` and obey **its** router
   (make-docs). Never write under `../docs/**` outside that router.
 

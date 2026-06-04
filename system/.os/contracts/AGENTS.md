@@ -8,8 +8,12 @@ restating them elsewhere. **Not** an output target. Do not modify contracts unle
 
 - [`config-contract.md`](config-contract.md) — adopter-owned instance config (`systems`,
   `environments`, `owners`, and defaults).
+- [`converted-source-contract.md`](converted-source-contract.md) — converted source artifacts.
+- [`entity-records-contract.md`](entity-records-contract.md) — entity records.
+- [`extraction-contract.md`](extraction-contract.md) — extracted source evidence.
+- [`finding-contract.md`](finding-contract.md) — findings.
 - [`playbook-contract.md`](playbook-contract.md) — playbooks (incl. the guardrail variant).
-- _to be added: entity-records, run-record, finding, converted-source, extraction._
+- [`run-record-contract.md`](run-record-contract.md) — run records.
 
 ## Use
 

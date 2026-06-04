@@ -1,0 +1,116 @@
+---
+title: "Maintaining Operating Layer Contracts"
+path: "operating-layer/contracts"
+status: draft
+order: 100
+tags:
+  - operating-layer
+  - contracts
+  - routing
+applies-to:
+  - system/.os
+related:
+  - "../../../system/.os/AGENTS.md"
+  - "../../../system/.os/contracts/AGENTS.md"
+  - "../../../system/.os/data/AGENTS.md"
+  - "../../../system/.os/indexes/AGENTS.md"
+  - "../../../system/.os/contracts/entity-records-contract.md"
+  - "../../../system/.os/contracts/run-record-contract.md"
+  - "../../../system/.os/contracts/finding-contract.md"
+  - "../../../system/.os/contracts/converted-source-contract.md"
+  - "../../../system/.os/contracts/extraction-contract.md"
+  - "../../work/2026-06-03-w1-r0-build-os-baseline/01-foundation.md"
+  - "../../assets/history/2026-06-04-w1-r0-p1-operating-layer-contracts.md"
+---
+
+# Maintaining Operating Layer Contracts
+
+## Overview
+
+Use this guide when adding or changing Build OS operating-layer contracts, `.os` routers, or system-owned data/index routing. The current operating layer is contract first: contracts define authority, shape, lifecycle, and link rules; routers only tell contributors where to go next.
+
+Coverage outcome: `developer`. The durable knowledge is maintainer-facing because it describes source-of-truth boundaries, extension points, validation, and safe-change rules. User-guide outcome: `none`, because P1 did not add a shipped user workflow.
+
+## Project Orientation
+
+- [../../../system/.os/AGENTS.md](../../../system/.os/AGENTS.md) is the root operating-layer router. It should stay thin and route contributors to the more specific area router or contract.
+- [../../../system/.os/contracts/AGENTS.md](../../../system/.os/contracts/AGENTS.md) lists authority contracts. Add a contract link here when a new authority contract lands.
+- [../../../system/.os/data/AGENTS.md](../../../system/.os/data/AGENTS.md) routes system-owned structured data. It points writers back to the relevant contract and keeps user datasets out of `.os/data`.
+- [../../../system/.os/indexes/AGENTS.md](../../../system/.os/indexes/AGENTS.md) routes rebuildable derived catalogs. Indexes are not authority.
+- `CLAUDE.md` files in these directories are one-line pointers to the matching `AGENTS.md`. Do not duplicate routing rules in them.
+
+The current P1 contract set is:
+
+| Contract | Owns |
+| --- | --- |
+| [entity-records-contract.md](../../../system/.os/contracts/entity-records-contract.md) | Canonical `.os/data/*.jsonl` entity envelopes, ID prefixes, shared fields, per-type fields, and status vocabulary. |
+| [run-record-contract.md](../../../system/.os/contracts/run-record-contract.md) | Run artifact directories, immutable run evidence, outcome values, raw findings, and `.os/data/runs.jsonl` index fields. |
+| [finding-contract.md](../../../system/.os/contracts/finding-contract.md) | Raw to qualified to optional design lifecycle, deterministic qualification tests, and negative-finding qualification. |
+| [converted-source-contract.md](../../../system/.os/contracts/converted-source-contract.md) | Converted twin provenance frontmatter for source, hash, converter, timestamp, type, and status. |
+| [extraction-contract.md](../../../system/.os/contracts/extraction-contract.md) | Extraction records with source anchors, minted IDs, extractor identity, and extraction timestamps. |
+
+## Development Workflow
+
+1. Start at the nearest `AGENTS.md` router before editing a `.os` area.
+2. Identify the authority contract before changing a data shape, lifecycle, status value, path rule, or generated artifact boundary.
+3. Update the contract first when behavior needs a new authority rule. Keep the contract format consistent: `Purpose`, `Required Path`, `Required Shape/Fields`, lifecycle or status rules where relevant, `Intended Follow-On (Next Step)`, and `Link Rules`.
+4. Update the router only after the contract is correct. Routers should explain where to write and what contract to consult; they should not restate schema details.
+5. Keep `CLAUDE.md` as a pointer only.
+6. Do not create runtime `.jsonl` stores, populated indexes, run artifacts, or workspace datasets during a contract-only phase. Create those only when the active backlog phase explicitly asks for runtime artifacts.
+7. After the edit, update the active work backlog and history record only after validation.
+
+## Safe-Change Rules
+
+- Treat contracts as authority and indexes as derived.
+- Preserve NDJSON, JSONL, or CSV as the only system-owned structured data formats under `.os/data`.
+- Keep user datasets out of `.os/data`; route them to the workspace dataset area when that workspace path is introduced by an implementation phase.
+- Do not add new ID prefixes without updating [entity-records-contract.md](../../../system/.os/contracts/entity-records-contract.md).
+- Do not add outcome, lifecycle, or status values in only one contract when another contract depends on the same vocabulary.
+- Do not write directly into make-docs managed `system/docs` trees unless the relevant router or phase explicitly permits it.
+
+## Validation
+
+Run the operating-layer checks after changing `.os` contracts or routers:
+
+```sh
+python3 system/.os/scripts/validate_config.py --self-test
+python3 system/.os/scripts/validate_config.py
+```
+
+Then refresh the project documentation index and check links where practical. Review the diff for:
+
+- valid relative links from new or changed documents
+- thin routers with no duplicated contract schema
+- one-line `CLAUDE.md` pointers
+- no generated runtime data in `.os/data`
+- no generated catalogs in `.os/indexes`
+- no direct edits to make-docs managed trees outside the phase scope
+
+Finish with:
+
+```sh
+git diff --check
+```
+
+## Troubleshooting
+
+If a router starts accumulating field definitions, move the field details into the owning contract and leave a short link in the router.
+
+If a new data file seems necessary, first decide whether it is authority data, a rebuildable index, a user dataset, or a run artifact. `.os/data` is for system-owned structured authority or index records only; `.os/indexes` is for derived catalogs only; run artifacts and user datasets belong under the workspace surface when those runtime paths are introduced.
+
+If link checking reports repository-wide noise, separate baseline failures from touched-file failures. Fix every broken link introduced by the current change, and record any unrelated baseline noise in the closeout instead of hiding it.
+
+## Related Resources
+
+- [P1 work backlog](../../work/2026-06-03-w1-r0-build-os-baseline/01-foundation.md)
+- [P1 history record](../../assets/history/2026-06-04-w1-r0-p1-operating-layer-contracts.md)
+- [Operating router](../../../system/.os/AGENTS.md)
+- [Contracts router](../../../system/.os/contracts/AGENTS.md)
+- [Data router](../../../system/.os/data/AGENTS.md)
+- [Indexes router](../../../system/.os/indexes/AGENTS.md)
+
+## Future Coverage
+
+- Blocked by: Later phases that implement conversion scripts, discovery runs, finding qualification tests, extraction loaders, and generated index rebuilds.
+  Update when: those phases introduce runnable commands, generated artifacts, or operational recovery paths.
+  Guide change: Add command examples, generator ownership rules, artifact cleanup guidance, and troubleshooting for failed conversions or index rebuilds.
