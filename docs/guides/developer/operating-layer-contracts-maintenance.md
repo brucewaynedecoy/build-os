@@ -18,6 +18,12 @@ related:
   - "../../../system/.os/data/AGENTS.md"
   - "../../../system/.os/indexes/AGENTS.md"
   - "../../../system/playbooks/AGENTS.md"
+  - "../user/build-os-getting-started.md"
+  - "../user/configure-adopter-owned-metadata.md"
+  - "../user/validate-system-data-and-indexes.md"
+  - "../user/use-playbooks-and-active-indexes.md"
+  - "../user/record-discovery-runs-and-qualify-findings.md"
+  - "../user/understand-workspace-artifacts.md"
   - "../../../system/.os/contracts/entity-records-contract.md"
   - "../../../system/.os/contracts/run-record-contract.md"
   - "../../../system/.os/contracts/finding-contract.md"
@@ -48,7 +54,7 @@ related:
 
 Use this guide when adding or changing Build OS operating-layer contracts, `.os` routers, active guardrails, scoped metadata, workspace run/finding artifacts, or system-owned data/index routing. The current operating layer is contract first: contracts define authority, shape, lifecycle, and link rules; guardrails define always-on safety rules; routers only tell contributors where to go next.
 
-Coverage outcome: `developer`. The durable knowledge is maintainer-facing because it describes source-of-truth boundaries, extension points, validation, shipping boundaries, and safe-change rules. User-guide outcome: `none` for this guide because these surfaces do not create a shipped end-user workflow.
+Coverage outcome: `developer`. The durable knowledge here is maintainer-facing because it describes source-of-truth boundaries, extension points, validation, shipping boundaries, and safe-change rules. User-facing operation of the shipped filesystem is covered by the companion user guides for getting started, configuration, validation, playbooks, discovery, and workspace artifacts.
 
 ## Project Orientation
 
@@ -200,6 +206,12 @@ If link checking reports repository-wide noise, separate baseline failures from 
 - [P5 history record](../../assets/history/2026-06-04-w1-r0-p5-playbooks.md)
 - [P6 discovery runs backlog](../../work/2026-06-03-w1-r0-build-os-baseline/06-discovery-runs-qualification.md)
 - [P6 history record](../../assets/history/2026-06-05-w1-r0-p6-discovery-runs-qualification.md)
+- [Build OS Getting Started](../user/build-os-getting-started.md)
+- [Configure Adopter-Owned Metadata](../user/configure-adopter-owned-metadata.md)
+- [Validate System Data and Indexes](../user/validate-system-data-and-indexes.md)
+- [Use Playbooks and Active Indexes](../user/use-playbooks-and-active-indexes.md)
+- [Record Discovery Runs and Qualify Findings](../user/record-discovery-runs-and-qualify-findings.md)
+- [Understand Workspace Artifacts](../user/understand-workspace-artifacts.md)
 - [Operating router](../../../system/.os/AGENTS.md)
 - [Contracts router](../../../system/.os/contracts/AGENTS.md)
 - [Config contract](../../../system/.os/contracts/config-contract.md)

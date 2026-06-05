@@ -32,6 +32,8 @@ Developer-guide coverage decision: `update-existing`. The completed work creates
 
 User-guide coverage decision: `none`. P5 creates internal playbook templates, category routers, draft seed instruments, minimal target rows, and an administrator-facing generated index. These capabilities are `developer` or maintainer-facing for guide purposes and are covered by developer guidance, but they do not add or change a shipped end-user task, concept, configuration choice, adoption path, expected result, or troubleshooting workflow. No `docs/guides/user/` guide was created.
 
+Correction: The user-guide `none` outcome above is superseded by [2026-06-05-w1-r0-user-guide-remediation.md](2026-06-05-w1-r0-user-guide-remediation.md), which treats shipped Build OS playbook operation as user-facing and adds draft user guides for the adopter/operator workflows introduced across W1 R0 P1-P6.
+
 PRD coverage decision: `none`. The implementation matches existing PRD 09 behavior for category routers, playbook templates, `targets`, lifecycle status, and active-only running/enforcement. No numbered PRD revision, baseline annotation, PRD index update, or risk-register change was warranted.
 
 | Capability or finding | Outcome | Rationale |

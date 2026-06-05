@@ -55,7 +55,7 @@ Code anchors:
 
 | Status | Decision | Follow-Up |
 | --- | --- | --- |
-| Open | Build OS product users include adopters, operators, admins, and practitioners who use the shipped `system/` filesystem and first-party `buildos-*` toolkits | Revise the user-guide coverage prompt and run a W1 R0 P1-P6 user-guide remediation pass |
+| Closed | Build OS product users include adopters, operators, admins, and practitioners who use the shipped `system/` filesystem and first-party `buildos-*` toolkits | None |
 
 **Issue**: W1 R0 P1-P6 closeouts repeatedly recorded user-guide outcome `none` because shipped filesystem, playbook, workspace, and toolkit workflows were classified as maintainer/operator-only rather than user-facing Build OS product workflows.
 
@@ -64,6 +64,8 @@ Code anchors:
 **Recommendation**: Treat shipped operational surfaces as user-facing when they are part of how an adopter uses Build OS. User-guide coverage prompts and closeout checks should explicitly ask what an adopter can do after the phase, and should trigger user-guide work when a phase adds or changes shipped CLI commands, wrappers, playbook workflows, workspace artifacts, adopter configuration, validation commands, expected results, or troubleshooting paths.
 
 **To close**: The reusable user-guide coverage prompt is updated, W1 R0 P1-P6 user-guide remediation creates or updates the missing draft user guides, and the affected history records clearly mark their earlier `none` decisions as superseded by the remediation outcome.
+
+**Resolution**: W1 R0 user-guide remediation created the draft `docs/guides/user/` suite, recorded a P1-P6 coverage matrix, added reciprocal developer-guide links, and marked the earlier P1-P6 user-guide `none` history outcomes as superseded by `docs/assets/history/2026-06-05-w1-r0-user-guide-remediation.md`.
 
 Code anchors:
 

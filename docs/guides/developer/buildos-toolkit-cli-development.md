@@ -16,6 +16,9 @@ related:
   - "../../designs/2026-06-04-make-docs-buildos-toolkit-cli-import-strategy.md"
   - "../../prd/14-revise-deterministic-toolkit-deployment.md"
   - "../../prd/16-revise-toolkit-ownership-boundaries.md"
+  - "../user/convert-source-material-with-buildos-intake.md"
+  - "../user/record-discovery-runs-and-qualify-findings.md"
+  - "../user/use-playbooks-and-active-indexes.md"
   - "../../../system/.os/contracts/converted-source-contract.md"
   - "../../../system/.os/contracts/intake-translation-contract.md"
   - "../../../system/.os/contracts/playbook-contract.md"
@@ -40,7 +43,7 @@ related:
 
 Use this guide when creating a new first-party deterministic toolkit, revising an existing toolkit, or converting unmanaged deterministic scripts into packaged Build OS CLI tooling.
 
-Coverage outcome: `developer`. This topic is maintainer-facing because it defines source layout, dependency posture, local execution, packaging expectations, script-wrapper boundaries, validation, and agent handoff rules. User-guide outcome: `none` for system docs guides in this phase. `buildos-intake` is an operating toolkit, and fallback operator guidance lives in `system/playbooks/administrative/manual-intake-conversion.md` instead of `system/docs/guides/user/`.
+Coverage outcome: `developer`. This topic is maintainer-facing because it defines source layout, dependency posture, local execution, packaging expectations, script-wrapper boundaries, validation, and agent handoff rules. User-facing operation of the current shipped toolkits is covered by the companion user guides for intake conversion, playbook indexes, and discovery runs.
 
 ## Project Orientation
 
@@ -241,6 +244,9 @@ If enterprise distribution concerns block a rollout, track them against R-003 in
 - [make-docs import strategy design](../../designs/2026-06-04-make-docs-buildos-toolkit-cli-import-strategy.md)
 - [PRD 14 deterministic toolkit deployment revision](../../prd/14-revise-deterministic-toolkit-deployment.md)
 - [PRD 16 toolkit ownership boundary revision](../../prd/16-revise-toolkit-ownership-boundaries.md)
+- [Convert Source Material With buildos-intake](../user/convert-source-material-with-buildos-intake.md)
+- [Use Playbooks and Active Indexes](../user/use-playbooks-and-active-indexes.md)
+- [Record Discovery Runs and Qualify Findings](../user/record-discovery-runs-and-qualify-findings.md)
 - [P4 data and extraction backlog](../../work/2026-06-03-w1-r0-build-os-baseline/04-data-and-extraction.md)
 - [P4 history record](../../assets/history/2026-06-04-w1-r0-p4-data-layer-extraction.md)
 - [P5 playbooks backlog](../../work/2026-06-03-w1-r0-build-os-baseline/05-playbooks.md)

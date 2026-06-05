@@ -33,6 +33,8 @@ Developer-guide coverage decision: existing guides own the durable maintainer kn
 
 User-guide coverage decision: `none`. The completed P4 work creates internal structured data stores, repository validation, and an administrator-maintained playbook index; it does not create or change a shipped user-facing task, setup path, product workflow, configuration choice, or troubleshooting path that belongs in `docs/guides/user/`. No user guide exists or was created for this pass.
 
+Correction: The user-guide `none` outcome above is superseded by [2026-06-05-w1-r0-user-guide-remediation.md](2026-06-05-w1-r0-user-guide-remediation.md), which treats shipped Build OS filesystem and toolkit operation as user-facing and adds draft user guides for the adopter/operator workflows introduced across W1 R0 P1-P6.
+
 PRD coverage decision: `prd-change-doc` and `baseline-change-note`. The P4 implementation changed an established lifecycle requirement from `candidate` staging to `draft` entity and extraction rows, so the active PRD namespace needed a numbered revision doc and backlinks. The risk register remained unchanged because no new or resolved gap, open question, confirmed drift item, or rebuild risk was found.
 
 | Capability or finding | Outcome | Rationale |

@@ -58,6 +58,8 @@ Developer-guide coverage pass after final manual retest kept the outcome `update
 
 User-guide coverage pass outcome: `none`. The completed P3 work is an operating/admin toolkit workflow and maintainer-facing conversion surface, not a shipped end-user product workflow that belongs in `docs/guides/user/`. The current user-relevant operational fallback remains covered by `system/playbooks/administrative/manual-intake-conversion.md`, and the toolkit command surface is covered by the toolkit README and developer guide.
 
+Correction: The user-guide `none` outcome above is superseded by [2026-06-05-w1-r0-user-guide-remediation.md](2026-06-05-w1-r0-user-guide-remediation.md), which treats shipped Build OS toolkit operation as user-facing and adds draft user guides for the adopter/operator workflows introduced across W1 R0 P1-P6.
+
 PRD reconciliation pass after final P3 closeout kept the outcome `baseline-change-note`. No new numbered PRD change doc was warranted because PRD 14 already carries the toolkit deployment revision and PRD 07 already owns intake/conversion. PRD 07 was updated in place to remove the stale `system/assets/converted/` source anchor and to clarify that accessible non-PDF embedded media and diagrams may be copied as side artifacts under the same source directory and linked from converted twins per the intake translation contract. The risk register remained unchanged because R-003 already covers enterprise toolkit distribution hardening and no new gap, open question, or rebuild risk was introduced.
 
 ## Documentation

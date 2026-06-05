@@ -27,6 +27,8 @@ Developer-guide coverage decision: `update-existing`. Existing developer guides 
 
 User-guide coverage decision: `none`. P6 remains a maintainer/operator workflow in the build-layer toolkits and system routers; no end-user docs were introduced. This user-guide coverage pass found no existing `docs/guides/user/` guide to update and no shipped user task, configuration choice, adoption path, or troubleshooting flow that would justify a new user guide. Capability outcomes: `buildos-discovery run discovery` is `developer`, `buildos-discovery qualify finding` is `developer`, scratch-copy manual UAT guidance is `developer`, and user-guide coverage is `none`.
 
+Correction: The user-guide `none` outcome above is superseded by [2026-06-05-w1-r0-user-guide-remediation.md](2026-06-05-w1-r0-user-guide-remediation.md), which treats shipped Build OS discovery-run and finding-qualification operation as user-facing and adds draft user guides for the adopter/operator workflows introduced across W1 R0 P1-P6.
+
 PRD coverage decision: `closed drift, no new PRD`. PRD 16 already supplies the toolkit ownership correction, so no additional PRD revision was needed after implementation. D-002 now records the remediation resolution.
 
 Manual-test coverage decision: worthwhile. P6 adds an administrator-facing CLI and wrapper that write user-observable run and finding artifacts, so a human should exercise the flow outside the automated Go fixtures.
