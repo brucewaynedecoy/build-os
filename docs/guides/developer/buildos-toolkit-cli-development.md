@@ -15,17 +15,23 @@ related:
   - "../../designs/2026-06-04-buildos-toolkit-cli-deployment-standard.md"
   - "../../designs/2026-06-04-make-docs-buildos-toolkit-cli-import-strategy.md"
   - "../../prd/14-revise-deterministic-toolkit-deployment.md"
+  - "../../prd/16-revise-toolkit-ownership-boundaries.md"
   - "../../../system/.os/contracts/converted-source-contract.md"
   - "../../../system/.os/contracts/intake-translation-contract.md"
   - "../../../system/.os/contracts/playbook-contract.md"
+  - "../../../system/.os/contracts/run-record-contract.md"
+  - "../../../system/.os/contracts/finding-contract.md"
   - "../../../system/.os/indexes/AGENTS.md"
   - "../../../system/playbooks/administrative/manual-intake-conversion.md"
   - "../../work/2026-06-03-w1-r0-build-os-baseline/04-data-and-extraction.md"
   - "../../work/2026-06-03-w1-r0-build-os-baseline/05-playbooks.md"
+  - "../../work/2026-06-03-w1-r0-build-os-baseline/06-discovery-runs-qualification.md"
   - "../../assets/history/2026-06-04-w1-r0-p4-data-layer-extraction.md"
   - "../../assets/history/2026-06-04-w1-r0-p5-playbooks.md"
+  - "../../assets/history/2026-06-05-w1-r0-p6-discovery-runs-qualification.md"
   - "../../../toolkits/README.md"
   - "../../../toolkits/buildos-intake/README.md"
+  - "../../../toolkits/buildos-discovery/README.md"
 ---
 
 # Build OS Toolkit CLI Development
@@ -58,6 +64,27 @@ Coverage outcome: `developer`. This topic is maintainer-facing because it define
 
 Third-party packages, native dependencies, generated parsers, service SDKs, or external conversion engines require explicit rationale in the toolkit README. That rationale should include why the dependency is necessary, license notes, packaging implications, expected update cadence, and any enterprise review concerns.
 
+## Toolkit Ownership Guardrails
+
+Toolkit ownership is a design boundary, not a convenience choice.
+
+Before adding a command or deterministic behavior, identify the capability domain and confirm the target toolkit README and local `AGENTS.md` already own that domain. If they do not, create or plan a new domain-specific toolkit instead of expanding the nearest existing Go CLI.
+
+Known ownership from the active PRD set:
+
+| Toolkit | Ownership |
+| --- | --- |
+| `buildos-intake` | Source intake, conversion, converted twins, and the `references.json` derived catalog. |
+| `buildos-config` | Planned home for instance config validation, scoped metadata/frontmatter hygiene, and the eventual `validate_config.py` migration. |
+| `buildos-playbooks` | Candidate home for playbook catalog rebuilds, active-only playbook resolution, and playbook contract checks if those remain durable commands. |
+| `buildos-extract` or `buildos-data` | Candidate home for extraction load-plan helpers, entity-row loaders, and deterministic `.os/data` hygiene beyond config-owned checks. |
+| `buildos-discovery` | Implemented home for discovery-run recording, raw-finding anchoring, finding qualification, negative assertions, and run/finding-specific validation. |
+| `buildos-flow` or `buildos-stage` | Candidate home for qualified-finding hand-off and stage-mover orchestration. |
+
+Do not add discovery runs, finding qualification, Flow C hand-offs, stage movers, config validation, or entity-row validation to `buildos-intake` unless an explicit PRD/design revision changes its scope.
+
+Do not add new durable domains to `system/.os/scripts/validate_config.py`. It is a legacy transitional script, not the long-term validation expansion point.
+
 ## buildos-intake Reference
 
 `buildos-intake` is the first implemented toolkit and is the model for future deterministic toolkits.
@@ -89,6 +116,26 @@ Maintain intake behavior against the contracts, not only against command output:
 - For HTML, preserve local and data-URI images when accessible, preserve inline SVG as `diagrams/*.svg`, and preserve Mermaid as `diagrams/*.mmd` plus fenced `mermaid` code in the Markdown body. Do not add diagram rendering to bitmap output unless a future design approves the renderer dependency.
 - Treat PDF extraction as best-effort plain text. Do not imply OCR, layout fidelity, table reconstruction, embedded-image extraction, or a future rich-PDF roadmap.
 - Keep manual and agent-assisted fallback aligned with [manual-intake-conversion.md](../../../system/playbooks/administrative/manual-intake-conversion.md) so hand-built converted twins look like automated ones.
+
+## buildos-discovery Reference
+
+`buildos-discovery` owns filesystem-first discovery runs and deterministic finding qualification.
+
+```sh
+buildos-discovery run discovery --playbook-id <PB-NNN> --outcome positive|negative|inconclusive
+buildos-discovery qualify finding --run-id <RUN-NNN> --raw-finding-ref <path#anchor> --outcome positive|negative --confirmation-test <path> --confirmation-evidence <path>
+```
+
+The operating-layer wrapper is:
+
+```sh
+system/.os/scripts/buildos-discovery run discovery --playbook-id <PB-NNN> --outcome positive|negative|inconclusive
+system/.os/scripts/buildos-discovery qualify finding --run-id <RUN-NNN> --raw-finding-ref <path#anchor> --outcome positive|negative --confirmation-test <path> --confirmation-evidence <path>
+```
+
+Maintain discovery behavior against [run-record-contract.md](../../../system/.os/contracts/run-record-contract.md) and [finding-contract.md](../../../system/.os/contracts/finding-contract.md). `run discovery` requires an active runnable `category: discovery` playbook from `system/.os/indexes/playbooks.json`; `qualify finding` requires an existing source run, a raw finding anchor, deterministic confirmation test evidence, and a positive or negative qualification outcome.
+
+Keep raw findings inside the run artifact until qualification. Do not route run/finding commands through `buildos-intake`, and do not add run/finding-specific validation to `validate_config.py`.
 
 ## Create a New Toolkit
 
@@ -184,6 +231,8 @@ If generated list fields become `null` or output order changes unexpectedly, fix
 
 If draft, reviewed, or archived playbooks appear under `runnable_playbooks`, fix the index filter and add or update regression fixtures before changing router wording.
 
+If a proposed command does not fit the toolkit's README and local `AGENTS.md`, stop and route the work through [PRD 16](../../prd/16-revise-toolkit-ownership-boundaries.md) instead of broadening the current toolkit by convenience.
+
 If enterprise distribution concerns block a rollout, track them against R-003 in [03 Open Questions and Risk Register](../../prd/03-open-questions-and-risk-register.md) instead of hiding them inside a toolkit README.
 
 ## Related Resources
@@ -191,14 +240,20 @@ If enterprise distribution concerns block a rollout, track them against R-003 in
 - [Toolkit CLI deployment standard design](../../designs/2026-06-04-buildos-toolkit-cli-deployment-standard.md)
 - [make-docs import strategy design](../../designs/2026-06-04-make-docs-buildos-toolkit-cli-import-strategy.md)
 - [PRD 14 deterministic toolkit deployment revision](../../prd/14-revise-deterministic-toolkit-deployment.md)
+- [PRD 16 toolkit ownership boundary revision](../../prd/16-revise-toolkit-ownership-boundaries.md)
 - [P4 data and extraction backlog](../../work/2026-06-03-w1-r0-build-os-baseline/04-data-and-extraction.md)
 - [P4 history record](../../assets/history/2026-06-04-w1-r0-p4-data-layer-extraction.md)
 - [P5 playbooks backlog](../../work/2026-06-03-w1-r0-build-os-baseline/05-playbooks.md)
 - [P5 history record](../../assets/history/2026-06-04-w1-r0-p5-playbooks.md)
+- [P6 discovery runs backlog](../../work/2026-06-03-w1-r0-build-os-baseline/06-discovery-runs-qualification.md)
+- [P6 history record](../../assets/history/2026-06-05-w1-r0-p6-discovery-runs-qualification.md)
 - [Indexes router](../../../system/.os/indexes/AGENTS.md)
 - [Playbook contract](../../../system/.os/contracts/playbook-contract.md)
+- [Run record contract](../../../system/.os/contracts/run-record-contract.md)
+- [Finding contract](../../../system/.os/contracts/finding-contract.md)
 - [Toolkits root README](../../../toolkits/README.md)
 - [Toolkits router](../../../toolkits/AGENTS.md)
+- [buildos-discovery README](../../../toolkits/buildos-discovery/README.md)
 
 ## Future Coverage
 

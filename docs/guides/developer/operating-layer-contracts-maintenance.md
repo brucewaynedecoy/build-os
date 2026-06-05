@@ -23,23 +23,30 @@ related:
   - "../../../system/.os/contracts/finding-contract.md"
   - "../../../system/.os/contracts/converted-source-contract.md"
   - "../../../system/.os/contracts/extraction-contract.md"
+  - "../../prd/16-revise-toolkit-ownership-boundaries.md"
+  - "../../../system/workspace/AGENTS.md"
+  - "../../../system/workspace/runs/AGENTS.md"
+  - "../../../system/workspace/findings/AGENTS.md"
+  - "../../../system/workspace/datasets/AGENTS.md"
   - "../../../system/playbooks/administrative/respect-configured-scoped-metadata.md"
   - "../../../system/.gitignore"
   - "../../work/2026-06-03-w1-r0-build-os-baseline/01-foundation.md"
   - "../../work/2026-06-03-w1-r0-build-os-baseline/02-boundary-and-shipping.md"
   - "../../work/2026-06-03-w1-r0-build-os-baseline/04-data-and-extraction.md"
   - "../../work/2026-06-03-w1-r0-build-os-baseline/05-playbooks.md"
+  - "../../work/2026-06-03-w1-r0-build-os-baseline/06-discovery-runs-qualification.md"
   - "../../assets/history/2026-06-04-w1-r0-p1-operating-layer-contracts.md"
   - "../../assets/history/2026-06-04-w1-r0-p2-spaces-boundary-shipping.md"
   - "../../assets/history/2026-06-04-w1-r0-p4-data-layer-extraction.md"
   - "../../assets/history/2026-06-04-w1-r0-p5-playbooks.md"
+  - "../../assets/history/2026-06-05-w1-r0-p6-discovery-runs-qualification.md"
 ---
 
 # Maintaining Operating Layer Contracts
 
 ## Overview
 
-Use this guide when adding or changing Build OS operating-layer contracts, `.os` routers, active guardrails, scoped metadata, or system-owned data/index routing. The current operating layer is contract first: contracts define authority, shape, lifecycle, and link rules; guardrails define always-on safety rules; routers only tell contributors where to go next.
+Use this guide when adding or changing Build OS operating-layer contracts, `.os` routers, active guardrails, scoped metadata, workspace run/finding artifacts, or system-owned data/index routing. The current operating layer is contract first: contracts define authority, shape, lifecycle, and link rules; guardrails define always-on safety rules; routers only tell contributors where to go next.
 
 Coverage outcome: `developer`. The durable knowledge is maintainer-facing because it describes source-of-truth boundaries, extension points, validation, shipping boundaries, and safe-change rules. User-guide outcome: `none` for this guide because these surfaces do not create a shipped end-user workflow.
 
@@ -51,6 +58,10 @@ Coverage outcome: `developer`. The durable knowledge is maintainer-facing becaus
 - [../../../system/.os/indexes/AGENTS.md](../../../system/.os/indexes/AGENTS.md) routes rebuildable derived catalogs such as `playbooks.json`. Indexes are not authority; maintain the rebuild command with the index contract.
 - [../../../system/.os/templates/AGENTS.md](../../../system/.os/templates/AGENTS.md) routes starter shapes for system artifacts. Procedure playbook templates are split by `execution_mode` and `state_nature`; copy a template, then conform the result to the playbook contract.
 - [../../../system/playbooks/AGENTS.md](../../../system/playbooks/AGENTS.md) is the top playbook router. Category routers under `administrative/`, `build/`, `discovery/`, and `testing/` must keep active runnable or enforced entries separate from draft seed candidates.
+- [../../../system/workspace/AGENTS.md](../../../system/workspace/AGENTS.md) routes operational artifacts. Runs, qualified findings, and local datasets live under `system/workspace/`; structured JSONL indexes for runs and findings live under `system/.os/data/`.
+- [../../../system/workspace/runs/AGENTS.md](../../../system/workspace/runs/AGENTS.md) routes immutable `RUN-NNN/` artifacts and points writers to the run-record contract.
+- [../../../system/workspace/findings/AGENTS.md](../../../system/workspace/findings/AGENTS.md) routes `FIND-NNN/` artifacts and documents the negative-assertion qualification pattern.
+- [../../../system/workspace/datasets/AGENTS.md](../../../system/workspace/datasets/AGENTS.md) keeps adopter-owned datasets out of `.os/data`.
 - [../../../system/playbooks/administrative/respect-configured-scoped-metadata.md](../../../system/playbooks/administrative/respect-configured-scoped-metadata.md) is the active guardrail for config-backed scoped metadata.
 - `system/.gitignore` is part of the shipped `system/` boundary. It ignores runtime ephemera only; data tracking or ignoring remains the adopter's choice.
 - The repository root `.gitignore` also has broad build-output rules. Keep the `system/playbooks/build/` exception in place so the build playbook category remains source-controlled.
@@ -94,6 +105,21 @@ Use this workflow when adding or revising playbooks, procedure templates, or cat
 7. Update the relevant category router after the playbook exists. Active procedures and guardrails belong in active sections; draft playbooks belong only in draft seed candidate sections.
 8. Rebuild `system/.os/indexes/playbooks.json` and verify the full `playbooks` catalog includes every lifecycle state while `runnable_playbooks` includes only active entries.
 
+## Discovery Runs And Finding Qualification
+
+Use this workflow when maintaining run-record or finding-qualification behavior:
+
+1. Read [run-record-contract.md](../../../system/.os/contracts/run-record-contract.md), [finding-contract.md](../../../system/.os/contracts/finding-contract.md), and [entity-records-contract.md](../../../system/.os/contracts/entity-records-contract.md) before changing run/finding row shape.
+2. Treat `system/workspace/runs/RUN-NNN/` as immutable once a run closes. Store the human summary in `run.md`, raw observations in `raw-findings.md`, and copied evidence under `evidence/`.
+3. Keep raw findings inside the source run until a deterministic repeatable confirmation test promotes one to `system/workspace/findings/FIND-NNN/`.
+4. Record discovery runs through `buildos-discovery run discovery`. It requires an active `category: discovery` playbook from `system/.os/indexes/playbooks.json`, records the playbook version and targets, allocates the next `RUN-NNN`, writes the run folder, and appends to `system/.os/data/runs.jsonl`.
+5. Record qualified findings through `buildos-discovery qualify finding`. It requires an existing source `RUN-NNN`, a raw finding anchor, a Playwright confirmation test file, confirmation evidence, and a positive or negative outcome before allocating the next `FIND-NNN`.
+6. For negative findings, make the passing confirmation test assert the negative condition. This is a regression guard against silent fixes or accidental behavior changes.
+7. Keep the computer-use harness boundary explicit. The live harness is external; this repository records playbook metadata, targets, dataset refs, evidence, raw findings, confirmation tests, and outcomes.
+8. Do not write adopter datasets to `.os/data`. Use `system/workspace/datasets/` and reference them from run rows with project-relative paths.
+
+For manual UAT, prefer a scratch copy of the repository when the current checkout has no active discovery playbook or when the evidence, raw finding, or confirmation test would be disposable. Activate or seed a discovery playbook only in the scratch copy, create temporary evidence and confirmation files there, run `buildos-discovery run discovery`, run `buildos-discovery qualify finding`, then inspect the `RUN-NNN/`, `FIND-NNN/`, `runs.jsonl`, and `findings.jsonl` outputs. Do not add scratch-only playbook index edits, evidence files, raw findings, or confirmation tests to the live shippable `system/` tree.
+
 ## Safe-Change Rules
 
 - Treat contracts as authority and indexes as derived.
@@ -109,6 +135,8 @@ Use this workflow when adding or revising playbooks, procedure templates, or cat
 - Do not write directly into make-docs managed `system/docs` trees unless the relevant router or phase explicitly permits it.
 - Do not route draft, reviewed, or archived playbooks through runnable procedure or enforced guardrail sections. Keep the active-only gate visible in routers and derived indexes.
 - Do not remove the root `.gitignore` exception for `system/playbooks/build/`; otherwise the build category can disappear from Git status and index rebuilds.
+- Do not index raw findings as qualified findings. A `FIND-NNN` row requires the source run, raw anchor, deterministic confirmation test, confirmation evidence, and `status: qualified`.
+- Do not implement run/finding commands in `buildos-intake` or add run/finding-specific validation to `validate_config.py`; PRD 16 assigns that ownership to `buildos-discovery`.
 
 ## Validation
 
@@ -130,6 +158,8 @@ Then refresh the project documentation index and check links where practical. Re
 - populated entity rows with the expected file/type pairing, ID prefix, lifecycle status, anchors, and scoped IDs
 - generated catalogs only under `.os/indexes`, with a deterministic rebuild command and no authority-only fields invented in the index
 - playbook catalogs with `playbooks` as the full lifecycle catalog and `runnable_playbooks` as the active-only subset
+- run rows with `outcome`, `playbook_id`, `playbook_version`, target IDs, artifact counts, and object-shaped `inputs`/`outputs`
+- finding rows with `status: qualified`, `run_id`, `confirmation_test`, `confirmation_evidence`, and negative assertions for negative findings
 - no direct edits to make-docs managed trees outside the phase scope
 
 Finish with:
@@ -150,6 +180,12 @@ If a generated index is stale, rerun the owning rebuild command and inspect the 
 
 If a build category playbook does not appear in Git status or the generated playbook index, check the root `.gitignore` exception for `system/playbooks/build/` before changing the playbook scanner.
 
+If `buildos-discovery run discovery` rejects a playbook, rebuild `system/.os/indexes/playbooks.json` and confirm the playbook is in `runnable_playbooks`, has `status: active`, and has `category: discovery`.
+
+If `buildos-discovery qualify finding` rejects a raw finding reference, use either `#raw-finding-N`, `raw-findings.md#raw-finding-N`, or the full `system/workspace/runs/RUN-NNN/raw-findings.md#raw-finding-N` form for the source run being qualified.
+
+If `--confirmation-test` or an evidence flag fails a path check during manual UAT, create the disposable file inside the scratch copy or point to a real deterministic test/evidence artifact from the target system. Do not stage scratch-only artifacts in the live product tree.
+
 If link checking reports repository-wide noise, separate baseline failures from touched-file failures. Fix every broken link introduced by the current change, and record any unrelated baseline noise in the closeout instead of hiding it.
 
 ## Related Resources
@@ -162,6 +198,8 @@ If link checking reports repository-wide noise, separate baseline failures from 
 - [P4 history record](../../assets/history/2026-06-04-w1-r0-p4-data-layer-extraction.md)
 - [P5 playbooks backlog](../../work/2026-06-03-w1-r0-build-os-baseline/05-playbooks.md)
 - [P5 history record](../../assets/history/2026-06-04-w1-r0-p5-playbooks.md)
+- [P6 discovery runs backlog](../../work/2026-06-03-w1-r0-build-os-baseline/06-discovery-runs-qualification.md)
+- [P6 history record](../../assets/history/2026-06-05-w1-r0-p6-discovery-runs-qualification.md)
 - [Operating router](../../../system/.os/AGENTS.md)
 - [Contracts router](../../../system/.os/contracts/AGENTS.md)
 - [Config contract](../../../system/.os/contracts/config-contract.md)
@@ -173,7 +211,11 @@ If link checking reports repository-wide noise, separate baseline failures from 
 - [Configured scoped metadata guardrail](../../../system/playbooks/administrative/respect-configured-scoped-metadata.md)
 - [Data router](../../../system/.os/data/AGENTS.md)
 - [Indexes router](../../../system/.os/indexes/AGENTS.md)
+- [Workspace router](../../../system/workspace/AGENTS.md)
+- [Runs router](../../../system/workspace/runs/AGENTS.md)
+- [Findings router](../../../system/workspace/findings/AGENTS.md)
+- [Datasets router](../../../system/workspace/datasets/AGENTS.md)
 
 ## Future Coverage
 
-- Blocked by: Later phases that implement discovery runs, finding qualification tests, extraction loaders, additional index rebuilds, and operational recovery paths. Update when: those phases introduce runnable commands, generated artifacts, or operational recovery paths. Guide change: Add command examples, generator ownership rules, artifact cleanup guidance, and troubleshooting for failed conversions or index rebuilds.
+- Blocked by: Later phases that implement extraction loaders, additional index rebuilds, live computer-use harness adapters, and operational recovery paths. Update when: those phases introduce runnable commands, generated artifacts, or recovery paths beyond the current filesystem-first run/finding recorders. Guide change: Add adapter-specific command examples, generator ownership rules, artifact cleanup guidance, and troubleshooting for failed conversions, harness execution, or index rebuilds.

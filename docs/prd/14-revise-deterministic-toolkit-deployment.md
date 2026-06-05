@@ -26,12 +26,17 @@ The safer baseline is to keep deterministic logic in versioned, buildable first-
 | --- | --- |
 | Source home | First-party deterministic toolkit source and build metadata live under root `toolkits/`. |
 | Toolkit structure | Each toolkit gets its own directory under `toolkits/<toolkit-slug>/` with local `README.md`, `AGENTS.md`, and `CLAUDE.md` routing files. |
+| Toolkit ownership | Each toolkit owns a coherent deterministic capability domain. A toolkit README and local `AGENTS.md` are scope contracts; unrelated commands require a new or explicitly revised owning toolkit. |
 | Default language | Go is the default implementation language for new Build OS deterministic CLI toolkits. |
 | Dependency posture | Prefer the Go standard library. Third-party or native dependencies require explicit rationale, license notes, and packaging review in the toolkit README. |
 | Runtime posture | Toolkits are local-only by default. Network or service calls are disallowed unless a design explicitly approves them and the CLI requires opt-in flags. |
 | Binary naming | Toolkit binaries use `buildos-<toolkit-slug>`, for example `buildos-intake`. A future unified `buildos` dispatcher may route to these binaries without replacing independently buildable toolkit directories. |
 | Script role | `system/.os/scripts/` is a thin wrapper, command router, compatibility, and documentation surface. New durable deterministic logic should not be implemented there as unmanaged scripts. |
 | Existing scripts | Existing scripts may remain until they are explicitly converted. `validate_config.py` is not ported by this change. |
+
+### Change Notes
+
+- Superseded by [16 Revise Toolkit Ownership Boundaries](./16-revise-toolkit-ownership-boundaries.md) where this revision was too broad about "toolkits" generally: new deterministic behavior must choose the correct domain-owned toolkit rather than expanding an unrelated existing Go CLI or legacy unmanaged script.
 
 ## Initial Toolkit Target
 

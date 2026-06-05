@@ -27,6 +27,7 @@ Code anchors:
 ### Change Notes
 
 - Revised by [14 Revise Deterministic Toolkit Deployment](./14-revise-deterministic-toolkit-deployment.md): deterministic command runners should call packaged `buildos-*` toolkits where applicable, with script or slash-command surfaces acting as routers rather than unmanaged logic implementations.
+- Superseded by [16 Revise Toolkit Ownership Boundaries](./16-revise-toolkit-ownership-boundaries.md) for toolkit-domain routing: stage-movers should orchestrate or call the owning domain toolkits instead of adding durable logic to unmanaged scripts or expanding unrelated existing toolkits.
 
 ## Contracts and Data
 
@@ -39,6 +40,7 @@ Code anchors:
 ### Change Notes
 
 - Enhanced by [13 Adopter-Owned Config Surface](./13-adopter-owned-config-surface.md): stage-movers must run or respect `system/.os/scripts/validate_config.py` for config-backed scoped metadata and frontmatter hygiene. Automation should fail on legacy scoped fields or unconfigured `systems`, `environments`, and `owners` IDs after the migration lands.
+- Superseded by [16 Revise Toolkit Ownership Boundaries](./16-revise-toolkit-ownership-boundaries.md) where config or scoped-metadata checks become durable deterministic behavior: those checks should route through `buildos-config` once that toolkit exists, with legacy script use treated as transitional.
 
 ## Integrations
 

@@ -21,6 +21,7 @@ Any third-party or native dependency must be documented in the owning toolkit RE
 | Toolkit | Binary | Status | Purpose |
 | --- | --- | --- | --- |
 | [buildos-intake](./buildos-intake/) | `buildos-intake` | Initial implementation | Intake, conversion, and reference-index toolkit for W1 R0 P3 |
+| [buildos-discovery](./buildos-discovery/) | `buildos-discovery` | Initial implementation | Discovery-run recording, raw-finding anchoring, and finding qualification toolkit for W1 R0 P6 |
 
 ## Development Flow
 

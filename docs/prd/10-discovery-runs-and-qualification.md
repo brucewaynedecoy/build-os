@@ -37,6 +37,7 @@ Code anchors:
 ### Change Notes
 
 - Enhanced by [13 Adopter-Owned Config Surface](./13-adopter-owned-config-surface.md): run and finding records that carry scoped metadata propagate `systems`, `environments`, and `owners` as configured ID lists. Qualification and promotion must preserve those lists rather than translating them back to legacy scoped fields.
+- Superseded by [16 Revise Toolkit Ownership Boundaries](./16-revise-toolkit-ownership-boundaries.md) for deterministic implementation ownership: Flow B run recording, raw-finding anchoring, finding qualification, negative assertions, and run/finding-specific validation belong in `buildos-discovery`, not `buildos-intake` or `validate_config.py`.
 
 ## Integrations
 

@@ -15,7 +15,7 @@ This backlog implements Build OS in `./system/`, derived from [the baseline buil
 | [03-intake-conversion.md](./03-intake-conversion.md) | `buildos-intake` Go CLI, thin wrappers, provenance, `references.json` |
 | [04-data-and-extraction.md](./04-data-and-extraction.md) | Entity JSONL, candidate staging, load-plans, `playbooks.json` |
 | [05-playbooks.md](./05-playbooks.md) | Playbook templates, category routers, seed playbooks, review-to-activate |
-| [06-discovery-runs-qualification.md](./06-discovery-runs-qualification.md) | Runs, finding qualification (Playwright), computer-use |
+| [06-discovery-runs-qualification.md](./06-discovery-runs-qualification.md) | `buildos-discovery` runs, finding qualification (Playwright), and computer-use evidence |
 | [07-flow-c-integration.md](./07-flow-c-integration.md) | Qualified-finding → `system/docs/designs/` hand-off via make-docs |
 | [08-stage-automation.md](./08-stage-automation.md) | Hooks + slash-commands for the stage-movers |
 

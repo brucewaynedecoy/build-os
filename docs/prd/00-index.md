@@ -11,7 +11,7 @@ This PRD set is the descriptive source-of-truth for **Build OS** — a general-p
 3. [03-open-questions-and-risk-register.md](./03-open-questions-and-risk-register.md)
 4. [04-glossary.md](./04-glossary.md)
 5. Subsystem docs `05`–`12` in number order.
-6. Active change docs in number order, starting with [13-adopter-owned-config-surface.md](./13-adopter-owned-config-surface.md).
+6. Active change docs in number order, starting with [13-adopter-owned-config-surface.md](./13-adopter-owned-config-surface.md) through [16-revise-toolkit-ownership-boundaries.md](./16-revise-toolkit-ownership-boundaries.md).
 
 ## Document Map
 
@@ -20,19 +20,20 @@ This PRD set is the descriptive source-of-truth for **Build OS** — a general-p
 | `00-index.md` | `core` | `active` | `—` | Explain the PRD set and how to read it |
 | `01-product-overview.md` | `core` | `active` | `13`, `14` | Purpose, users, capabilities, boundaries, limitations |
 | `02-architecture-overview.md` | `core` | `active` | `13`, `14`, `15` | Topology, modules, runtime boundaries, data flow, config, toolkit source |
-| `03-open-questions-and-risk-register.md` | `core` | `active` | `13`, `14` | Drift, open questions, rebuild risks |
+| `03-open-questions-and-risk-register.md` | `core` | `active` | `13`, `14`, `16` | Drift, open questions, rebuild risks |
 | `04-glossary.md` | `core` | `active` | `15` | Canonical terms |
 | `05-spaces-boundary-and-shipping.md` | `baseline` | `active` | `06`, `11` | Three spaces, make-docs boundary, shipping model |
 | `06-operating-layer-and-routing.md` | `baseline` | `active` | `05`, `08`, `13`, `14` | `.os/` brain, contracts authority, agent routing, script wrappers |
-| `07-intake-and-conversion.md` | `baseline` | `active` | `08`, `14` | Pillar 1: deterministic converters + provenance |
-| `08-data-and-extraction.md` | `baseline` | `active` | `06`, `07`, `13`, `15` | `.os/data` entities, extraction ETL, layered canonicity |
-| `09-playbooks.md` | `baseline` | `active` | `06`, `08`, `13` | Instruments, contract, gates, guardrails |
-| `10-discovery-runs-and-qualification.md` | `baseline` | `active` | `09`, `08`, `13` | Runs, finding qualification (verify-to-promote) |
-| `11-flow-c-integration.md` | `baseline` | `active` | `10`, `13` | Qualified-finding → design hand-off |
-| `12-stage-automation.md` | `baseline` | `active` | `07`–`11`, `13`, `14` | Hooks + slash-command stage-movers |
+| `07-intake-and-conversion.md` | `baseline` | `active` | `08`, `14`, `16` | Pillar 1: deterministic converters + provenance |
+| `08-data-and-extraction.md` | `baseline` | `active` | `06`, `07`, `13`, `15`, `16` | `.os/data` entities, extraction ETL, layered canonicity |
+| `09-playbooks.md` | `baseline` | `active` | `06`, `08`, `13`, `16` | Instruments, contract, gates, guardrails |
+| `10-discovery-runs-and-qualification.md` | `baseline` | `active` | `09`, `08`, `13`, `16` | Runs, finding qualification (verify-to-promote) |
+| `11-flow-c-integration.md` | `baseline` | `active` | `10`, `13`, `16` | Qualified-finding → design hand-off |
+| `12-stage-automation.md` | `baseline` | `active` | `07`–`11`, `13`, `14`, `16` | Hooks + slash-command stage-movers |
 | `13-adopter-owned-config-surface.md` | `addition` | `active` | `02`, `03`, `06`, `08`–`12` | Adopter-owned config for systems, environments, owners, and validation |
-| `14-revise-deterministic-toolkit-deployment.md` | `revision` | `active` | `02`, `03`, `06`, `07`, `12` | Packaged `buildos-*` toolkits as the standard for durable deterministic logic |
+| `14-revise-deterministic-toolkit-deployment.md` | `revision` | `active` | `02`, `03`, `06`, `07`, `12`, `16` | Packaged `buildos-*` toolkits as the standard for durable deterministic logic |
 | `15-revise-extraction-draft-lifecycle.md` | `revision` | `active` | `02`, `04`, `08` | `draft` as the pending lifecycle state for entity and extraction rows |
+| `16-revise-toolkit-ownership-boundaries.md` | `revision` | `active` | `07`–`14` | Domain-owned toolkit boundaries and W1 R0 toolkit inventory |
 
 ## Source Anchors
 

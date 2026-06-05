@@ -27,6 +27,56 @@ Code anchors:
 - `docs/AGENTS.md`
 - `docs/assets/references/output-contract.md`
 
+### D-002 P6 toolkit ownership drift
+
+| Status | Decision | Follow-Up |
+| --- | --- | --- |
+| Closed | Flow B deterministic logic is implemented in `buildos-discovery`; P6 behavior was removed from `buildos-intake` and `validate_config.py` | None |
+
+**Issue**: The initial W1 R0 P6 implementation placed discovery-run and finding-qualification logic in `buildos-intake` and added run/finding-specific validation to `system/.os/scripts/validate_config.py`.
+
+**Why it matters**: This violates the packaged-toolkit ownership principle. `buildos-intake` is scoped to intake/conversion, while `validate_config.py` is a legacy unmanaged config/scoped-metadata validator that should eventually migrate to `buildos-config` rather than accumulate new durable domains.
+
+**Recommendation**: Treat the current P6 implementation as rejected architecture. Create `buildos-discovery` for discovery runs, raw-finding anchoring, finding qualification, negative assertions, and run/finding-specific validation; remove the P6 logic from `buildos-intake` and `validate_config.py` during the remediation phase.
+
+**To close**: W1 R0 P6 is remediated so Flow B behavior is implemented by `buildos-discovery`, `buildos-intake` returns to intake/conversion scope, and `validate_config.py` no longer carries P6 run/finding logic.
+
+**Resolution**: W1 R0 P6 remediation created the `buildos-discovery` toolkit, restored `buildos-intake` to intake/conversion/index scope, removed P6 run/finding-specific validation from `validate_config.py`, and added the thin `system/.os/scripts/buildos-discovery` wrapper.
+
+Code anchors:
+
+- `docs/prd/16-revise-toolkit-ownership-boundaries.md`
+- `docs/work/2026-06-03-w1-r0-build-os-baseline/06-discovery-runs-qualification.md`
+- `docs/assets/history/2026-06-05-w1-r0-p6-discovery-runs-qualification.md`
+- `toolkits/buildos-discovery/`
+- `system/.os/scripts/buildos-discovery`
+
+### D-003 user-guide coverage drift
+
+| Status | Decision | Follow-Up |
+| --- | --- | --- |
+| Open | Build OS product users include adopters, operators, admins, and practitioners who use the shipped `system/` filesystem and first-party `buildos-*` toolkits | Revise the user-guide coverage prompt and run a W1 R0 P1-P6 user-guide remediation pass |
+
+**Issue**: W1 R0 P1-P6 closeouts repeatedly recorded user-guide outcome `none` because shipped filesystem, playbook, workspace, and toolkit workflows were classified as maintainer/operator-only rather than user-facing Build OS product workflows.
+
+**Why it matters**: Build OS ships a filesystem-based operating system and first-party CLI toolkits. Adopters need simple task-oriented guides for first successful use, configuration choices, expected filesystem outputs, and troubleshooting. Without those guides, the active history understates a documentation gap and future phases can continue to skip user guidance for real product surfaces.
+
+**Recommendation**: Treat shipped operational surfaces as user-facing when they are part of how an adopter uses Build OS. User-guide coverage prompts and closeout checks should explicitly ask what an adopter can do after the phase, and should trigger user-guide work when a phase adds or changes shipped CLI commands, wrappers, playbook workflows, workspace artifacts, adopter configuration, validation commands, expected results, or troubleshooting paths.
+
+**To close**: The reusable user-guide coverage prompt is updated, W1 R0 P1-P6 user-guide remediation creates or updates the missing draft user guides, and the affected history records clearly mark their earlier `none` decisions as superseded by the remediation outcome.
+
+Code anchors:
+
+- `README.md`
+- `docs/guides/AGENTS.md`
+- `docs/assets/references/guide-contract.md`
+- `docs/assets/history/2026-06-04-w1-r0-p1-operating-layer-contracts.md`
+- `docs/assets/history/2026-06-04-w1-r0-p2-spaces-boundary-shipping.md`
+- `docs/assets/history/2026-06-04-w1-r0-p3-intake-conversion.md`
+- `docs/assets/history/2026-06-04-w1-r0-p4-data-layer-extraction.md`
+- `docs/assets/history/2026-06-04-w1-r0-p5-playbooks.md`
+- `docs/assets/history/2026-06-05-w1-r0-p6-discovery-runs-qualification.md`
+
 ## Open Questions
 
 ### Q-001 Promotion enforcement: convention vs. machinery
@@ -122,3 +172,5 @@ Code anchors:
 
 - `docs/designs/2026-06-03-build-os-architecture.md`
 - `docs/assets/references/output-contract.md`
+- `docs/assets/references/guide-contract.md`
+- `README.md`
