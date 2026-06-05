@@ -13,6 +13,7 @@ applies-to:
 related:
   - "./build-os-getting-started.md"
   - "./record-discovery-runs-and-qualify-findings.md"
+  - "./promote-qualified-findings-to-designs.md"
   - "./validate-system-data-and-indexes.md"
   - "../../../system/.os/contracts/run-record-contract.md"
   - "../../../system/.os/contracts/finding-contract.md"
@@ -97,6 +98,8 @@ If a file is evidence from a discovery run, use `buildos-discovery run discovery
 
 If a file is confirmation evidence for a qualified finding, use `buildos-discovery qualify finding --confirmation-evidence <path>` so it is copied into the finding artifact.
 
+If a qualified finding needs design or planning hand-off, use `buildos-design promote finding` so the finding keeps evidence traceability while the design lands under `system/docs/designs/`.
+
 If a file is a generated index, keep it under `system/.os/indexes/` and rebuild it from source artifacts.
 
 If a file is disposable manual-test input, use a scratch copy instead of adding it to the live shippable `system/` tree.
@@ -118,6 +121,7 @@ No for normal operation. Use `buildos-discovery` so the artifact folder and JSON
 ## Related Resources
 
 - [Record Discovery Runs and Qualify Findings](./record-discovery-runs-and-qualify-findings.md)
+- [Promote Qualified Findings to Designs](./promote-qualified-findings-to-designs.md)
 - [Validate System Data and Indexes](./validate-system-data-and-indexes.md)
 - [Workspace Router](../../../system/workspace/AGENTS.md)
 - [Run Record Contract](../../../system/.os/contracts/run-record-contract.md)

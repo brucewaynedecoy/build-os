@@ -57,14 +57,16 @@ Known toolkit ownership inventory from the active PRD set and remaining W1 R0 wo
 | `buildos-playbooks` | Candidate / needs ownership decision | Playbook catalog rebuilds, active-only runnable playbook resolution, and playbook contract validation if these remain durable deterministic commands. | PRD 08, PRD 09, W1 R0 P5 |
 | `buildos-extract` or `buildos-data` | Candidate / needs ownership decision | Extraction load-plan helpers, entity-row loaders, and `.os/data` deterministic hygiene beyond config-owned checks. | PRD 08, W1 R0 P4 |
 | `buildos-discovery` | Implemented for P6 | Discovery-run recording, run artifact creation, raw-finding anchoring, finding qualification, negative assertions, and run/finding-specific validation. | PRD 10, W1 R0 P6 |
-| `buildos-flow` or `buildos-stage` | Candidate / needs ownership decision | Qualified-finding to design hand-off and stage-mover orchestration that routes to the owning toolkits. | PRD 11, PRD 12, W1 R0 P7-P8 |
+| `buildos-design` | Implemented for P7 | Qualified-finding to design hand-off, design route selection, finding design-link updates, and make-docs design-router boundary enforcement. | PRD 11, W1 R0 P7 |
+| `buildos-stage` | Candidate / needs ownership decision | Stage-mover orchestration that routes to owning toolkits without absorbing their domain logic. | PRD 12, W1 R0 P8 |
 
-W1 R0 P6 remediation moved Flow B behavior to `buildos-discovery` and removed P6-specific logic from `buildos-intake` and `validate_config.py`.
+W1 R0 P6 remediation moved Flow B behavior to `buildos-discovery` and removed P6-specific logic from `buildos-intake` and `validate_config.py`. W1 R0 P7 keeps qualified-finding design promotion in `buildos-design` and leaves stage automation as a separate ownership decision.
 
 Code anchors:
 
 - `toolkits/AGENTS.md`
 - `toolkits/buildos-intake/AGENTS.md`
+- `toolkits/buildos-design/`
 - `docs/guides/developer/buildos-toolkit-cli-development.md`
 
 ## Impacted Docs and Dependencies
@@ -72,7 +74,8 @@ Code anchors:
 - PRD 07 remains the source for `buildos-intake`; it should not be read as permission to add discovery, finding, config, extraction, or stage commands to that toolkit.
 - PRD 08 and PRD 09 need an explicit ownership decision before further durable playbook/data commands are added.
 - PRD 10 needs a discovery-owned toolkit implementation for P6.
-- PRD 11 and PRD 12 need an explicit stage/flow ownership decision before implementation.
+- PRD 11 now owns the `buildos-design` qualified-finding to design hand-off.
+- PRD 12 still needs an explicit stage ownership decision before stage-mover implementation.
 - PRD 14 remains active but is superseded where it did not force a domain ownership check.
 
 Code anchors:
@@ -88,6 +91,7 @@ Code anchors:
 ## Required Baseline Annotations
 
 - `10-discovery-runs-and-qualification.md`: add a `### Change Notes` entry stating that Flow B implementation ownership is superseded by this revision and belongs in a discovery-specific toolkit.
+- `11-flow-c-integration.md`: add a `### Change Notes` entry stating that qualified-finding design promotion ownership is superseded by this revision and belongs in `buildos-design`.
 - `12-stage-automation.md`: add a `### Change Notes` entry stating that stage-movers route to owning toolkits rather than becoming unmanaged script logic or expanding unrelated toolkits.
 - `14-revise-deterministic-toolkit-deployment.md`: add a `### Change Notes` entry stating that this revision adds a toolkit-domain ownership gate.
 
@@ -97,6 +101,8 @@ Code anchors:
 - `docs/prd/10-discovery-runs-and-qualification.md`
 - `docs/prd/12-stage-automation.md`
 - `docs/work/2026-06-03-w1-r0-build-os-baseline/06-discovery-runs-qualification.md`
+- `docs/work/2026-06-03-w1-r0-build-os-baseline/07-flow-c-integration.md`
 - `docs/assets/history/2026-06-05-w1-r0-p6-discovery-runs-qualification.md`
 - `toolkits/`
 - `toolkits/buildos-intake/`
+- `toolkits/buildos-design/`

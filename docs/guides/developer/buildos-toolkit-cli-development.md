@@ -18,6 +18,7 @@ related:
   - "../../prd/16-revise-toolkit-ownership-boundaries.md"
   - "../user/convert-source-material-with-buildos-intake.md"
   - "../user/record-discovery-runs-and-qualify-findings.md"
+  - "../user/promote-qualified-findings-to-designs.md"
   - "../user/use-playbooks-and-active-indexes.md"
   - "../../../system/.os/contracts/converted-source-contract.md"
   - "../../../system/.os/contracts/intake-translation-contract.md"
@@ -32,9 +33,11 @@ related:
   - "../../assets/history/2026-06-04-w1-r0-p4-data-layer-extraction.md"
   - "../../assets/history/2026-06-04-w1-r0-p5-playbooks.md"
   - "../../assets/history/2026-06-05-w1-r0-p6-discovery-runs-qualification.md"
+  - "../../assets/history/2026-06-05-w1-r0-p7-qualified-finding-design-promotion.md"
   - "../../../toolkits/README.md"
   - "../../../toolkits/buildos-intake/README.md"
   - "../../../toolkits/buildos-discovery/README.md"
+  - "../../../toolkits/buildos-design/README.md"
 ---
 
 # Build OS Toolkit CLI Development
@@ -43,7 +46,7 @@ related:
 
 Use this guide when creating a new first-party deterministic toolkit, revising an existing toolkit, or converting unmanaged deterministic scripts into packaged Build OS CLI tooling.
 
-Coverage outcome: `developer`. This topic is maintainer-facing because it defines source layout, dependency posture, local execution, packaging expectations, script-wrapper boundaries, validation, and agent handoff rules. User-facing operation of the current shipped toolkits is covered by the companion user guides for intake conversion, playbook indexes, and discovery runs.
+Coverage outcome: `developer`. This topic is maintainer-facing because it defines source layout, dependency posture, local execution, packaging expectations, script-wrapper boundaries, validation, and agent handoff rules. User-facing operation of the current shipped toolkits is covered by the companion user guides for intake conversion, playbook indexes, discovery runs, finding qualification, and qualified-finding design promotion.
 
 ## Project Orientation
 
@@ -82,9 +85,12 @@ Known ownership from the active PRD set:
 | `buildos-playbooks` | Candidate home for playbook catalog rebuilds, active-only playbook resolution, and playbook contract checks if those remain durable commands. |
 | `buildos-extract` or `buildos-data` | Candidate home for extraction load-plan helpers, entity-row loaders, and deterministic `.os/data` hygiene beyond config-owned checks. |
 | `buildos-discovery` | Implemented home for discovery-run recording, raw-finding anchoring, finding qualification, negative assertions, and run/finding-specific validation. |
-| `buildos-flow` or `buildos-stage` | Candidate home for qualified-finding hand-off and stage-mover orchestration. |
+| `buildos-design` | Implemented home for qualified-finding to design hand-off, design route selection, and finding design-link updates. |
+| `buildos-stage` | Candidate home for stage-mover orchestration that routes to owning toolkits without absorbing their domain logic. |
 
-Do not add discovery runs, finding qualification, Flow C hand-offs, stage movers, config validation, or entity-row validation to `buildos-intake` unless an explicit PRD/design revision changes its scope.
+Do not add discovery runs, finding qualification, qualified-finding design hand-offs, stage movers, config validation, or entity-row validation to `buildos-intake` unless an explicit PRD/design revision changes its scope.
+
+Do not add stage-mover automation to `buildos-design` unless an explicit PRD/design revision moves that orchestration into this toolkit. P7 keeps the qualified-finding design hand-off separate from later stage movement.
 
 Do not add new durable domains to `system/.os/scripts/validate_config.py`. It is a legacy transitional script, not the long-term validation expansion point.
 
@@ -139,6 +145,26 @@ system/.os/scripts/buildos-discovery qualify finding --run-id <RUN-NNN> --raw-fi
 Maintain discovery behavior against [run-record-contract.md](../../../system/.os/contracts/run-record-contract.md) and [finding-contract.md](../../../system/.os/contracts/finding-contract.md). `run discovery` requires an active runnable `category: discovery` playbook from `system/.os/indexes/playbooks.json`; `qualify finding` requires an existing source run, a raw finding anchor, deterministic confirmation test evidence, and a positive or negative qualification outcome.
 
 Keep raw findings inside the run artifact until qualification. Do not route run/finding commands through `buildos-intake`, and do not add run/finding-specific validation to `validate_config.py`.
+
+## buildos-design Reference
+
+`buildos-design` owns the user-gated hand-off from a qualified finding to a make-docs-routed design.
+
+```sh
+buildos-design promote finding --finding-id <FIND-NNN> --route baseline-plan|change-plan [--title <text>] [--slug <slug>] [--repo-root <path>] [--dry-run]
+```
+
+The operating-layer wrapper is:
+
+```sh
+system/.os/scripts/buildos-design promote finding --finding-id <FIND-NNN> --route baseline-plan|change-plan [--title <text>] [--slug <slug>] [--repo-root <path>] [--dry-run]
+```
+
+Maintain design-promotion behavior against [finding-contract.md](../../../system/.os/contracts/finding-contract.md), the active qualified-finding design-promotion requirement, and the make-docs design router under [system/docs/designs/AGENTS.md](../../../system/docs/designs/AGENTS.md).
+
+`promote finding` requires a `qualified` finding row, a qualification anchor, and an explicit route. The `baseline-plan` route prepares a design for fresh baseline planning; the `change-plan` route prepares a design for additive planning against the active PRD namespace. A successful promotion writes a dated design under `system/docs/designs/`, records the design link on the source finding, and updates the findings index for traceability.
+
+Keep design promotion user-gated. Do not auto-promote qualified findings, do not bypass the make-docs design router, and do not rewrite the origin run or qualification evidence during design promotion.
 
 ## Create a New Toolkit
 
@@ -247,12 +273,14 @@ If enterprise distribution concerns block a rollout, track them against R-003 in
 - [Convert Source Material With buildos-intake](../user/convert-source-material-with-buildos-intake.md)
 - [Use Playbooks and Active Indexes](../user/use-playbooks-and-active-indexes.md)
 - [Record Discovery Runs and Qualify Findings](../user/record-discovery-runs-and-qualify-findings.md)
+- [Promote Qualified Findings to Designs](../user/promote-qualified-findings-to-designs.md)
 - [P4 data and extraction backlog](../../work/2026-06-03-w1-r0-build-os-baseline/04-data-and-extraction.md)
 - [P4 history record](../../assets/history/2026-06-04-w1-r0-p4-data-layer-extraction.md)
 - [P5 playbooks backlog](../../work/2026-06-03-w1-r0-build-os-baseline/05-playbooks.md)
 - [P5 history record](../../assets/history/2026-06-04-w1-r0-p5-playbooks.md)
 - [P6 discovery runs backlog](../../work/2026-06-03-w1-r0-build-os-baseline/06-discovery-runs-qualification.md)
 - [P6 history record](../../assets/history/2026-06-05-w1-r0-p6-discovery-runs-qualification.md)
+- [P7 history record](../../assets/history/2026-06-05-w1-r0-p7-qualified-finding-design-promotion.md)
 - [Indexes router](../../../system/.os/indexes/AGENTS.md)
 - [Playbook contract](../../../system/.os/contracts/playbook-contract.md)
 - [Run record contract](../../../system/.os/contracts/run-record-contract.md)
@@ -260,6 +288,8 @@ If enterprise distribution concerns block a rollout, track them against R-003 in
 - [Toolkits root README](../../../toolkits/README.md)
 - [Toolkits router](../../../toolkits/AGENTS.md)
 - [buildos-discovery README](../../../toolkits/buildos-discovery/README.md)
+- [buildos-design README](../../../toolkits/buildos-design/README.md)
+- `buildos-design` command surface: `toolkits/buildos-design/cmd/buildos-design/main.go`
 
 ## Future Coverage
 

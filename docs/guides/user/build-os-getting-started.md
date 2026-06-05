@@ -18,6 +18,7 @@ related:
   - "./convert-source-material-with-buildos-intake.md"
   - "./use-playbooks-and-active-indexes.md"
   - "./record-discovery-runs-and-qualify-findings.md"
+  - "./promote-qualified-findings-to-designs.md"
   - "./understand-workspace-artifacts.md"
   - "../developer/operating-layer-contracts-maintenance.md"
 ---
@@ -26,7 +27,7 @@ related:
 
 ## Overview
 
-Use this guide for a first successful pass through the shipped Build OS filesystem. Build OS is the reusable `system/` tree plus first-party `buildos-*` toolkits that help an adopter convert source material, operate playbooks, record discovery runs, qualify findings, and keep structured data reviewable in Git.
+Use this guide for a first successful pass through the shipped Build OS filesystem. Build OS is the reusable `system/` tree plus first-party `buildos-*` toolkits that help an adopter convert source material, operate playbooks, record discovery runs, qualify findings, promote qualified findings to designs, and keep structured data reviewable in Git.
 
 This guide is the entry point. It helps you identify the main spaces, run the first validation command, and choose the next guide for your task.
 
@@ -84,6 +85,7 @@ The build-layer `docs/` directory explains how Build OS itself is designed and b
    | Validate data and rebuild indexes | [Validate System Data and Indexes](./validate-system-data-and-indexes.md) |
    | Review or operate playbooks | [Use Playbooks and Active Indexes](./use-playbooks-and-active-indexes.md) |
    | Record discovery runs and qualify findings | [Record Discovery Runs and Qualify Findings](./record-discovery-runs-and-qualify-findings.md) |
+   | Promote qualified findings into design hand-offs | [Promote Qualified Findings to Designs](./promote-qualified-findings-to-designs.md) |
    | Decide where artifacts belong | [Understand Workspace Artifacts](./understand-workspace-artifacts.md) |
 
 ## Core Workflow
@@ -96,13 +98,14 @@ The current Build OS flow is:
 4. Use active playbooks to guide discovery, testing, or administrative work.
 5. Record discovery runs under `system/workspace/runs/`.
 6. Promote only deterministically confirmed observations to qualified findings under `system/workspace/findings/`.
-7. Keep adopter datasets under `system/workspace/datasets/`.
+7. Promote qualified findings into designs under `system/docs/designs/` when solution framing or planning should start from the evidence.
+8. Keep adopter datasets under `system/workspace/datasets/`.
 
 ## Troubleshooting
 
 If `validate_config.py` reports a scoped metadata error, check that artifacts use plural `systems`, `environments`, and `owners` fields and that every listed ID exists in `system/.os/config/instance.yaml`.
 
-If a wrapper says a binary is missing, either build the repo-local binary from the matching toolkit directory or set the wrapper's environment variable to an installed binary path. For example, `BUILDOS_INTAKE_BIN` overrides `system/.os/scripts/buildos-intake`, and `BUILDOS_DISCOVERY_BIN` overrides `system/.os/scripts/buildos-discovery`.
+If a wrapper says a binary is missing, either build the repo-local binary from the matching toolkit directory or set the wrapper's environment variable to an installed binary path. For example, `BUILDOS_INTAKE_BIN` overrides `system/.os/scripts/buildos-intake`, `BUILDOS_DISCOVERY_BIN` overrides `system/.os/scripts/buildos-discovery`, and `BUILDOS_DESIGN_BIN` overrides `system/.os/scripts/buildos-design`.
 
 If a discovery playbook cannot run, confirm it appears in `system/.os/indexes/playbooks.json` under `runnable_playbooks`, has `status: active`, and has `category: discovery`.
 
@@ -131,6 +134,7 @@ Treat them as immutable. Record a new run or qualified finding instead of rewrit
 - [Build OS README](../../../README.md)
 - [Configure Adopter-Owned Metadata](./configure-adopter-owned-metadata.md)
 - [Validate System Data and Indexes](./validate-system-data-and-indexes.md)
+- [Promote Qualified Findings to Designs](./promote-qualified-findings-to-designs.md)
 - [Understand Workspace Artifacts](./understand-workspace-artifacts.md)
 - [Maintaining Operating Layer Contracts](../developer/operating-layer-contracts-maintenance.md)
 

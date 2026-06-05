@@ -14,6 +14,7 @@ applies-to:
 related:
   - "./build-os-getting-started.md"
   - "./use-playbooks-and-active-indexes.md"
+  - "./promote-qualified-findings-to-designs.md"
   - "./understand-workspace-artifacts.md"
   - "../../../toolkits/buildos-discovery/README.md"
   - "../../../system/.os/contracts/run-record-contract.md"
@@ -83,6 +84,8 @@ The live browser or computer-use harness remains external to this repository. Bu
 
    Expected result: the command prints `wrote system/workspace/findings/FIND-NNN (FIND-NNN)`, creates the finding folder, copies confirmation artifacts, writes qualification records, and appends one `status: "qualified"` row to `system/.os/data/findings.jsonl`.
 
+5. When the qualified finding needs solution framing or planning hand-off, continue with [Promote Qualified Findings to Designs](./promote-qualified-findings-to-designs.md).
+
 ## Core Workflow
 
 A discovery run can have `positive`, `negative`, or `inconclusive` outcome. A qualified finding can have `positive` or `negative` outcome.
@@ -128,6 +131,7 @@ Only if a raw finding from that run later has deterministic positive or negative
 ## Related Resources
 
 - [Use Playbooks and Active Indexes](./use-playbooks-and-active-indexes.md)
+- [Promote Qualified Findings to Designs](./promote-qualified-findings-to-designs.md)
 - [Understand Workspace Artifacts](./understand-workspace-artifacts.md)
 - [buildos-discovery README](../../../toolkits/buildos-discovery/README.md)
 - [Run Record Contract](../../../system/.os/contracts/run-record-contract.md)
