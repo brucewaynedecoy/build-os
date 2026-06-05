@@ -52,8 +52,9 @@ type ReferenceEntry struct {
 }
 
 type PlaybookIndex struct {
-	Version   int             `json:"version"`
-	Playbooks []PlaybookEntry `json:"playbooks"`
+	Version           int             `json:"version"`
+	Playbooks         []PlaybookEntry `json:"playbooks"`
+	RunnablePlaybooks []PlaybookEntry `json:"runnable_playbooks"`
 }
 
 type PlaybookEntry struct {

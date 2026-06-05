@@ -122,7 +122,7 @@ func BuildPlaybooksIndex(opts IndexOptions) (IndexResult, error) {
 		}
 		return entries[i].ID < entries[j].ID
 	})
-	index := PlaybookIndex{Version: 1, Playbooks: entries}
+	index := PlaybookIndex{Version: 1, Playbooks: entries, RunnablePlaybooks: runnablePlaybooks(entries)}
 	data, err := json.MarshalIndent(index, "", "  ")
 	if err != nil {
 		return IndexResult{}, err
@@ -135,6 +135,16 @@ func BuildPlaybooksIndex(opts IndexOptions) (IndexResult, error) {
 		return IndexResult{}, err
 	}
 	return IndexResult{OutputPath: outputPath, Count: len(entries)}, nil
+}
+
+func runnablePlaybooks(entries []PlaybookEntry) []PlaybookEntry {
+	runnable := []PlaybookEntry{}
+	for _, entry := range entries {
+		if entry.Status == "active" {
+			runnable = append(runnable, entry)
+		}
+	}
+	return runnable
 }
 
 func playbookEntry(repoRoot, path string) (PlaybookEntry, bool, error) {

@@ -21,7 +21,9 @@ related:
   - "../../../system/.os/indexes/AGENTS.md"
   - "../../../system/playbooks/administrative/manual-intake-conversion.md"
   - "../../work/2026-06-03-w1-r0-build-os-baseline/04-data-and-extraction.md"
+  - "../../work/2026-06-03-w1-r0-build-os-baseline/05-playbooks.md"
   - "../../assets/history/2026-06-04-w1-r0-p4-data-layer-extraction.md"
+  - "../../assets/history/2026-06-04-w1-r0-p5-playbooks.md"
   - "../../../toolkits/README.md"
   - "../../../toolkits/buildos-intake/README.md"
 ---
@@ -82,7 +84,7 @@ Maintain intake behavior against the contracts, not only against command output:
 - Converted twin bodies and side artifacts must follow [intake-translation-contract.md](../../../system/.os/contracts/intake-translation-contract.md).
 - `convert` currently supports CSV, DOCX, XLSX, HTML, HTML-directory sources, and minimal PDF text extraction. If a source type or output shape changes, update contracts, tests, and wrapper-facing documentation in the same change.
 - `index references` scans converted twins under `system/assets/` and writes the derived `system/.os/indexes/references.json` catalog.
-- `index playbooks` scans Markdown playbooks under `system/playbooks/`, skips documents without playbook frontmatter, requires the playbook contract fields, sorts entries by `id`, and writes the derived `system/.os/indexes/playbooks.json` catalog.
+- `index playbooks` scans Markdown playbooks under `system/playbooks/`, skips documents without playbook frontmatter, requires the playbook contract fields, sorts entries by `id`, and writes the derived `system/.os/indexes/playbooks.json` catalog. The output keeps `playbooks` as the full lifecycle catalog and `runnable_playbooks` as the active-only subset.
 - Keep side artifacts under the same `system/assets/<source-slug>/` directory as the converted twin. Use deterministic relative references from the converted body. Prefer `media/` for copied images and `diagrams/` for inline SVG or Mermaid artifacts.
 - For HTML, preserve local and data-URI images when accessible, preserve inline SVG as `diagrams/*.svg`, and preserve Mermaid as `diagrams/*.mmd` plus fenced `mermaid` code in the Markdown body. Do not add diagram rendering to bitmap output unless a future design approves the renderer dependency.
 - Treat PDF extraction as best-effort plain text. Do not imply OCR, layout fidelity, table reconstruction, embedded-image extraction, or a future rich-PDF roadmap.
@@ -160,6 +162,12 @@ go run ./cmd/buildos-intake index playbooks --repo-root ../.. --playbooks-root s
 python3 ../../system/.os/scripts/validate_config.py
 ```
 
+For playbook index changes, inspect the generated JSON before closing out:
+
+- `playbooks` should include every valid playbook regardless of `status`.
+- `runnable_playbooks` should include only entries with `status: active`.
+- Draft, reviewed, or archived playbooks may appear in `playbooks`, but must not appear in `runnable_playbooks`.
+
 After edits, refresh the project documentation and code indexes when the jdocmunch and jcodemunch MCP servers are available.
 
 ## Troubleshooting
@@ -174,6 +182,8 @@ If `index playbooks` fails, inspect the reported playbook frontmatter before cha
 
 If generated list fields become `null` or output order changes unexpectedly, fix the index builder or tests. Derived catalogs should remain deterministic and should serialize empty lists as arrays.
 
+If draft, reviewed, or archived playbooks appear under `runnable_playbooks`, fix the index filter and add or update regression fixtures before changing router wording.
+
 If enterprise distribution concerns block a rollout, track them against R-003 in [03 Open Questions and Risk Register](../../prd/03-open-questions-and-risk-register.md) instead of hiding them inside a toolkit README.
 
 ## Related Resources
@@ -183,6 +193,8 @@ If enterprise distribution concerns block a rollout, track them against R-003 in
 - [PRD 14 deterministic toolkit deployment revision](../../prd/14-revise-deterministic-toolkit-deployment.md)
 - [P4 data and extraction backlog](../../work/2026-06-03-w1-r0-build-os-baseline/04-data-and-extraction.md)
 - [P4 history record](../../assets/history/2026-06-04-w1-r0-p4-data-layer-extraction.md)
+- [P5 playbooks backlog](../../work/2026-06-03-w1-r0-build-os-baseline/05-playbooks.md)
+- [P5 history record](../../assets/history/2026-06-04-w1-r0-p5-playbooks.md)
 - [Indexes router](../../../system/.os/indexes/AGENTS.md)
 - [Playbook contract](../../../system/.os/contracts/playbook-contract.md)
 - [Toolkits root README](../../../toolkits/README.md)

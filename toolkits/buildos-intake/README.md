@@ -12,6 +12,8 @@ buildos-intake index playbooks [--repo-root .] [--playbooks-root system/playbook
 
 Use the wrapper at `system/.os/scripts/buildos-intake` when operating through the Build OS script surface.
 
+`buildos-intake index playbooks` writes `playbooks.json` with `playbooks` as the full catalog, including `draft`, `reviewed`, `active`, and `archived` entries, and `runnable_playbooks` as the active-only subset used by runnable procedure listings and enforceable guardrail listings.
+
 ## Conversion Behavior
 
 | Source | Output | Notes |

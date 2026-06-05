@@ -302,13 +302,53 @@ related: [REQ-002, docs/prd/09-playbooks.md]
 ---
 ## Scope
 `)
+	writePlaybook(t, root, "system/playbooks/testing/draft.md", `---
+id: PB-003
+title: Draft playbook
+category: testing
+execution_mode: guided-objective
+state_nature: stateful
+status: draft
+audience: human
+harness: [shell]
+systems: [crm]
+environments: [dev]
+owners: [qa]
+targets: [REQ-003]
+produces: [run-record]
+source_anchor: null
+version: 0.1.0
+related: []
+---
+# Draft
+`)
+	writePlaybook(t, root, "system/playbooks/testing/reviewed.md", `---
+id: PB-004
+title: Reviewed playbook
+category: testing
+execution_mode: explicit-steps
+state_nature: standing
+status: reviewed
+audience: agent
+harness: [mcp]
+systems: [crm]
+environments: [prod]
+owners: [qa]
+targets: [REQ-004]
+produces: [finding]
+source_anchor: null
+version: 0.2.0
+related: []
+---
+# Reviewed
+`)
 	writePlaybook(t, root, "system/playbooks/testing/AGENTS.md", "# Router\n")
 
 	result, err := BuildPlaybooksIndex(IndexOptions{RepoRoot: root, PlaybooksRoot: "system/playbooks", Output: "system/.os/indexes/playbooks.json"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.Count != 2 {
+	if result.Count != 4 {
 		t.Fatalf("count=%d", result.Count)
 	}
 	data, err := os.ReadFile(result.OutputPath)
@@ -325,11 +365,31 @@ related: [REQ-002, docs/prd/09-playbooks.md]
 	if index.Version != 1 {
 		t.Fatalf("version=%d", index.Version)
 	}
-	if len(index.Playbooks) != 2 {
+	if len(index.Playbooks) != 4 {
 		t.Fatalf("playbooks=%d", len(index.Playbooks))
 	}
-	if got := index.Playbooks[0].ID + "," + index.Playbooks[1].ID; got != "PB-002,PB-010" {
+	if got := index.Playbooks[0].ID + "," + index.Playbooks[1].ID + "," + index.Playbooks[2].ID + "," + index.Playbooks[3].ID; got != "PB-002,PB-003,PB-004,PB-010" {
 		t.Fatalf("sort order=%s", got)
+	}
+	statusByID := map[string]string{}
+	for _, playbook := range index.Playbooks {
+		statusByID[playbook.ID] = playbook.Status
+	}
+	for id, want := range map[string]string{"PB-003": "draft", "PB-004": "reviewed"} {
+		if got := statusByID[id]; got != want {
+			t.Fatalf("%s status=%q want %q in full catalog", id, got, want)
+		}
+	}
+	if len(index.RunnablePlaybooks) != 2 {
+		t.Fatalf("runnable_playbooks=%d", len(index.RunnablePlaybooks))
+	}
+	if got := index.RunnablePlaybooks[0].ID + "," + index.RunnablePlaybooks[1].ID; got != "PB-002,PB-010" {
+		t.Fatalf("runnable ids=%s", got)
+	}
+	for _, playbook := range index.RunnablePlaybooks {
+		if playbook.Status != "active" {
+			t.Fatalf("non-active runnable playbook: %#v", playbook)
+		}
 	}
 
 	alpha := index.Playbooks[0]
@@ -350,7 +410,7 @@ related: [REQ-002, docs/prd/09-playbooks.md]
 	assertStringSlice(t, alpha.Harness, []string{"none"})
 	assertStringSlice(t, alpha.Related, []string{"REQ-002", "docs/prd/09-playbooks.md"})
 
-	zeta := index.Playbooks[1]
+	zeta := index.Playbooks[3]
 	if zeta.SourceAnchor == nil || *zeta.SourceAnchor != "docs/prd/09-playbooks.md#scope" {
 		t.Fatalf("zeta source_anchor=%v", zeta.SourceAnchor)
 	}

@@ -26,7 +26,7 @@ func TestRunIndexPlaybooksCommand(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{`"version": 1`, `"id": "PB-001"`, `"path": "system/playbooks/testing/sample.md"`} {
+	for _, want := range []string{`"version": 1`, `"playbooks":`, `"runnable_playbooks":`, `"id": "PB-001"`, `"path": "system/playbooks/testing/sample.md"`} {
 		if !strings.Contains(string(data), want) {
 			t.Fatalf("missing %q in\n%s", want, string(data))
 		}

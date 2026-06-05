@@ -17,9 +17,9 @@ Author procedure-playbook templates per category and execution mode, scaffold th
 
 ### Tasks
 
-- [ ] t1: Author procedure-playbook template(s) in `system/.os/templates/` covering the three execution modes (explicit-steps, guided-objective, inferred-actions) and the stateful/standing variants.
+- [x] t1: Author procedure-playbook template(s) in `system/.os/templates/` covering the three execution modes (explicit-steps, guided-objective, inferred-actions) and the stateful/standing variants.
 - [x] t2: Author the guardrail-playbook template (`system/.os/templates/guardrail-playbook.md`).
-- [ ] t3: Scaffold category routers for `build/`, `discovery/`, and `testing/` (administrative already exists), AGENTS-canonical with `CLAUDE.md` pointers.
+- [x] t3: Scaffold category routers for `build/`, `discovery/`, and `testing/` (administrative already exists), AGENTS-canonical with `CLAUDE.md` pointers.
 
 ### Acceptance criteria
 
@@ -34,8 +34,8 @@ Author procedure-playbook templates per category and execution mode, scaffold th
 
 ### Tasks
 
-- [ ] t4: Author at least one seed playbook per category, set to `status: draft`.
-- [ ] t5: Wire the review-to-activate gate so `status` transitions surface through `playbooks.json` and the category routers; only `active` playbooks are listed as runnable.
+- [x] t4: Author at least one seed playbook per category, set to `status: draft`.
+- [x] t5: Wire the review-to-activate gate so `status` transitions surface through `playbooks.json` and the category routers; only `active` playbooks are listed as runnable.
 
 ### Acceptance criteria
 

@@ -14,8 +14,10 @@ related:
   - "../../../system/.os/contracts/AGENTS.md"
   - "../../../system/.os/contracts/config-contract.md"
   - "../../../system/.os/contracts/playbook-contract.md"
+  - "../../../system/.os/templates/AGENTS.md"
   - "../../../system/.os/data/AGENTS.md"
   - "../../../system/.os/indexes/AGENTS.md"
+  - "../../../system/playbooks/AGENTS.md"
   - "../../../system/.os/contracts/entity-records-contract.md"
   - "../../../system/.os/contracts/run-record-contract.md"
   - "../../../system/.os/contracts/finding-contract.md"
@@ -26,9 +28,11 @@ related:
   - "../../work/2026-06-03-w1-r0-build-os-baseline/01-foundation.md"
   - "../../work/2026-06-03-w1-r0-build-os-baseline/02-boundary-and-shipping.md"
   - "../../work/2026-06-03-w1-r0-build-os-baseline/04-data-and-extraction.md"
+  - "../../work/2026-06-03-w1-r0-build-os-baseline/05-playbooks.md"
   - "../../assets/history/2026-06-04-w1-r0-p1-operating-layer-contracts.md"
   - "../../assets/history/2026-06-04-w1-r0-p2-spaces-boundary-shipping.md"
   - "../../assets/history/2026-06-04-w1-r0-p4-data-layer-extraction.md"
+  - "../../assets/history/2026-06-04-w1-r0-p5-playbooks.md"
 ---
 
 # Maintaining Operating Layer Contracts
@@ -45,8 +49,11 @@ Coverage outcome: `developer`. The durable knowledge is maintainer-facing becaus
 - [../../../system/.os/contracts/AGENTS.md](../../../system/.os/contracts/AGENTS.md) lists authority contracts. Add a contract link here when a new authority contract lands.
 - [../../../system/.os/data/AGENTS.md](../../../system/.os/data/AGENTS.md) routes system-owned structured JSONL files. It points writers back to the relevant contract, keeps user datasets out of `.os/data`, and treats empty canonical files as valid until converted source twins produce real rows.
 - [../../../system/.os/indexes/AGENTS.md](../../../system/.os/indexes/AGENTS.md) routes rebuildable derived catalogs such as `playbooks.json`. Indexes are not authority; maintain the rebuild command with the index contract.
+- [../../../system/.os/templates/AGENTS.md](../../../system/.os/templates/AGENTS.md) routes starter shapes for system artifacts. Procedure playbook templates are split by `execution_mode` and `state_nature`; copy a template, then conform the result to the playbook contract.
+- [../../../system/playbooks/AGENTS.md](../../../system/playbooks/AGENTS.md) is the top playbook router. Category routers under `administrative/`, `build/`, `discovery/`, and `testing/` must keep active runnable or enforced entries separate from draft seed candidates.
 - [../../../system/playbooks/administrative/respect-configured-scoped-metadata.md](../../../system/playbooks/administrative/respect-configured-scoped-metadata.md) is the active guardrail for config-backed scoped metadata.
 - `system/.gitignore` is part of the shipped `system/` boundary. It ignores runtime ephemera only; data tracking or ignoring remains the adopter's choice.
+- The repository root `.gitignore` also has broad build-output rules. Keep the `system/playbooks/build/` exception in place so the build playbook category remains source-controlled.
 - `CLAUDE.md` files in these directories are one-line pointers to the matching `AGENTS.md`. Do not duplicate routing rules in them.
 
 The current operating-layer contract set includes:
@@ -74,6 +81,19 @@ The current operating-layer contract set includes:
 9. Rebuild indexes with the command named by the owning router. Do not hand-maintain derived JSON catalogs.
 10. After the edit, update the active work backlog and history record only after validation.
 
+## Playbook Maintenance
+
+Use this workflow when adding or revising playbooks, procedure templates, or category routers:
+
+1. Read [playbook-contract.md](../../../system/.os/contracts/playbook-contract.md) before choosing fields or body headings.
+2. Choose the category directory from the playbook's purpose: `administrative`, `build`, `discovery`, or `testing`.
+3. For procedure playbooks, start from the template matching both `execution_mode` and `state_nature` under [`.os/templates`](../../../system/.os/templates/AGENTS.md). Guardrails use the guardrail template and `execution_mode: n/a`.
+4. Mint the next flat `PB-NNN` id. Do not encode category in the id.
+5. Set new playbooks to `status: draft`. Only `status: active` playbooks are runnable as procedures or enforced as guardrails.
+6. Link `targets` to existing `REQ-*`, `CAP-*`, or `TC-*` rows in `.os/data`. If no appropriate row exists, add the smallest source-backed draft entity row rather than inventing an untracked target.
+7. Update the relevant category router after the playbook exists. Active procedures and guardrails belong in active sections; draft playbooks belong only in draft seed candidate sections.
+8. Rebuild `system/.os/indexes/playbooks.json` and verify the full `playbooks` catalog includes every lifecycle state while `runnable_playbooks` includes only active entries.
+
 ## Safe-Change Rules
 
 - Treat contracts as authority and indexes as derived.
@@ -87,6 +107,8 @@ The current operating-layer contract set includes:
 - Keep `extractions.jsonl` load plans explicit about `minted` IDs, `extracted_by`, and `extracted_at`; use `dataset_refs` only for optional dataset paths.
 - Do not add outcome, lifecycle, or status values in only one contract when another contract depends on the same vocabulary.
 - Do not write directly into make-docs managed `system/docs` trees unless the relevant router or phase explicitly permits it.
+- Do not route draft, reviewed, or archived playbooks through runnable procedure or enforced guardrail sections. Keep the active-only gate visible in routers and derived indexes.
+- Do not remove the root `.gitignore` exception for `system/playbooks/build/`; otherwise the build category can disappear from Git status and index rebuilds.
 
 ## Validation
 
@@ -107,6 +129,7 @@ Then refresh the project documentation index and check links where practical. Re
 - no fabricated rows in canonical `.os/data/*.jsonl` files
 - populated entity rows with the expected file/type pairing, ID prefix, lifecycle status, anchors, and scoped IDs
 - generated catalogs only under `.os/indexes`, with a deterministic rebuild command and no authority-only fields invented in the index
+- playbook catalogs with `playbooks` as the full lifecycle catalog and `runnable_playbooks` as the active-only subset
 - no direct edits to make-docs managed trees outside the phase scope
 
 Finish with:
@@ -125,6 +148,8 @@ If `validate_config.py` reports a JSONL row failure, fix the source-of-truth row
 
 If a generated index is stale, rerun the owning rebuild command and inspect the deterministic order before editing the output. A generated index should be explainable from its source files.
 
+If a build category playbook does not appear in Git status or the generated playbook index, check the root `.gitignore` exception for `system/playbooks/build/` before changing the playbook scanner.
+
 If link checking reports repository-wide noise, separate baseline failures from touched-file failures. Fix every broken link introduced by the current change, and record any unrelated baseline noise in the closeout instead of hiding it.
 
 ## Related Resources
@@ -135,10 +160,14 @@ If link checking reports repository-wide noise, separate baseline failures from 
 - [P2 history record](../../assets/history/2026-06-04-w1-r0-p2-spaces-boundary-shipping.md)
 - [P4 data and extraction backlog](../../work/2026-06-03-w1-r0-build-os-baseline/04-data-and-extraction.md)
 - [P4 history record](../../assets/history/2026-06-04-w1-r0-p4-data-layer-extraction.md)
+- [P5 playbooks backlog](../../work/2026-06-03-w1-r0-build-os-baseline/05-playbooks.md)
+- [P5 history record](../../assets/history/2026-06-04-w1-r0-p5-playbooks.md)
 - [Operating router](../../../system/.os/AGENTS.md)
 - [Contracts router](../../../system/.os/contracts/AGENTS.md)
 - [Config contract](../../../system/.os/contracts/config-contract.md)
 - [Playbook contract](../../../system/.os/contracts/playbook-contract.md)
+- [Templates router](../../../system/.os/templates/AGENTS.md)
+- [Playbooks router](../../../system/playbooks/AGENTS.md)
 - [Entity records contract](../../../system/.os/contracts/entity-records-contract.md)
 - [Extraction contract](../../../system/.os/contracts/extraction-contract.md)
 - [Configured scoped metadata guardrail](../../../system/playbooks/administrative/respect-configured-scoped-metadata.md)

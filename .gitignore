@@ -24,6 +24,8 @@ node_modules/
 # build outputs
 dist/
 build/
+!system/playbooks/build/
+!system/playbooks/build/**
 out/
 wheels/
 *.tsbuildinfo
