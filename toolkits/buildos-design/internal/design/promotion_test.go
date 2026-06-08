@@ -82,6 +82,89 @@ func TestPromoteFindingCreatesDesignAndUpdatesFinding(t *testing.T) {
 	}
 }
 
+func TestPromoteFindingSupportsInstalledRootLayout(t *testing.T) {
+	root := t.TempDir()
+	writeInstalledSystemRoot(t, root)
+	writeInstalledRouterInputs(t, root)
+	row := findingIndexRow{
+		ID:                "FIND-001",
+		Type:              "finding",
+		Path:              "system/workspace/findings/FIND-001/",
+		Title:             "Installed qualified finding",
+		Status:            "qualified",
+		Summary:           "Finding qualified from installed root run RUN-001.",
+		Observed:          "Raw finding was confirmed in the installed workspace.",
+		Outcome:           "positive",
+		Polarity:          "positive",
+		RunID:             "RUN-001",
+		OriginRun:         "RUN-001",
+		RawAnchor:         "system/workspace/runs/RUN-001/raw-findings.md#raw-finding-1",
+		QualificationTest: "system/workspace/findings/FIND-001/qualification.md#confirmation-test",
+		Systems:           []string{"primary-system"},
+		Environments:      []string{"baseline"},
+		Owners:            []string{"adopter-team"},
+		QualifiedAt:       "2026-06-05T00:00:00Z",
+		Designs:           []string{},
+		Related:           []string{"RUN-001"},
+		CreatedAt:         "2026-06-05T00:00:00Z",
+		UpdatedAt:         "2026-06-05T00:00:00Z",
+	}
+	data, err := json.Marshal(row)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeTextFile(t, root, ".os/data/findings.jsonl", string(data)+"\n")
+	writeTextFile(t, root, "workspace/findings/FIND-001/finding.md", "# "+row.Title+"\n\n## Finding FIND-001 {#finding-find-001}\n\n- Status: qualified\n\n## Observation\n\nObserved.\n\n## Designs\n\nNo design hand-off recorded.\n")
+	writeTextFile(t, root, "workspace/findings/FIND-001/qualification.md", "# Qualification\n\n## Confirmation Test {#confirmation-test}\n\n- Result: pass\n")
+	writeTextFile(t, root, "workspace/runs/RUN-001/raw-findings.md", "# Raw Findings\n\n## Raw Finding 1 {#raw-finding-1}\n\nRaw.\n")
+
+	result, err := PromoteFinding(PromoteFindingOptions{
+		RepoRoot:  root,
+		FindingID: "FIND-001",
+		Route:     "change-plan",
+		Title:     "Installed Design Hand Off",
+		Slug:      "installed-design-hand-off",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(result.DesignPath, "docs/designs/") || result.FindingsIndexPath != ".os/data/findings.jsonl" {
+		t.Fatalf("unexpected installed-root result: %#v", result)
+	}
+	assertExists(t, root, result.DesignPath)
+	assertNotExists(t, root, "system/"+result.DesignPath)
+
+	design := readTextFile(t, root, result.DesignPath)
+	for _, want := range []string{
+		"# Installed Design Hand Off",
+		"- Route: `change-plan`",
+		"../assets/prompts/designs-to-plan-change.prompt.md",
+		"../../workspace/findings/FIND-001/qualification.md#confirmation-test",
+		"../../workspace/runs/RUN-001/raw-findings.md#raw-finding-1",
+		"primary-system",
+		"baseline",
+		"adopter-team",
+	} {
+		if !strings.Contains(design, want) {
+			t.Fatalf("design missing %q:\n%s", want, design)
+		}
+	}
+
+	updated := readSingleFindingRowAt(t, root, ".os/data/findings.jsonl")
+	if len(updated.Designs) != 1 || updated.Designs[0] != result.DesignPath {
+		t.Fatalf("unexpected designs in row: %#v", updated.Designs)
+	}
+	for _, value := range []string{updated.Path, updated.RawAnchor, updated.QualificationTest, updated.Designs[0]} {
+		if strings.HasPrefix(value, "system/") {
+			t.Fatalf("installed-root row kept system prefix: %#v", updated)
+		}
+	}
+	record := readTextFile(t, root, "workspace/findings/FIND-001/finding.md")
+	if strings.Contains(record, "No design hand-off recorded") || !strings.Contains(record, "../../../docs/designs/") {
+		t.Fatalf("finding record not updated:\n%s", record)
+	}
+}
+
 func TestPromoteFindingRejectsInvalidInputs(t *testing.T) {
 	tests := []struct {
 		name string
@@ -263,12 +346,36 @@ func writeRouterInputs(t *testing.T, root string) {
 	writeTextFile(t, root, "system/docs/assets/prompts/designs-to-plan-change.prompt.md", "# Prompt\n")
 }
 
+func writeInstalledSystemRoot(t *testing.T, root string) {
+	t.Helper()
+	for _, rel := range []string{".os", "assets", "docs", "playbooks", "workspace"} {
+		if err := os.MkdirAll(filepath.Join(root, filepath.FromSlash(rel)), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func writeInstalledRouterInputs(t *testing.T, root string) {
+	t.Helper()
+	writeTextFile(t, root, "docs/designs/AGENTS.md", "# Designs Router\n")
+	writeTextFile(t, root, "docs/assets/references/design-workflow.md", "# Design Workflow\n")
+	writeTextFile(t, root, "docs/assets/references/design-contract.md", "# Design Contract\n")
+	writeTextFile(t, root, "docs/assets/templates/design.md", "# {{TITLE}}\n")
+	writeTextFile(t, root, "docs/assets/prompts/designs-to-plan.prompt.md", "# Prompt\n")
+	writeTextFile(t, root, "docs/assets/prompts/designs-to-plan-change.prompt.md", "# Prompt\n")
+}
+
 func readSingleFindingRow(t *testing.T, root string) findingIndexRow {
 	t.Helper()
-	data := readTextFile(t, root, "system/.os/data/findings.jsonl")
+	return readSingleFindingRowAt(t, root, "system/.os/data/findings.jsonl")
+}
+
+func readSingleFindingRowAt(t *testing.T, root, rel string) findingIndexRow {
+	t.Helper()
+	data := readTextFile(t, root, rel)
 	lines := strings.Split(strings.TrimSpace(data), "\n")
 	if len(lines) != 1 {
-		t.Fatalf("expected one finding row, got %d:\n%s", len(lines), data)
+		t.Fatalf("expected one finding row in %s, got %d:\n%s", rel, len(lines), data)
 	}
 	var row findingIndexRow
 	if err := json.Unmarshal([]byte(lines[0]), &row); err != nil {
@@ -299,6 +406,13 @@ func readTextFile(t *testing.T, root, rel string) string {
 		t.Fatal(err)
 	}
 	return string(data)
+}
+
+func assertExists(t *testing.T, root, rel string) {
+	t.Helper()
+	if _, err := os.Stat(filepath.Join(root, filepath.FromSlash(rel))); err != nil {
+		t.Fatalf("expected %s to exist: %v", rel, err)
+	}
 }
 
 func assertNotExists(t *testing.T, root, rel string) {

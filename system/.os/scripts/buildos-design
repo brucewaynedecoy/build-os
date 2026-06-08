@@ -10,12 +10,12 @@ if command -v buildos-design >/dev/null 2>&1; then
 fi
 
 script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-repo_root=$(CDPATH= cd -- "$script_dir/../../.." && pwd)
-local_bin="$repo_root/toolkits/buildos-design/bin/buildos-design"
+dev_root=$(CDPATH= cd -- "$script_dir/../../.." && pwd)
+local_bin="$dev_root/toolkits/buildos-design/bin/buildos-design"
 
 if [ -x "$local_bin" ]; then
   exec "$local_bin" "$@"
 fi
 
-printf '%s\n' "buildos-design binary not found. Install buildos-design, set BUILDOS_DESIGN_BIN, or build $local_bin." >&2
+printf '%s\n' "buildos-design binary not found. Install buildos-design, set BUILDOS_DESIGN_BIN, or build the toolkit binary." >&2
 exit 127

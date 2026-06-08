@@ -1,6 +1,8 @@
 # buildos-discovery
 
-`buildos-discovery` is the first-party Build OS discovery-run and finding-qualification toolkit. It records immutable run artifacts under `system/workspace/runs/`, keeps raw findings anchored inside the source run, and promotes only deterministically confirmed observations into `system/workspace/findings/`.
+`buildos-discovery` is the first-party Build OS discovery-run and finding-qualification toolkit. It records immutable run artifacts, keeps raw findings anchored inside the source run, and promotes only deterministically confirmed observations into finding artifacts.
+
+In this development repository the default paths live under `system/`, such as `system/workspace/runs/`, `system/workspace/findings/`, and `system/.os/data/`. In an installed Build OS system root, where `.os/`, `assets/`, `docs/`, `playbooks/`, and `workspace/` are copied to the root, the same defaults automatically target top-level `workspace/` and `.os/data/`.
 
 ## Command Surface
 

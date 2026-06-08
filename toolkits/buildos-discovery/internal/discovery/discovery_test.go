@@ -145,6 +145,53 @@ func TestRecordDiscoveryRunRejectsInvalidOutcomeAndMissingRawFile(t *testing.T) 
 	}
 }
 
+func TestRecordDiscoveryRunSupportsInstalledRootLayout(t *testing.T) {
+	root := t.TempDir()
+	writeInstalledSystemRoot(t, root)
+	playbook := activeDiscoveryPlaybookFixture("PB-010")
+	playbook.Path = "playbooks/discovery/sample.md"
+	writeInstalledPlaybookIndex(t, root, playbook, true)
+	writeTextFile(t, root, "assets/_incoming/evidence.txt", "evidence")
+	writeTextFile(t, root, "assets/_incoming/raw.md", "raw finding text")
+
+	result, err := RecordDiscoveryRun(RunDiscoveryOptions{
+		RepoRoot:        root,
+		PlaybookID:      "PB-010",
+		Outcome:         "positive",
+		DatasetRefs:     []string{"system/workspace/datasets/example.csv"},
+		EvidencePaths:   []string{"assets/_incoming/evidence.txt"},
+		RawFindingPaths: []string{"assets/_incoming/raw.md"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.RunPath != "workspace/runs/RUN-001/" || result.RunsIndexPath != ".os/data/runs.jsonl" {
+		t.Fatalf("unexpected installed-root result: %#v", result)
+	}
+	assertExists(t, root, "workspace/runs/RUN-001/run.md")
+	assertExists(t, root, "workspace/runs/RUN-001/raw-findings.md")
+	assertExists(t, root, "workspace/runs/RUN-001/evidence/001-evidence.txt")
+	assertExists(t, root, ".os/data/runs.jsonl")
+	assertNotExists(t, root, "system/workspace/runs/RUN-001/run.md")
+
+	row := readSingleJSONLRow(t, root, ".os/data/runs.jsonl")
+	if row["path"] != "workspace/runs/RUN-001/" {
+		t.Fatalf("path kept development-root prefix: %#v", row)
+	}
+	if row["doc_anchor"] != "docs/prd/10-discovery-runs-and-qualification.md#run-artifacts" {
+		t.Fatalf("doc anchor kept development-root prefix: %#v", row)
+	}
+	if got := stringSliceFromAny(t, row["dataset_refs"]); len(got) != 1 || got[0] != "workspace/datasets/example.csv" {
+		t.Fatalf("dataset refs not normalized: %#v", row["dataset_refs"])
+	}
+	sourceRefs := stringSliceFromAny(t, row["source_refs"])
+	for _, want := range []string{"assets/_incoming/raw.md", "playbooks/discovery/sample.md"} {
+		if !containsString(sourceRefs, want) {
+			t.Fatalf("source refs missing %s in %#v", want, sourceRefs)
+		}
+	}
+}
+
 func TestQualifyFindingPromotesPositiveAndNegativeFindings(t *testing.T) {
 	root := t.TempDir()
 	writePlaybookIndex(t, root, activeDiscoveryPlaybookFixture("PB-010"), true)
@@ -200,6 +247,58 @@ func TestQualifyFindingPromotesPositiveAndNegativeFindings(t *testing.T) {
 	rows := readJSONLRows(t, root, "system/.os/data/findings.jsonl")
 	if len(rows) != 2 || rows[0]["status"] != "qualified" || rows[1]["negative_assertion"] == nil {
 		t.Fatalf("unexpected finding rows: %#v", rows)
+	}
+}
+
+func TestQualifyFindingSupportsInstalledRootLayout(t *testing.T) {
+	root := t.TempDir()
+	writeInstalledSystemRoot(t, root)
+	playbook := activeDiscoveryPlaybookFixture("PB-010")
+	playbook.Path = "playbooks/discovery/sample.md"
+	writeInstalledPlaybookIndex(t, root, playbook, true)
+	writeTextFile(t, root, "assets/_incoming/raw.md", "raw finding text")
+	if _, err := RecordDiscoveryRun(RunDiscoveryOptions{
+		RepoRoot:        root,
+		PlaybookID:      "PB-010",
+		Outcome:         "positive",
+		RawFindingPaths: []string{"assets/_incoming/raw.md"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	writeTextFile(t, root, "workspace/tests/confirm.spec.ts", "test('confirm', async () => {})")
+	writeTextFile(t, root, "workspace/evidence/confirmation.txt", "passed")
+
+	result, err := QualifyFinding(QualifyFindingOptions{
+		RepoRoot:             root,
+		RunID:                "RUN-001",
+		RawFindingRef:        "system/workspace/runs/RUN-001/raw-findings.md#raw-finding-1",
+		Outcome:              "positive",
+		ConfirmationTest:     "system/workspace/tests/confirm.spec.ts",
+		ConfirmationEvidence: "system/workspace/evidence/confirmation.txt",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.FindingPath != "workspace/findings/FIND-001/" || result.FindingsIndexPath != ".os/data/findings.jsonl" {
+		t.Fatalf("unexpected installed-root result: %#v", result)
+	}
+	assertExists(t, root, "workspace/findings/FIND-001/finding.md")
+	assertExists(t, root, "workspace/findings/FIND-001/qualification.md")
+	assertExists(t, root, ".os/data/findings.jsonl")
+	assertNotExists(t, root, "system/workspace/findings/FIND-001/finding.md")
+
+	row := readSingleJSONLRow(t, root, ".os/data/findings.jsonl")
+	for key, want := range map[string]string{
+		"path":                  "workspace/findings/FIND-001/",
+		"raw_anchor":            "workspace/runs/RUN-001/raw-findings.md#raw-finding-1",
+		"qualification_test":    "workspace/findings/FIND-001/qualification.md#confirmation-test",
+		"confirmation_test":     "workspace/findings/FIND-001/confirmation-test/001-confirm.spec.ts",
+		"confirmation_evidence": "workspace/findings/FIND-001/evidence/001-confirmation.txt",
+		"doc_anchor":            "docs/prd/10-discovery-runs-and-qualification.md#finding-qualification",
+	} {
+		if row[key] != want {
+			t.Fatalf("%s=%#v want %q in %#v", key, row[key], want, row)
+		}
 	}
 }
 
@@ -327,6 +426,31 @@ func writePlaybookIndex(t *testing.T, root string, playbook PlaybookEntry, runna
 	writeTextFile(t, root, "system/.os/indexes/playbooks.json", string(data)+"\n")
 }
 
+func writeInstalledSystemRoot(t *testing.T, root string) {
+	t.Helper()
+	for _, rel := range []string{".os", "assets", "docs", "playbooks", "workspace"} {
+		if err := os.MkdirAll(filepath.Join(root, filepath.FromSlash(rel)), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func writeInstalledPlaybookIndex(t *testing.T, root string, playbook PlaybookEntry, runnable bool) {
+	t.Helper()
+	index := PlaybookIndex{
+		Version:   1,
+		Playbooks: []PlaybookEntry{playbook},
+	}
+	if runnable {
+		index.RunnablePlaybooks = []PlaybookEntry{playbook}
+	}
+	data, err := json.Marshal(index)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeTextFile(t, root, ".os/indexes/playbooks.json", string(data)+"\n")
+}
+
 func writeTextFile(t *testing.T, root, rel, body string) {
 	t.Helper()
 	path := filepath.Join(root, filepath.FromSlash(rel))
@@ -372,6 +496,32 @@ func readJSONLRows(t *testing.T, root, rel string) []map[string]any {
 		rows = append(rows, row)
 	}
 	return rows
+}
+
+func stringSliceFromAny(t *testing.T, value any) []string {
+	t.Helper()
+	items, ok := value.([]any)
+	if !ok {
+		t.Fatalf("expected JSON array, got %#v", value)
+	}
+	out := make([]string, len(items))
+	for i, item := range items {
+		text, ok := item.(string)
+		if !ok {
+			t.Fatalf("expected string at index %d, got %#v", i, item)
+		}
+		out[i] = text
+	}
+	return out
+}
+
+func containsString(values []string, want string) bool {
+	for _, value := range values {
+		if value == want {
+			return true
+		}
+	}
+	return false
 }
 
 func assertExists(t *testing.T, root, rel string) {

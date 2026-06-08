@@ -1,6 +1,8 @@
 # buildos-design
 
-`buildos-design` is the first-party Build OS toolkit for promoting qualified findings into user-gated design documents under `system/docs/designs/`. It starts the evidence-backed design to plan path without losing the originating run and qualification lineage.
+`buildos-design` is the first-party Build OS toolkit for promoting qualified findings into user-gated design documents. It starts the evidence-backed design to plan path without losing the originating run and qualification lineage.
+
+In this development repository the default paths live under `system/`, such as `system/.os/data/findings.jsonl`, `system/workspace/findings/`, and `system/docs/designs/`. In an installed Build OS system root, where `.os/`, `assets/`, `docs/`, `playbooks/`, and `workspace/` are copied to the root, the same defaults automatically target top-level `.os/data/findings.jsonl`, `workspace/findings/`, and `docs/designs/`.
 
 ## Command Surface
 

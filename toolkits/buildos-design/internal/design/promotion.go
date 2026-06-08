@@ -52,6 +52,7 @@ type findingIndexRow struct {
 
 func PromoteFinding(opts PromoteFindingOptions) (PromoteFindingResult, error) {
 	repoRoot := cleanRepoRoot(opts.RepoRoot)
+	layout := detectLayout(repoRoot)
 	if strings.TrimSpace(opts.FindingID) == "" {
 		return PromoteFindingResult{}, errors.New("promote finding requires --finding-id")
 	}
@@ -61,10 +62,13 @@ func PromoteFinding(opts PromoteFindingOptions) (PromoteFindingResult, error) {
 		return PromoteFindingResult{}, errors.New("promote finding requires --route baseline-plan or change-plan")
 	}
 
-	findingsIndexPath := filepath.Join(repoRoot, "system/.os/data/findings.jsonl")
+	findingsIndexPath := layout.path("system/.os/data/findings.jsonl")
 	rows, targetIndex, err := readFindingRows(findingsIndexPath, opts.FindingID)
 	if err != nil {
 		return PromoteFindingResult{}, err
+	}
+	for i := range rows {
+		normalizeFindingRow(layout, &rows[i])
 	}
 	row := rows[targetIndex]
 	if row.Status != "qualified" {
@@ -92,8 +96,8 @@ func PromoteFinding(opts PromoteFindingOptions) (PromoteFindingResult, error) {
 	if err != nil {
 		return PromoteFindingResult{}, err
 	}
-	designRelPath := filepath.ToSlash(filepath.Join("system/docs/designs", time.Now().Format("2006-01-02")+"-"+slug+".md"))
-	designPath := filepath.Join(repoRoot, filepath.FromSlash(designRelPath))
+	designRelPath := layout.rel(filepath.ToSlash(filepath.Join("system/docs/designs", time.Now().Format("2006-01-02")+"-"+slug+".md")))
+	designPath := layout.path(designRelPath)
 	if _, err := os.Stat(designPath); err == nil {
 		return PromoteFindingResult{}, fmt.Errorf("design target %s already exists", designRelPath)
 	} else if !errors.Is(err, os.ErrNotExist) {
@@ -111,7 +115,7 @@ func PromoteFinding(opts PromoteFindingOptions) (PromoteFindingResult, error) {
 	updatedRow.Related = uniqueStrings(append(updatedRow.Related, designRelPath))
 	updatedRow.UpdatedAt = nowUTC()
 	design := renderDesign(title, route, promptFile, updatedRow, designRelPath)
-	findingRecordPath := filepath.Join(repoRoot, filepath.FromSlash(row.Path), "finding.md")
+	findingRecordPath := layout.path(filepath.ToSlash(filepath.Join(row.Path, "finding.md")))
 	findingRecord, err := os.ReadFile(findingRecordPath)
 	if err != nil {
 		return PromoteFindingResult{}, fmt.Errorf("read finding record: %w", err)
@@ -125,7 +129,7 @@ func PromoteFinding(opts PromoteFindingOptions) (PromoteFindingResult, error) {
 		FindingID:         row.ID,
 		DesignPath:        designRelPath,
 		FindingPath:       row.Path,
-		FindingsIndexPath: filepath.ToSlash(filepath.Join("system/.os/data/findings.jsonl")),
+		FindingsIndexPath: layout.rel("system/.os/data/findings.jsonl"),
 		DesignContent:     design,
 		DryRun:            opts.DryRun,
 	}
@@ -150,6 +154,7 @@ func PromoteFinding(opts PromoteFindingOptions) (PromoteFindingResult, error) {
 }
 
 func requireDesignRouterInputs(repoRoot, promptFile string) error {
+	layout := detectLayout(repoRoot)
 	required := []struct {
 		label string
 		rel   string
@@ -161,12 +166,13 @@ func requireDesignRouterInputs(repoRoot, promptFile string) error {
 		{"next prompt", filepath.ToSlash(filepath.Join("system/docs/assets/prompts", promptFile))},
 	}
 	for _, item := range required {
-		data, err := os.ReadFile(filepath.Join(repoRoot, filepath.FromSlash(item.rel)))
+		displayPath := layout.rel(item.rel)
+		data, err := os.ReadFile(layout.path(item.rel))
 		if err != nil {
-			return fmt.Errorf("read %s %s: %w", item.label, item.rel, err)
+			return fmt.Errorf("read %s %s: %w", item.label, displayPath, err)
 		}
 		if strings.TrimSpace(string(data)) == "" {
-			return fmt.Errorf("%s %s is empty", item.label, item.rel)
+			return fmt.Errorf("%s %s is empty", item.label, displayPath)
 		}
 	}
 	return nil
@@ -238,7 +244,8 @@ func splitQualificationAnchor(value string) (string, string, error) {
 }
 
 func validateQualificationAnchor(repoRoot, qualificationPath, anchor string) error {
-	absPath := filepath.Join(repoRoot, filepath.FromSlash(qualificationPath))
+	layout := detectLayout(repoRoot)
+	absPath := layout.path(qualificationPath)
 	info, err := os.Stat(absPath)
 	if err != nil {
 		return fmt.Errorf("qualification anchor %s#%s: %w", qualificationPath, anchor, err)
@@ -419,7 +426,81 @@ func cleanRepoRoot(repoRoot string) string {
 	if repoRoot == "" {
 		return "."
 	}
-	return repoRoot
+	abs, err := filepath.Abs(repoRoot)
+	if err != nil {
+		return filepath.Clean(repoRoot)
+	}
+	return filepath.Clean(abs)
+}
+
+func normalizeFindingRow(layout buildOSLayout, row *findingIndexRow) {
+	row.Path = layout.rel(row.Path)
+	row.RawAnchor = layout.ref(row.RawAnchor)
+	row.QualificationTest = layout.ref(row.QualificationTest)
+	row.ConfirmationTest = layout.rel(row.ConfirmationTest)
+	row.ConfirmationEvidence = layout.rel(row.ConfirmationEvidence)
+	row.SourceAnchor = layout.ref(row.SourceAnchor)
+	row.DocAnchor = layout.ref(row.DocAnchor)
+	row.Designs = layout.rels(row.Designs)
+	row.SourceRefs = layout.refs(row.SourceRefs)
+	row.Related = layout.refs(row.Related)
+}
+
+type buildOSLayout struct {
+	repoRoot      string
+	installedRoot bool
+}
+
+func detectLayout(repoRoot string) buildOSLayout {
+	return buildOSLayout{repoRoot: repoRoot, installedRoot: isInstalledSystemRoot(repoRoot)}
+}
+
+func (layout buildOSLayout) rel(path string) string {
+	path = filepath.ToSlash(path)
+	if layout.installedRoot && strings.HasPrefix(path, "system/") {
+		return strings.TrimPrefix(path, "system/")
+	}
+	return path
+}
+
+func (layout buildOSLayout) rels(values []string) []string {
+	out := make([]string, len(values))
+	for i, value := range values {
+		out[i] = layout.rel(value)
+	}
+	return out
+}
+
+func (layout buildOSLayout) ref(value string) string {
+	pathPart, anchor, hasAnchor := strings.Cut(value, "#")
+	rel := layout.rel(pathPart)
+	if hasAnchor {
+		return rel + "#" + anchor
+	}
+	return rel
+}
+
+func (layout buildOSLayout) refs(values []string) []string {
+	out := make([]string, len(values))
+	for i, value := range values {
+		out[i] = layout.ref(value)
+	}
+	return out
+}
+
+func (layout buildOSLayout) path(rel string) string {
+	return filepath.Join(layout.repoRoot, filepath.FromSlash(layout.rel(rel)))
+}
+
+func isInstalledSystemRoot(repoRoot string) bool {
+	required := []string{".os", "assets", "docs", "playbooks", "workspace"}
+	for _, rel := range required {
+		info, err := os.Stat(filepath.Join(repoRoot, rel))
+		if err != nil || !info.IsDir() {
+			return false
+		}
+	}
+	return true
 }
 
 func nowUTC() string {

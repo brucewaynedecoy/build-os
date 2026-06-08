@@ -159,7 +159,27 @@ func resolvePath(repoRoot, path string) string {
 	if filepath.IsAbs(path) {
 		return filepath.Clean(path)
 	}
+	path = installedRootRel(repoRoot, path)
 	return filepath.Clean(filepath.Join(repoRoot, path))
+}
+
+func installedRootRel(repoRoot, path string) string {
+	path = filepath.ToSlash(path)
+	if !isInstalledSystemRoot(repoRoot) || !strings.HasPrefix(path, "system/") {
+		return path
+	}
+	return strings.TrimPrefix(path, "system/")
+}
+
+func isInstalledSystemRoot(repoRoot string) bool {
+	required := []string{".os", "assets", "docs", "playbooks", "workspace"}
+	for _, rel := range required {
+		info, err := os.Stat(filepath.Join(repoRoot, rel))
+		if err != nil || !info.IsDir() {
+			return false
+		}
+	}
+	return true
 }
 
 func repoRelative(repoRoot, path string) string {

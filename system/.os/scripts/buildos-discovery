@@ -10,12 +10,12 @@ if command -v buildos-discovery >/dev/null 2>&1; then
 fi
 
 script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-repo_root=$(CDPATH= cd -- "$script_dir/../../.." && pwd)
-local_bin="$repo_root/toolkits/buildos-discovery/bin/buildos-discovery"
+dev_root=$(CDPATH= cd -- "$script_dir/../../.." && pwd)
+local_bin="$dev_root/toolkits/buildos-discovery/bin/buildos-discovery"
 
 if [ -x "$local_bin" ]; then
   exec "$local_bin" "$@"
 fi
 
-printf '%s\n' "buildos-discovery binary not found. Install buildos-discovery, set BUILDOS_DISCOVERY_BIN, or build $local_bin." >&2
+printf '%s\n' "buildos-discovery binary not found. Install buildos-discovery, set BUILDOS_DISCOVERY_BIN, or build the toolkit binary." >&2
 exit 127

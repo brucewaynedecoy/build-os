@@ -90,6 +90,7 @@ type findingIndexRow struct {
 
 func RecordDiscoveryRun(opts RunDiscoveryOptions) (RunDiscoveryResult, error) {
 	repoRoot := cleanRepoRoot(opts.RepoRoot)
+	layout := detectLayout(repoRoot)
 	if opts.PlaybookID == "" {
 		return RunDiscoveryResult{}, errors.New("run discovery requires --playbook-id")
 	}
@@ -102,14 +103,14 @@ func RecordDiscoveryRun(opts RunDiscoveryOptions) (RunDiscoveryResult, error) {
 		return RunDiscoveryResult{}, err
 	}
 
-	runsIndexPath := filepath.Join(repoRoot, "system/.os/data/runs.jsonl")
+	runsIndexPath := layout.path("system/.os/data/runs.jsonl")
 	runID, err := nextJSONLID(runsIndexPath, "RUN")
 	if err != nil {
 		return RunDiscoveryResult{}, err
 	}
 
-	runRelPath := filepath.ToSlash(filepath.Join("system/workspace/runs", runID)) + "/"
-	runPath := filepath.Join(repoRoot, filepath.FromSlash(runRelPath))
+	runRelPath := layout.rel(filepath.ToSlash(filepath.Join("system/workspace/runs", runID)) + "/")
+	runPath := layout.path(runRelPath)
 	if _, err := os.Stat(runPath); err == nil {
 		return RunDiscoveryResult{}, fmt.Errorf("run artifact %s already exists", runRelPath)
 	} else if !errors.Is(err, os.ErrNotExist) {
@@ -124,6 +125,8 @@ func RecordDiscoveryRun(opts RunDiscoveryOptions) (RunDiscoveryResult, error) {
 	if err != nil {
 		return RunDiscoveryResult{}, err
 	}
+	datasetRefs := uniqueStrings(layout.refs(opts.DatasetRefs))
+	sourceRefs := uniqueStrings(layout.refs(append([]string{playbook.Path}, rawSources...)))
 
 	targets := opts.Targets
 	if len(targets) == 0 {
@@ -158,10 +161,10 @@ func RecordDiscoveryRun(opts RunDiscoveryOptions) (RunDiscoveryResult, error) {
 		EvidenceCount:     len(evidence),
 		RawFindingCount:   len(rawTexts),
 		QualifiedFindings: []string{},
-		DatasetRefs:       uniqueStrings(opts.DatasetRefs),
+		DatasetRefs:       datasetRefs,
 		SourceAnchor:      filepath.ToSlash(filepath.Join(runRelPath, "run.md")) + "#run-" + strings.ToLower(runID),
-		DocAnchor:         "system/docs/prd/10-discovery-runs-and-qualification.md#run-artifacts",
-		SourceRefs:        uniqueStrings(append([]string{playbook.Path}, rawSources...)),
+		DocAnchor:         layout.ref("system/docs/prd/10-discovery-runs-and-qualification.md#run-artifacts"),
+		SourceRefs:        sourceRefs,
 		Related:           uniqueStrings(append([]string{playbook.ID}, targets...)),
 		CreatedAt:         now,
 		UpdatedAt:         now,
@@ -169,7 +172,7 @@ func RecordDiscoveryRun(opts RunDiscoveryOptions) (RunDiscoveryResult, error) {
 			"playbook_id":      playbook.ID,
 			"playbook_version": playbook.Version,
 			"targets":          uniqueStrings(targets),
-			"dataset_refs":     uniqueStrings(opts.DatasetRefs),
+			"dataset_refs":     datasetRefs,
 		},
 		Outputs: map[string]any{
 			"evidence":     artifactPaths(evidence),
@@ -180,7 +183,7 @@ func RecordDiscoveryRun(opts RunDiscoveryOptions) (RunDiscoveryResult, error) {
 	result := RunDiscoveryResult{
 		RunID:           runID,
 		RunPath:         runRelPath,
-		RunsIndexPath:   filepath.ToSlash(filepath.Join("system/.os/data/runs.jsonl")),
+		RunsIndexPath:   layout.rel("system/.os/data/runs.jsonl"),
 		EvidenceCount:   len(evidence),
 		RawFindingCount: len(rawTexts),
 		DryRun:          opts.DryRun,
@@ -193,7 +196,7 @@ func RecordDiscoveryRun(opts RunDiscoveryOptions) (RunDiscoveryResult, error) {
 		return RunDiscoveryResult{}, err
 	}
 	for _, artifact := range evidence {
-		if err := copyFile(resolveRepoPath(repoRoot, artifact.Source), filepath.Join(repoRoot, filepath.FromSlash(artifact.Path))); err != nil {
+		if err := copyFile(resolveRepoPath(repoRoot, artifact.Source), layout.path(artifact.Path)); err != nil {
 			return RunDiscoveryResult{}, err
 		}
 	}
@@ -211,6 +214,7 @@ func RecordDiscoveryRun(opts RunDiscoveryOptions) (RunDiscoveryResult, error) {
 
 func QualifyFinding(opts QualifyFindingOptions) (QualifyFindingResult, error) {
 	repoRoot := cleanRepoRoot(opts.RepoRoot)
+	layout := detectLayout(repoRoot)
 	if opts.RunID == "" {
 		return QualifyFindingResult{}, errors.New("qualify finding requires --run-id")
 	}
@@ -230,12 +234,12 @@ func QualifyFinding(opts QualifyFindingOptions) (QualifyFindingResult, error) {
 		return QualifyFindingResult{}, err
 	}
 
-	runsIndexPath := filepath.Join(repoRoot, "system/.os/data/runs.jsonl")
+	runsIndexPath := layout.path("system/.os/data/runs.jsonl")
 	runRow, err := readRunIndexRow(runsIndexPath, opts.RunID)
 	if err != nil {
 		return QualifyFindingResult{}, err
 	}
-	rawRef, err := normalizeRawFindingRef(opts.RunID, opts.RawFindingRef)
+	rawRef, err := normalizeRawFindingRef(layout, opts.RunID, opts.RawFindingRef)
 	if err != nil {
 		return QualifyFindingResult{}, err
 	}
@@ -243,13 +247,13 @@ func QualifyFinding(opts QualifyFindingOptions) (QualifyFindingResult, error) {
 		return QualifyFindingResult{}, err
 	}
 
-	findingsIndexPath := filepath.Join(repoRoot, "system/.os/data/findings.jsonl")
+	findingsIndexPath := layout.path("system/.os/data/findings.jsonl")
 	findingID, err := nextJSONLID(findingsIndexPath, "FIND")
 	if err != nil {
 		return QualifyFindingResult{}, err
 	}
-	findingRelPath := filepath.ToSlash(filepath.Join("system/workspace/findings", findingID)) + "/"
-	findingPath := filepath.Join(repoRoot, filepath.FromSlash(findingRelPath))
+	findingRelPath := layout.rel(filepath.ToSlash(filepath.Join("system/workspace/findings", findingID)) + "/")
+	findingPath := layout.path(findingRelPath)
 	if _, err := os.Stat(findingPath); err == nil {
 		return QualifyFindingResult{}, fmt.Errorf("finding artifact %s already exists", findingRelPath)
 	} else if !errors.Is(err, os.ErrNotExist) {
@@ -301,7 +305,7 @@ func QualifyFinding(opts QualifyFindingOptions) (QualifyFindingResult, error) {
 		QualifiedAt:          now,
 		Designs:              []string{},
 		SourceAnchor:         rawAnchor,
-		DocAnchor:            "system/docs/prd/10-discovery-runs-and-qualification.md#finding-qualification",
+		DocAnchor:            layout.ref("system/docs/prd/10-discovery-runs-and-qualification.md#finding-qualification"),
 		SourceRefs:           []string{rawAnchor},
 		Related:              uniqueStrings([]string{opts.RunID}),
 		CreatedAt:            now,
@@ -311,7 +315,7 @@ func QualifyFinding(opts QualifyFindingOptions) (QualifyFindingResult, error) {
 	result := QualifyFindingResult{
 		FindingID:         findingID,
 		FindingPath:       findingRelPath,
-		FindingsIndexPath: filepath.ToSlash(filepath.Join("system/.os/data/findings.jsonl")),
+		FindingsIndexPath: layout.rel("system/.os/data/findings.jsonl"),
 		DryRun:            opts.DryRun,
 	}
 	if opts.DryRun {
@@ -325,7 +329,7 @@ func QualifyFinding(opts QualifyFindingOptions) (QualifyFindingResult, error) {
 		return QualifyFindingResult{}, err
 	}
 	for _, artifact := range append(testArtifacts, evidenceArtifacts...) {
-		if err := copyFile(resolveRepoPath(repoRoot, artifact.Source), filepath.Join(repoRoot, filepath.FromSlash(artifact.Path))); err != nil {
+		if err := copyFile(resolveRepoPath(repoRoot, artifact.Source), layout.path(artifact.Path)); err != nil {
 			return QualifyFindingResult{}, err
 		}
 	}
@@ -342,7 +346,8 @@ func QualifyFinding(opts QualifyFindingOptions) (QualifyFindingResult, error) {
 }
 
 func activeDiscoveryPlaybook(repoRoot, playbookID string) (PlaybookEntry, error) {
-	indexPath := filepath.Join(repoRoot, "system/.os/indexes/playbooks.json")
+	layout := detectLayout(repoRoot)
+	indexPath := layout.path("system/.os/indexes/playbooks.json")
 	data, err := os.ReadFile(indexPath)
 	if err != nil {
 		return PlaybookEntry{}, fmt.Errorf("read playbook index: %w", err)
@@ -437,6 +442,7 @@ func numericSuffix(id, prefix string) (int, bool) {
 func planCopiedArtifacts(repoRoot string, paths []string, targetRelDir string) ([]copiedArtifact, error) {
 	artifacts := make([]copiedArtifact, 0, len(paths))
 	used := map[string]bool{}
+	layout := detectLayout(repoRoot)
 	for i, source := range paths {
 		if source == "" {
 			continue
@@ -450,7 +456,7 @@ func planCopiedArtifacts(repoRoot string, paths []string, targetRelDir string) (
 		}
 		used[name] = true
 		artifacts = append(artifacts, copiedArtifact{
-			Source: source,
+			Source: layout.ref(source),
 			Path:   filepath.ToSlash(filepath.Join(targetRelDir, name)),
 		})
 	}
@@ -472,6 +478,7 @@ func sluggedFilename(name string) string {
 func rawFindingContent(repoRoot string, paths []string) ([]string, []string, error) {
 	texts := make([]string, 0, len(paths))
 	sources := make([]string, 0, len(paths))
+	layout := detectLayout(repoRoot)
 	for _, source := range paths {
 		if source == "" {
 			continue
@@ -485,7 +492,7 @@ func rawFindingContent(repoRoot string, paths []string) ([]string, []string, err
 			return nil, nil, err
 		}
 		texts = append(texts, strings.TrimSpace(string(data)))
-		sources = append(sources, filepath.ToSlash(source))
+		sources = append(sources, layout.ref(filepath.ToSlash(source)))
 	}
 	return texts, sources, nil
 }
@@ -667,18 +674,18 @@ func uniqueStrings(values []string) []string {
 	return out
 }
 
-func normalizeRawFindingRef(runID, rawRef string) (string, error) {
+func normalizeRawFindingRef(layout buildOSLayout, runID, rawRef string) (string, error) {
 	if rawRef == "" {
 		return "", errors.New("qualify finding requires --raw-finding-ref")
 	}
 	if strings.HasPrefix(rawRef, "#") {
-		return filepath.ToSlash(filepath.Join("system/workspace/runs", runID, "raw-findings.md")) + rawRef, nil
+		return layout.rel(filepath.ToSlash(filepath.Join("system/workspace/runs", runID, "raw-findings.md")) + rawRef), nil
 	}
 	if strings.HasPrefix(rawRef, "raw-findings.md#") {
-		return filepath.ToSlash(filepath.Join("system/workspace/runs", runID, rawRef)), nil
+		return layout.rel(filepath.ToSlash(filepath.Join("system/workspace/runs", runID, rawRef))), nil
 	}
 	if strings.Contains(rawRef, "#") {
-		return filepath.ToSlash(rawRef), nil
+		return layout.rel(filepath.ToSlash(rawRef)), nil
 	}
 	return "", fmt.Errorf("raw finding reference %q must be a path#anchor", rawRef)
 }
@@ -740,14 +747,68 @@ func resolveRepoPath(repoRoot, path string) string {
 	if filepath.IsAbs(path) {
 		return path
 	}
-	return filepath.Join(repoRoot, filepath.FromSlash(path))
+	layout := detectLayout(repoRoot)
+	return layout.path(path)
 }
 
 func cleanRepoRoot(repoRoot string) string {
 	if repoRoot == "" {
 		return "."
 	}
-	return repoRoot
+	abs, err := filepath.Abs(repoRoot)
+	if err != nil {
+		return filepath.Clean(repoRoot)
+	}
+	return filepath.Clean(abs)
+}
+
+type buildOSLayout struct {
+	repoRoot      string
+	installedRoot bool
+}
+
+func detectLayout(repoRoot string) buildOSLayout {
+	return buildOSLayout{repoRoot: repoRoot, installedRoot: isInstalledSystemRoot(repoRoot)}
+}
+
+func (layout buildOSLayout) rel(path string) string {
+	path = filepath.ToSlash(path)
+	if layout.installedRoot && strings.HasPrefix(path, "system/") {
+		return strings.TrimPrefix(path, "system/")
+	}
+	return path
+}
+
+func (layout buildOSLayout) ref(value string) string {
+	pathPart, anchor, hasAnchor := strings.Cut(value, "#")
+	rel := layout.rel(pathPart)
+	if hasAnchor {
+		return rel + "#" + anchor
+	}
+	return rel
+}
+
+func (layout buildOSLayout) refs(values []string) []string {
+	out := make([]string, len(values))
+	for i, value := range values {
+		out[i] = layout.ref(value)
+	}
+	return out
+}
+
+func (layout buildOSLayout) path(rel string) string {
+	return filepath.Join(layout.repoRoot, filepath.FromSlash(layout.rel(rel)))
+}
+
+func isInstalledSystemRoot(repoRoot string) bool {
+	required := []string{".os", "assets", "docs", "playbooks", "workspace"}
+	for _, rel := range required {
+		info, err := os.Stat(filepath.Join(repoRoot, rel))
+		if err != nil || !info.IsDir() {
+			return false
+		}
+	}
+	return true
 }
 
 func nowUTC() string {

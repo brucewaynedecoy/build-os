@@ -1,6 +1,8 @@
 # buildos-intake
 
-`buildos-intake` is the first-party Build OS intake and conversion toolkit. It converts supported local source inputs into provenance-stamped converted twins under `system/assets/` and rebuilds derived operating-layer indexes.
+`buildos-intake` is the first-party Build OS intake and conversion toolkit. It converts supported local source inputs into provenance-stamped converted twins and rebuilds derived operating-layer indexes.
+
+In this development repository the default paths live under `system/`, such as `system/assets/` and `system/.os/indexes/`. In an installed Build OS system root, where `.os/`, `assets/`, `docs/`, `playbooks/`, and `workspace/` are copied to the root, the same defaults automatically target top-level `assets/`, `.os/indexes/`, and `playbooks/`.
 
 ## Command Surface
 

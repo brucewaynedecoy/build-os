@@ -454,7 +454,85 @@ func TestPDFInvalidInputFails(t *testing.T) {
 	}
 }
 
+func TestInstalledRootLayoutUsesTopLevelSystemDirs(t *testing.T) {
+	root := t.TempDir()
+	for _, rel := range []string{".os", "assets/_incoming", "docs", "playbooks/testing", "workspace"} {
+		if err := os.MkdirAll(filepath.Join(root, filepath.FromSlash(rel)), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	writeTextFile(t, root, "assets/_incoming/input.csv", "name,value\nalpha,1\n")
+	result, err := Convert(ConvertOptions{RepoRoot: root, Source: "assets/_incoming/input.csv", AssetsRoot: "system/assets"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Outputs) != 1 {
+		t.Fatalf("outputs=%d", len(result.Outputs))
+	}
+	wantOutput := filepath.Join(root, "assets", "input", "input.csv")
+	if result.Outputs[0].Path != wantOutput {
+		t.Fatalf("output path=%s want %s", result.Outputs[0].Path, wantOutput)
+	}
+	data, err := os.ReadFile(wantOutput)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(data), `source: "assets/_incoming/input.csv"`) {
+		t.Fatalf("installed-root source path should not include system prefix:\n%s", data)
+	}
+
+	referencesResult, err := BuildReferencesIndex(IndexOptions{RepoRoot: root, AssetsRoot: "system/assets", Output: "system/.os/indexes/references.json"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if referencesResult.OutputPath != filepath.Join(root, ".os", "indexes", "references.json") {
+		t.Fatalf("references index path=%s", referencesResult.OutputPath)
+	}
+	references := readTextFile(t, root, ".os/indexes/references.json")
+	if !strings.Contains(references, `"converted": "assets/input/input.csv"`) {
+		t.Fatalf("installed-root reference path should not include system prefix:\n%s", references)
+	}
+
+	writePlaybook(t, root, "playbooks/testing/sample.md", `---
+id: PB-001
+title: Sample
+category: testing
+execution_mode: guided
+state_nature: stateless
+status: active
+audience: both
+harness:
+  - agent
+systems: []
+environments: []
+owners: []
+targets: []
+produces: []
+source_anchor: null
+version: "1.0.0"
+related: []
+---
+# Sample
+`)
+	indexResult, err := BuildPlaybooksIndex(IndexOptions{RepoRoot: root, PlaybooksRoot: "system/playbooks", Output: "system/.os/indexes/playbooks.json"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if indexResult.OutputPath != filepath.Join(root, ".os", "indexes", "playbooks.json") {
+		t.Fatalf("index path=%s", indexResult.OutputPath)
+	}
+	index := readTextFile(t, root, ".os/indexes/playbooks.json")
+	if !strings.Contains(index, `"path": "playbooks/testing/sample.md"`) {
+		t.Fatalf("installed-root playbook path should not include system prefix:\n%s", index)
+	}
+}
+
 func writePlaybook(t *testing.T, root, rel, body string) {
+	t.Helper()
+	writeTextFile(t, root, rel, body)
+}
+
+func writeTextFile(t *testing.T, root, rel, body string) {
 	t.Helper()
 	path := filepath.Join(root, filepath.FromSlash(rel))
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
@@ -463,6 +541,15 @@ func writePlaybook(t *testing.T, root, rel, body string) {
 	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func readTextFile(t *testing.T, root, rel string) string {
+	t.Helper()
+	data, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(rel)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(data)
 }
 
 func assertStringSlice(t *testing.T, got, want []string) {
