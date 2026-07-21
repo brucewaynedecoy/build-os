@@ -227,6 +227,12 @@ system/.os/scripts/buildos-discovery qualify finding --run-id <RUN-NNN> --raw-fi
 
 Maintain discovery behavior against [run-record-contract.md](../../../system/.os/contracts/run-record-contract.md) and [finding-contract.md](../../../system/.os/contracts/finding-contract.md). `run discovery` requires an active runnable `category: discovery` playbook from `system/.os/indexes/playbooks.json`; `qualify finding` requires an existing source run, a raw finding anchor, deterministic confirmation test evidence, and a positive or negative qualification outcome.
 
+During W1 R4, `toolkits/buildos-discovery/go.mod` has an explicit local dependency on `../buildos`, and discovery imports `toolkits/buildos/pkg/entities` directly. It must not invoke `buildos entities` as a subprocess or implement its own redirect traversal. Before writing, `run discovery` resolves authored playbook targets and explicit targets; `qualify finding` resolves the requested run ID. Results and CLI output expose the requested ID, canonical ID, and complete chain.
+
+Preserve authored and historical provenance. Do not rewrite the playbook index, losing entity rows, or the requested raw-finding anchor. New run targets use terminal canonical IDs while retaining requested targets and resolution details. New finding `run_id`, `origin_run`, `basis_refs`, and `related` governed references use the terminal canonical run; `requested_run_id` and the raw anchor preserve what the operator supplied. The canonical run supplies runtime systems, environments, and owners.
+
+The resolver treats `running`, `closed`, and `aborted` as valid terminal states for run entities. A stale `.os/indexes/entity-resolution.json` does not override authoritative canonical JSONL. Invalid graphs, missing IDs, or invalid terminal lifecycle states fail before any run or finding artifact is written.
+
 Keep raw findings inside the run artifact until qualification. Do not route run/finding commands through `buildos-intake`, and do not add run/finding-specific validation to `validate_config.py`.
 
 ## buildos-design Reference
@@ -245,7 +251,11 @@ system/.os/scripts/buildos-design promote finding --finding-id <FIND-NNN> --rout
 
 Maintain design-promotion behavior against [finding-contract.md](../../../system/.os/contracts/finding-contract.md), the active qualified-finding design-promotion requirement, and the make-docs design router under [system/docs/designs/AGENTS.md](../../../system/docs/designs/AGENTS.md).
 
-`promote finding` requires a `qualified` finding row, a qualification anchor, and an explicit route. The `baseline-plan` route prepares a design for fresh baseline planning; the `change-plan` route prepares a design for additive planning against the active PRD namespace. A successful promotion writes a dated design under `system/docs/designs/`, records the design link on the source finding, and updates the findings index for traceability.
+`promote finding` requires a terminal `qualified` finding row, a qualification anchor, and an explicit route. The requested finding ID may be historical and superseded: the toolkit resolves it through the shared `toolkits/buildos/pkg/entities` package and reports the requested ID, canonical ID, and complete chain. The `baseline-plan` route prepares a design for fresh baseline planning; the `change-plan` route prepares a design for additive planning against the active PRD namespace.
+
+A successful promotion writes a dated design under `system/docs/designs/`, records the design link only on the canonical finding, and updates the findings index for traceability. The losing finding row and authored historical references remain unchanged. The canonical finding supplies lineage, qualification evidence, and configured scope. JSONL updates preserve unknown and type-specific fields and use atomic replacement; a resolver, validation, design-write, or canonical-finding update failure must not leave a partial promotion.
+
+During W1 R4, `toolkits/buildos-design/go.mod` depends explicitly on `../buildos` and imports the resolver package directly. It must not shell out to `buildos entities` or duplicate graph traversal. This local cross-module dependency is temporary and is removed when W1 R5 migrates design into the unified module.
 
 Keep design promotion user-gated. Do not auto-promote qualified findings, do not bypass the make-docs design router, and do not rewrite the origin run or qualification evidence during design promotion.
 

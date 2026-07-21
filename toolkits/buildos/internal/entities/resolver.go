@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// Resolve follows zero or more immediate-successor edges to one active record.
+// Resolve follows zero or more immediate-successor edges to one current record.
 func (g *Graph) Resolve(id string) (Resolution, []Diagnostic) {
 	requested := id
 	record, ok := g.records[id]
@@ -34,7 +34,7 @@ func (g *Graph) Resolve(id string) (Resolution, []Diagnostic) {
 	if !valid {
 		return Resolution{}, g.pathDiagnostics(record, chain)
 	}
-	if terminal.Status != "active" {
+	if !isTerminalCanonical(terminal) {
 		if terminal.Status == "superseded" && terminal.Redirect == nil {
 			return Resolution{}, []Diagnostic{diagnosticForRecord(
 				CodeLegacyMissingRedirect, SeverityError,
@@ -42,7 +42,7 @@ func (g *Graph) Resolve(id string) (Resolution, []Diagnostic) {
 				"review the terminal record and add one complete redirect to a same-type successor",
 			)}
 		}
-		diagnostic := diagnosticForRecord(CodeRedirectInactiveTerminal, SeverityError, fmt.Sprintf("resolution of %s terminates at %s with status %s", requested, terminal.ID, terminal.Status), record, "review the chain and redirect it to a terminal active record")
+		diagnostic := diagnosticForRecord(CodeRedirectInactiveTerminal, SeverityError, fmt.Sprintf("resolution of %s terminates at %s with status %s", requested, terminal.ID, terminal.Status), record, "review the chain and redirect it to a current same-type terminal record")
 		diagnostic.TargetID = terminal.ID
 		diagnostic.Chain = chain
 		return Resolution{}, []Diagnostic{diagnostic}

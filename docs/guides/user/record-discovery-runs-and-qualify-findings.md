@@ -90,7 +90,13 @@ The live browser or computer-use harness remains external to this repository. Bu
 
 A discovery run can have `positive`, `negative`, or `inconclusive` outcome. A qualified finding can have `positive` or `negative` outcome.
 
+Discovery now resolves governed IDs before it writes. If a playbook or explicit target names a superseded record, the command keeps that requested ID and its complete redirect chain for audit, but runtime execution and the new run use the terminal canonical target. The authored playbook is not rewritten.
+
 Raw findings stay in the run artifact. They do not receive `FIND-NNN` IDs and are not indexed as qualified findings until `qualify finding` confirms one with deterministic evidence.
+
+When you qualify from a requested run ID that redirects, the command reads the terminal canonical run for systems, environments, and owners. The new finding links to that canonical run. It also retains the requested run ID and requested raw-finding anchor so a reviewer can trace exactly what you supplied. Command output reports requested ID, canonical ID, and chain.
+
+For resolver purposes, runs may be current in `running`, `closed`, or `aborted` state. A new qualified finding is current in the finding-specific `qualified` state. That status does not make an unrelated entity type current.
 
 For negative findings, the confirmation test must assert the negative condition and pass. This turns the absence or failure mode into a regression guard.
 
@@ -114,6 +120,8 @@ If `qualify finding` cannot find the raw anchor, inspect `system/workspace/runs/
 
 If a negative finding lacks a deterministic confirmation test, keep it as a raw finding until a repeatable test exists.
 
+If the command reports an invalid entity graph, unknown governed ID, or invalid terminal status, stop and repair or review the canonical data. The toolkit checks these conditions before writing, so it does not leave a partial run or finding. A stale entity-resolution index does not override canonical JSONL.
+
 ## FAQ
 
 **Does Build OS run the browser or computer-use harness for me?**
@@ -127,6 +135,10 @@ No. Qualified findings must trace back to a source `RUN-NNN` raw finding.
 **Can an inconclusive run produce a qualified finding?**
 
 Only if a raw finding from that run later has deterministic positive or negative confirmation evidence.
+
+**Will Build OS rewrite an old playbook or run reference when it finds a redirect?**
+
+No. Historical references remain as authored. Runtime use and new governed references use the terminal canonical ID, while output preserves the requested ID and chain.
 
 ## Related Resources
 

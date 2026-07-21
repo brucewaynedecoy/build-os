@@ -10,10 +10,13 @@ type PromoteFindingOptions struct {
 }
 
 type PromoteFindingResult struct {
-	FindingID         string
-	DesignPath        string
-	FindingPath       string
-	FindingsIndexPath string
-	DesignContent     string
-	DryRun            bool
+	FindingID          string
+	RequestedFindingID string
+	CanonicalFindingID string
+	RedirectChain      []string
+	DesignPath         string
+	FindingPath        string
+	FindingsIndexPath  string
+	DesignContent      string
+	DryRun             bool
 }

@@ -4,7 +4,7 @@
 
 Define a generic, non-destructive way to consolidate duplicate or superseded Build OS entity records,
 preserve the history and provenance of every losing record,
-and resolve historical and future references to one active canonical record.
+and resolve historical and future references to one current canonical record.
 
 Personas are the first proving ground.
 The redirect graph and resolver apply to every entity type governed by the entity-records contract,
@@ -53,7 +53,7 @@ Missing targets,
 self-redirects,
 cross-type targets,
 cycles,
-and chains that do not terminate at one active record fail closed with actionable diagnostics.
+and chains that do not terminate at one current record fail closed with actionable diagnostics.
 
 ### Deterministic toolkit and index
 
@@ -182,7 +182,7 @@ W1 R4 P3 proves this procedure against the sanitized fixture root at `toolkits/b
 
 ### Acceptance requirements
 
-- One-hop and multi-hop redirects resolve to one active canonical record without erasing the losing rows.
+- One-hop and multi-hop redirects resolve to one current canonical record without erasing the losing rows.
 - A later replacement of a current winner preserves correct terminal resolution.
 - The same consolidation is idempotent;
   redirecting one loser to a different target is a reviewed conflict.
@@ -219,6 +219,9 @@ The P3 copied-root acceptance requirements are satisfied by the sanitized person
 
 - Superseded by [18 Revise Unified BuildOS CLI and Distribution](./18-revise-unified-buildos-cli-and-distribution.md) for the public executable and source-module topology: W1 R4 seeds `toolkits/buildos/` and `buildos entities`; W1 R5 later consolidates the existing domains and packages `buildos 0.1.0`. The entity data, resolver, mutation, index, validation, and migration-safety requirements in this PRD remain effective.
 - W1 R4 P2 implements the source-built CLI seed, graph engine, deterministic index, and reviewed mutation surface. Version 1 manifests are explicitly limited to one canonical JSONL dataset so a successful apply performs one atomic canonical-file replacement; multi-dataset reviews require separate manifests and approvals.
+- W1 R4 P4 wires `buildos-discovery` and `buildos-design` directly to the temporary `toolkits/buildos/pkg/entities` Go package through explicit local module dependencies. Discovery resolves authored playbook targets, explicit targets, and requested run IDs before runtime use; design resolves the requested finding before promotion. Both preserve requested IDs and full chains for provenance while new governed references use terminal canonical IDs.
+- P4 also implements the persona-only exact-match adapter and the `extraction-outcomes-v1` validator as shared package APIs. Exact IDs, unique approved aliases, and unique `persona-v1` keys may resolve automatically; ambiguous, colliding, inactive, fuzzy, semantic, unsupported-type, and malformed inputs remain non-mutating review outcomes.
+- P4 does not migrate live data, publish a package, replace installed binaries, or add a general extraction command. Existing discovery and design binaries remain separate until W1 R5.
 
 ## Affected Baseline Docs
 
@@ -264,7 +267,7 @@ The lifecycle and graph contract requires:
 - source and target to exist,
   differ,
   and have the same entity type;
-- every chain to be acyclic and terminate at one active record;
+- every chain to be acyclic and terminate at one current record;
 - archived to mean retained without a successor;
 - losing type-specific fields and provenance to remain intact;
 - reverse membership to be derived rather than copied onto the winner;
@@ -316,6 +319,10 @@ the index may be deleted and rebuilt.
 - Entity consumers preserve original IDs for provenance and expose canonical IDs and chains.
 - Entity producers store canonical IDs for new references and distinguish reused or updated entities from newly minted entities.
 - Playbooks that historically target a losing ID remain auditable and resolve to the canonical entity when used.
+- Discovery stores canonical targets and canonical run links in new records while retaining requested targets, requested run IDs, and complete resolution chains. Its authored playbook rows and historical losing records remain unchanged.
+- Design promotion accepts a requested historical finding ID, resolves it to one terminal `qualified` finding, reports requested/canonical/chain data, and writes the design back-reference only to the canonical finding.
+- Terminal lifecycle is type-aware: most types resolve to `active`; findings may resolve to `qualified`; runs may resolve to `running`, `closed`, or `aborted`. `qualified` is not a valid status for unrelated types, and design promotion still requires a `qualified` canonical finding.
+- Extraction-outcome validation requires disjoint `minted`, `referenced`, and `updated` lists whose governed IDs resolve to terminal canonical records. Entity-graph validation does not validate `PB-NNN` values; the playbook-aware API also consults the authoritative playbook resolver. The shared persona matcher remains a proposal boundary rather than a live-data writer.
 - The first release supports reviewed persona consolidation and copied-root rehearsal before broader entity-type rollout.
 - The pre-upgrade audit prompt remains proposal-only until the compatible resolver,
   validator,

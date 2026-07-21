@@ -37,7 +37,7 @@ func TestPromoteFindingCommandWritesDesignAndFindingBackRefs(t *testing.T) {
 	}
 
 	designRelPath := "system/docs/designs/" + time.Now().Format("2006-01-02") + "-payment-retry-repair.md"
-	if !strings.Contains(stdout, "wrote "+designRelPath+" (FIND-001)") {
+	if !strings.Contains(stdout, "wrote "+designRelPath+" (requested=FIND-001 canonical=FIND-001 chain=[FIND-001])") {
 		t.Fatalf("stdout=%q", stdout)
 	}
 	design := readCommandTextFile(t, root, designRelPath)
@@ -84,7 +84,7 @@ func TestPromoteFindingCommandDryRunDoesNotWrite(t *testing.T) {
 	}
 
 	designRelPath := "system/docs/designs/" + time.Now().Format("2006-01-02") + "-payment-retry-change.md"
-	if !strings.Contains(stdout, "would write "+designRelPath+" (FIND-001)") {
+	if !strings.Contains(stdout, "would write "+designRelPath+" (requested=FIND-001 canonical=FIND-001 chain=[FIND-001])") {
 		t.Fatalf("stdout=%q", stdout)
 	}
 	assertCommandNotExists(t, root, designRelPath)
@@ -168,6 +168,9 @@ func writeCommandFindingFixture(t *testing.T, root string) {
 		t.Fatal(err)
 	}
 	writeCommandTextFile(t, root, "system/.os/data/findings.jsonl", string(data)+"\n")
+	for _, name := range []string{"requirements.jsonl", "capabilities.jsonl", "personas.jsonl", "test-cases.jsonl", "results.jsonl", "runs.jsonl", "extractions.jsonl"} {
+		writeCommandTextFile(t, root, filepath.ToSlash(filepath.Join("system/.os/data", name)), "")
+	}
 	writeCommandTextFile(t, root, "system/workspace/findings/FIND-001/finding.md", "# Qualified finding FIND-001\n\n## Designs\n\nNo design hand-off recorded.\n")
 	writeCommandTextFile(t, root, "system/workspace/findings/FIND-001/qualification.md", "# Qualification\n\n## Confirmation Test {#confirmation-test}\n")
 	writeCommandTextFile(t, root, "system/workspace/runs/RUN-001/raw-findings.md", "## Raw Finding 1 {#raw-finding-1}\n")

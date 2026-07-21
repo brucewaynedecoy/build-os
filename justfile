@@ -18,7 +18,9 @@ build-buildos output="toolkits/buildos/bin/buildos":
 test-buildos:
     #!/usr/bin/env bash
     set -euo pipefail
-    (cd toolkits/buildos && go test ./...)
+    for module in buildos buildos-discovery buildos-design; do
+      (cd "toolkits/$module" && go test ./...)
+    done
 
 install-toolkits:
     #!/usr/bin/env bash

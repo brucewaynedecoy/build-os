@@ -97,11 +97,23 @@ If reviewers disagree, keep the records separate. A deferred decision is safer t
 
 ## Exact Persona Reuse
 
-P1 defines a future exact-match path for personas, but it does not add a runnable command yet. A team may approve aliases and one `persona-v1` identity phrase for a persona. Build OS may reuse that persona automatically only when the exact approved value leads to one active canonical persona after following redirects.
+P4 adds the shared exact-match rules for persona-producing code, but it does not add a new user-facing extraction command. A team may approve aliases and one `persona-v1` identity phrase for a persona. A producer may reuse that persona automatically only when the exact approved value leads to one active canonical persona after following redirects.
 
-Build OS will not treat similar wording as an exact identity. Fuzzy or semantic similarity, punctuation changes, synonym guesses, and ambiguous aliases remain review candidates. They do not create redirects or change records automatically.
+Build OS does not treat similar wording as an exact identity. Fuzzy or semantic similarity, punctuation changes, synonym guesses, malformed stored identity fields, and ambiguous or colliding aliases remain review candidates. They do not create redirects or change records automatically.
 
-When extraction integration arrives in P4, its record will say whether it minted a new entity, referenced an unchanged canonical entity, or deliberately updated an existing one. That history remains tied to the canonical ID known at extraction time.
+The P4 extraction validator distinguishes whether a proposed extraction minted a new entity, referenced an unchanged canonical entity, or deliberately updated an existing one. These lists must be present, separate, and canonical at the time of the extraction. A playbook ID needs the validator that also consults the authoritative playbook registry; the entity graph alone cannot validate playbooks. This validation does not itself write an extraction row or change live data.
+
+## How Existing Tools Use Canonical IDs
+
+The separately built discovery and design tools now use the same resolver package in process. They do not call the `buildos entities` command behind the scenes.
+
+| Operation | What stays as history | What uses the winner |
+| --- | --- | --- |
+| Start a discovery run | The playbook's authored target and the requested target list remain available for audit. | Runtime execution and the new run's governed target references use terminal canonical IDs. |
+| Qualify a finding | The requested run ID and raw-finding anchor remain available for audit. | The new finding links to the terminal canonical run and inherits its governed scope. |
+| Promote a finding | The requested finding ID, losing record, and resolution chain remain available for audit. | The design is created from the terminal `qualified` finding, and only that finding receives the design back-reference. |
+
+Command output reports the requested ID, canonical ID, and complete chain so you can see when a historical reference was redirected. If the graph is invalid, an ID is unknown, or the terminal record has the wrong lifecycle state, the operation stops before creating new records.
 
 ## Current Source-Build Workflow
 
@@ -265,6 +277,6 @@ No. Building produces a separate binary. Replacing installed binary routing and 
 
 ## Future Coverage
 
-- Blocked by: W1 R4 P4 extraction and consumer integration. Update when: redirect-aware reads and canonical writes are available. Guide change: show how old references appear, how new references are stored, and how repeated persona extraction reuses a reviewed canonical record.
+- Blocked by: a concrete outcome-aware extraction writer. Update when: a user-facing producer persists validated `minted`, `referenced`, and `updated` outcomes. Guide change: add its exact reviewed workflow without implying that the shared validator writes records.
 - Blocked by: W1 R5 package distribution. Update when: a verified `buildos 0.1.0` package and legacy command aliases are available. Guide change: replace source-build-only setup with package installation and upgrade steps.
 - Blocked by: W2 project lifecycle. Update when: manifest-backed setup, update, backup, removal, and uninstall commands are available. Guide change: add the automated in-place project lifecycle path while keeping separate data-migration approvals.

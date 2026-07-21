@@ -32,8 +32,8 @@ func TestRecordDiscoveryRunCreatesArtifactsAndDoesNotPromoteRawFinding(t *testin
 	assertExists(t, root, "system/workspace/runs/RUN-001/run.md")
 	assertExists(t, root, "system/workspace/runs/RUN-001/raw-findings.md")
 	assertExists(t, root, "system/workspace/runs/RUN-001/evidence/001-evidence.txt")
-	if _, err := os.Stat(filepath.Join(root, "system/.os/data/findings.jsonl")); !os.IsNotExist(err) {
-		t.Fatalf("raw finding should not promote to findings.jsonl, err=%v", err)
+	if rows := readJSONLRows(t, root, "system/.os/data/findings.jsonl"); len(rows) != 0 {
+		t.Fatalf("raw finding should not promote to findings.jsonl: %#v", rows)
 	}
 
 	raw := readTextFile(t, root, "system/workspace/runs/RUN-001/raw-findings.md")
@@ -41,7 +41,7 @@ func TestRecordDiscoveryRunCreatesArtifactsAndDoesNotPromoteRawFinding(t *testin
 		t.Fatalf("raw findings missing anchor/content:\n%s", raw)
 	}
 	row := readSingleJSONLRow(t, root, "system/.os/data/runs.jsonl")
-	if row["id"] != "RUN-001" || row["outcome"] != "negative" || row["playbook_id"] != "PB-010" {
+	if row["id"] != "RUN-001" || row["status"] != "closed" || row["outcome"] != "negative" || row["playbook_id"] != "PB-010" {
 		t.Fatalf("unexpected run row: %#v", row)
 	}
 }
@@ -65,7 +65,9 @@ func TestRecordDiscoveryRunDryRunDoesNotWrite(t *testing.T) {
 		t.Fatalf("unexpected result: %#v", result)
 	}
 	assertNotExists(t, root, "system/workspace/runs/RUN-001")
-	assertNotExists(t, root, "system/.os/data/runs.jsonl")
+	if rows := readJSONLRows(t, root, "system/.os/data/runs.jsonl"); len(rows) != 0 {
+		t.Fatalf("dry run wrote run rows: %#v", rows)
+	}
 }
 
 func TestRecordDiscoveryRunRejectsImmutableRunFolder(t *testing.T) {
@@ -84,10 +86,10 @@ func TestRecordDiscoveryRunRejectsImmutableRunFolder(t *testing.T) {
 func TestRecordDiscoveryRunRejectsDuplicateIDs(t *testing.T) {
 	root := t.TempDir()
 	writePlaybookIndex(t, root, activeDiscoveryPlaybookFixture("PB-010"), true)
-	writeTextFile(t, root, "system/.os/data/runs.jsonl", `{"id":"RUN-001"}`+"\n"+`{"id":"RUN-001"}`+"\n")
+	writeTextFile(t, root, "system/.os/data/runs.jsonl", `{"id":"RUN-001","type":"run","status":"active"}`+"\n"+`{"id":"RUN-001","type":"run","status":"active"}`+"\n")
 
 	_, err := RecordDiscoveryRun(RunDiscoveryOptions{RepoRoot: root, PlaybookID: "PB-010", Outcome: "positive"})
-	if err == nil || !strings.Contains(err.Error(), "duplicates") {
+	if err == nil || !strings.Contains(err.Error(), "duplicate_id") {
 		t.Fatalf("expected duplicate ID rejection, got %v", err)
 	}
 }
@@ -333,7 +335,9 @@ func TestQualifyFindingDryRunDoesNotWrite(t *testing.T) {
 		t.Fatalf("unexpected dry-run result: %#v", result)
 	}
 	assertNotExists(t, root, "system/workspace/findings/FIND-001")
-	assertNotExists(t, root, "system/.os/data/findings.jsonl")
+	if rows := readJSONLRows(t, root, "system/.os/data/findings.jsonl"); len(rows) != 0 {
+		t.Fatalf("dry run wrote finding rows: %#v", rows)
+	}
 }
 
 func TestQualifyFindingRejectsMissingRawAnchorMissingEvidenceAndDuplicateIDs(t *testing.T) {
@@ -375,7 +379,7 @@ func TestQualifyFindingRejectsMissingRawAnchorMissingEvidenceAndDuplicateIDs(t *
 		t.Fatalf("expected missing evidence error, got %v", err)
 	}
 
-	writeTextFile(t, root, "system/.os/data/findings.jsonl", `{"id":"FIND-001"}`+"\n"+`{"id":"FIND-001"}`+"\n")
+	writeTextFile(t, root, "system/.os/data/findings.jsonl", `{"id":"FIND-001","type":"finding","status":"active"}`+"\n"+`{"id":"FIND-001","type":"finding","status":"active"}`+"\n")
 	_, err = QualifyFinding(QualifyFindingOptions{
 		RepoRoot:             root,
 		RunID:                "RUN-001",
@@ -384,8 +388,189 @@ func TestQualifyFindingRejectsMissingRawAnchorMissingEvidenceAndDuplicateIDs(t *
 		ConfirmationTest:     "tests/confirm.spec.ts",
 		ConfirmationEvidence: "evidence/confirmation.txt",
 	})
-	if err == nil || !strings.Contains(err.Error(), "duplicates") {
+	if err == nil || !strings.Contains(err.Error(), "duplicate_id") {
 		t.Fatalf("expected duplicate finding ID error, got %v", err)
+	}
+}
+
+func TestRecordDiscoveryRunResolvesRedirectedTargetsAndPersistsCanonicalReferences(t *testing.T) {
+	root := t.TempDir()
+	playbook := activeDiscoveryPlaybookFixture("PB-010")
+	playbook.Targets = []string{"REQ-002"}
+	writePlaybookIndex(t, root, playbook, true)
+	writeEntityGraph(t, root, false, []string{
+		`{"id":"REQ-001","type":"requirement","status":"active"}`,
+		`{"id":"REQ-002","type":"requirement","status":"superseded","redirect":{"target_id":"REQ-001","kind":"duplicate","decided_at":"2026-07-21T12:00:00Z","decided_by":"test-reviewer","reason":"same requirement","evidence_refs":[]}}`,
+	})
+	writeTextFile(t, root, "system/.os/indexes/entity-resolution.json", `{"version":1,"canonical_by_id":{"REQ-002":"REQ-999"},"members_by_canonical":{"REQ-999":["REQ-002"]}}`+"\n")
+
+	result, err := RecordDiscoveryRun(RunDiscoveryOptions{
+		RepoRoot:   root,
+		PlaybookID: "PB-010",
+		Outcome:    "positive",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := result.RequestedTargets; len(got) != 1 || got[0] != "REQ-002" {
+		t.Fatalf("requested targets = %#v", got)
+	}
+	if got := result.CanonicalTargets; len(got) != 1 || got[0] != "REQ-001" {
+		t.Fatalf("canonical targets = %#v", got)
+	}
+	if got := result.TargetResolutions; len(got) != 1 || got[0].RequestedID != "REQ-002" || got[0].CanonicalID != "REQ-001" || strings.Join(got[0].Chain, ",") != "REQ-002,REQ-001" {
+		t.Fatalf("target resolutions = %#v", got)
+	}
+
+	row := readSingleJSONLRow(t, root, "system/.os/data/runs.jsonl")
+	if got := stringSliceFromAny(t, row["requested_targets"]); len(got) != 1 || got[0] != "REQ-002" {
+		t.Fatalf("requested targets not preserved: %#v", row)
+	}
+	if got := stringSliceFromAny(t, row["targets"]); len(got) != 1 || got[0] != "REQ-001" {
+		t.Fatalf("new targets are not canonical: %#v", row)
+	}
+	related := stringSliceFromAny(t, row["related"])
+	if !containsString(related, "REQ-001") || containsString(related, "REQ-002") {
+		t.Fatalf("related did not persist canonical ID only: %#v", related)
+	}
+	input, ok := row["inputs"].(map[string]any)
+	if !ok {
+		t.Fatalf("inputs missing: %#v", row["inputs"])
+	}
+	if got := stringSliceFromAny(t, input["requested_targets"]); len(got) != 1 || got[0] != "REQ-002" {
+		t.Fatalf("input provenance missing: %#v", input)
+	}
+	runDoc := readTextFile(t, root, "system/workspace/runs/RUN-001/run.md")
+	for _, want := range []string{"Requested targets: REQ-002", "Targets: REQ-001", "REQ-002 -> REQ-001"} {
+		if !strings.Contains(runDoc, want) {
+			t.Fatalf("run document missing %q:\n%s", want, runDoc)
+		}
+	}
+
+	indexData := readTextFile(t, root, "system/.os/indexes/playbooks.json")
+	if !strings.Contains(indexData, `"targets":["REQ-002"]`) {
+		t.Fatalf("authored playbook target was rewritten: %s", indexData)
+	}
+}
+
+func TestRecordDiscoveryRunFailsClosedOnInvalidEntityGraph(t *testing.T) {
+	root := t.TempDir()
+	playbook := activeDiscoveryPlaybookFixture("PB-010")
+	playbook.Targets = []string{"REQ-002"}
+	writePlaybookIndex(t, root, playbook, true)
+	writeEntityGraph(t, root, false, []string{
+		`{"id":"REQ-002","type":"requirement","status":"superseded","redirect":{"target_id":"REQ-999","kind":"duplicate","decided_at":"2026-07-21T12:00:00Z","decided_by":"test-reviewer","reason":"invalid fixture","evidence_refs":[]}}`,
+	})
+
+	_, err := RecordDiscoveryRun(RunDiscoveryOptions{RepoRoot: root, PlaybookID: "PB-010", Outcome: "positive"})
+	if err == nil || !strings.Contains(err.Error(), "redirect_missing_target") {
+		t.Fatalf("expected graph diagnostic, got %v", err)
+	}
+	assertNotExists(t, root, "system/workspace/runs/RUN-001")
+	if rows := readJSONLRows(t, root, "system/.os/data/runs.jsonl"); len(rows) != 0 {
+		t.Fatalf("invalid graph allowed a write: %#v", rows)
+	}
+}
+
+func TestRecordDiscoveryRunFailsClosedOnUnknownTarget(t *testing.T) {
+	root := t.TempDir()
+	writePlaybookIndex(t, root, activeDiscoveryPlaybookFixture("PB-010"), true)
+	_, err := RecordDiscoveryRun(RunDiscoveryOptions{
+		RepoRoot:   root,
+		PlaybookID: "PB-010",
+		Outcome:    "positive",
+		Targets:    []string{"CAP-999"},
+	})
+	if err == nil || !strings.Contains(err.Error(), "entity_not_found") {
+		t.Fatalf("expected unresolved target diagnostic, got %v", err)
+	}
+}
+
+func TestQualifyFindingResolvesRedirectedRunAndPersistsCanonicalReferences(t *testing.T) {
+	root := t.TempDir()
+	writePlaybookIndex(t, root, activeDiscoveryPlaybookFixture("PB-010"), true)
+	writeTextFile(t, root, "system/.os/data/runs.jsonl", strings.Join([]string{
+		`{"id":"RUN-001","type":"run","status":"closed","systems":["canonical-system"],"environments":["canonical-environment"],"owners":["canonical-owner"]}`,
+		`{"id":"RUN-002","type":"run","status":"superseded","systems":["historical-system"],"environments":["historical-environment"],"owners":["historical-owner"],"redirect":{"target_id":"RUN-001","kind":"duplicate","decided_at":"2026-07-21T12:00:00Z","decided_by":"test-reviewer","reason":"same discovery run","evidence_refs":[]}}`,
+	}, "\n")+"\n")
+	writeTextFile(t, root, "system/.os/indexes/entity-resolution.json", `{"version":1,"canonical_by_id":{"RUN-002":"RUN-999"},"members_by_canonical":{"RUN-999":["RUN-002"]}}`+"\n")
+	writeTextFile(t, root, "system/workspace/runs/RUN-002/raw-findings.md", "# Raw Findings\n\n## Raw Finding 1 {#raw-finding-1}\n\nhistorical evidence\n")
+	writeTextFile(t, root, "tests/confirm.spec.ts", "test('confirm', async () => {})")
+	writeTextFile(t, root, "evidence/confirmation.txt", "passed")
+	beforeRuns := readTextFile(t, root, "system/.os/data/runs.jsonl")
+	beforeRaw := readTextFile(t, root, "system/workspace/runs/RUN-002/raw-findings.md")
+
+	result, err := QualifyFinding(QualifyFindingOptions{
+		RepoRoot:             root,
+		RunID:                "RUN-002",
+		RawFindingRef:        "#raw-finding-1",
+		Outcome:              "positive",
+		ConfirmationTest:     "tests/confirm.spec.ts",
+		ConfirmationEvidence: "evidence/confirmation.txt",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.RequestedRunID != "RUN-002" || result.CanonicalRunID != "RUN-001" || strings.Join(result.RunResolution.Chain, ",") != "RUN-002,RUN-001" {
+		t.Fatalf("unexpected run resolution: %#v", result)
+	}
+
+	row := readSingleJSONLRow(t, root, "system/.os/data/findings.jsonl")
+	for key, want := range map[string]string{
+		"status":           "qualified",
+		"requested_run_id": "RUN-002",
+		"run_id":           "RUN-001",
+		"origin_run":       "RUN-001",
+		"raw_anchor":       "system/workspace/runs/RUN-002/raw-findings.md#raw-finding-1",
+		"source_anchor":    "system/workspace/runs/RUN-002/raw-findings.md#raw-finding-1",
+	} {
+		if row[key] != want {
+			t.Fatalf("%s=%#v want %q in %#v", key, row[key], want, row)
+		}
+	}
+	for _, key := range []string{"basis_refs", "related"} {
+		refs := stringSliceFromAny(t, row[key])
+		if !containsString(refs, "RUN-001") || containsString(refs, "RUN-002") {
+			t.Fatalf("%s did not persist canonical run ID only: %#v", key, refs)
+		}
+	}
+	if got := stringSliceFromAny(t, row["systems"]); len(got) != 1 || got[0] != "canonical-system" {
+		t.Fatalf("finding did not use canonical run metadata: %#v", row)
+	}
+	findingDoc := readTextFile(t, root, "system/workspace/findings/FIND-001/finding.md")
+	for _, want := range []string{"Requested run: RUN-002", "Origin run: RUN-001", "RUN-002/raw-findings.md#raw-finding-1"} {
+		if !strings.Contains(findingDoc, want) {
+			t.Fatalf("finding document missing %q:\n%s", want, findingDoc)
+		}
+	}
+	if got := readTextFile(t, root, "system/.os/data/runs.jsonl"); got != beforeRuns {
+		t.Fatalf("qualification rewrote historical run rows:\n%s", got)
+	}
+	if got := readTextFile(t, root, "system/workspace/runs/RUN-002/raw-findings.md"); got != beforeRaw {
+		t.Fatalf("qualification rewrote requested raw evidence:\n%s", got)
+	}
+}
+
+func TestQualifyFindingResolverFailureDoesNotWrite(t *testing.T) {
+	root := t.TempDir()
+	writePlaybookIndex(t, root, activeDiscoveryPlaybookFixture("PB-010"), true)
+	writeTextFile(t, root, "tests/confirm.spec.ts", "test('confirm', async () => {})")
+	writeTextFile(t, root, "evidence/confirmation.txt", "passed")
+
+	_, err := QualifyFinding(QualifyFindingOptions{
+		RepoRoot:             root,
+		RunID:                "RUN-999",
+		RawFindingRef:        "#raw-finding-1",
+		Outcome:              "positive",
+		ConfirmationTest:     "tests/confirm.spec.ts",
+		ConfirmationEvidence: "evidence/confirmation.txt",
+	})
+	if err == nil || !strings.Contains(err.Error(), "entity_not_found") {
+		t.Fatalf("expected resolver failure, got %v", err)
+	}
+	assertNotExists(t, root, "system/workspace/findings/FIND-001")
+	if rows := readJSONLRows(t, root, "system/.os/data/findings.jsonl"); len(rows) != 0 {
+		t.Fatalf("resolver failure allowed a governed write: %#v", rows)
 	}
 }
 
@@ -424,6 +609,7 @@ func writePlaybookIndex(t *testing.T, root string, playbook PlaybookEntry, runna
 		t.Fatal(err)
 	}
 	writeTextFile(t, root, "system/.os/indexes/playbooks.json", string(data)+"\n")
+	writeEntityGraph(t, root, false, nil)
 }
 
 func writeInstalledSystemRoot(t *testing.T, root string) {
@@ -449,6 +635,23 @@ func writeInstalledPlaybookIndex(t *testing.T, root string, playbook PlaybookEnt
 		t.Fatal(err)
 	}
 	writeTextFile(t, root, ".os/indexes/playbooks.json", string(data)+"\n")
+	writeEntityGraph(t, root, true, nil)
+}
+
+func writeEntityGraph(t *testing.T, root string, installed bool, requirements []string) {
+	t.Helper()
+	prefix := "system/"
+	if installed {
+		prefix = ""
+	}
+	files := []string{"requirements.jsonl", "capabilities.jsonl", "personas.jsonl", "test-cases.jsonl", "results.jsonl", "runs.jsonl", "findings.jsonl", "extractions.jsonl"}
+	for _, filename := range files {
+		writeTextFile(t, root, prefix+".os/data/"+filename, "")
+	}
+	if requirements == nil {
+		requirements = []string{`{"id":"REQ-001","type":"requirement","status":"active"}`}
+	}
+	writeTextFile(t, root, prefix+".os/data/requirements.jsonl", strings.Join(requirements, "\n")+"\n")
 }
 
 func writeTextFile(t *testing.T, root, rel, body string) {

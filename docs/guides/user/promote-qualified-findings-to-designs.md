@@ -98,6 +98,10 @@ Design promotion connects evidence to planning:
 
 Use `baseline-plan` when the design should feed a fresh baseline planning flow. Use `change-plan` when the design should feed additive planning against the active Build OS PRD namespace.
 
+You may request promotion with a historical finding ID that now redirects. `buildos-design` resolves it to the terminal canonical finding and reports the requested ID, canonical ID, and complete chain. The terminal finding must be `qualified`; `active` or another status is not enough for design promotion.
+
+The losing finding and old references remain unchanged. The new design uses the canonical finding's lineage, qualification evidence, systems, environments, and owners. Only the canonical finding receives the new design back-reference. If resolution or validation fails, the command stops without leaving a partial design or finding update.
+
 Promotion does not run the downstream plan, PRD, or work generation steps. Those remain make-docs workflows after the design exists.
 
 ## Troubleshooting
@@ -108,7 +112,9 @@ If promotion says the finding is missing a qualification anchor, inspect `qualif
 
 If promotion says the design already exists, choose a different slug or update the existing design through the make-docs design router.
 
-If `buildos-design` is not found, use the packaged toolkit binary from your Build OS distribution, set `BUILDOS_DESIGN_BIN`, or ask a maintainer to build `toolkits/buildos-design/bin/buildos-design`.
+If `buildos-design` is not found, use the existing separately installed binary, set `BUILDOS_DESIGN_BIN`, or ask a maintainer to build `toolkits/buildos-design/bin/buildos-design` from source. W1 R4 has not shipped the future package-manager release.
+
+If promotion reports an invalid entity graph, unknown finding, or non-`qualified` canonical finding, stop and review the canonical data. Historical losing rows are not eligible for direct mutation, and the command will not create a partial promotion.
 
 If you are unsure which route to choose, use `baseline-plan` for a new area of work and `change-plan` for a change to an already active PRD scope.
 
@@ -125,6 +131,10 @@ No. The finding remains the evidence-backed observation. The design owns solutio
 **Does promotion run the next stage automatically?**
 
 No. Design promotion only creates the design hand-off. Later stage-mover automation is separate work.
+
+**What happens if I promote a finding ID that was consolidated?**
+
+The command follows its redirect chain, shows both the requested and canonical IDs, creates the design from the terminal `qualified` finding, and leaves the losing row unchanged.
 
 ## Related Resources
 

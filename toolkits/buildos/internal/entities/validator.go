@@ -6,10 +6,6 @@ import (
 	"strings"
 )
 
-var legalStatuses = map[string]bool{
-	"draft": true, "active": true, "superseded": true, "archived": true,
-}
-
 // Validate checks local redirect rules and every complete redirect chain.
 func (g *Graph) Validate(mode Mode) []Diagnostic {
 	if g == nil {
@@ -22,8 +18,8 @@ func (g *Graph) Validate(mode Mode) []Diagnostic {
 	var diagnostics []Diagnostic
 	records := g.Records()
 	for _, record := range records {
-		if !legalStatuses[record.Status] {
-			diagnostic := diagnosticForRecord(CodeInputContract, SeverityError, fmt.Sprintf("entity %s has unsupported status %q", record.ID, record.Status), record, "set status to draft, active, superseded, or archived")
+		if !isLegalLifecycleStatus(record) {
+			diagnostic := diagnosticForRecord(CodeInputContract, SeverityError, fmt.Sprintf("entity %s has unsupported status %q", record.ID, record.Status), record, lifecycleStatusAction(record))
 			diagnostics = append(diagnostics, diagnostic)
 			continue
 		}
@@ -102,8 +98,8 @@ func (g *Graph) validateChains() []Diagnostic {
 		if !valid || terminal.ID == "" {
 			continue
 		}
-		if terminal.Status != "active" {
-			diagnostic := diagnosticForRecord(CodeRedirectInactiveTerminal, SeverityError, fmt.Sprintf("redirect chain from %s terminates at %s with status %s", source.ID, terminal.ID, terminal.Status), source, "review the chain and redirect it to a terminal active record")
+		if !isTerminalCanonical(terminal) {
+			diagnostic := diagnosticForRecord(CodeRedirectInactiveTerminal, SeverityError, fmt.Sprintf("redirect chain from %s terminates at %s with status %s", source.ID, terminal.ID, terminal.Status), source, "review the chain and redirect it to a current same-type terminal record")
 			diagnostic.TargetID = terminal.ID
 			diagnostic.Chain = chain
 			diagnostics = append(diagnostics, diagnostic)

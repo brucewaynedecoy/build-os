@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	sharedentities "github.com/brucewaynedecoy/build-os/toolkits/buildos/pkg/entities"
 )
 
 var (
@@ -26,33 +28,35 @@ type copiedArtifact struct {
 }
 
 type runIndexRow struct {
-	ID                string         `json:"id"`
-	Type              string         `json:"type"`
-	Path              string         `json:"path"`
-	Title             string         `json:"title"`
-	Status            string         `json:"status"`
-	Summary           string         `json:"summary"`
-	Outcome           string         `json:"outcome"`
-	PlaybookID        string         `json:"playbook_id"`
-	PlaybookVersion   string         `json:"playbook_version"`
-	Targets           []string       `json:"targets"`
-	Systems           []string       `json:"systems"`
-	Environments      []string       `json:"environments"`
-	Owners            []string       `json:"owners"`
-	StartedAt         string         `json:"started_at"`
-	EndedAt           string         `json:"ended_at"`
-	EvidenceCount     int            `json:"evidence_count"`
-	RawFindingCount   int            `json:"raw_finding_count"`
-	QualifiedFindings []string       `json:"qualified_findings"`
-	DatasetRefs       []string       `json:"dataset_refs"`
-	SourceAnchor      string         `json:"source_anchor"`
-	DocAnchor         string         `json:"doc_anchor"`
-	SourceRefs        []string       `json:"source_refs"`
-	Related           []string       `json:"related"`
-	CreatedAt         string         `json:"created_at"`
-	UpdatedAt         string         `json:"updated_at"`
-	Inputs            map[string]any `json:"inputs"`
-	Outputs           map[string]any `json:"outputs"`
+	ID                string             `json:"id"`
+	Type              string             `json:"type"`
+	Path              string             `json:"path"`
+	Title             string             `json:"title"`
+	Status            string             `json:"status"`
+	Summary           string             `json:"summary"`
+	Outcome           string             `json:"outcome"`
+	PlaybookID        string             `json:"playbook_id"`
+	PlaybookVersion   string             `json:"playbook_version"`
+	RequestedTargets  []string           `json:"requested_targets"`
+	Targets           []string           `json:"targets"`
+	TargetResolutions []EntityResolution `json:"target_resolutions"`
+	Systems           []string           `json:"systems"`
+	Environments      []string           `json:"environments"`
+	Owners            []string           `json:"owners"`
+	StartedAt         string             `json:"started_at"`
+	EndedAt           string             `json:"ended_at"`
+	EvidenceCount     int                `json:"evidence_count"`
+	RawFindingCount   int                `json:"raw_finding_count"`
+	QualifiedFindings []string           `json:"qualified_findings"`
+	DatasetRefs       []string           `json:"dataset_refs"`
+	SourceAnchor      string             `json:"source_anchor"`
+	DocAnchor         string             `json:"doc_anchor"`
+	SourceRefs        []string           `json:"source_refs"`
+	Related           []string           `json:"related"`
+	CreatedAt         string             `json:"created_at"`
+	UpdatedAt         string             `json:"updated_at"`
+	Inputs            map[string]any     `json:"inputs"`
+	Outputs           map[string]any     `json:"outputs"`
 }
 
 type findingIndexRow struct {
@@ -68,6 +72,7 @@ type findingIndexRow struct {
 	Implications         []string `json:"implications"`
 	Outcome              string   `json:"outcome"`
 	Polarity             string   `json:"polarity"`
+	RequestedRunID       string   `json:"requested_run_id"`
 	RunID                string   `json:"run_id"`
 	OriginRun            string   `json:"origin_run"`
 	RawAnchor            string   `json:"raw_anchor"`
@@ -103,6 +108,20 @@ func RecordDiscoveryRun(opts RunDiscoveryOptions) (RunDiscoveryResult, error) {
 		return RunDiscoveryResult{}, err
 	}
 
+	requestedTargets := opts.Targets
+	if len(requestedTargets) == 0 {
+		requestedTargets = playbook.Targets
+	}
+	requestedTargets = uniqueStrings(requestedTargets)
+	graph, err := openEntityGraph(layout)
+	if err != nil {
+		return RunDiscoveryResult{}, err
+	}
+	canonicalTargets, targetResolutions, err := resolveEntityIDs(graph, requestedTargets)
+	if err != nil {
+		return RunDiscoveryResult{}, err
+	}
+
 	runsIndexPath := layout.path("system/.os/data/runs.jsonl")
 	runID, err := nextJSONLID(runsIndexPath, "RUN")
 	if err != nil {
@@ -128,10 +147,6 @@ func RecordDiscoveryRun(opts RunDiscoveryOptions) (RunDiscoveryResult, error) {
 	datasetRefs := uniqueStrings(layout.refs(opts.DatasetRefs))
 	sourceRefs := uniqueStrings(layout.refs(append([]string{playbook.Path}, rawSources...)))
 
-	targets := opts.Targets
-	if len(targets) == 0 {
-		targets = playbook.Targets
-	}
 	now := nowUTC()
 	title := strings.TrimSpace(opts.Title)
 	if title == "" {
@@ -152,7 +167,9 @@ func RecordDiscoveryRun(opts RunDiscoveryOptions) (RunDiscoveryResult, error) {
 		Outcome:           opts.Outcome,
 		PlaybookID:        playbook.ID,
 		PlaybookVersion:   playbook.Version,
-		Targets:           uniqueStrings(targets),
+		RequestedTargets:  requestedTargets,
+		Targets:           canonicalTargets,
+		TargetResolutions: targetResolutions,
 		Systems:           uniqueStrings(playbook.Systems),
 		Environments:      uniqueStrings(playbook.Environments),
 		Owners:            uniqueStrings(playbook.Owners),
@@ -165,14 +182,16 @@ func RecordDiscoveryRun(opts RunDiscoveryOptions) (RunDiscoveryResult, error) {
 		SourceAnchor:      filepath.ToSlash(filepath.Join(runRelPath, "run.md")) + "#run-" + strings.ToLower(runID),
 		DocAnchor:         layout.ref("system/docs/prd/10-discovery-runs-and-qualification.md#run-artifacts"),
 		SourceRefs:        sourceRefs,
-		Related:           uniqueStrings(append([]string{playbook.ID}, targets...)),
+		Related:           uniqueStrings(append([]string{playbook.ID}, canonicalTargets...)),
 		CreatedAt:         now,
 		UpdatedAt:         now,
 		Inputs: map[string]any{
-			"playbook_id":      playbook.ID,
-			"playbook_version": playbook.Version,
-			"targets":          uniqueStrings(targets),
-			"dataset_refs":     datasetRefs,
+			"playbook_id":        playbook.ID,
+			"playbook_version":   playbook.Version,
+			"requested_targets":  requestedTargets,
+			"targets":            canonicalTargets,
+			"target_resolutions": targetResolutions,
+			"dataset_refs":       datasetRefs,
 		},
 		Outputs: map[string]any{
 			"evidence":     artifactPaths(evidence),
@@ -181,12 +200,15 @@ func RecordDiscoveryRun(opts RunDiscoveryOptions) (RunDiscoveryResult, error) {
 	}
 
 	result := RunDiscoveryResult{
-		RunID:           runID,
-		RunPath:         runRelPath,
-		RunsIndexPath:   layout.rel("system/.os/data/runs.jsonl"),
-		EvidenceCount:   len(evidence),
-		RawFindingCount: len(rawTexts),
-		DryRun:          opts.DryRun,
+		RunID:             runID,
+		RunPath:           runRelPath,
+		RunsIndexPath:     layout.rel("system/.os/data/runs.jsonl"),
+		RequestedTargets:  requestedTargets,
+		CanonicalTargets:  canonicalTargets,
+		TargetResolutions: targetResolutions,
+		EvidenceCount:     len(evidence),
+		RawFindingCount:   len(rawTexts),
+		DryRun:            opts.DryRun,
 	}
 	if opts.DryRun {
 		return result, nil
@@ -233,9 +255,21 @@ func QualifyFinding(opts QualifyFindingOptions) (QualifyFindingResult, error) {
 	if err := requireFile(resolveRepoPath(repoRoot, opts.ConfirmationEvidence), "--confirmation-evidence"); err != nil {
 		return QualifyFindingResult{}, err
 	}
+	graph, err := openEntityGraph(layout)
+	if err != nil {
+		return QualifyFindingResult{}, err
+	}
+	runResolution, err := resolveEntityID(graph, opts.RunID)
+	if err != nil {
+		return QualifyFindingResult{}, fmt.Errorf("resolve qualification run: %w", err)
+	}
+	canonicalRun, ok := graph.Record(runResolution.CanonicalID)
+	if !ok || canonicalRun.Type != "run" {
+		return QualifyFindingResult{}, fmt.Errorf("resolve qualification run %s: terminal entity %s is not a run", opts.RunID, runResolution.CanonicalID)
+	}
 
 	runsIndexPath := layout.path("system/.os/data/runs.jsonl")
-	runRow, err := readRunIndexRow(runsIndexPath, opts.RunID)
+	runRow, err := readRunIndexRow(runsIndexPath, runResolution.CanonicalID)
 	if err != nil {
 		return QualifyFindingResult{}, err
 	}
@@ -285,15 +319,16 @@ func QualifyFinding(opts QualifyFindingOptions) (QualifyFindingResult, error) {
 		Path:                 findingRelPath,
 		Title:                title,
 		Status:               "qualified",
-		Summary:              fmt.Sprintf("Finding qualified from run %s.", opts.RunID),
+		Summary:              fmt.Sprintf("Finding qualified from run %s.", runResolution.CanonicalID),
 		Observed:             fmt.Sprintf("Raw finding %s was deterministically confirmed.", rawAnchor),
-		BasisRefs:            []string{opts.RunID, rawAnchor},
+		BasisRefs:            []string{runResolution.CanonicalID, rawAnchor},
 		Confidence:           "high",
 		Implications:         []string{},
 		Outcome:              opts.Outcome,
 		Polarity:             opts.Outcome,
-		RunID:                opts.RunID,
-		OriginRun:            opts.RunID,
+		RequestedRunID:       opts.RunID,
+		RunID:                runResolution.CanonicalID,
+		OriginRun:            runResolution.CanonicalID,
 		RawAnchor:            rawAnchor,
 		QualificationTest:    filepath.ToSlash(filepath.Join(findingRelPath, "qualification.md")) + "#confirmation-test",
 		ConfirmationTest:     testArtifacts[0].Path,
@@ -307,7 +342,7 @@ func QualifyFinding(opts QualifyFindingOptions) (QualifyFindingResult, error) {
 		SourceAnchor:         rawAnchor,
 		DocAnchor:            layout.ref("system/docs/prd/10-discovery-runs-and-qualification.md#finding-qualification"),
 		SourceRefs:           []string{rawAnchor},
-		Related:              uniqueStrings([]string{opts.RunID}),
+		Related:              uniqueStrings([]string{runResolution.CanonicalID}),
 		CreatedAt:            now,
 		UpdatedAt:            now,
 	}
@@ -316,6 +351,9 @@ func QualifyFinding(opts QualifyFindingOptions) (QualifyFindingResult, error) {
 		FindingID:         findingID,
 		FindingPath:       findingRelPath,
 		FindingsIndexPath: layout.rel("system/.os/data/findings.jsonl"),
+		RequestedRunID:    opts.RunID,
+		CanonicalRunID:    runResolution.CanonicalID,
+		RunResolution:     runResolution,
 		DryRun:            opts.DryRun,
 	}
 	if opts.DryRun {
@@ -382,6 +420,58 @@ func activeDiscoveryPlaybook(repoRoot, playbookID string) (PlaybookEntry, error)
 		return PlaybookEntry{}, fmt.Errorf("playbook %s is not active/runnable", playbookID)
 	}
 	return PlaybookEntry{}, fmt.Errorf("playbook %s not found in playbook index", playbookID)
+}
+
+func openEntityGraph(layout buildOSLayout) (*sharedentities.Graph, error) {
+	graph, diagnostics := sharedentities.OpenRoot(layout.systemRoot(), sharedentities.ModeStrict)
+	if sharedentities.HasErrors(diagnostics) {
+		return nil, entityDiagnosticsError("validate entity graph", diagnostics)
+	}
+	return graph, nil
+}
+
+func resolveEntityIDs(graph *sharedentities.Graph, requested []string) ([]string, []EntityResolution, error) {
+	canonical := make([]string, 0, len(requested))
+	resolutions := make([]EntityResolution, 0, len(requested))
+	for _, requestedID := range requested {
+		resolution, err := resolveEntityID(graph, requestedID)
+		if err != nil {
+			return nil, nil, fmt.Errorf("resolve discovery target %s: %w", requestedID, err)
+		}
+		canonical = append(canonical, resolution.CanonicalID)
+		resolutions = append(resolutions, resolution)
+	}
+	return uniqueStrings(canonical), resolutions, nil
+}
+
+func resolveEntityID(graph *sharedentities.Graph, requestedID string) (EntityResolution, error) {
+	resolution, diagnostics := graph.Resolve(requestedID)
+	if sharedentities.HasErrors(diagnostics) {
+		return EntityResolution{}, entityDiagnosticsError("resolve entity "+requestedID, diagnostics)
+	}
+	return EntityResolution{
+		RequestedID: resolution.RequestedID,
+		CanonicalID: resolution.CanonicalID,
+		Chain:       append([]string(nil), resolution.Chain...),
+	}, nil
+}
+
+func entityDiagnosticsError(context string, diagnostics []sharedentities.Diagnostic) error {
+	parts := make([]string, 0, len(diagnostics))
+	for _, diagnostic := range diagnostics {
+		if diagnostic.Severity != sharedentities.SeverityError {
+			continue
+		}
+		part := string(diagnostic.Code) + ": " + diagnostic.Message
+		if diagnostic.Action != "" {
+			part += "; correction: " + diagnostic.Action
+		}
+		parts = append(parts, part)
+	}
+	if len(parts) == 0 {
+		return fmt.Errorf("%s: unknown entity resolver failure", context)
+	}
+	return fmt.Errorf("%s: %s", context, strings.Join(parts, " | "))
 }
 
 func nextJSONLID(indexPath, prefix string) (string, error) {
@@ -575,7 +665,11 @@ func formatRunRecord(row runIndexRow, evidence []copiedArtifact, rawAnchors []st
 	fmt.Fprintf(&builder, "- Playbook: %s (%s)\n", row.PlaybookID, row.PlaybookVersion)
 	fmt.Fprintf(&builder, "- Started: %s\n", row.StartedAt)
 	fmt.Fprintf(&builder, "- Ended: %s\n", row.EndedAt)
+	fmt.Fprintf(&builder, "- Requested targets: %s\n", inlineList(row.RequestedTargets))
 	fmt.Fprintf(&builder, "- Targets: %s\n", inlineList(row.Targets))
+	for _, resolution := range row.TargetResolutions {
+		fmt.Fprintf(&builder, "- Target resolution: %s -> %s (%s)\n", resolution.RequestedID, resolution.CanonicalID, strings.Join(resolution.Chain, " -> "))
+	}
 	fmt.Fprintf(&builder, "- Dataset refs: %s\n\n", inlineList(row.DatasetRefs))
 	builder.WriteString("## Evidence\n\n")
 	if len(evidence) == 0 {
@@ -611,6 +705,7 @@ func formatFindingRecord(row findingIndexRow) string {
 	fmt.Fprintf(&builder, "## Finding %s {#finding-%s}\n\n", row.ID, strings.ToLower(row.ID))
 	fmt.Fprintf(&builder, "- Status: %s\n", row.Status)
 	fmt.Fprintf(&builder, "- Polarity: %s\n", row.Polarity)
+	fmt.Fprintf(&builder, "- Requested run: %s\n", row.RequestedRunID)
 	fmt.Fprintf(&builder, "- Origin run: %s\n", row.OriginRun)
 	fmt.Fprintf(&builder, "- Raw anchor: [%s](%s)\n", row.RawAnchor, relativeFindingArtifact(row.Path, row.RawAnchor))
 	fmt.Fprintf(&builder, "- Qualification test: [%s](qualification.md#confirmation-test)\n", row.QualificationTest)
@@ -798,6 +893,13 @@ func (layout buildOSLayout) refs(values []string) []string {
 
 func (layout buildOSLayout) path(rel string) string {
 	return filepath.Join(layout.repoRoot, filepath.FromSlash(layout.rel(rel)))
+}
+
+func (layout buildOSLayout) systemRoot() string {
+	if layout.installedRoot {
+		return layout.repoRoot
+	}
+	return filepath.Join(layout.repoRoot, "system")
 }
 
 func isInstalledSystemRoot(repoRoot string) bool {

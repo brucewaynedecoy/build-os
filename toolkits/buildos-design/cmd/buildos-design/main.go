@@ -64,9 +64,9 @@ func runPromoteFinding(args []string) error {
 		return err
 	}
 	if result.DryRun {
-		fmt.Printf("would write %s (%s)\n", result.DesignPath, result.FindingID)
+		fmt.Printf("would write %s (requested=%s canonical=%s chain=%v)\n", result.DesignPath, result.RequestedFindingID, result.CanonicalFindingID, result.RedirectChain)
 	} else {
-		fmt.Printf("wrote %s (%s)\n", result.DesignPath, result.FindingID)
+		fmt.Printf("wrote %s (requested=%s canonical=%s chain=%v)\n", result.DesignPath, result.RequestedFindingID, result.CanonicalFindingID, result.RedirectChain)
 	}
 	return nil
 }

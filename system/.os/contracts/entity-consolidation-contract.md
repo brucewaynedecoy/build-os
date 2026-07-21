@@ -16,7 +16,10 @@ The [entity records contract](entity-records-contract.md) remains authoritative 
 
 ## Terminal Resolution
 
-For a requested entity ID, the resolver loads the complete graph and follows zero or more `redirect.target_id` edges until it reaches an active record.
+For a requested entity ID, the resolver loads the complete graph and follows zero or more `redirect.target_id` edges until it reaches a current terminal record.
+A current terminal is normally `active`; the existing type contracts also make
+`qualified` current for findings and `running`, `closed`, or `aborted` current
+for runs. Those statuses are not legal for other entity types.
 A successful result has exactly this stable shape:
 
 ```json
@@ -33,11 +36,11 @@ Field semantics:
 | Field | Contract |
 | --- | --- |
 | `requested_id` | The exact ID supplied by the caller. |
-| `canonical_id` | The terminal active ID. |
-| `chain` | Ordered IDs from requested through every immediate successor to the terminal active ID, inclusive. |
+| `canonical_id` | The current terminal ID. |
+| `chain` | Ordered IDs from requested through every immediate successor to the current terminal ID, inclusive. |
 | `resolved` | `true` when at least one redirect was followed; otherwise `false`. |
 
-Zero-hop resolution of an active record returns the requested ID as the canonical ID, a one-element chain, and `resolved: false`.
+Zero-hop resolution of a current terminal record returns the requested ID as the canonical ID, a one-element chain, and `resolved: false`.
 Multi-hop resolution returns every visited ID exactly once and `resolved: true`.
 A missing requested ID or invalid chain produces a diagnostic rather than a partial successful result.
 
@@ -110,9 +113,9 @@ Version 1 has exactly this shape:
 
 Index rules:
 
-- `canonical_by_id` contains every non-terminal governed ID and maps it directly to its terminal active ID.
-  Zero-hop active IDs are omitted.
-- `members_by_canonical` contains every active terminal with at least one redirected member.
+- `canonical_by_id` contains every non-terminal governed ID and maps it directly to its current terminal ID.
+  Zero-hop current terminal IDs are omitted.
+- `members_by_canonical` contains every current terminal with at least one redirected member.
   Member lists contain non-terminal IDs only; they exclude the canonical ID.
 - Object keys and member lists use ascending lexical byte order.
 - Canonical serialization is UTF-8 JSON, two-space indentation, no trailing spaces, and one final newline.
@@ -123,7 +126,7 @@ Index rules:
 
 ## Validation Modes
 
-Both modes validate JSONL shape, global ID uniqueness, redirect field shape, status legality, target existence, non-self edges, same-type edges, acyclic chains, and active terminals.
+Both modes validate JSONL shape, global ID uniqueness, redirect field shape, status legality, target existence, non-self edges, same-type edges, acyclic chains, and current terminals.
 Neither mode guesses successors or accepts a known-bad graph.
 
 Compatibility mode has one graph exception: a legacy `superseded` row without `redirect` produces `legacy_missing_redirect` as a warning.

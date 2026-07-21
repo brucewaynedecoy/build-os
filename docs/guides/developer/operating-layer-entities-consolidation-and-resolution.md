@@ -34,7 +34,7 @@ related:
 
 ## Overview
 
-Use this guide when maintaining or preparing Build OS support for duplicate or replaced entity records. The accepted contract keeps every losing record, marks it `superseded`, and gives it one reviewed redirect to an immediate successor. A shared resolver follows that chain to one active canonical record.
+Use this guide when maintaining or preparing Build OS support for duplicate or replaced entity records. The accepted contract keeps every losing record, marks it `superseded`, and gives it one reviewed redirect to an immediate successor. A shared resolver follows that chain to one current canonical record. Most current terminals use `active`; qualified findings and run lifecycle states retain their type-specific contracts.
 
 W1 R4 P2 implements the first source-built `buildos` executable, whole-graph resolver and validator, deterministic entity-resolution index, and reviewed consolidation writer. Maintainers can now build and test the entity domain against fixtures or a recoverable copied root. P2 is not a packaged release and does not authorize changing a live adopter root, installed binary, or historical reference.
 
@@ -118,7 +118,7 @@ The whole graph must satisfy all of these rules:
 
 - The source and target exist, differ, and have the same entity type.
 - Only a `superseded` row has a redirect; `draft`, `active`, and `archived` rows do not.
-- Each chain is acyclic and ends at one active record.
+- Each chain is acyclic and ends at a type-valid current record. The generic terminal is `active`; findings may terminate at `qualified`; runs may terminate at `running`, `closed`, or `aborted`.
 - A losing row points to its immediate successor, so a later winner replacement forms a valid multi-hop chain.
 - Reverse membership is derived from the graph and is not hand-maintained on the winner.
 - Repeating an identical mapping is idempotent; remapping a loser to a different winner is a reviewed conflict.
@@ -127,9 +127,9 @@ A resolver result must preserve the requested historical ID while also reporting
 
 ## Persona Identity and Extraction Outcomes
 
-P1 defines deterministic identity reuse for personas only. A persona may have one reviewer-approved `identity` object using the `persona-v1` scheme and a sorted list of explicitly approved `aliases`. Matching trims and collapses ASCII whitespace and lowercases ASCII letters. It does not perform Unicode normalization, punctuation removal, stemming, synonym expansion, token reordering, or fuzzy comparison.
+P4 implements deterministic identity reuse for personas only through the shared `toolkits/buildos/pkg/entities` package. A persona may have one reviewer-approved `identity` object using the `persona-v1` scheme and a sorted list of explicitly approved `aliases`. Matching trims and collapses ASCII whitespace and lowercases ASCII letters. It does not perform Unicode normalization, punctuation removal, stemming, synonym expansion, token reordering, or fuzzy comparison.
 
-An exact alias or `persona-v1` key may match automatically only when every matching historical row resolves to the same active terminal persona. Collisions, ambiguity, inactive terminals, fuzzy similarity, and semantic similarity remain review-only and never mutate a row. Other entity types require their own versioned identity contracts before automated identity matching is allowed.
+`MatchPersonaExact` checks an exact persona ID, then an approved alias, then a `persona-v1` key. A match may succeed automatically only when every matching historical row resolves to the same active terminal persona. Collisions, ambiguity, inactive terminals, malformed stored identity or alias fields, fuzzy similarity, and semantic similarity remain fail-closed review outcomes and never mutate a row. Other entity types require their own versioned identity contracts before automated identity matching is allowed.
 
 New outcome-aware extraction rows use `outcome_contract: extraction-outcomes-v1` and include three disjoint lists:
 
@@ -140,6 +140,24 @@ New outcome-aware extraction rows use `outcome_contract: extraction-outcomes-v1`
 | `updated` | The extraction deliberately changed an existing canonical entity. |
 
 Each outcome stores the terminal canonical ID as it existed at extraction time. Historical extraction rows that predate this contract retain their former `minted`-or-updated meaning; validators and migrations do not guess or rewrite them.
+
+`ValidateExtractionOutcomes` validates entity-graph IDs and cannot validate a `PB-NNN` playbook ID because playbooks are registered outside the eight canonical entity datasets. Call `ValidateExtractionOutcomesWithPlaybooks` when an extraction may report playbook outcomes; it combines the entity resolver with the authoritative playbook resolver. Never claim that the graph-only validator covers playbooks. Both validators require present, disjoint lists and terminal canonical IDs; they validate proposed rows but do not write extraction records or migrate live data.
+
+## P4 Consumer and Producer Inventory
+
+Use this inventory before adding or changing a governed-ID surface. The classification tells maintainers whether a value is provenance, runtime identity, a new governed reference, derived output, or a review-only proposal.
+
+| Surface | Classification | Requested and historical behavior | Canonical or derived behavior | Failure behavior |
+| --- | --- | --- | --- | --- |
+| `buildos entities resolve` and `validate` | Current read and derived diagnostics | Preserve the requested ID in resolver output. | Report the canonical ID and complete chain from authoritative JSONL. | Reject invalid graphs, missing IDs, or invalid type-specific terminals. |
+| `buildos-discovery run discovery` | Historical playbook read, current target read, and new run write | Leave authored playbook targets unchanged and retain requested targets plus their chains. | Execute against terminal canonical targets and store those IDs in the new run. | Resolve all governed targets before writing; any failure leaves no run artifacts. |
+| `buildos-discovery qualify finding` | Current run read and new finding write | Retain `requested_run_id` and the operator's raw-finding anchor. | Use the canonical run for runtime metadata and new `run_id`, `origin_run`, `basis_refs`, and `related` references. | Resolve and validate before writing; failure leaves no finding artifacts. |
+| `buildos-design promote finding` | Current finding read, new design write, and intentional canonical-finding update | Report the requested finding and chain; leave the losing row unchanged. | Require a terminal `qualified` finding, create the design from it, and write its back-reference only to the canonical finding. | Resolver, validation, design-write, or canonical-row update failure leaves no partial promotion. |
+| `MatchPersonaExact` | Review proposal and current persona read | Accept only exact IDs, approved aliases, or `persona-v1` keys; preserve the candidate evidence. | Return one active terminal persona only when the match is unique. | Ambiguous, colliding, inactive, malformed, fuzzy, semantic, or unsupported input stays non-mutating and review-only. |
+| `ValidateExtractionOutcomes` | New-write preflight | Validate `minted`, `referenced`, and `updated` without rewriting historical extraction rows. | Require disjoint terminal canonical entity IDs. | Fail on missing lists, overlaps, unknown IDs, non-terminal IDs, and playbook IDs. |
+| `ValidateExtractionOutcomesWithPlaybooks` | New-write preflight with authoritative playbook resolution | Apply the same outcome contract when `PB-NNN` values are present. | Resolve entity IDs through the graph and playbook IDs through the playbook resolver. | Fail closed when either authority rejects an ID; perform no write. |
+| `.os/indexes/entity-resolution.json` | Derived output | Never treat it as authored evidence or edit it by hand. | Rebuild it deterministically from canonical JSONL. | A stale or missing index does not override canonical JSONL. |
+| Existing JSONL, playbook, run, and finding references | Historical read | Retain the authored losing ID for audit; do not bulk rewrite. | Resolve the ID before runtime use and expose the canonical identity and chain. | Invalid resolution stops the consuming operation before new writes. |
 
 ## Validation and Recovery Expectations
 
@@ -207,6 +225,5 @@ If any recorded checksum changes unexpectedly, stop before apply. Rebuild the st
 
 ## Future Coverage
 
-- Blocked by: W1 R4 P4 consumer and producer integration. Update when: redirect-aware reads and terminal-canonical writes pass integration tests. Guide change: list each integration point, its original-ID behavior, its canonical-ID behavior, and its failure mode.
 - Blocked by: W1 R5 distribution. Update when: the unified command migration, legacy aliases, archives, checksums, SBOMs, signing, and Homebrew workflows pass. Guide change: add package installation and compatibility-alias maintenance, and remove source-build-only caveats where verified.
 - Blocked by: W2 lifecycle implementation. Update when: manifest-backed project setup, update, backup, removal, and machine uninstall behavior passes. Guide change: replace manual synchronization guidance with the verified in-place lifecycle procedure.

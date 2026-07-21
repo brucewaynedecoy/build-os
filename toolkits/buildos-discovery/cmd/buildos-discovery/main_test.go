@@ -43,6 +43,9 @@ func TestRunDiscoveryCommand(t *testing.T) {
 	if !strings.Contains(stdout, "wrote ") || !strings.Contains(stdout, "RUN-001") {
 		t.Fatalf("stdout=%q", stdout)
 	}
+	if !strings.Contains(stdout, "target REQ-001 -> REQ-001 (REQ-001)") {
+		t.Fatalf("stdout missing target resolution: %q", stdout)
+	}
 }
 
 func TestQualifyFindingCommand(t *testing.T) {
@@ -80,6 +83,9 @@ func TestQualifyFindingCommand(t *testing.T) {
 	if !strings.Contains(stdout, "wrote ") || !strings.Contains(stdout, "FIND-001") {
 		t.Fatalf("stdout=%q", stdout)
 	}
+	if !strings.Contains(stdout, "run RUN-001 -> RUN-001 (RUN-001)") {
+		t.Fatalf("stdout missing run resolution: %q", stdout)
+	}
 }
 
 func writeCommandDiscoveryIndex(t *testing.T, root string) {
@@ -112,6 +118,10 @@ func writeCommandDiscoveryIndex(t *testing.T, root string) {
 		t.Fatal(err)
 	}
 	writeCommandTextFile(t, root, "system/.os/indexes/playbooks.json", string(data)+"\n")
+	for _, filename := range []string{"requirements.jsonl", "capabilities.jsonl", "personas.jsonl", "test-cases.jsonl", "results.jsonl", "runs.jsonl", "findings.jsonl", "extractions.jsonl"} {
+		writeCommandTextFile(t, root, "system/.os/data/"+filename, "")
+	}
+	writeCommandTextFile(t, root, "system/.os/data/requirements.jsonl", `{"id":"REQ-001","type":"requirement","status":"active"}`+"\n")
 }
 
 func jsonMarshal(value any) ([]byte, error) {

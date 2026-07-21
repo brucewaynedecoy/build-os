@@ -13,12 +13,23 @@ type RunDiscoveryOptions struct {
 }
 
 type RunDiscoveryResult struct {
-	RunID           string
-	RunPath         string
-	RunsIndexPath   string
-	EvidenceCount   int
-	RawFindingCount int
-	DryRun          bool
+	RunID             string
+	RunPath           string
+	RunsIndexPath     string
+	RequestedTargets  []string
+	CanonicalTargets  []string
+	TargetResolutions []EntityResolution
+	EvidenceCount     int
+	RawFindingCount   int
+	DryRun            bool
+}
+
+// EntityResolution preserves the authored ID while exposing the terminal ID
+// used for runtime behavior and new references.
+type EntityResolution struct {
+	RequestedID string   `json:"requested_id"`
+	CanonicalID string   `json:"canonical_id"`
+	Chain       []string `json:"chain"`
 }
 
 type QualifyFindingOptions struct {
@@ -36,6 +47,9 @@ type QualifyFindingResult struct {
 	FindingID         string
 	FindingPath       string
 	FindingsIndexPath string
+	RequestedRunID    string
+	CanonicalRunID    string
+	RunResolution     EntityResolution
 	DryRun            bool
 }
 

@@ -90,10 +90,24 @@ IDs are flat per type. Prefixes must not encode system, environment, owner, stat
 
 Status is lifecycle state only. Do not use status values to express pass/fail, severity, priority, or confidence.
 
+The common vocabulary coexists with these older, type-specific lifecycle
+states:
+
+- A `finding` may use `qualified` as its current canonical state under the
+  finding contract.
+- A `run` may use `running`, `closed`, or `aborted` as a canonical state under
+  the run-record contract.
+- Those values are legal only for their named entity type. They do not become
+  general-purpose statuses for requirements, capabilities, personas, test
+  cases, results, or extractions.
+
 Lifecycle and successor rules:
 
 - `draft` is pending and has no canonical successor, so it must not contain `redirect`.
 - `active` is a possible terminal canonical record and must not contain `redirect`.
+- A type-specific current state (`finding:qualified` or
+  `run:running|closed|aborted`) is also a possible terminal canonical record
+  and must not contain `redirect`.
 - `superseded` has an intentional successor.
   Every newly written or changed superseded row must contain exactly one valid `redirect` object.
 - `archived` is retained without a current successor and must not contain `redirect`.
@@ -131,7 +145,7 @@ Every redirect graph must satisfy all of these invariants:
 - every edge begins at a `superseded` record;
 - no `draft`, `active`, or `archived` record carries a redirect;
 - every chain is acyclic and terminates at exactly one `active` record;
-- an intermediate target may later become superseded, provided its full chain still terminates at one active record;
+- an intermediate target may later become superseded, provided its full chain still terminates at one current record;
 - losing records retain their stable IDs, anchors, evidence, and all type-specific or unknown fields;
 - reverse membership is derived from redirects and is never hand-maintained on the winner;
 - `related` remains a non-canonical relationship and never participates in resolution.

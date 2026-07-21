@@ -2,11 +2,96 @@ package design
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	entityresolver "github.com/brucewaynedecoy/build-os/toolkits/buildos/pkg/entities"
 )
+
+func TestPromoteFindingResolvesCanonicalFindingAndPreservesHistoricalRecord(t *testing.T) {
+	root := t.TempDir()
+	writeRouterInputs(t, root)
+	writeEmptyGovernedDatasets(t, root, "system/.os/data")
+	loser := findingIndexRow{
+		ID: "FIND-001", Type: "finding", Path: "system/workspace/findings/FIND-001/", Title: "Historical finding",
+		Status: "superseded", Designs: []string{"system/docs/designs/2026-07-01-historical.md"}, Related: []string{"RUN-OLD"},
+		Redirect: &entityresolver.Redirect{TargetID: "FIND-002", Kind: "duplicate", DecidedAt: "2026-07-20T10:00:00Z", DecidedBy: "reviewer", Reason: "same finding", EvidenceRefs: []string{"review.md"}},
+	}
+	canonical := findingIndexRow{
+		ID: "FIND-002", Type: "finding", Path: "system/workspace/findings/FIND-002/", Title: "Canonical qualified finding",
+		Status: "qualified", Summary: "Canonical summary", Observed: "Canonical observation", Outcome: "positive", Polarity: "positive",
+		RunID: "RUN-002", OriginRun: "RUN-002", RawAnchor: "system/workspace/runs/RUN-002/raw-findings.md#raw-finding-1",
+		QualificationTest: "system/workspace/findings/FIND-002/qualification.md#confirmation-test", Designs: []string{}, Related: []string{"RUN-002"},
+	}
+	var index strings.Builder
+	var originalLoserLine string
+	for rowIndex, row := range []findingIndexRow{loser, canonical} {
+		data, err := json.Marshal(row)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var object map[string]json.RawMessage
+		if err := json.Unmarshal(data, &object); err != nil {
+			t.Fatal(err)
+		}
+		object["x_type_specific"] = json.RawMessage(`{"owner":"preserve-me"}`)
+		data, err = json.Marshal(object)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if rowIndex == 0 {
+			originalLoserLine = string(data)
+		}
+		index.Write(data)
+		index.WriteByte('\n')
+	}
+	writeTextFile(t, root, "system/.os/data/findings.jsonl", index.String())
+	historicalRecord := "# Historical finding\n\n## Designs\n\n- [Historical](../../../docs/designs/2026-07-01-historical.md)\n"
+	writeTextFile(t, root, "system/workspace/findings/FIND-001/finding.md", historicalRecord)
+	writeTextFile(t, root, "system/workspace/findings/FIND-002/finding.md", "# Canonical qualified finding\n\n## Designs\n\nNo design hand-off recorded.\n")
+	writeTextFile(t, root, "system/workspace/findings/FIND-002/qualification.md", "# Qualification\n\n## Confirmation Test {#confirmation-test}\n")
+	writeTextFile(t, root, "system/workspace/runs/RUN-002/raw-findings.md", "## Raw Finding 1 {#raw-finding-1}\n")
+
+	result, err := PromoteFinding(PromoteFindingOptions{RepoRoot: root, FindingID: "FIND-001", Route: "change-plan", Slug: "canonical-finding"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.RequestedFindingID != "FIND-001" || result.CanonicalFindingID != "FIND-002" || result.FindingID != "FIND-002" {
+		t.Fatalf("identity reporting=%#v", result)
+	}
+	if strings.Join(result.RedirectChain, ",") != "FIND-001,FIND-002" {
+		t.Fatalf("redirect chain=%v", result.RedirectChain)
+	}
+	if got := readTextFile(t, root, "system/workspace/findings/FIND-001/finding.md"); got != historicalRecord {
+		t.Fatalf("historical record changed:\n%s", got)
+	}
+	if got := strings.Split(strings.TrimSuffix(readTextFile(t, root, "system/.os/data/findings.jsonl"), "\n"), "\n")[0]; got != originalLoserLine {
+		t.Fatalf("historical JSONL row changed:\n got: %s\nwant: %s", got, originalLoserLine)
+	}
+	rows, loserIndex, err := readFindingRows(filepath.Join(root, "system/.os/data/findings.jsonl"), "FIND-001")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, canonicalIndex, err := readFindingRows(filepath.Join(root, "system/.os/data/findings.jsonl"), "FIND-002")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows[loserIndex].Designs) != 1 || rows[loserIndex].Designs[0] != loser.Designs[0] {
+		t.Fatalf("historical back-references changed: %#v", rows[loserIndex].Designs)
+	}
+	if len(rows[canonicalIndex].Designs) != 1 || rows[canonicalIndex].Designs[0] != result.DesignPath {
+		t.Fatalf("canonical back-reference missing: %#v", rows[canonicalIndex].Designs)
+	}
+	if rows[loserIndex].Raw["x_type_specific"] == nil || rows[canonicalIndex].Raw["x_type_specific"] == nil {
+		t.Fatal("unknown fields were not preserved on historical and canonical rows")
+	}
+	if design := readTextFile(t, root, result.DesignPath); !strings.Contains(design, "FIND-002") || strings.Contains(design, "FIND-001") {
+		t.Fatalf("design did not use canonical finding:\n%s", design)
+	}
+}
 
 func TestPromoteFindingCreatesDesignAndUpdatesFinding(t *testing.T) {
 	root := t.TempDir()
@@ -114,6 +199,7 @@ func TestPromoteFindingSupportsInstalledRootLayout(t *testing.T) {
 		t.Fatal(err)
 	}
 	writeTextFile(t, root, ".os/data/findings.jsonl", string(data)+"\n")
+	writeEmptyGovernedDatasets(t, root, ".os/data")
 	writeTextFile(t, root, "workspace/findings/FIND-001/finding.md", "# "+row.Title+"\n\n## Finding FIND-001 {#finding-find-001}\n\n- Status: qualified\n\n## Observation\n\nObserved.\n\n## Designs\n\nNo design hand-off recorded.\n")
 	writeTextFile(t, root, "workspace/findings/FIND-001/qualification.md", "# Qualification\n\n## Confirmation Test {#confirmation-test}\n\n- Result: pass\n")
 	writeTextFile(t, root, "workspace/runs/RUN-001/raw-findings.md", "# Raw Findings\n\n## Raw Finding 1 {#raw-finding-1}\n\nRaw.\n")
@@ -175,13 +261,13 @@ func TestPromoteFindingRejectsInvalidInputs(t *testing.T) {
 		{
 			name: "unknown finding",
 			opts: PromoteFindingOptions{FindingID: "FIND-999", Route: "baseline-plan", Slug: "valid-slug"},
-			want: "not found",
+			want: "does not exist",
 		},
 		{
 			name: "not qualified",
 			row:  findingIndexRow{ID: "FIND-001", Path: "system/workspace/findings/FIND-001/", Status: "draft", QualificationTest: "system/workspace/findings/FIND-001/qualification.md#confirmation-test"},
 			opts: PromoteFindingOptions{FindingID: "FIND-001", Route: "baseline-plan", Slug: "valid-slug"},
-			want: "requires qualified",
+			want: "redirect_inactive_terminal",
 		},
 		{
 			name: "missing qualification anchor",
@@ -222,6 +308,7 @@ func TestPromoteFindingRejectsInvalidInputs(t *testing.T) {
 			} else {
 				writeRouterInputs(t, root)
 				writeTextFile(t, root, "system/.os/data/findings.jsonl", "")
+				writeEmptyGovernedDatasets(t, root, "system/.os/data")
 			}
 			tt.opts.RepoRoot = root
 			_, err := PromoteFinding(tt.opts)
@@ -230,6 +317,31 @@ func TestPromoteFindingRejectsInvalidInputs(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestPromoteFindingFailsClosedOnInvalidRedirectGraph(t *testing.T) {
+	root := t.TempDir()
+	writeRouterInputs(t, root)
+	writeEmptyGovernedDatasets(t, root, "system/.os/data")
+	row := findingIndexRow{
+		ID: "FIND-001", Type: "finding", Path: "system/workspace/findings/FIND-001/", Status: "superseded",
+		Redirect: &entityresolver.Redirect{TargetID: "FIND-999", Kind: "duplicate", DecidedAt: "2026-07-20T10:00:00Z", DecidedBy: "reviewer", Reason: "invalid fixture", EvidenceRefs: []string{}},
+	}
+	data, err := json.Marshal(row)
+	if err != nil {
+		t.Fatal(err)
+	}
+	indexPath := "system/.os/data/findings.jsonl"
+	writeTextFile(t, root, indexPath, string(data)+"\n")
+	before := readTextFile(t, root, indexPath)
+	_, err = PromoteFinding(PromoteFindingOptions{RepoRoot: root, FindingID: "FIND-001", Route: "baseline-plan", Slug: "must-not-exist"})
+	if err == nil || !strings.Contains(err.Error(), "redirect_missing_target") {
+		t.Fatalf("expected redirect graph failure, got %v", err)
+	}
+	if got := readTextFile(t, root, indexPath); got != before {
+		t.Fatal("invalid redirect graph changed findings index")
+	}
+	assertNotExists(t, root, timeStampedDesignPath("must-not-exist"))
 }
 
 func TestPromoteFindingRejectsDuplicateDesignTarget(t *testing.T) {
@@ -314,6 +426,88 @@ func TestPromoteFindingDryRunDoesNotWrite(t *testing.T) {
 	}
 }
 
+func TestAtomicReplaceFileLeavesOriginalAndCleansTempOnRenameFailure(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "findings.jsonl")
+	if err := os.WriteFile(path, []byte("original\n"), 0o640); err != nil {
+		t.Fatal(err)
+	}
+	originalRename := renameAtomicFile
+	renameAtomicFile = func(_, _ string) error { return errors.New("injected rename failure") }
+	t.Cleanup(func() { renameAtomicFile = originalRename })
+
+	if err := atomicReplaceFile(path, []byte("replacement\n")); err == nil || !strings.Contains(err.Error(), "injected rename failure") {
+		t.Fatalf("expected injected failure, got %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil || string(data) != "original\n" {
+		t.Fatalf("original changed: %q, %v", data, err)
+	}
+	matches, err := filepath.Glob(filepath.Join(root, ".findings.jsonl.tmp-*"))
+	if err != nil || len(matches) != 0 {
+		t.Fatalf("temporary files remain: %v, %v", matches, err)
+	}
+}
+
+func TestPromoteFindingRollsBackIndexWhenFindingRecordReplacementFails(t *testing.T) {
+	root := t.TempDir()
+	writeQualifiedFindingFixture(t, root, findingIndexRow{
+		ID: "FIND-001", Status: "qualified", QualificationTest: "system/workspace/findings/FIND-001/qualification.md#confirmation-test",
+	})
+	indexPath := "system/.os/data/findings.jsonl"
+	recordPath := "system/workspace/findings/FIND-001/finding.md"
+	beforeIndex := readTextFile(t, root, indexPath)
+	beforeRecord := readTextFile(t, root, recordPath)
+	originalReplace := replaceExistingFile
+	failed := false
+	replaceExistingFile = func(path string, data []byte) error {
+		if !failed && filepath.Base(path) == "finding.md" {
+			failed = true
+			return errors.New("injected finding record failure")
+		}
+		return originalReplace(path, data)
+	}
+	t.Cleanup(func() { replaceExistingFile = originalReplace })
+
+	_, err := PromoteFinding(PromoteFindingOptions{RepoRoot: root, FindingID: "FIND-001", Route: "baseline-plan", Slug: "record-failure"})
+	if err == nil || !strings.Contains(err.Error(), "injected finding record failure") {
+		t.Fatalf("expected injected failure, got %v", err)
+	}
+	if got := readTextFile(t, root, indexPath); got != beforeIndex {
+		t.Fatalf("findings index was not rolled back:\n%s", got)
+	}
+	if got := readTextFile(t, root, recordPath); got != beforeRecord {
+		t.Fatalf("finding record changed:\n%s", got)
+	}
+	assertNotExists(t, root, timeStampedDesignPath("record-failure"))
+}
+
+func TestPromoteFindingRollsBackExistingFilesWhenDesignCreationFails(t *testing.T) {
+	root := t.TempDir()
+	writeQualifiedFindingFixture(t, root, findingIndexRow{
+		ID: "FIND-001", Status: "qualified", QualificationTest: "system/workspace/findings/FIND-001/qualification.md#confirmation-test",
+	})
+	indexPath := "system/.os/data/findings.jsonl"
+	recordPath := "system/workspace/findings/FIND-001/finding.md"
+	beforeIndex := readTextFile(t, root, indexPath)
+	beforeRecord := readTextFile(t, root, recordPath)
+	originalCreate := createExclusiveFile
+	createExclusiveFile = func(string, []byte) error { return errors.New("injected design creation failure") }
+	t.Cleanup(func() { createExclusiveFile = originalCreate })
+
+	_, err := PromoteFinding(PromoteFindingOptions{RepoRoot: root, FindingID: "FIND-001", Route: "baseline-plan", Slug: "design-failure"})
+	if err == nil || !strings.Contains(err.Error(), "injected design creation failure") {
+		t.Fatalf("expected injected failure, got %v", err)
+	}
+	if got := readTextFile(t, root, indexPath); got != beforeIndex {
+		t.Fatalf("findings index was not rolled back:\n%s", got)
+	}
+	if got := readTextFile(t, root, recordPath); got != beforeRecord {
+		t.Fatalf("finding record was not rolled back:\n%s", got)
+	}
+	assertNotExists(t, root, timeStampedDesignPath("design-failure"))
+}
+
 func writeQualifiedFindingFixture(t *testing.T, root string, row findingIndexRow) {
 	t.Helper()
 	writeRouterInputs(t, root)
@@ -331,6 +525,7 @@ func writeQualifiedFindingFixture(t *testing.T, root string, row findingIndexRow
 		t.Fatal(err)
 	}
 	writeTextFile(t, root, "system/.os/data/findings.jsonl", string(data)+"\n")
+	writeEmptyGovernedDatasets(t, root, "system/.os/data")
 	writeTextFile(t, root, row.Path+"finding.md", "# "+row.Title+"\n\n## Finding "+row.ID+" {#finding-"+strings.ToLower(row.ID)+"}\n\n- Status: "+row.Status+"\n\n## Observation\n\nObserved.\n\n## Designs\n\nNo design hand-off recorded.\n")
 	writeTextFile(t, root, row.Path+"qualification.md", "# Qualification\n\n## Confirmation Test {#confirmation-test}\n\n- Result: pass\n")
 	writeTextFile(t, root, "system/workspace/runs/RUN-001/raw-findings.md", "# Raw Findings\n\n## Raw Finding 1 {#raw-finding-1}\n\nRaw.\n")
@@ -344,6 +539,13 @@ func writeRouterInputs(t *testing.T, root string) {
 	writeTextFile(t, root, "system/docs/assets/templates/design.md", "# {{TITLE}}\n")
 	writeTextFile(t, root, "system/docs/assets/prompts/designs-to-plan.prompt.md", "# Prompt\n")
 	writeTextFile(t, root, "system/docs/assets/prompts/designs-to-plan-change.prompt.md", "# Prompt\n")
+}
+
+func writeEmptyGovernedDatasets(t *testing.T, root, dataDir string) {
+	t.Helper()
+	for _, name := range []string{"requirements.jsonl", "capabilities.jsonl", "personas.jsonl", "test-cases.jsonl", "results.jsonl", "runs.jsonl", "extractions.jsonl"} {
+		writeTextFile(t, root, filepath.ToSlash(filepath.Join(dataDir, name)), "")
+	}
 }
 
 func writeInstalledSystemRoot(t *testing.T, root string) {

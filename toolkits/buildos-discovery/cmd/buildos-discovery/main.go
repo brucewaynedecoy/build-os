@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/brucewaynedecoy/build-os/toolkits/buildos-discovery/internal/discovery"
 )
@@ -81,6 +82,9 @@ func runDiscovery(args []string) error {
 	} else {
 		fmt.Printf("wrote %s (%s)\n", result.RunPath, result.RunID)
 	}
+	for _, resolution := range result.TargetResolutions {
+		fmt.Printf("target %s -> %s (%s)\n", resolution.RequestedID, resolution.CanonicalID, strings.Join(resolution.Chain, " -> "))
+	}
 	return nil
 }
 
@@ -121,6 +125,7 @@ func runQualifyFinding(args []string) error {
 	} else {
 		fmt.Printf("wrote %s (%s)\n", result.FindingPath, result.FindingID)
 	}
+	fmt.Printf("run %s -> %s (%s)\n", result.RequestedRunID, result.CanonicalRunID, strings.Join(result.RunResolution.Chain, " -> "))
 	return nil
 }
 
