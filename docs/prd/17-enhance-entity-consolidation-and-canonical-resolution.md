@@ -57,17 +57,19 @@ and chains that do not terminate at one active record fail closed with actionabl
 
 ### Deterministic toolkit and index
 
-The independently buildable Go toolkit `toolkits/buildos-entities/` owns entity-graph validation,
+The unified Go module `toolkits/buildos/` owns the public CLI and exposes the entity domain as `buildos entities`.
+During W1 R4,
+the module's temporary `pkg/entities` package owns shared entity-graph validation,
 resolution,
 consolidation,
-and the entity-resolution index.
-It produces the `buildos-entities` binary with these initial commands:
+and the entity-resolution index so existing discovery and design modules can import one implementation without subprocess calls.
+The module produces one `buildos` binary with these initial entity commands:
 
 ```text
-buildos-entities consolidate
-buildos-entities resolve
-buildos-entities validate
-buildos-entities rebuild-index
+buildos entities consolidate
+buildos entities resolve
+buildos entities validate
+buildos entities rebuild-index
 ```
 
 Mutation is dry-run by default and requires explicit `--apply` authorization.
@@ -83,6 +85,7 @@ and whether a write occurred.
 
 `system/.os/scripts/` may provide thin routing or compatibility wrappers after the command surface stabilizes.
 No new durable Python implementation is permitted.
+No public `buildos-entities` binary is introduced.
 
 ### Compatibility-to-strict migration
 
@@ -128,7 +131,7 @@ Extraction metadata distinguishes a newly minted ID from an update or reference 
 
 ### Side-by-side source-build adoption
 
-An adopter that already has Build OS installed may build `buildos-entities` from a separate source checkout,
+An adopter that already has Build OS installed may build `buildos` from a separate source checkout,
 but source build verification,
 binary deployment,
 and live-data migration are distinct actions.
@@ -193,6 +196,10 @@ Old tooling remains read-only for redirect-bearing datasets until cutover is com
   stale indexes,
   and a successful canonical write followed by an index rebuild failure.
 
+### Change Notes
+
+- Superseded by [18 Revise Unified BuildOS CLI and Distribution](./18-revise-unified-buildos-cli-and-distribution.md) for the public executable and source-module topology: W1 R4 seeds `toolkits/buildos/` and `buildos entities`; W1 R5 later consolidates the existing domains and packages `buildos 0.1.0`. The entity data, resolver, mutation, index, validation, and migration-safety requirements in this PRD remain effective.
+
 ## Affected Baseline Docs
 
 | Document | Impact |
@@ -204,9 +211,9 @@ Old tooling remains read-only for redirect-bearing datasets until cutover is com
 | `04-glossary.md` | Adds canonical identity, redirect, resolution, index, and validation-mode terminology. |
 | `08-data-and-extraction.md` | Defines redirect-bearing records, canonicalized references, matching tiers, and index rebuild behavior. |
 | `09-playbooks.md` | Requires entity-valued playbook targets to resolve canonically without rewriting historical playbooks. |
-| `14-revise-deterministic-toolkit-deployment.md` | Applies the packaged Go toolkit standard and explicit source-build adoption boundaries to entity operations. |
+| `14-revise-deterministic-toolkit-deployment.md` | Applies the packaged Go execution standard and explicit source-build adoption boundaries to entity operations, as revised by PRD 18. |
 | `15-revise-extraction-draft-lifecycle.md` | Distinguishes pending `draft`, successor-bearing `superseded`, and successor-free `archived` lifecycle semantics. |
-| `16-revise-toolkit-ownership-boundaries.md` | Assigns entity-graph behavior to the domain-owned `buildos-entities` toolkit. |
+| `16-revise-toolkit-ownership-boundaries.md` | Assigns entity-graph behavior to the domain-owned `entities` package and `buildos entities` subcommand, as revised by PRD 18. |
 
 PRD 07 is not changed.
 Its converted-source intake contract and `references.json` index remain semantically separate from entity resolution.
@@ -311,3 +318,4 @@ the index may be deleted and rebuilt.
 - [PRD 14 Revise Deterministic Toolkit Deployment](./14-revise-deterministic-toolkit-deployment.md)
 - [PRD 15 Revise Extraction Draft Lifecycle](./15-revise-extraction-draft-lifecycle.md)
 - [PRD 16 Revise Toolkit Ownership Boundaries](./16-revise-toolkit-ownership-boundaries.md)
+- [PRD 18 Revise Unified BuildOS CLI and Distribution](./18-revise-unified-buildos-cli-and-distribution.md)

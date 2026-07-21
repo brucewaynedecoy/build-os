@@ -38,6 +38,7 @@ The safer baseline is to keep deterministic logic in versioned, buildable first-
 
 - Superseded by [16 Revise Toolkit Ownership Boundaries](./16-revise-toolkit-ownership-boundaries.md) where this revision was too broad about "toolkits" generally: new deterministic behavior must choose the correct domain-owned toolkit rather than expanding an unrelated existing Go CLI or legacy unmanaged script.
 - Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): entity graph operations use the independently buildable `buildos-entities` Go toolkit with dry-run defaults, explicit roots, atomic canonical writes, and auditable source revision output.
+- Superseded by [18 Revise Unified BuildOS CLI and Distribution](./18-revise-unified-buildos-cli-and-distribution.md): durable deterministic domains remain isolated, but they converge into packages and subcommands in one `toolkits/buildos/` Go module and one public `buildos` executable. W1 R4 therefore introduces `buildos entities`, not a `buildos-entities` binary.
 
 ## Initial Toolkit Target
 
@@ -54,6 +55,7 @@ W1 R0 P3 intake/conversion work should implement converter/index logic through t
 ### Change Notes
 
 - Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): source-built adoption keeps checkout, installed binary, and adopter data separate; binary deployment and live-data migration are distinct operator approvals.
+- Superseded by [18 Revise Unified BuildOS CLI and Distribution](./18-revise-unified-buildos-cli-and-distribution.md): W1 R5 consolidates existing domain commands, provides one-minor-release compatibility aliases, and packages `buildos 0.1.0` through signed archives and Homebrew. R-003 remains open until that release evidence exists.
 
 ## Required Baseline Annotations
 
@@ -70,3 +72,4 @@ This PRD revision should be referenced from the impacted baseline PRDs as a chan
 - `docs/designs/2026-06-04-buildos-toolkit-cli-deployment-standard.md`
 - `docs/plans/2026-06-04-w1-r2-buildos-toolkit-cli-deployment-standard/`
 - `docs/work/2026-06-04-w1-r2-buildos-toolkit-cli-deployment-standard/`
+- `docs/prd/18-revise-unified-buildos-cli-and-distribution.md`

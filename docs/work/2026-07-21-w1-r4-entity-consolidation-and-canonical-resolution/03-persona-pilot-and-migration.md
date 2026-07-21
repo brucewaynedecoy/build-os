@@ -42,9 +42,9 @@ The pre-upgrade prompt may prepare evidence and proposed mappings, but it remain
 ### Tasks
 
 - [ ] t5: Inventory installed binary paths, wrapper behavior, installed versions, and the actual adopter-owned data root without modifying them.
-- [ ] t6: Build `buildos-entities` in a separate source checkout and record the source revision, explicit binary path, and binary checksum without replacing installed binaries.
+- [ ] t6: Build `buildos` into a staging directory from a separate source checkout and record the source revision, explicit binary path, and binary checksum without replacing the still-separate installed binaries.
 - [ ] t7: Create and identify a recoverable snapshot or copied working root containing canonical JSONL and current indexes.
-- [ ] t8: Invoke the source-built binary by explicit path against the copy in compatibility and dry-run modes, then review warnings, chains, planned row changes, and the projected index diff.
+- [ ] t8: Invoke the staged `buildos` binary by explicit path against the copy in compatibility and dry-run modes, then review warnings, chains, planned row changes, and the projected index diff.
 - [ ] t9: Apply only the approved persona manifest to the copy, rebuild the index, run strict validation and representative lookups, and record validation outputs and mapping-manifest checksum.
 - [ ] t10: Restore from the untouched snapshot or recreate the copied root and verify that rollback returns the pre-migration identity and index state.
 

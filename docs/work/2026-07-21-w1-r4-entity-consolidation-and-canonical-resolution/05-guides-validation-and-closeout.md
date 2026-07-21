@@ -22,14 +22,14 @@ Documentation must separate source checkout, installed program files, and adopte
 
 ### Tasks
 
-- [ ] t1: Reconcile `docs/guides/developer/` coverage for redirect invariants, toolkit ownership, graph loading, resolver behavior, compatibility and strict validation, atomic writes, deterministic indexes, failure recovery, fixtures, and integration expectations.
+- [ ] t1: Reconcile `docs/guides/developer/` coverage for redirect invariants, unified CLI ownership, temporary package sharing, graph loading, resolver behavior, compatibility and strict validation, atomic writes, deterministic indexes, failure recovery, fixtures, and integration expectations.
 - [ ] t2: Add or update a maintainer workflow that shows where canonical rows, derived indexes, toolkit code, wrappers, tests, and contracts live and how changes propagate safely.
 - [ ] t3: Document safe release verification, including invalid-graph diagnostics, index reproducibility, post-write index recovery, and the prohibition on new durable Python logic.
-- [ ] t4: Add reciprocal related-guide links and `Future Coverage` only for deferred entity-type identity adapters that have an actual downstream dependency.
+- [ ] t4: Add reciprocal related-guide links and `Future Coverage` for verified downstream dependencies, including W1 R5 packaging and W2 lifecycle automation without describing either as current behavior.
 
 ### Acceptance criteria
 
-- A naive maintainer can identify the authoritative data, derived index, owning toolkit, validation modes, and recovery path before reading implementation internals.
+- A naive maintainer can identify the authoritative data, derived index, unified module, temporary resolver package, validation modes, and recovery path before reading implementation internals.
 - Examples preserve provenance and never imply that historical records or references should be deleted or bulk rewritten.
 - Guide commands and expected diagnostics match the implemented CLI.
 
@@ -47,6 +47,7 @@ Documentation must separate source checkout, installed program files, and adopte
 - [ ] t7: Document the distinct source checkout, installed binary or wrapper, copied working root, snapshot, and live adopter root using sanitized placeholders.
 - [ ] t8: Document hard-stop conditions for ambiguous roots, missing snapshots, invalid graphs, ambiguous mappings, failed writes, failed index rebuilds, or unresolved strict errors.
 - [ ] t9: Explain that binary deployment and live-data migration require separate operator approvals and that the checkout's `system/` scaffold must never be copied over installed or adopter-owned data.
+- [ ] t10: Explain that W1 R4 supplies only a source-built `buildos entities` seed, while intake, discovery, and design remain separately installed until W1 R5 and upgrade automation remains deferred to W2.
 
 ### Acceptance criteria
 
@@ -54,6 +55,7 @@ Documentation must separate source checkout, installed program files, and adopte
 - Every mutating example requires an explicit root and `--apply`; every preceding example is clearly non-writing.
 - Troubleshooting identifies recovery commands, evidence to retain, and when to stop rather than improvise.
 - No environment-specific absolute paths, live data, or secrets appear in the guides.
+- Current source-build behavior is visibly separated from future W1 R5 package distribution and future W2 project lifecycle commands.
 
 ### Dependencies
 
@@ -64,12 +66,12 @@ Documentation must separate source checkout, installed program files, and adopte
 
 ### Tasks
 
-- [ ] t10: Run toolkit unit, graph fixture, persona fixture, integration, failure-injection, and deterministic index tests and capture exact commands and outcomes.
-- [ ] t11: Run compatibility assessment, approved copied-root persona consolidation, strict validation, representative read/write checks, and rollback verification without touching the live root.
-- [ ] t12: Run repository configuration, frontmatter, entity-data, path-hygiene, internal-link, and `git diff --check` validation; route failures back to the owning scope and repeat until clean.
-- [ ] t13: Verify PRD 17 lineage, PRD index routing, R-004 state, baseline backlinks, guide reciprocal links, and delta-backlog traceability without rewriting prior PRDs or backlogs.
-- [ ] t14: Create the W1 R4 history breadcrumb with actual changes, validation evidence, developer and user guide decisions, remaining operator approvals, and deferred non-persona identity adapters.
-- [ ] t15: Review the final diff against this scoped backlog and prepare the local commit using the repository commit-message convention, excluding unrelated user changes and performing no push, publish, deployment, or live-data migration.
+- [ ] t11: Run unified CLI unit, graph fixture, persona fixture, integration, failure-injection, and deterministic index tests and capture exact commands and outcomes.
+- [ ] t12: Run compatibility assessment, approved copied-root persona consolidation, strict validation, representative read/write checks, and rollback verification without touching the live root.
+- [ ] t13: Run repository configuration, frontmatter, entity-data, path-hygiene, internal-link, and `git diff --check` validation; route failures back to the owning scope and repeat until clean.
+- [ ] t14: Verify PRD 17 and PRD 18 lineage, PRD index routing, R-004 state, baseline backlinks, guide reciprocal links, and delta-backlog traceability without rewriting prior PRDs or backlogs.
+- [ ] t15: Create the W1 R4 history breadcrumb with actual changes, validation evidence, developer and user guide decisions, remaining operator approvals, and deferred non-persona identity adapters.
+- [ ] t16: Review the final diff against this scoped backlog and prepare the local commit using the repository commit-message convention, excluding unrelated user changes and performing no push, publish, deployment, or live-data migration.
 
 ### Acceptance criteria
 

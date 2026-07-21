@@ -15,6 +15,7 @@ This phase fixes the executable contract for redirect-bearing rows, terminal res
 - [PRD 14: Revise Deterministic Toolkit Deployment](../../prd/14-revise-deterministic-toolkit-deployment.md)
 - [PRD 15: Revise Extraction Draft Lifecycle](../../prd/15-revise-extraction-draft-lifecycle.md)
 - [PRD 16: Revise Toolkit Ownership Boundaries](../../prd/16-revise-toolkit-ownership-boundaries.md)
+- [PRD 18: Revise Unified BuildOS CLI and Distribution](../../prd/18-revise-unified-buildos-cli-and-distribution.md)
 
 ## Stage 1 - Entity lifecycle and redirect contract
 
@@ -45,7 +46,8 @@ This phase fixes the executable contract for redirect-bearing rows, terminal res
 - [ ] t6: Define `system/.os/indexes/entity-resolution.json` as a rebuildable canonical-JSONL projection with versioned, lexically ordered `canonical_by_id` and `members_by_canonical` maps.
 - [ ] t7: Extend extraction contracts so minted-output metadata distinguishes a new entity from a reference or update to an existing canonical entity.
 - [ ] t8: Specify compatibility warnings for legacy superseded rows without redirects and strict failures for all graph, duplicate-ID, remap, and stale-index violations.
-- [ ] t9: Reconcile contract links and routers so `references.json` remains the converted-source intake index and `buildos-entities` owns entity-graph behavior without changing PRD 07 semantics.
+- [ ] t9: Reconcile contract links and routers so `references.json` remains the converted-source intake index and `buildos entities` owns entity-graph behavior without changing PRD 07 semantics.
+- [ ] t10: Freeze the unified root commands, domain command names, common flags, result envelope, version metadata, exit-code policy, and temporary `pkg/entities` package boundary required by PRD 18.
 
 ### Acceptance criteria
 
@@ -54,8 +56,9 @@ This phase fixes the executable contract for redirect-bearing rows, terminal res
 - Canonical JSONL remains authoritative and the resolution index is explicitly disposable and reproducible.
 - Compatibility mode never guesses a successor, and strict mode is identified as the release and post-migration gate.
 - Extraction metadata can represent new, reused, and updated entity outcomes without conflating them.
+- The W1 R4 command contract creates `buildos entities` and no public `buildos-entities` binary.
 
 ### Dependencies
 
 - Stage 1 field names and graph invariants are final.
-- Toolkit ownership requirements from PRDs 14 and 16 remain in force.
+- Unified CLI and temporary package requirements from PRD 18 revise the earlier separate-toolkit boundary while preserving domain ownership.

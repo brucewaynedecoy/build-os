@@ -6,7 +6,7 @@ Prove the generic contract against the high-volume persona use case and establis
 
 ## Source Inputs
 
-- P2 source-built `buildos-entities` binary and passing graph/index tests
+- P2 staged source-built `buildos` binary and passing CLI, graph, and index tests
 - [Pre-upgrade entity consolidation audit prompt](../../assets/prompts/pre-upgrade-entity-consolidation-audit.prompt.md)
 - Reviewed, non-mutating persona inventory and proposed mapping manifest
 - Representative persona, extraction, and reference fixtures
@@ -16,7 +16,7 @@ Prove the generic contract against the high-volume persona use case and establis
 
 1. Use the pre-upgrade prompt only for read-only inventory, clustering, evidence capture, confidence, ambiguity, checksums, and proposed winner/loser mappings; do not add redirect fields or lifecycle mutations during audit.
 2. Define a small reviewed persona proving set covering duplicates, intentional consolidation, replacement, ambiguous lookalikes, one-hop chains, multi-hop chains, a winner later superseded, and a repeated already-applied mapping.
-3. Build by explicit source path, record source revision and binary checksum, and inventory the existing installed paths and actual adopter root without replacing either.
+3. Build `buildos` by explicit source path, record source revision and binary checksum, and inventory the still-separate installed intake, discovery, and design paths plus the actual adopter root without replacing any of them.
 4. Create a recoverable copy or snapshot of the adopter root. Run compatibility validation and dry-run consolidation against the copy, review the exact diff and warnings, then apply only the approved manifest to the copy.
 5. Rebuild and check the resolution index, run strict validation and representative persona lookups, verify the untouched snapshot restores the pre-migration state, and record all evidence needed for separate deployment and live-data approvals.
 
@@ -32,7 +32,7 @@ Prove the generic contract against the high-volume persona use case and establis
 - Approved mappings resolve to one active persona; ambiguous groups remain unresolved review candidates with no canonical mutation.
 - The same manifest is idempotent, while a conflicting winner produces a non-writing conflict.
 - Compatibility warnings are captured before mutation and the copied root passes strict validation afterward.
-- The new binary is invoked by explicit path, and neither installed binary routing nor live adopter data changes during rehearsal.
+- The staged `buildos` binary is invoked by explicit path, and neither installed binary routing nor live adopter data changes during rehearsal.
 - Source revision, binary checksum, root snapshot identity, mapping manifest checksum, validation outputs, index diff, and rollback location are recorded.
 - Binary deployment and live-data migration remain two distinct operator approvals outside this repository task.
 

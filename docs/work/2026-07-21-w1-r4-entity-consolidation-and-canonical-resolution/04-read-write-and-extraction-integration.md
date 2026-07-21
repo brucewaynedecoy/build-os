@@ -39,11 +39,12 @@ This phase integrates known-ID resolution broadly and adds deterministic persona
 
 ### Tasks
 
-- [ ] t4: Integrate the shared resolver into entity readers so output preserves the requested ID and exposes the canonical ID and full chain.
+- [ ] t4: Integrate `toolkits/buildos/pkg/entities` into entity readers so output preserves the requested ID and exposes the canonical ID and full chain.
 - [ ] t5: Integrate resolver checks into new reference creation and intentional updates so writers persist only the terminal canonical ID and fail closed on graph errors.
 - [ ] t6: Update playbook target use so historical targets remain unchanged for audit while execution resolves losing IDs to the active canonical entity.
 - [ ] t7: Update extraction outcome metadata to distinguish newly minted IDs from reused or updated canonical IDs.
 - [ ] t8: Add integration tests for old read-only tooling coexistence, redirect-aware reads, terminal-canonical writes, stale indexes, inactive terminals, and resolver error propagation.
+- [ ] t9: Wire the existing discovery and design modules to the temporary resolver package through explicit local module dependencies; prohibit subprocess invocation and duplicated graph traversal.
 
 ### Acceptance criteria
 
@@ -62,11 +63,11 @@ This phase integrates known-ID resolution broadly and adds deterministic persona
 
 ### Tasks
 
-- [ ] t9: Define and version persona normalization, approved alias, consolidated-member identity, and deterministic identity-key rules from the Phase 03 pilot evidence.
-- [ ] t10: Resolve exact persona IDs and unique approved type-scoped identities automatically to their terminal canonical persona.
-- [ ] t11: Route fuzzy, semantic, colliding, ambiguous, or otherwise probabilistic persona matches to non-mutating human review with evidence and confidence.
-- [ ] t12: Add repeated-extraction tests proving an approved persona is reused or updated rather than minted again and ambiguous input remains a proposal.
-- [ ] t13: Add guard tests preventing persona matching rules from enabling automatic matching for requirements, capabilities, findings, test cases, results, runs, or extractions without later type-specific contracts.
+- [ ] t10: Define and version persona normalization, approved alias, consolidated-member identity, and deterministic `persona-v1` identity-key rules from the Phase 03 pilot evidence.
+- [ ] t11: Resolve exact persona IDs and unique approved type-scoped identities automatically to their terminal canonical persona.
+- [ ] t12: Route fuzzy, semantic, colliding, ambiguous, or otherwise probabilistic persona matches to non-mutating human review with evidence and confidence.
+- [ ] t13: Add repeated-extraction tests proving an approved persona is reused or updated rather than minted again and ambiguous input remains a proposal.
+- [ ] t14: Add guard tests preventing persona matching rules from enabling automatic matching for requirements, capabilities, findings, test cases, results, runs, or extractions without later type-specific contracts.
 
 ### Acceptance criteria
 

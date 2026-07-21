@@ -72,6 +72,7 @@ Code anchors:
 ### Change Notes
 
 - Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): the entity-graph domain is owned by the new `buildos-entities` toolkit; extraction-specific helpers remain a separate ownership decision unless explicitly assigned later.
+- Superseded by [18 Revise Unified BuildOS CLI and Distribution](./18-revise-unified-buildos-cli-and-distribution.md): domain ownership remains mandatory, but domains become isolated packages and subcommands inside the single `toolkits/buildos/` module. Public binary boundaries no longer define domain boundaries, and W1 R4 seeds the entity domain as `buildos entities`.
 
 ## Impacted Docs and Dependencies
 
@@ -95,6 +96,7 @@ Code anchors:
 ### Change Notes
 
 - Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): PRD 17 resolves canonical entity graph operations into `buildos-entities` without granting unrelated extraction or playbook behavior to that toolkit.
+- Superseded by [18 Revise Unified BuildOS CLI and Distribution](./18-revise-unified-buildos-cli-and-distribution.md): W1 R5 migrates intake, discovery, design, and entities into the unified module only after command-parity tests, and temporary legacy-name aliases route to the same executable for one stable minor-release cycle.
 
 ## Required Baseline Annotations
 
@@ -114,3 +116,4 @@ Code anchors:
 - `toolkits/`
 - `toolkits/buildos-intake/`
 - `toolkits/buildos-design/`
+- `docs/prd/18-revise-unified-buildos-cli-and-distribution.md`

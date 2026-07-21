@@ -12,13 +12,14 @@ tags:
 applies-to:
   - system/.os/data
   - system/.os/indexes
-  - buildos-entities
+  - buildos/entities
 related:
   - "./operating-layer-contracts-maintenance.md"
   - "./buildos-toolkit-cli-development.md"
   - "../user/entities-consolidation-curate-and-resolve-records.md"
   - "../../designs/2026-07-21-entity-consolidation-and-canonical-resolution.md"
   - "../../prd/17-enhance-entity-consolidation-and-canonical-resolution.md"
+  - "../../prd/18-revise-unified-buildos-cli-and-distribution.md"
   - "../../plans/2026-07-21-w1-r4-entity-consolidation-and-canonical-resolution/00-overview.md"
   - "../../work/2026-07-21-w1-r4-entity-consolidation-and-canonical-resolution/00-index.md"
   - "../../assets/prompts/pre-upgrade-entity-consolidation-audit.prompt.md"
@@ -33,6 +34,15 @@ related:
 Use this guide when maintaining or preparing Build OS support for duplicate or replaced entity records. The accepted contract keeps every losing record, marks it `superseded`, and gives it one reviewed redirect to an immediate successor. A shared resolver follows that chain to one active canonical record.
 
 This capability is planned but not implemented in the current checkout. Today, maintainers may inventory records and prepare review proposals only. Do not add redirect fields, change lifecycle states, rewrite references, or delete records until the compatible resolver, validator, writer, and index builder exist and have passed copied-root testing.
+
+The canonical planned surface is `buildos entities`,
+implemented as the W1 R4 seed of `toolkits/buildos/`.
+No public `buildos-entities` executable will be created.
+W1 R4 is source-build-only:
+the existing `buildos-intake`,
+`buildos-discovery`,
+and `buildos-design` binaries stay separate until W1 R5 migration and package distribution.
+W2 project installation and upgrade commands are later work inside the same `buildos` executable.
 
 ## Project Orientation
 
@@ -54,6 +64,7 @@ The authority boundaries are:
 - `related` remains an ordinary relationship and never changes canonical identity.
 - `system/.os/indexes/entity-resolution.json` is a planned derived projection. It is rebuildable and never replaces the canonical JSONL rows.
 - `references.json` remains an intake-source index and must not carry entity redirects.
+- `toolkits/buildos/pkg/entities` is the temporary shared resolver boundary during W1 R4; existing Go consumers import it through explicit local dependencies and must not invoke the CLI as a subprocess.
 
 ## Current Safe Workflow
 
@@ -89,9 +100,24 @@ Compatibility mode is only a temporary assessment aid for legacy `superseded` ro
 
 Future mutation must be dry-run by default, require an explicit adopter root and explicit apply approval, write through a same-filesystem temporary file, replace the affected JSONL atomically, preserve permissions, and rebuild the derived index. If the canonical write succeeds but index rebuilding fails, recovery must preserve the canonical rows and provide a deterministic index-rebuild command.
 
+The planned W1 R4 command families are:
+
+```text
+buildos help
+buildos version
+buildos entities resolve --root <copied-root> --mode compat|strict --id <entity-id> [--json]
+buildos entities validate --root <copied-root> --mode compat|strict [--json]
+buildos entities consolidate --root <copied-root> --mode compat|strict --manifest <reviewed-manifest> [--apply] [--json]
+buildos entities rebuild-index --root <copied-root> --mode compat|strict [--check|--apply] [--json]
+```
+
+These are contract examples,
+not runnable instructions yet.
+Replace them with tested commands and output only after the implementation phase passes.
+
 ## Source-Build Rehearsal Boundary
 
-When the implementation exists, maintainers must first build it in a separate source checkout and invoke that exact binary path against a copied adopter root. Record the source revision, binary checksum, copied-root or snapshot identity, proposal-manifest checksum, validation results, index diff, and rollback location.
+When the implementation exists, maintainers must first build `buildos` into a staging directory from a separate source checkout and invoke that exact binary path against a copied adopter root. Record the reported version, source revision, binary checksum, copied-root or snapshot identity, proposal-manifest checksum, validation results, index diff, and rollback location.
 
 Treat these as separate approvals:
 
@@ -115,6 +141,7 @@ If a graph error is found after a canonical write, preserve the written JSONL an
 ## Related Resources
 
 - [Entity Consolidation and Canonical Resolution PRD](../../prd/17-enhance-entity-consolidation-and-canonical-resolution.md)
+- [Unified BuildOS CLI and Distribution PRD](../../prd/18-revise-unified-buildos-cli-and-distribution.md)
 - [W1 R4 Change Plan](../../plans/2026-07-21-w1-r4-entity-consolidation-and-canonical-resolution/00-overview.md)
 - [Entity Consolidation and Canonical Resolution Design](../../designs/2026-07-21-entity-consolidation-and-canonical-resolution.md)
 - [Entity Consolidation Work Backlog](../../work/2026-07-21-w1-r4-entity-consolidation-and-canonical-resolution/00-index.md)
@@ -127,6 +154,8 @@ If a graph error is found after a canonical write, preserve the written JSONL an
 
 ## Future Coverage
 
-- Blocked by: W1 R4 P2 implementation of `toolkits/buildos-entities/` and stable diagnostics. Update when: the resolver, compatibility and strict validators, consolidation writer, and deterministic index builder pass their fixtures. Guide change: add verified build commands, exact command syntax, exit behavior, example output, and failure-recovery commands.
+- Blocked by: W1 R4 P2 implementation of `toolkits/buildos/` and stable diagnostics. Update when: the root CLI, resolver, compatibility and strict validators, consolidation writer, deterministic index builder, and no-extra-binary tests pass. Guide change: add verified build commands, exact command syntax, exit behavior, example output, and failure-recovery commands.
 - Blocked by: W1 R4 P3 copied-root persona pilot. Update when: the approved persona fixture set and rollback rehearsal pass. Guide change: replace the contract-shaped rehearsal outline with an executed maintainer runbook and sanitized evidence examples.
 - Blocked by: W1 R4 P4 consumer and producer integration. Update when: redirect-aware reads and terminal-canonical writes pass integration tests. Guide change: list each integration point, its original-ID behavior, its canonical-ID behavior, and its failure mode.
+- Blocked by: W1 R5 distribution. Update when: the unified command migration, legacy aliases, archives, checksums, SBOMs, signing, and Homebrew workflows pass. Guide change: add package installation and compatibility-alias maintenance, and remove source-build-only caveats where verified.
+- Blocked by: W2 lifecycle implementation. Update when: manifest-backed project setup, update, backup, removal, and machine uninstall behavior passes. Guide change: replace manual synchronization guidance with the verified in-place lifecycle procedure.

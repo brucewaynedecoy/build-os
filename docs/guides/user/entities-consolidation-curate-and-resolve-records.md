@@ -20,6 +20,7 @@ related:
   - "../../assets/prompts/pre-upgrade-entity-consolidation-audit.prompt.md"
   - "../../designs/2026-07-21-entity-consolidation-and-canonical-resolution.md"
   - "../../prd/17-enhance-entity-consolidation-and-canonical-resolution.md"
+  - "../../prd/18-revise-unified-buildos-cli-and-distribution.md"
 ---
 
 # Curate and Resolve Duplicate Entity Records
@@ -29,6 +30,20 @@ related:
 Use this guide when your Build OS data contains several records that describe the same persona or another entity and you want to choose one winner without deleting the others.
 
 Build OS is designed to keep the losing records as history. A future redirect will point each loser toward its reviewed successor, and Build OS will follow that chain to one active canonical record. This capability is not implemented in the current checkout. For now, you may audit and propose mappings, but you must not change live entity data.
+
+When W1 R4 is implemented,
+the source-built command will be `buildos entities`.
+There will not be a separate `buildos-entities` program.
+At that stage,
+intake,
+discovery,
+and design will still use their existing separate binaries;
+W1 R5 will later consolidate and package them,
+and W2 will later add project setup,
+update,
+backup,
+removal,
+and tool-uninstall workflows.
 
 ## Before You Begin
 
@@ -84,7 +99,7 @@ If reviewers disagree, keep the records separate. A deferred decision is safer t
 
 After the feature is implemented, the safe path will be:
 
-1. Build the new entity tool in a separate source checkout.
+1. Build `buildos` into a staging directory from a separate source checkout.
 2. Record the exact source revision and binary checksum.
 3. Invoke that exact binary path against a copied data root, never the live root first.
 4. Run compatibility assessment and a non-writing preview.
@@ -96,6 +111,13 @@ After the feature is implemented, the safe path will be:
 10. Obtain separate approval to change live adopter-owned data.
 
 Success in the copy does not automatically authorize either live action.
+
+The planned command family is `buildos entities resolve`,
+`validate`,
+`consolidate`,
+and `rebuild-index`.
+These names describe the accepted contract only;
+do not attempt to run them until your source build contains the implemented W1 R4 command and your team has verified it on a copied root.
 
 ## Rollback and Safe Stops
 
@@ -144,9 +166,12 @@ No. Building produces a separate binary. Replacing installed binary routing and 
 - [Maintainer Guide](../developer/operating-layer-entities-consolidation-and-resolution.md)
 - [Entity Consolidation Design](../../designs/2026-07-21-entity-consolidation-and-canonical-resolution.md)
 - [Entity Consolidation PRD](../../prd/17-enhance-entity-consolidation-and-canonical-resolution.md)
+- [Unified BuildOS CLI and Distribution PRD](../../prd/18-revise-unified-buildos-cli-and-distribution.md)
 
 ## Future Coverage
 
-- Blocked by: W1 R4 P2 entity toolkit implementation. Update when: the shipped command surface and diagnostics pass validation. Guide change: add exact preview, apply, resolve, validate, and index-check commands with verified example output.
+- Blocked by: W1 R4 P2 unified CLI seed. Update when: the source-built `buildos entities` command surface and diagnostics pass validation. Guide change: add exact preview, apply, resolve, validate, and index-check commands with verified example output.
 - Blocked by: W1 R4 P3 copied-root persona rehearsal. Update when: the persona pilot and restore test pass. Guide change: add a complete sanitized operator walkthrough, review checklist, expected warnings, and rollback steps.
 - Blocked by: W1 R4 P4 extraction and consumer integration. Update when: redirect-aware reads and canonical writes are available. Guide change: show how old references appear, how new references are stored, and how repeated persona extraction reuses a reviewed canonical record.
+- Blocked by: W1 R5 package distribution. Update when: a verified `buildos 0.1.0` package and legacy command aliases are available. Guide change: replace source-build-only setup with package installation and upgrade steps.
+- Blocked by: W2 project lifecycle. Update when: manifest-backed setup, update, backup, removal, and uninstall commands are available. Guide change: add the automated in-place project lifecycle path while keeping separate data-migration approvals.

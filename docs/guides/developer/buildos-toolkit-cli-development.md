@@ -18,6 +18,8 @@ related:
   - "../../prd/14-revise-deterministic-toolkit-deployment.md"
   - "../../prd/16-revise-toolkit-ownership-boundaries.md"
   - "../../prd/17-enhance-entity-consolidation-and-canonical-resolution.md"
+  - "../../prd/18-revise-unified-buildos-cli-and-distribution.md"
+  - "../../designs/2026-07-21-unified-buildos-cli-and-distribution.md"
   - "../user/convert-source-material-with-buildos-intake.md"
   - "../user/record-discovery-runs-and-qualify-findings.md"
   - "../user/promote-qualified-findings-to-designs.md"
@@ -51,13 +53,24 @@ Use this guide when creating a new first-party deterministic toolkit, revising a
 
 Coverage outcome: `developer`. This topic is maintainer-facing because it defines source layout, dependency posture, local execution, packaging expectations, script-wrapper boundaries, validation, and agent handoff rules. User-facing operation of the current shipped toolkits is covered by the companion user guides for intake conversion, playbook indexes, discovery runs, finding qualification, and qualified-finding design promotion.
 
+Architecture note: Build OS is converging on one distributable `buildos` executable.
+W1 R4 seeds `toolkits/buildos/` with the entity domain as `buildos entities`.
+W1 R5 will migrate intake,
+discovery,
+and design into that module and add temporary legacy-name aliases.
+Until that migration is implemented and verified,
+the current `buildos-intake`,
+`buildos-discovery`,
+and `buildos-design` binaries remain the runnable surfaces documented below.
+
 ## Project Orientation
 
 - [../../../toolkits/README.md](../../../toolkits/README.md) is the source home overview for first-party deterministic CLI toolkits.
 - [../../../toolkits/AGENTS.md](../../../toolkits/AGENTS.md) is the top router for toolkit work.
-- Each toolkit directory should include a local `README.md`, `AGENTS.md`, and `CLAUDE.md`.
+- The future public CLI lives in one Go module at `toolkits/buildos/`; coherent capabilities remain isolated as internal domain packages and subcommands.
+- The existing separate toolkit directories remain in place until their W1 R5 parity migrations pass.
 - `system/.os/scripts/` remains the operational wrapper, command router, compatibility, and command documentation surface.
-- Durable deterministic logic should move into packaged `buildos-*` binaries instead of accumulating in unmanaged Python, Node, or shell scripts.
+- Durable deterministic logic should move into an owning `buildos <domain>` package instead of accumulating in unmanaged Python, Node, or shell scripts.
 - Existing scripts may remain until a later phase explicitly ports them. Do not port `system/.os/scripts/validate_config.py` as part of the intake toolkit scaffold.
 
 ## Toolkit Defaults
@@ -67,7 +80,9 @@ Coverage outcome: `developer`. This topic is maintainer-facing because it define
 | Implementation language | Go |
 | Dependency posture | Standard library first |
 | Runtime posture | Local-only |
-| Binary name | `buildos-<toolkit-slug>` |
+| Public binary name | `buildos` |
+| Public command shape | `buildos <domain> <operation>` |
+| Source module | `toolkits/buildos/` |
 | Script role | Thin wrapper, router, compatibility shim, or command documentation |
 | Network calls | Disallowed unless a design approves them and the CLI requires opt-in flags |
 
@@ -77,20 +92,19 @@ Third-party packages, native dependencies, generated parsers, service SDKs, or e
 
 Toolkit ownership is a design boundary, not a convenience choice.
 
-Before adding a command or deterministic behavior, identify the capability domain and confirm the target toolkit README and local `AGENTS.md` already own that domain. If they do not, create or plan a new domain-specific toolkit instead of expanding the nearest existing Go CLI.
+Before adding a command or deterministic behavior, identify the capability domain and confirm that the unified module's domain package and command router own it.
+If they do not,
+design a new isolated domain package and subcommand rather than a new public executable or an expansion of the nearest package.
 
 Known ownership from the active PRD set:
 
-| Toolkit | Ownership |
+| Domain | Ownership and current posture |
 | --- | --- |
-| `buildos-intake` | Source intake, conversion, converted twins, and the `references.json` derived catalog. |
-| `buildos-config` | Planned home for instance config validation, scoped metadata/frontmatter hygiene, and the eventual `validate_config.py` migration. |
-| `buildos-playbooks` | Candidate home for playbook catalog rebuilds, active-only playbook resolution, and playbook contract checks if those remain durable commands. |
-| `buildos-extract` or `buildos-data` | Candidate home for extraction load-plan helpers, entity-row loaders, and deterministic `.os/data` hygiene beyond config-owned checks. |
-| `buildos-entities` | Contracted, not-yet-implemented home for whole-entity-graph loading, canonical resolution, compatibility and strict validation, reviewed consolidation, and `entity-resolution.json` generation. |
-| `buildos-discovery` | Implemented home for discovery-run recording, raw-finding anchoring, finding qualification, negative assertions, and run/finding-specific validation. |
-| `buildos-design` | Implemented home for qualified-finding to design hand-off, design route selection, and finding design-link updates. |
-| `buildos-stage` | Candidate home for stage-mover orchestration that routes to owning toolkits without absorbing their domain logic. |
+| `intake` | Source intake, conversion, converted twins, and `references.json`; still runs as `buildos-intake` until W1 R5 migration. |
+| `discovery` | Discovery-run recording, raw-finding anchoring, finding qualification, and run/finding validation; still runs as `buildos-discovery` until W1 R5 migration. |
+| `design` | Qualified-finding design hand-off and finding design-link updates; still runs as `buildos-design` until W1 R5 migration. |
+| `entities` | W1 R4 seed for whole-graph loading, canonical resolution, reviewed consolidation, compatibility and strict validation, and `entity-resolution.json`; canonical command is `buildos entities`. |
+| `config`, `playbooks`, `extraction`, or `stage` | Candidate future domains only; they require explicit product ownership and must not become new public binaries by default. |
 
 Do not add discovery runs, finding qualification, qualified-finding design hand-offs, stage movers, config validation, or entity-row validation to `buildos-intake` unless an explicit PRD/design revision changes its scope.
 
@@ -98,19 +112,37 @@ Do not add stage-mover automation to `buildos-design` unless an explicit PRD/des
 
 Do not add new durable domains to `system/.os/scripts/validate_config.py`. It is a legacy transitional script, not the long-term validation expansion point.
 
-Do not place entity graph behavior in `buildos-intake`, `buildos-config`, or a general extraction helper. PRD 17 assigns the shared resolver and mutation boundary to an independently buildable `buildos-entities` Go toolkit. Until that toolkit exists, entity cleanup remains audit-and-proposal-only.
+Do not place entity graph behavior in intake,
+config,
+or a general extraction helper.
+PRD 17 assigns the graph contract and PRD 18 assigns its public surface to `buildos entities` inside `toolkits/buildos/`.
+Until W1 R4 implements and validates that seed,
+entity cleanup remains audit-and-proposal-only.
 
-## Planned buildos-entities Boundary
+## Planned `buildos entities` Boundary
 
-`buildos-entities` will own resolution, whole-graph validation, reviewed consolidation, and the derived entity-resolution index. The accepted command families are `consolidate`, `resolve`, `validate`, and `rebuild-index`, but exact flags, output, and exit behavior must come from the tested implementation before they are documented as runnable instructions.
+`buildos entities` will own resolution, whole-graph validation, reviewed consolidation, and the derived entity-resolution index. The accepted command families are `consolidate`, `resolve`, `validate`, and `rebuild-index`. Their planned flags and shared result envelope are contractually frozen, but they remain non-runnable guidance until W1 R4 tests the implementation.
+
+W1 R4 temporarily exposes `toolkits/buildos/pkg/entities` so the current discovery and design modules can import the same resolver through explicit local module dependencies.
+Consumers must not shell out to `buildos entities` or copy redirect traversal.
+W1 R5 removes the local replacements and internalizes the package after those domains migrate into the unified module.
 
 The implementation must distinguish three roots: the source checkout, installed program files, and adopter-owned data. Building in the source checkout must not replace an installed binary. Testing must invoke the source-built binary by explicit path against a recoverable copy of adopter data, never the live root first.
 
 Mutation must be dry-run by default, require an explicit root and explicit apply authorization, validate the complete graph before writing, use same-filesystem temporary output and atomic replacement, preserve permissions, and rebuild the derived index. Binary deployment and live-data mutation require separate operator approvals.
 
+W1 R4 is source-build-only.
+It does not provide Homebrew installation,
+signed archives,
+automatic executable replacement,
+or project lifecycle commands.
+Those belong to W1 R5 distribution work and W2 lifecycle work respectively.
+
 ## buildos-intake Reference
 
-`buildos-intake` is the first implemented toolkit and is the model for future deterministic toolkits.
+`buildos-intake` is the first implemented toolkit and the behavior baseline for the future `buildos intake` migration.
+Its separate module and binary are current behavior,
+not the pattern for new public executables.
 
 ```sh
 buildos-intake convert --source <path>
@@ -180,17 +212,20 @@ Maintain design-promotion behavior against [finding-contract.md](../../../system
 
 Keep design promotion user-gated. Do not auto-promote qualified findings, do not bypass the make-docs design router, and do not rewrite the origin run or qualification evidence during design promotion.
 
-## Create a New Toolkit
+## Add a New CLI Domain
 
-1. Create `toolkits/<toolkit-slug>/`.
-2. Name the compiled binary `buildos-<toolkit-slug>`.
-3. Add a local `README.md` that states purpose, command surface, dependency posture, local-only posture, build instructions, validation, packaging notes, and known future work.
-4. Add a thin `AGENTS.md` router that points contributors to the local README, owning PRD or design, and relevant operating-layer contracts.
-5. Add `CLAUDE.md` as a pointer to the local `AGENTS.md`.
-6. Prefer a small Go module rooted in the toolkit directory. Keep command parsing explicit and predictable.
-7. Add tests close to the toolkit source once behavior exists.
-8. Add script wrappers only when they improve compatibility or discoverability from `system/.os/scripts/`.
-9. Update PRDs, designs, guides, or work backlogs only when the toolkit changes a durable contract or source-of-truth boundary.
+1. Confirm the domain's product ownership in the active PRD set.
+2. Add the domain under `toolkits/buildos/internal/<domain>/` after W1 R5 establishes that internal structure; W1 R4 alone uses the temporary exported entity package required for cross-module sharing.
+3. Route the public operation as `buildos <domain> <operation>` and reuse the shared help, root, output, diagnostic, version, and exit-code behavior.
+4. Keep the domain package coherent and use Go interfaces for cross-domain operations rather than subprocess calls.
+5. Add focused tests close to the domain source and parity tests for any command being migrated from a legacy binary.
+6. Add wrappers or legacy-name aliases only when the owning compatibility plan requires them.
+7. Update PRDs, designs, guides, or work backlogs whenever the domain changes a durable contract or source-of-truth boundary.
+
+Do not introduce a new public `buildos-<domain>` executable.
+The only temporary legacy names planned by W1 R5 are compatibility aliases for already shipped intake,
+discovery,
+and design commands.
 
 ## Enhance an Existing Toolkit
 
@@ -206,11 +241,11 @@ Keep design promotion user-gated. Do not auto-promote qualified findings, do not
 ## Convert an Existing Script
 
 1. Identify whether the script is durable logic, a temporary validator, a compatibility wrapper, or command documentation.
-2. If it is durable deterministic logic, create or select a toolkit directory under `toolkits/`.
+2. If it is durable deterministic logic, select or create its domain package inside the unified module.
 3. Port the behavior into the toolkit while preserving input and output contracts.
 4. Keep the old script only as a wrapper when existing workflows still call it.
 5. Make the wrapper call the packaged binary and keep any compatibility mapping obvious.
-6. Update documentation to name the toolkit binary as the implementation surface.
+6. Update documentation to name `buildos <domain>` as the canonical implementation surface.
 7. Record any intentionally unported behavior as future work in the toolkit README or owning backlog.
 
 ## Parallel Agent Workflow
@@ -311,6 +346,7 @@ If enterprise distribution concerns block a rollout, track them against R-003 in
 
 ## Future Coverage
 
-- Blocked by: expanded installer and release packaging. Update when `buildos-intake` has signed release artifacts, checksums, SBOM generation, and installer integration. Guide change: add enterprise deployment procedures and release checklist details.
-- Blocked by: W1 R4 P2 implementation of `toolkits/buildos-entities/`. Update when: its build, unit, fixture, failure-injection, and deterministic-index tests pass. Guide change: add verified build commands, exact command syntax and output, version/source reporting, copied-root test commands, and recovery behavior.
+- Blocked by: W1 R5 package distribution. Update when `buildos 0.1.0` has verified signed archives, checksums, SBOMs, provenance, Homebrew install/upgrade/uninstall, and legacy aliases. Guide change: replace multi-tool installation guidance with the verified unified release procedure.
+- Blocked by: W1 R4 P2 implementation of `toolkits/buildos/`. Update when: its CLI, unit, fixture, failure-injection, deterministic-index, and no-extra-binary tests pass. Guide change: add verified build commands, exact `buildos entities` syntax and output, version/source reporting, copied-root test commands, and recovery behavior.
 - Blocked by: W1 R4 P3 source-build migration rehearsal. Update when: the persona pilot proves snapshot restore and side-by-side binary isolation. Guide change: add the tested packaging, checksum, binary-routing, copied-root, and separate-approval procedure.
+- Blocked by: W2 project installation lifecycle. Update when: manifest-backed setup, update, backup, remove, and uninstall behavior is implemented. Guide change: replace manual project synchronization notes with the verified lifecycle commands while preserving rollback guidance.

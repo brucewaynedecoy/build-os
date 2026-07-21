@@ -155,20 +155,23 @@ Code anchors:
 
 | Status | Decision | Follow-Up |
 | --- | --- | --- |
-| Open | None yet | Resolve before broad enterprise rollout of packaged Build OS toolkits |
+| Open | Distribute one Apache-2.0 `buildos 0.1.0` executable through signed release archives and Homebrew after W1 R5 proves packaging and migration behavior | Implement and verify the W1 R5 release pipeline before broad enterprise rollout |
 
-**Issue**: Build OS now standardizes durable deterministic logic as packaged `buildos-*` CLI toolkits, but the installer, code signing, checksum, SBOM, vulnerability scanning, and enterprise distribution posture is not yet specified.
+**Issue**: Build OS now has an approved unified CLI and initial distribution contract, but the release pipeline, archive matrix, checksums, SBOMs, signed provenance or attestations, Homebrew formula, installation migration, and clean-machine evidence do not exist yet.
 
-**Why it matters**: Enterprise adopters may block unmanaged binaries or unsigned artifacts even when unmanaged scripts have been removed. The toolkit standard lowers runtime and dependency risk, but distribution still needs a hardened release path.
+**Why it matters**: Enterprise adopters may block unmanaged binaries or unsigned artifacts even when unmanaged scripts have been removed. Consolidating domains into one executable reduces operational surface area, but it does not prove artifact integrity, installation ownership, upgrade safety, or rollback.
 
-**Recommendation**: Treat unsigned local builds as development-only. Before broad adoption, define release artifacts, signing expectations, SBOM generation, checksum publication, installer behavior, and package-manager targets.
+**Recommendation**: Treat unsigned source builds as development-only. Implement W1 R5 against [18 Revise Unified BuildOS CLI and Distribution](./18-revise-unified-buildos-cli-and-distribution.md), publish supported platform archives with SHA-256 checksums, CycloneDX JSON SBOMs, and signed provenance or attestations, then verify the checksum-pinned Homebrew formula and archive workflows through install, upgrade, rollback, uninstall, and clean-machine smoke tests.
 
-**To close**: An approved enterprise distribution design and an implemented release pipeline for Build OS toolkit binaries.
+**To close**: Verified `buildos 0.1.0` release artifacts and Homebrew installation evidence, including the supported platform matrix, checksums, SBOMs, signatures or attestations, compatibility-alias migration, upgrade, rollback, uninstall, and clean-machine smoke tests. The approved architecture and planning bundle alone are not sufficient to close this risk.
 
 Code anchors:
 
 - `toolkits/`
 - `docs/designs/2026-06-04-buildos-toolkit-cli-deployment-standard.md`
+- `docs/designs/2026-07-21-unified-buildos-cli-and-distribution.md`
+- `docs/plans/2026-07-21-w1-r5-unified-buildos-cli-and-distribution/`
+- `docs/prd/18-revise-unified-buildos-cli-and-distribution.md`
 
 ### R-004 Deployed-instance entity consolidation compatibility
 
@@ -187,7 +190,7 @@ verify the source-built binary against a recoverable copy in compatibility and s
 then apply approved mappings through a separately authorized and audited migration.
 
 **To close**: The redirect and extraction contracts,
-`buildos-entities` resolver and writer,
+`buildos entities` resolver and writer,
 strict validator,
 deterministic index,
 redirect-aware integrations,
@@ -200,6 +203,7 @@ Code anchors:
 
 - [Entity consolidation and canonical resolution design](../designs/2026-07-21-entity-consolidation-and-canonical-resolution.md)
 - [PRD 17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md)
+- [PRD 18 Revise Unified BuildOS CLI and Distribution](./18-revise-unified-buildos-cli-and-distribution.md)
 - [W1 R4 entity consolidation and canonical resolution plan](../plans/2026-07-21-w1-r4-entity-consolidation-and-canonical-resolution/00-overview.md)
 - [Entity records contract](../../system/.os/contracts/entity-records-contract.md)
 
@@ -207,6 +211,7 @@ Code anchors:
 
 - `docs/designs/2026-06-03-build-os-architecture.md`
 - `docs/designs/2026-07-21-entity-consolidation-and-canonical-resolution.md`
+- `docs/designs/2026-07-21-unified-buildos-cli-and-distribution.md`
 - `docs/assets/references/output-contract.md`
 - `docs/assets/references/guide-contract.md`
 - `README.md`

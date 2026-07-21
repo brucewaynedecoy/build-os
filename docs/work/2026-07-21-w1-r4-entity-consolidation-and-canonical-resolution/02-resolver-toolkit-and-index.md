@@ -1,12 +1,12 @@
-# Phase 02: Resolver Toolkit and Index
+# Phase 02: Unified CLI Seed, Resolver, and Index
 
 ## Purpose
 
-Build the deterministic entity graph engine, command surface, validator modes, and reproducible resolution index required before any canonical data migration.
+Seed the unified CLI and build the deterministic entity graph engine, command surface, validator modes, and reproducible resolution index required before any canonical data migration.
 
 ## Overview
 
-This phase creates the independently buildable `buildos-entities` Go toolkit. Mutation remains dry-run by default, requires an explicit root and `--apply`, validates the complete graph before writing, and never infers an adopter root from a checkout or current directory.
+This phase creates the source-build-only `toolkits/buildos/` Go module and `buildos entities` domain. Mutation remains dry-run by default, requires an explicit root and `--apply`, validates the complete graph before writing, and never infers an adopter root from a checkout or current directory. Intake, discovery, and design remain separate binaries until W1 R5.
 
 ## Source PRD Docs
 
@@ -15,19 +15,21 @@ This phase creates the independently buildable `buildos-entities` Go toolkit. Mu
 - [PRD 08: Data Layer and Extraction](../../prd/08-data-and-extraction.md)
 - [PRD 14: Revise Deterministic Toolkit Deployment](../../prd/14-revise-deterministic-toolkit-deployment.md)
 - [PRD 16: Revise Toolkit Ownership Boundaries](../../prd/16-revise-toolkit-ownership-boundaries.md)
+- [PRD 18: Revise Unified BuildOS CLI and Distribution](../../prd/18-revise-unified-buildos-cli-and-distribution.md)
 
-## Stage 1 - Toolkit scaffold and graph engine
+## Stage 1 - Unified CLI scaffold and graph engine
 
 ### Tasks
 
-- [ ] t1: Create `toolkits/buildos-entities/` with Go module metadata, local README and agent routers, build targets, version or source-revision reporting, and a scope contract limited to entity-graph behavior.
+- [ ] t1: Create `toolkits/buildos/` with Go module metadata, `cmd/buildos`, local README and agent routers, root help and version behavior, build targets, and source-build defaults of version `dev` and revision `unknown`.
 - [ ] t2: Implement a whole-graph loader that reads all governed JSONL datasets, rejects invalid JSONL and duplicate IDs, and indexes records by stable ID and entity type.
 - [ ] t3: Implement terminal resolution for zero-hop, one-hop, and multi-hop chains with the contractually stable result shape and fail-closed diagnostics.
 - [ ] t4: Add graph tests for each entity type, every redirect kind, later winner replacement, same-type enforcement, missing and self targets, cycles, inactive terminals, illegal statuses, and remap conflicts.
+- [ ] t5: Expose the resolver temporarily through `toolkits/buildos/pkg/entities` with an interface existing Go modules can import without subprocess calls or duplicated chain logic.
 
 ### Acceptance criteria
 
-- The toolkit builds independently under the repository's Go conventions and reports its provenance on every command.
+- The unified seed builds independently under the repository's Go conventions and reports version, source revision, resolved root, mode, and write status on every result.
 - One shared engine supplies resolution and validation behavior rather than command-specific chain implementations.
 - Diagnostics identify the offending record and complete problematic chain or cycle where applicable.
 - Generic fixtures demonstrate identical graph semantics across all governed entity types.
@@ -37,15 +39,15 @@ This phase creates the independently buildable `buildos-entities` Go toolkit. Mu
 - Phase 01 contracts and fixtures are final.
 - `toolkits/AGENTS.md`, PRD 14, and PRD 16 have been read before choosing module structure or dependencies.
 
-## Stage 2 - Validation modes and deterministic index
+## Stage 2 - Command surface, validation modes, and deterministic index
 
 ### Tasks
 
-- [ ] t5: Implement `buildos-entities validate --compat` with structured warnings for legacy superseded rows without redirects and no automatic target inference.
-- [ ] t6: Implement strict validation for legacy omissions, graph invariants, duplicate IDs, remap conflicts, and stale or non-reproducible indexes.
-- [ ] t7: Implement `buildos-entities resolve` with machine-readable and human-readable output for requested ID, canonical ID, chain, and resolution state.
-- [ ] t8: Implement `buildos-entities rebuild-index` to emit stable lexical ordering from canonical JSONL only and support a non-writing `--check` mode.
-- [ ] t9: Add reproducibility and stale-index tests that compare repeated byte output from unchanged input and report exact remediation commands.
+- [ ] t6: Implement `buildos entities validate --root <path> --mode compat|strict [--json]` with structured compatibility warnings and strict graph enforcement.
+- [ ] t7: Implement `buildos entities resolve --root <path> --mode compat|strict --id <entity-id> [--json]` with requested ID, canonical ID, chain, and resolution state.
+- [ ] t8: Implement `buildos entities rebuild-index --root <path> --mode compat|strict [--check|--apply] [--json]` to emit stable lexical ordering from canonical JSONL only.
+- [ ] t9: Implement the shared human-readable result and stable JSON envelope plus common exit-code behavior across help, version, and entity commands.
+- [ ] t10: Add CLI, reproducibility, stale-index, and no-`buildos-entities` tests that compare repeated byte output and report exact remediation commands.
 
 ### Acceptance criteria
 
@@ -53,21 +55,22 @@ This phase creates the independently buildable `buildos-entities` Go toolkit. Mu
 - Strict validation rejects every release-blocking condition and passes only a fully valid graph and current index.
 - Repeated index builds from identical canonical inputs are byte-identical.
 - `--check` detects drift without mutating the index or canonical data.
+- The build emits only the `buildos` executable and the canonical domain spelling is `entities`.
 
 ### Dependencies
 
-- Stage 1 graph loader and resolver are stable.
+- Stage 1 CLI root, graph loader, resolver, and temporary exported package are stable.
 - Index format and compatibility-to-strict rules from Phase 01 are final.
 
 ## Stage 3 - Safe consolidation and recovery
 
 ### Tasks
 
-- [ ] t10: Implement `buildos-entities consolidate` as a dry-run operation that requires explicit winner, loser, kind, reason, and adopter-root inputs and displays the exact planned record and index changes.
-- [ ] t11: Add explicit `--apply` handling that validates the entire graph before mutation, writes through a same-filesystem temporary file, atomically replaces only the affected canonical JSONL file, and preserves permissions.
-- [ ] t12: Rebuild the derived index after a successful canonical write and report an exact recovery command if index generation then fails.
-- [ ] t13: Add tests for identical-mapping idempotence, conflicting-target non-writes, ambiguous or missing roots, unwritable roots, interrupted writes, invalid JSONL, and post-write index failure.
-- [ ] t14: Add only thin `system/.os/scripts/` routing if required after the CLI stabilizes; do not add durable Python logic or move the domain into an existing unrelated toolkit.
+- [ ] t11: Implement `buildos entities consolidate --root <path> --mode compat|strict --manifest <path> [--apply] [--json]` as a dry-run operation that displays exact planned row and index changes.
+- [ ] t12: Add explicit `--apply` handling that validates the entire graph before mutation, writes through a same-filesystem temporary file, atomically replaces only the affected canonical JSONL file, and preserves permissions.
+- [ ] t13: Rebuild the derived index after a successful canonical write and report an exact recovery command if index generation then fails.
+- [ ] t14: Add tests for identical-manifest idempotence, conflicting-target non-writes, ambiguous or missing roots, unwritable roots, interrupted writes, invalid JSONL, and post-write index failure.
+- [ ] t15: Add only thin `system/.os/scripts/` routing if required after the CLI stabilizes; do not add durable Python logic or migrate the legacy domains into `toolkits/buildos/` during W1 R4.
 
 ### Acceptance criteria
 

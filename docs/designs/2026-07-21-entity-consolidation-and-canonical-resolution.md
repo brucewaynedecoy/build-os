@@ -61,6 +61,36 @@ Contract-bearing data changes should wait until the resolver,
 validator,
 and deterministic writer are available from the source build.
 
+## Architecture Change Note (2026-07-21)
+
+The accepted [Unified BuildOS CLI and Distribution design](./2026-07-21-unified-buildos-cli-and-distribution.md)
+supersedes this design's earlier proposal for a separately distributed `buildos-entities` executable.
+W1 R4 now seeds the future single Go module at `toolkits/buildos/`
+and exposes the canonical command family as `buildos entities`.
+No public `buildos-entities` binary is introduced.
+
+This changes the command and module boundary only;
+the redirect,
+resolver,
+consolidation-manifest,
+index,
+compatibility and strict validation,
+persona identity,
+extraction outcome,
+explicit-root,
+dry-run,
+atomic-write,
+and copied-root safety contracts in this design remain effective.
+Until W1 R5 consolidates the existing domains,
+`buildos-intake`,
+`buildos-discovery`,
+and `buildos-design` remain separately built and installed executables.
+W1 R4 exposes the resolver temporarily through `toolkits/buildos/pkg/entities`,
+so existing discovery and design modules can import one graph implementation through explicit local module dependencies rather than subprocess calls.
+W1 R5 will migrate those consumers into `toolkits/buildos/internal/`,
+remove the local replacements,
+and add compatibility aliases for the old executable names.
+
 ## Decision
 
 ### 1. Add a generic redirect to the common entity envelope
@@ -196,34 +226,50 @@ the index may always be deleted and rebuilt.
 `references.json` remains the intake and converted-source lookup index.
 It will not be overloaded with entity redirect behavior.
 
-### 4. Implement deterministic operations in a Go toolkit
+### 4. Seed deterministic operations in the unified Go CLI
 
-Create an independently buildable `toolkits/buildos-entities/` Go toolkit,
-producing the `buildos-entities` binary in accordance with the toolkit deployment standard.
-A future unified `buildos` dispatcher may expose equivalent `buildos entity ...` routes,
-but the independently runnable binary remains the durable implementation surface.
+Create the initial unified Go module at `toolkits/buildos/`,
+producing one `buildos` executable.
+W1 R4 initially supplies the root CLI,
+shared root and output behavior,
+layout resolution,
+and the entity domain.
+The durable public implementation surface is `buildos entities`;
+there is no public `buildos-entities` executable.
+
+Until W1 R5 moves the existing intake,
+discovery,
+and design domains into the unified module,
+the entity resolver is exposed temporarily as `toolkits/buildos/pkg/entities`.
+Existing Go modules import that package through explicit local module dependencies.
+They must not shell out to the CLI or duplicate redirect traversal.
 
 The initial command surface is:
 
 ```shell
-buildos-entities consolidate \
+buildos entities consolidate \
   --root /path/to/system-root \
-  --winner PER-003 \
-  --loser PER-027 \
-  --kind duplicate \
-  --reason "Approved during persona review"
+  --mode compat \
+  --manifest /path/to/reviewed-mappings.json \
+  [--apply] \
+  [--json]
 
-buildos-entities resolve \
+buildos entities resolve \
   --root /path/to/system-root \
-  PER-027
+  --mode compat \
+  --id PER-027 \
+  [--json]
 
-buildos-entities validate \
+buildos entities validate \
   --root /path/to/system-root \
-  --compat
+  --mode compat \
+  [--json]
 
-buildos-entities rebuild-index \
+buildos entities rebuild-index \
   --root /path/to/system-root \
-  --check
+  --mode strict \
+  [--check|--apply] \
+  [--json]
 ```
 
 Mutation commands produce a dry-run plan by default and require an explicit `--apply` flag to write.
@@ -236,10 +282,14 @@ If index generation fails after the canonical write,
 the command reports the exact recovery command;
 it does not attempt to fabricate or retain a partially generated index as authoritative data.
 
-Every invocation reports the executable version or source revision,
+The seed also provides `buildos help` and `buildos version`.
+Source builds default to version `dev` and source revision `unknown` unless build flags inject them.
+Every result reports the executable version,
+the source revision,
 the resolved root,
 the operating mode,
-and whether any write occurred.
+and whether any write occurred;
+human-readable output is the default and `--json` selects the shared automation envelope.
 Mutation requires an explicit root path;
 it does not infer the installed root from the source checkout or current working directory.
 Wrappers under `system/.os/scripts/` may route to the binary after the command surface stabilizes,
@@ -325,7 +375,7 @@ explicit-root process:
    version information,
    wrappers,
    and actual adopter data root.
-2. Clone the repository into a separate source directory and build `buildos-entities` there.
+2. Clone the repository into a separate source directory and build `buildos` there.
    Do not place the new binary over an installed binary yet.
 3. Create a recoverable snapshot or working copy of the adopter-owned data root,
    including canonical JSONL files and current indexes.
@@ -369,7 +419,7 @@ The implementation proceeds in these stages:
    implement the resolver,
    graph validator,
    deterministic index,
-   and dry-run/apply toolkit operations.
+   and dry-run/apply `buildos entities` operations inside the unified CLI seed.
 3. **Persona pilot:** apply a small reviewed persona mapping set in fixtures and a copied adopter root;
    validate resolution through existing references and new extraction inputs.
 4. **Read/write integration:** make entity consumers expose original and canonical IDs,
@@ -519,6 +569,12 @@ dry-run,
 snapshot,
 and two-approval boundaries add friction,
 but they prevent a source checkout or ambiguous binary from mutating live adopter data silently.
+
+W1 R4 also establishes a small shared CLI and layout foundation earlier than the entity feature alone would require.
+That additional boundary prevents a short-lived public binary from becoming a compatibility obligation,
+but it leaves intake,
+discovery,
+and design as separately installed binaries until W1 R5 migration and package distribution are complete.
 
 ## Intended Follow-On
 

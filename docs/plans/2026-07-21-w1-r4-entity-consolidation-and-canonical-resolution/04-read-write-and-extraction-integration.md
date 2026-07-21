@@ -15,11 +15,12 @@ Make Build OS consumers redirect-aware and ensure new entity-producing workflows
 ## Workstreams
 
 1. Inventory every reader and writer of governed entity IDs, including extraction load plans, playbook targets, discovery/run promotion surfaces, validators, generated narratives, and command output.
-2. Update reads to preserve and expose the requested historical ID while also returning terminal canonical ID and full redirect chain; never silently replace source provenance.
+2. Update reads to preserve and expose the requested historical ID while also returning terminal canonical ID and full redirect chain through `toolkits/buildos/pkg/entities`; never silently replace source provenance.
 3. Update new writes and intentional edits to resolve known IDs first and persist only the terminal canonical ID. Fail closed on unresolved graph errors or ambiguity.
 4. Implement persona-first exact matching: exact ID, unique approved type-scoped alias or consolidated member identity, and an explicitly versioned persona identity key may resolve automatically; fuzzy, semantic, colliding, or ambiguous matches create review candidates only.
 5. Update extraction output metadata so a reused or updated canonical ID is distinguishable from a newly minted ID and repeated extraction does not recreate an approved duplicate.
 6. Keep other entity types on ID-based resolution only until each receives a separately reviewed, type-specific identity contract; do not generalize persona normalization heuristics across requirements, capabilities, findings, tests, results, runs, or extractions.
+7. Add explicit local Go module dependencies for the existing discovery and design consumers; do not shell out to `buildos entities`, duplicate graph logic, or migrate those domains into the unified module before W1 R5.
 
 ## Dependencies
 
@@ -39,4 +40,4 @@ Make Build OS consumers redirect-aware and ensure new entity-producing workflows
 
 ## Execution Notes
 
-Use the resolver as the single source of graph behavior; do not reimplement chain following inside each consumer. Preserve the distinction between source observation and current canonical identity in command output, extraction metadata, and narrative generation.
+Use the temporary exported resolver package as the single source of graph behavior; do not reimplement chain following inside each consumer or call the CLI as a subprocess. Preserve the distinction between source observation and current canonical identity in command output, extraction metadata, and narrative generation. W1 R5 internalizes this package after moving the consumers into `toolkits/buildos/`.

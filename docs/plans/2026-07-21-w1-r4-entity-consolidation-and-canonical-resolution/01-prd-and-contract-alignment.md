@@ -10,7 +10,7 @@ Create the authoritative enhancement contract before implementation so every lat
 - [Pre-upgrade audit prompt](../../assets/prompts/pre-upgrade-entity-consolidation-audit.prompt.md)
 - `system/.os/contracts/entity-records-contract.md`
 - `system/.os/contracts/extraction-contract.md`
-- Active PRDs 00, 01, 02, 03, 04, 08, 09, 14, 15, and 16
+- Active PRDs 00, 01, 02, 03, 04, 08, 09, 14, 15, 16, 17, and 18
 
 ## Workstreams
 
@@ -18,12 +18,12 @@ Create the authoritative enhancement contract before implementation so every lat
 2. Extend the shipped entity and extraction contracts so `superseded` plus `redirect` has one meaning across every governed entity type and extraction metadata distinguishes newly minted IDs from references or updates to canonical IDs.
 3. Add only genuine `Enhanced by` annotations to the baseline sections named in the overview; preserve existing text and chronological change-note order.
 4. Update existing risk item R-004 with the accepted mitigation and closure gates, without adding `Change Notes` inside the register.
-5. Add PRD 17 to the active index with `Kind: enhancement`, `Status: active`, complete related-doc links, source anchors, reading order, and audience routes.
+5. Freeze the W1 R4 portion of PRD 18: `toolkits/buildos/`, `buildos entities`, shared `--root`, `--json`, version/help, output-envelope, and exit-code behavior, plus the temporary `pkg/entities` cross-module boundary.
 
 ## Dependencies
 
 - Starts from the accepted design and does not depend on implementation.
-- PRD 17 terminology must settle before contract fixtures, toolkit API names, baseline annotations, or guide prose become final.
+- PRD 17 entity terminology and PRD 18 CLI terminology must settle before contract fixtures, package API names, baseline annotations, or guide prose become final.
 - Baseline and index workers may proceed in parallel after the PRD 17 path and vocabulary are fixed, but assembly occurs after both are complete.
 
 ## Acceptance Checks
@@ -32,6 +32,7 @@ Create the authoritative enhancement contract before implementation so every lat
 - The contract states that losing records remain authoritative historical rows, `related` remains non-canonical, and reverse members are derived rather than hand-maintained.
 - The contract defines actionable errors for missing targets, self-redirects, type mismatches, cycles, inactive terminals, illegal redirect statuses, duplicate IDs, remap conflicts, and stale indexes.
 - Compatibility mode is explicitly temporary and read-oriented; strict mode is the release and post-migration gate.
+- The public command contract says `buildos entities`; no public `buildos-entities` binary is introduced.
 - Baseline links resolve from old requirements to PRD 17 and back, and R-004 carries executable closure conditions.
 
 ## Execution Notes
