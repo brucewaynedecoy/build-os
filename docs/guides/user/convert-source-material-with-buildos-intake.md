@@ -12,6 +12,7 @@ applies-to:
   - buildos-intake
   - system/assets
 related:
+  - "./entities-consolidation-curate-and-resolve-records.md"
   - "./build-os-getting-started.md"
   - "./validate-system-data-and-indexes.md"
   - "./use-playbooks-and-active-indexes.md"
@@ -20,6 +21,7 @@ related:
   - "../../../system/.os/contracts/intake-translation-contract.md"
   - "../../../system/playbooks/administrative/manual-intake-conversion.md"
   - "../developer/buildos-toolkit-cli-development.md"
+  - "../developer/operating-layer-entities-consolidation-and-resolution.md"
 ---
 
 # Convert Source Material With buildos-intake
@@ -29,6 +31,8 @@ related:
 Use this guide when you need to turn local source files into Build OS converted twins. Converted twins live under `system/assets/`, carry provenance frontmatter, and become source material for later extraction and review.
 
 `buildos-intake` is intentionally limited to intake and conversion. It does not extract requirements, qualify findings, or run discovery.
+
+Entity matching and canonical resolution remain outside `buildos-intake`. The current checkout does not yet resolve extracted persona references or consolidate duplicates. Pre-upgrade cleanup is audit-and-proposal-only.
 
 ## Before You Begin
 
@@ -94,6 +98,8 @@ Supported conversion inputs are:
 
 Converted twins should contain source text, tables, and local side artifacts that support later extraction. They should not contain newly invented requirement IDs, capability classifications, findings, or load-plan decisions.
 
+After redirect-aware extraction is implemented, an exact known entity ID will resolve to its terminal canonical ID before a new reference is stored. A unique approved alias or a versioned type-specific identity key may also reuse a canonical record. Fuzzy, semantic, colliding, or ambiguous matches must remain non-writing review candidates. These rules do not change converted-source intake or `references.json`.
+
 Rebuild `system/.os/indexes/references.json` after converted twins change. Rebuild `system/.os/indexes/playbooks.json` after playbooks change.
 
 ## Troubleshooting
@@ -129,15 +135,22 @@ No. PDF support is minimal local plain-text extraction only.
 
 No. It is derived from converted twin frontmatter. Rebuild it instead.
 
+**Will conversion deduplicate personas?**
+
+No. Conversion preserves source material. Future extraction may reuse a reviewed canonical persona, but uncertain similarity will still require human review.
+
 ## Related Resources
 
 - [Build OS Getting Started](./build-os-getting-started.md)
 - [Validate System Data and Indexes](./validate-system-data-and-indexes.md)
 - [Use Playbooks and Active Indexes](./use-playbooks-and-active-indexes.md)
+- [Curate and Resolve Duplicate Entity Records](./entities-consolidation-curate-and-resolve-records.md)
 - [buildos-intake README](../../../toolkits/buildos-intake/README.md)
 - [Manual Intake Conversion](../../../system/playbooks/administrative/manual-intake-conversion.md)
 - [Build OS Toolkit CLI Development](../developer/buildos-toolkit-cli-development.md)
+- [Entity Consolidation Maintainer Guide](../developer/operating-layer-entities-consolidation-and-resolution.md)
 
 ## Future Coverage
 
 - Add extraction-loader steps when Build OS ships a dedicated extraction toolkit or user-facing extraction command.
+- Blocked by: W1 R4 P4 redirect-aware extraction integration. Update when: repeated persona extraction, exact-ID resolution, unique approved aliases, and ambiguous-review fixtures pass. Guide change: add verified extraction examples showing newly minted, reused, and updated canonical IDs without implying that intake conversion owns entity matching.

@@ -69,6 +69,10 @@ Code anchors:
 - `toolkits/buildos-design/`
 - `docs/guides/developer/buildos-toolkit-cli-development.md`
 
+### Change Notes
+
+- Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): the entity-graph domain is owned by the new `buildos-entities` toolkit; extraction-specific helpers remain a separate ownership decision unless explicitly assigned later.
+
 ## Impacted Docs and Dependencies
 
 - PRD 07 remains the source for `buildos-intake`; it should not be read as permission to add discovery, finding, config, extraction, or stage commands to that toolkit.
@@ -87,6 +91,10 @@ Code anchors:
 - `docs/prd/11-flow-c-integration.md`
 - `docs/prd/12-stage-automation.md`
 - `docs/prd/14-revise-deterministic-toolkit-deployment.md`
+
+### Change Notes
+
+- Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): PRD 17 resolves canonical entity graph operations into `buildos-entities` without granting unrelated extraction or playbook behavior to that toolkit.
 
 ## Required Baseline Annotations
 

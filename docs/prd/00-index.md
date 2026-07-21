@@ -11,29 +11,30 @@ This PRD set is the descriptive source-of-truth for **Build OS** — a general-p
 3. [03-open-questions-and-risk-register.md](./03-open-questions-and-risk-register.md)
 4. [04-glossary.md](./04-glossary.md)
 5. Subsystem docs `05`–`12` in number order.
-6. Active change docs in number order, starting with [13-adopter-owned-config-surface.md](./13-adopter-owned-config-surface.md) through [16-revise-toolkit-ownership-boundaries.md](./16-revise-toolkit-ownership-boundaries.md).
+6. Active change docs in number order, starting with [13-adopter-owned-config-surface.md](./13-adopter-owned-config-surface.md) through [17-enhance-entity-consolidation-and-canonical-resolution.md](./17-enhance-entity-consolidation-and-canonical-resolution.md).
 
 ## Document Map
 
 | Document | Kind | Status | Related Docs | Focus |
 | --- | --- | --- | --- | --- |
 | `00-index.md` | `core` | `active` | `—` | Explain the PRD set and how to read it |
-| `01-product-overview.md` | `core` | `active` | `13`, `14` | Purpose, users, capabilities, boundaries, limitations |
-| `02-architecture-overview.md` | `core` | `active` | `13`, `14`, `15` | Topology, modules, runtime boundaries, data flow, config, toolkit source |
-| `03-open-questions-and-risk-register.md` | `core` | `active` | `13`, `14`, `16` | Drift, open questions, rebuild risks |
-| `04-glossary.md` | `core` | `active` | `15` | Canonical terms |
+| `01-product-overview.md` | `core` | `active` | `13`, `14`, `17` | Purpose, users, capabilities, boundaries, limitations |
+| `02-architecture-overview.md` | `core` | `active` | `13`, `14`, `15`, `17` | Topology, modules, runtime boundaries, data flow, config, toolkit source |
+| `03-open-questions-and-risk-register.md` | `core` | `active` | `13`, `14`, `16`, `17` | Drift, open questions, rebuild risks |
+| `04-glossary.md` | `core` | `active` | `15`, `17` | Canonical terms |
 | `05-spaces-boundary-and-shipping.md` | `baseline` | `active` | `06`, `11` | Three spaces, make-docs boundary, shipping model |
 | `06-operating-layer-and-routing.md` | `baseline` | `active` | `05`, `08`, `13`, `14` | `.os/` brain, contracts authority, agent routing, script wrappers |
 | `07-intake-and-conversion.md` | `baseline` | `active` | `08`, `14`, `16` | Pillar 1: deterministic converters + provenance |
-| `08-data-and-extraction.md` | `baseline` | `active` | `06`, `07`, `13`, `15`, `16` | `.os/data` entities, extraction ETL, layered canonicity |
-| `09-playbooks.md` | `baseline` | `active` | `06`, `08`, `13`, `16` | Instruments, contract, gates, guardrails |
+| `08-data-and-extraction.md` | `baseline` | `active` | `06`, `07`, `13`, `15`, `16`, `17` | `.os/data` entities, extraction ETL, layered canonicity |
+| `09-playbooks.md` | `baseline` | `active` | `06`, `08`, `13`, `16`, `17` | Instruments, contract, gates, guardrails |
 | `10-discovery-runs-and-qualification.md` | `baseline` | `active` | `09`, `08`, `13`, `16` | Runs, finding qualification (verify-to-promote) |
 | `11-flow-c-integration.md` | `baseline` | `active` | `10`, `13`, `16` | Qualified-finding → design hand-off |
 | `12-stage-automation.md` | `baseline` | `active` | `07`–`11`, `13`, `14`, `16` | Hooks + slash-command stage-movers |
 | `13-adopter-owned-config-surface.md` | `addition` | `active` | `02`, `03`, `06`, `08`–`12` | Adopter-owned config for systems, environments, owners, and validation |
-| `14-revise-deterministic-toolkit-deployment.md` | `revision` | `active` | `02`, `03`, `06`, `07`, `12`, `16` | Packaged `buildos-*` toolkits as the standard for durable deterministic logic |
-| `15-revise-extraction-draft-lifecycle.md` | `revision` | `active` | `02`, `04`, `08` | `draft` as the pending lifecycle state for entity and extraction rows |
-| `16-revise-toolkit-ownership-boundaries.md` | `revision` | `active` | `07`–`14` | Domain-owned toolkit boundaries and W1 R0 toolkit inventory |
+| `14-revise-deterministic-toolkit-deployment.md` | `revision` | `active` | `02`, `03`, `06`, `07`, `12`, `16`, `17` | Packaged `buildos-*` toolkits as the standard for durable deterministic logic |
+| `15-revise-extraction-draft-lifecycle.md` | `revision` | `active` | `02`, `04`, `08`, `17` | `draft` as the pending lifecycle state for entity and extraction rows |
+| `16-revise-toolkit-ownership-boundaries.md` | `revision` | `active` | `07`–`14`, `17` | Domain-owned toolkit boundaries and W1 R0 toolkit inventory |
+| `17-enhance-entity-consolidation-and-canonical-resolution.md` | `enhancement` | `active` | `01`–`04`, `08`, `09`, `14`–`16` | Non-destructive entity consolidation, canonical resolution, deterministic index/toolkit, and staged source-build migration |
 
 ## Source Anchors
 
@@ -42,9 +43,11 @@ This PRD set is the descriptive source-of-truth for **Build OS** — a general-p
 - `docs/designs/2026-06-03-adopter-owned-config-surface.md`
 - `docs/designs/2026-06-04-buildos-toolkit-cli-deployment-standard.md`
 - `docs/designs/2026-06-04-make-docs-buildos-toolkit-cli-import-strategy.md`
+- `docs/designs/2026-07-21-entity-consolidation-and-canonical-resolution.md`
 - `docs/plans/2026-06-03-w1-r0-build-os-baseline/`
 - `docs/plans/2026-06-03-w1-r1-adopter-owned-config-surface/`
 - `docs/plans/2026-06-04-w1-r2-buildos-toolkit-cli-deployment-standard/`
+- `docs/plans/2026-07-21-w1-r4-entity-consolidation-and-canonical-resolution/`
 - `docs/work/2026-06-03-w1-r0-build-os-baseline/`
 - `docs/work/2026-06-03-w1-r1-adopter-owned-config-surface/`
 - `docs/work/2026-06-04-w1-r2-buildos-toolkit-cli-deployment-standard/`
@@ -56,11 +59,19 @@ This PRD set is the descriptive source-of-truth for **Build OS** — a general-p
 ### New developer
 
 Read `01` → `02` → `06` (operating layer) → the subsystem doc for the area you'll work in, then the matching backlog phase under `docs/work/2026-06-03-w1-r0-build-os-baseline/`.
+For entity consolidation or canonical-reference work,
+continue through `08` → `16` → `17` and the W1 R4 plan.
 
 ### Product or technical lead
 
 Read `01` → `05` (spaces, boundary, shipping) → `03` (open questions and risks) → `02`.
+For deployed-instance entity cleanup or migration decisions,
+also read `17` and R-004 in `03`.
 
 ### AI coding assistant
 
 Read `06` (operating layer & routing) first to learn the `.os/` brain and the make-docs boundary (`system/playbooks/administrative/respect-make-docs-plugin-boundary.md`), then `02`, then the subsystem doc for the task.
+For entity records,
+read `08`,
+the ownership rules in `16`,
+and the effective consolidation contract in `17` before changing data or tools.

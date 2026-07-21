@@ -26,11 +26,17 @@ Define the canonical vocabulary used across the Build OS PRD set so humans and c
 | Capability / Requirement / Finding | Descriptive (what the product can do) / normative (what the adopter needs) / empirical (what was observed). | `08-data-and-extraction.md` |
 | Capability gap / Bug | A requirement with no capability / a capability that misbehaves. | adopter deliverables |
 | Layered canonicity | Structured fields canonical in `.os/data/*.jsonl`; narrative canonical in `system/docs/`; overlaps generated. | `08-…` |
+| Canonical entity | The terminal active entity that current workflows use after following zero or more reviewed redirects. | `17-enhance-entity-consolidation-and-canonical-resolution.md` |
+| Entity redirect | A directed successor link carried by a superseded entity; it is distinct from a non-canonical `related` edge. | `17-enhance-entity-consolidation-and-canonical-resolution.md` |
+| Resolution chain | The ordered entity IDs from the requested historical identity to its terminal canonical entity. | `17-enhance-entity-consolidation-and-canonical-resolution.md` |
+| Entity-resolution index | The rebuildable forward and reverse projection of canonical entity redirects under `system/.os/indexes/`. | `17-enhance-entity-consolidation-and-canonical-resolution.md` |
+| Compatibility / Strict validation | Temporary read-oriented legacy assessment / the release and post-migration enforcement gate for redirect graphs. | `17-enhance-entity-consolidation-and-canonical-resolution.md` |
 | make-docs boundary | The four externally-managed trees that must not be modified directly. | `05-spaces-boundary-and-shipping.md` |
 
 ### Change Notes
 
 - Revised by [15 Revise Extraction Draft Lifecycle](./15-revise-extraction-draft-lifecycle.md): `draft` is the effective ungated lifecycle term for entity and extraction rows; `candidate` is not part of the `.os/data` entity lifecycle vocabulary.
+- Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): canonical entity, entity redirect, resolution chain, entity-resolution index, and compatibility/strict validation define the shared consolidation vocabulary.
 
 ## Source Anchors
 

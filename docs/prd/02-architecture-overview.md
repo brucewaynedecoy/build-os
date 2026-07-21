@@ -29,6 +29,10 @@ Code anchors:
 - `system/playbooks/AGENTS.md`
 - `toolkits/AGENTS.md`
 
+### Change Notes
+
+- Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): `system/.os/data/` gains redirect-bearing entity rows, `system/.os/indexes/` gains the derived entity-resolution index, and `toolkits/buildos-entities/` owns deterministic graph operations.
+
 ## Runtime Boundaries
 
 The hard boundary is the make-docs plug-in: the four trees (`docs/`, `system/docs/`, `.make-docs/`, `system/.make-docs/`) are externally managed and never modified directly; the top routers are co-owned (augment-only). Within `system/`, `convert` is deterministic (packaged tools with script wrappers) while `extract` is smart (human/agent). Computer-use execution runs against the external target application.
@@ -36,6 +40,10 @@ The hard boundary is the make-docs plug-in: the four trees (`docs/`, `system/doc
 Code anchors:
 
 - `system/playbooks/administrative/respect-make-docs-plugin-boundary.md`
+
+### Change Notes
+
+- Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): source checkout, installed binaries, and adopter-owned data are distinct runtime boundaries; binary deployment and live-data migration require separate approvals and explicit roots.
 
 ## Data Flow
 
@@ -49,6 +57,7 @@ Code anchors:
 ### Change Notes
 
 - Revised by [15 Revise Extraction Draft Lifecycle](./15-revise-extraction-draft-lifecycle.md): Flow A extraction outputs use `draft` entity and extraction rows until promoted; `candidate` remains only a converted-source trust state where that contract applies.
+- Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): Flow A reads preserve observed IDs while exposing terminal canonical IDs, and new entity references store the terminal canonical ID after deterministic or reviewed matching.
 
 ## Configuration Surfaces
 

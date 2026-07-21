@@ -30,6 +30,10 @@ W1 R0 P4 introduced the first canonical entity JSONL files and validation. The i
 | Converted twins | Converted source twins may still use `candidate` only under the converted-source contract, where it means conversion quality is not yet trusted. |
 | PRD language | PRD language should describe Flow A extraction outputs as draft entity and extraction rows until promoted. |
 
+### Change Notes
+
+- Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): `superseded` means the row has one reviewed redirect to a successor, while `archived` means retained without a successor; neither replaces the pending `draft` state.
+
 ## Impacted Docs and Dependencies
 
 - [02 Architecture Overview](./02-architecture-overview.md) now describes Flow A as producing draft entity and extraction rows.
@@ -37,6 +41,10 @@ W1 R0 P4 introduced the first canonical entity JSONL files and validation. The i
 - [08 Data Layer and Extraction](./08-data-and-extraction.md) now describes draft staging and draft extraction outputs.
 - `system/.os/contracts/entity-records-contract.md` and `system/.os/contracts/extraction-contract.md` carry the effective lifecycle contract.
 - `system/.os/contracts/converted-source-contract.md` remains separate and may still use converted-source `candidate` status.
+
+### Change Notes
+
+- Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): entity and extraction contracts preserve this lifecycle vocabulary while recording canonical reuse or updates separately from newly minted IDs.
 
 ## Required Baseline Annotations
 

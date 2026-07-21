@@ -10,6 +10,7 @@ tags:
 applies-to:
   - system/.os
 related:
+  - "./operating-layer-entities-consolidation-and-resolution.md"
   - "../../../system/.os/AGENTS.md"
   - "../../../system/.os/contracts/AGENTS.md"
   - "../../../system/.os/contracts/config-contract.md"
@@ -24,12 +25,14 @@ related:
   - "../user/use-playbooks-and-active-indexes.md"
   - "../user/record-discovery-runs-and-qualify-findings.md"
   - "../user/understand-workspace-artifacts.md"
+  - "../user/entities-consolidation-curate-and-resolve-records.md"
   - "../../../system/.os/contracts/entity-records-contract.md"
   - "../../../system/.os/contracts/run-record-contract.md"
   - "../../../system/.os/contracts/finding-contract.md"
   - "../../../system/.os/contracts/converted-source-contract.md"
   - "../../../system/.os/contracts/extraction-contract.md"
   - "../../prd/16-revise-toolkit-ownership-boundaries.md"
+  - "../../prd/17-enhance-entity-consolidation-and-canonical-resolution.md"
   - "../../../system/workspace/AGENTS.md"
   - "../../../system/workspace/runs/AGENTS.md"
   - "../../../system/workspace/findings/AGENTS.md"
@@ -53,6 +56,8 @@ related:
 ## Overview
 
 Use this guide when adding or changing Build OS operating-layer contracts, `.os` routers, active guardrails, scoped metadata, workspace run/finding artifacts, or system-owned data/index routing. The current operating layer is contract first: contracts define authority, shape, lifecycle, and link rules; guardrails define always-on safety rules; routers only tell contributors where to go next.
+
+The entity-consolidation contract is newer than the current runtime implementation. Redirect-bearing data, terminal resolution, and the entity-resolution index are authoritative planned behavior, but the compatible resolver, validator, writer, and index builder are not yet shipped. Until they are implemented, use the pre-upgrade audit only for read-only proposals and do not mutate canonical rows.
 
 Coverage outcome: `developer`. The durable knowledge here is maintainer-facing because it describes source-of-truth boundaries, extension points, validation, shipping boundaries, and safe-change rules. User-facing operation of the shipped filesystem is covered by the companion user guides for getting started, configuration, validation, playbooks, discovery, and workspace artifacts.
 
@@ -79,7 +84,7 @@ The current operating-layer contract set includes:
 | --- | --- |
 | [config-contract.md](../../../system/.os/contracts/config-contract.md) | Adopter-owned instance config shape, configured `systems`, `environments`, and `owners`, defaults, and scoped metadata reference rules. |
 | [playbook-contract.md](../../../system/.os/contracts/playbook-contract.md) | Playbook frontmatter, guardrail/procedure body shapes, lifecycle, and scoped metadata expectations for playbooks. |
-| [entity-records-contract.md](../../../system/.os/contracts/entity-records-contract.md) | Canonical `.os/data/*.jsonl` entity envelopes, ID prefixes, `source_anchor`, promoted `doc_anchor`, shared fields, per-type fields, and status vocabulary. |
+| [entity-records-contract.md](../../../system/.os/contracts/entity-records-contract.md) | Canonical `.os/data/*.jsonl` entity envelopes, ID prefixes, anchors, per-type fields, lifecycle, reviewed redirects, and terminal canonical-resolution rules. |
 | [run-record-contract.md](../../../system/.os/contracts/run-record-contract.md) | Run artifact directories, immutable run evidence, outcome values, raw findings, and `.os/data/runs.jsonl` index fields. |
 | [finding-contract.md](../../../system/.os/contracts/finding-contract.md) | Raw to qualified to optional design lifecycle, deterministic qualification tests, and negative-finding qualification. |
 | [converted-source-contract.md](../../../system/.os/contracts/converted-source-contract.md) | Converted twin provenance frontmatter for source, hash, converter, timestamp, type, and status. |
@@ -95,8 +100,10 @@ The current operating-layer contract set includes:
 6. When changing scoped metadata, read `config-contract.md`, use `systems`, `environments`, and `owners` as list fields, and reference only configured IDs from `system/.os/config/instance.yaml` when scope applies.
 7. When a phase creates canonical `.os/data` JSONL files, create the file shape first and keep rows empty unless converted source twins or other real source evidence exist.
 8. For entity rows, use the common envelope, require `source_anchor`, and require `doc_anchor` once `status` is not `draft`.
-9. Rebuild indexes with the command named by the owning router. Do not hand-maintain derived JSON catalogs.
-10. After the edit, update the active work backlog and history record only after validation.
+9. For planned consolidation work, preserve every losing row and its provenance. Use `superseded` only with one reviewed redirect to an immediate same-type successor; never use `related` as a canonical pointer or hand-maintain reverse members on the winner.
+10. Before the redirect-aware implementation ships, stop at inventory and proposal output. Do not add redirect fields, change statuses, rewrite references, or create an entity-resolution index by hand.
+11. Rebuild indexes with the command named by the owning router. Do not hand-maintain derived JSON catalogs.
+12. After the edit, update the active work backlog and history record only after validation.
 
 ## Playbook Maintenance
 
@@ -134,6 +141,9 @@ For manual UAT, prefer a scratch copy of the repository when the current checkou
 - Use configured scoped metadata fields: `systems`, `environments`, and `owners`. Do not use legacy fields such as `env`, `envs`, `for`, or `target_systems`, and do not invent local scoped-value enums.
 - Keep `system/.gitignore` runtime-only. It may ignore ephemera such as `node_modules/`, `.playwright/`, and `test-results/`, but it must not hide `.os/data/` or `workspace/datasets/` by default.
 - Do not add new ID prefixes without updating [entity-records-contract.md](../../../system/.os/contracts/entity-records-contract.md).
+- Preserve the originally recorded entity ID on historical reads while exposing the terminal canonical ID and full resolution chain. New writes eventually store only the terminal canonical ID.
+- Reject missing redirect targets, self-links, cross-type targets, cycles, inactive terminals, duplicate IDs, illegal redirect statuses, and conflicting remaps. Never guess a successor for a legacy `superseded` row.
+- Treat `entity-resolution.json` as a derived index built only from canonical JSONL. Do not put entity aliases or redirects in `references.json`.
 - Keep `draft` as the pending promotion state for entity and extraction rows. Do not introduce a separate `candidate` status unless the contract and PRD vocabulary are deliberately revised together.
 - Require `source_anchor` on every entity row. Require `doc_anchor` under `system/docs/` for rows promoted out of `draft`.
 - Keep `extractions.jsonl` load plans explicit about `minted` IDs, `extracted_by`, and `extracted_at`; use `dataset_refs` only for optional dataset paths.
@@ -152,6 +162,8 @@ Run the operating-layer checks after changing `.os` contracts or routers:
 python3 system/.os/scripts/validate_config.py --self-test
 python3 system/.os/scripts/validate_config.py
 ```
+
+These current commands do not prove that redirect-bearing data is safe. Until `buildos-entities` is implemented, current validation success is not authorization to add redirects or migrate adopter data.
 
 Then refresh the project documentation index and check links where practical. Review the diff for:
 
@@ -212,6 +224,8 @@ If link checking reports repository-wide noise, separate baseline failures from 
 - [Use Playbooks and Active Indexes](../user/use-playbooks-and-active-indexes.md)
 - [Record Discovery Runs and Qualify Findings](../user/record-discovery-runs-and-qualify-findings.md)
 - [Understand Workspace Artifacts](../user/understand-workspace-artifacts.md)
+- [Curate and Resolve Duplicate Entity Records](../user/entities-consolidation-curate-and-resolve-records.md)
+- [Entity Consolidation Maintainer Guide](./operating-layer-entities-consolidation-and-resolution.md)
 - [Operating router](../../../system/.os/AGENTS.md)
 - [Contracts router](../../../system/.os/contracts/AGENTS.md)
 - [Config contract](../../../system/.os/contracts/config-contract.md)
@@ -231,3 +245,4 @@ If link checking reports repository-wide noise, separate baseline failures from 
 ## Future Coverage
 
 - Blocked by: Later phases that implement extraction loaders, additional index rebuilds, live computer-use harness adapters, and operational recovery paths. Update when: those phases introduce runnable commands, generated artifacts, or recovery paths beyond the current filesystem-first run/finding recorders. Guide change: Add adapter-specific command examples, generator ownership rules, artifact cleanup guidance, and troubleshooting for failed conversions, harness execution, or index rebuilds.
+- Blocked by: W1 R4 P2 through P4 implementation of entity resolution, consolidation, index generation, and consumer integration. Update when: strict graph validation, atomic mutation, deterministic index checks, and redirect-aware read/write tests pass. Guide change: add exact validation commands, generated-index ownership, integration checks, and recovery procedures.

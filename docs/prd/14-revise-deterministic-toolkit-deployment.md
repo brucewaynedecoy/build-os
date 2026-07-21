@@ -37,6 +37,7 @@ The safer baseline is to keep deterministic logic in versioned, buildable first-
 ### Change Notes
 
 - Superseded by [16 Revise Toolkit Ownership Boundaries](./16-revise-toolkit-ownership-boundaries.md) where this revision was too broad about "toolkits" generally: new deterministic behavior must choose the correct domain-owned toolkit rather than expanding an unrelated existing Go CLI or legacy unmanaged script.
+- Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): entity graph operations use the independently buildable `buildos-entities` Go toolkit with dry-run defaults, explicit roots, atomic canonical writes, and auditable source revision output.
 
 ## Initial Toolkit Target
 
@@ -49,6 +50,10 @@ W1 R0 P3 intake/conversion work should implement converter/index logic through t
 - [07 Intake and Conversion](./07-intake-and-conversion.md) now routes converter/index implementation through `buildos-intake`.
 - [12 Stage Automation](./12-stage-automation.md) now expects deterministic runners to call packaged toolkits where applicable.
 - [03 Open Questions and Risk Register](./03-open-questions-and-risk-register.md) tracks unresolved enterprise installer, signing, SBOM, and distribution hardening.
+
+### Change Notes
+
+- Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): source-built adoption keeps checkout, installed binary, and adopter data separate; binary deployment and live-data migration are distinct operator approvals.
 
 ## Required Baseline Annotations
 

@@ -26,6 +26,10 @@ Code anchors:
 - `system/.os/data/extractions.jsonl`
 - `system/.os/indexes/playbooks.json`
 
+### Change Notes
+
+- Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): the data layer gains redirect-bearing superseded rows, terminal entity resolution, a deterministic entity-resolution index, and reviewed persona-first consolidation.
+
 ## Contracts and Data
 
 All data is NDJSON/CSV — no SQLite. Every row carries `source_anchor` and (when promoted) `doc_anchor`. **Layered canonicity**: structured fields are canonical in `.os/data/*.jsonl`, narrative is canonical in `system/docs/` and references IDs, and overlapping doc tables are generated — so there is no drift. The three knowledge types are distinct: **capability** is descriptive (what the product can do), **requirement** is normative (what the adopter needs), **finding** is empirical (what was observed); a capability gap and a bug are adopter deliverables.
@@ -38,6 +42,7 @@ Code anchors:
 
 - Enhanced by [13 Adopter-Owned Config Surface](./13-adopter-owned-config-surface.md): structured rows that carry scoped metadata use `systems`, `environments`, and `owners` as config-backed list fields. Those values resolve to configured IDs in `system/.os/config/instance.yaml`, and validators reject legacy scoped fields or unconfigured IDs after the migration lands.
 - Revised by [15 Revise Extraction Draft Lifecycle](./15-revise-extraction-draft-lifecycle.md): entity and extraction rows use `draft` as the pending lifecycle state, and non-`draft` rows require `doc_anchor` in addition to `source_anchor`.
+- Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): `superseded` rows carry reviewed same-type redirects, reverse membership is derived, `related` remains non-canonical, and compatibility-to-strict graph validation governs migration.
 
 ## Integrations
 
@@ -47,6 +52,10 @@ Code anchors:
 
 - `docs/prd/10-discovery-runs-and-qualification.md`
 
+### Change Notes
+
+- Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): readers expose original and canonical IDs, producers store terminal canonical IDs, and extraction distinguishes newly minted entities from canonical references or updates.
+
 ## Rebuild Notes
 
 Never reintroduce a binary store. Keep structured fields canonical in JSONL and avoid duplicating them into narrative docs. Extraction is smart and gated; its outputs remain `draft` until promoted, regardless of destination.
@@ -54,6 +63,10 @@ Never reintroduce a binary store. Keep structured fields canonical in JSONL and 
 Code anchors:
 
 - `system/.os/data/`
+
+### Change Notes
+
+- Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): rebuilds validate the complete redirect graph and reproduce `entity-resolution.json` byte-identically from authoritative JSONL without overloading intake `references.json`.
 
 ## Source Anchors
 

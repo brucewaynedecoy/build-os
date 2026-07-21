@@ -27,6 +27,10 @@ Code anchors:
 - `system/.os/contracts/playbook-contract.md`
 - `system/workspace/`
 
+### Change Notes
+
+- Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): Build OS adds non-destructive entity consolidation, terminal canonical reference resolution, and reviewed persona-first identity reuse without erasing historical records.
+
 ## System Boundaries
 
 Build OS owns everything under `system/` *except* the make-docs-managed `system/docs/` and `system/.make-docs/` trees, which it uses through their own routers but never modifies. It depends on the make-docs plug-in (installed/maintained by a separate CLI) for all `docs/` documentation pipelines, and on an external agent harness for computer-use execution.
@@ -47,6 +51,7 @@ Code anchors:
 ### Change Notes
 
 - Superseded by [13 Adopter-Owned Config Surface](./13-adopter-owned-config-surface.md): adopter-owned `system/.os/config/instance.yaml`, `systems`, `environments`, `owners`, and config/frontmatter validation replace the concrete scoped placeholders as the effective requirement.
+- Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): the data layer still requires implementation, and its delivery now includes redirect-aware entity records, a canonical resolver, a deterministic index and toolkit, and staged source-build migration safeguards.
 
 ## Source Anchors
 

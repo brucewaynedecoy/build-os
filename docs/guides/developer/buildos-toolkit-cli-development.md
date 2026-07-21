@@ -12,14 +12,17 @@ applies-to:
   - toolkits
   - buildos
 related:
+  - "./operating-layer-entities-consolidation-and-resolution.md"
   - "../../designs/2026-06-04-buildos-toolkit-cli-deployment-standard.md"
   - "../../designs/2026-06-04-make-docs-buildos-toolkit-cli-import-strategy.md"
   - "../../prd/14-revise-deterministic-toolkit-deployment.md"
   - "../../prd/16-revise-toolkit-ownership-boundaries.md"
+  - "../../prd/17-enhance-entity-consolidation-and-canonical-resolution.md"
   - "../user/convert-source-material-with-buildos-intake.md"
   - "../user/record-discovery-runs-and-qualify-findings.md"
   - "../user/promote-qualified-findings-to-designs.md"
   - "../user/use-playbooks-and-active-indexes.md"
+  - "../user/entities-consolidation-curate-and-resolve-records.md"
   - "../../../system/.os/contracts/converted-source-contract.md"
   - "../../../system/.os/contracts/intake-translation-contract.md"
   - "../../../system/.os/contracts/playbook-contract.md"
@@ -84,6 +87,7 @@ Known ownership from the active PRD set:
 | `buildos-config` | Planned home for instance config validation, scoped metadata/frontmatter hygiene, and the eventual `validate_config.py` migration. |
 | `buildos-playbooks` | Candidate home for playbook catalog rebuilds, active-only playbook resolution, and playbook contract checks if those remain durable commands. |
 | `buildos-extract` or `buildos-data` | Candidate home for extraction load-plan helpers, entity-row loaders, and deterministic `.os/data` hygiene beyond config-owned checks. |
+| `buildos-entities` | Contracted, not-yet-implemented home for whole-entity-graph loading, canonical resolution, compatibility and strict validation, reviewed consolidation, and `entity-resolution.json` generation. |
 | `buildos-discovery` | Implemented home for discovery-run recording, raw-finding anchoring, finding qualification, negative assertions, and run/finding-specific validation. |
 | `buildos-design` | Implemented home for qualified-finding to design hand-off, design route selection, and finding design-link updates. |
 | `buildos-stage` | Candidate home for stage-mover orchestration that routes to owning toolkits without absorbing their domain logic. |
@@ -93,6 +97,16 @@ Do not add discovery runs, finding qualification, qualified-finding design hand-
 Do not add stage-mover automation to `buildos-design` unless an explicit PRD/design revision moves that orchestration into this toolkit. P7 keeps the qualified-finding design hand-off separate from later stage movement.
 
 Do not add new durable domains to `system/.os/scripts/validate_config.py`. It is a legacy transitional script, not the long-term validation expansion point.
+
+Do not place entity graph behavior in `buildos-intake`, `buildos-config`, or a general extraction helper. PRD 17 assigns the shared resolver and mutation boundary to an independently buildable `buildos-entities` Go toolkit. Until that toolkit exists, entity cleanup remains audit-and-proposal-only.
+
+## Planned buildos-entities Boundary
+
+`buildos-entities` will own resolution, whole-graph validation, reviewed consolidation, and the derived entity-resolution index. The accepted command families are `consolidate`, `resolve`, `validate`, and `rebuild-index`, but exact flags, output, and exit behavior must come from the tested implementation before they are documented as runnable instructions.
+
+The implementation must distinguish three roots: the source checkout, installed program files, and adopter-owned data. Building in the source checkout must not replace an installed binary. Testing must invoke the source-built binary by explicit path against a recoverable copy of adopter data, never the live root first.
+
+Mutation must be dry-run by default, require an explicit root and explicit apply authorization, validate the complete graph before writing, use same-filesystem temporary output and atomic replacement, preserve permissions, and rebuild the derived index. Binary deployment and live-data mutation require separate operator approvals.
 
 ## buildos-intake Reference
 
@@ -246,6 +260,8 @@ For playbook index changes, inspect the generated JSON before closing out:
 
 After edits, refresh the project documentation and code indexes when the jdocmunch and jcodemunch MCP servers are available.
 
+For planned entity consolidation, do not substitute the current Python validator or hand-edited JSON for the missing toolkit. Current checks are not redirect-aware and cannot certify a migration.
+
 ## Troubleshooting
 
 If a wrapper starts doing parsing, conversion, indexing, or validation logic, move that logic into the toolkit and leave the script as a call-through.
@@ -272,6 +288,8 @@ If enterprise distribution concerns block a rollout, track them against R-003 in
 - [PRD 16 toolkit ownership boundary revision](../../prd/16-revise-toolkit-ownership-boundaries.md)
 - [Convert Source Material With buildos-intake](../user/convert-source-material-with-buildos-intake.md)
 - [Use Playbooks and Active Indexes](../user/use-playbooks-and-active-indexes.md)
+- [Curate and Resolve Duplicate Entity Records](../user/entities-consolidation-curate-and-resolve-records.md)
+- [Entity Consolidation Maintainer Guide](./operating-layer-entities-consolidation-and-resolution.md)
 - [Record Discovery Runs and Qualify Findings](../user/record-discovery-runs-and-qualify-findings.md)
 - [Promote Qualified Findings to Designs](../user/promote-qualified-findings-to-designs.md)
 - [P4 data and extraction backlog](../../work/2026-06-03-w1-r0-build-os-baseline/04-data-and-extraction.md)
@@ -294,3 +312,5 @@ If enterprise distribution concerns block a rollout, track them against R-003 in
 ## Future Coverage
 
 - Blocked by: expanded installer and release packaging. Update when `buildos-intake` has signed release artifacts, checksums, SBOM generation, and installer integration. Guide change: add enterprise deployment procedures and release checklist details.
+- Blocked by: W1 R4 P2 implementation of `toolkits/buildos-entities/`. Update when: its build, unit, fixture, failure-injection, and deterministic-index tests pass. Guide change: add verified build commands, exact command syntax and output, version/source reporting, copied-root test commands, and recovery behavior.
+- Blocked by: W1 R4 P3 source-build migration rehearsal. Update when: the persona pilot proves snapshot restore and side-by-side binary isolation. Guide change: add the tested packaging, checksum, binary-routing, copied-root, and separate-approval procedure.

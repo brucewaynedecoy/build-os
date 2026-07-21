@@ -11,6 +11,7 @@ tags:
 applies-to:
   - system/workspace
 related:
+  - "./entities-consolidation-curate-and-resolve-records.md"
   - "./build-os-getting-started.md"
   - "./record-discovery-runs-and-qualify-findings.md"
   - "./promote-qualified-findings-to-designs.md"
@@ -18,6 +19,7 @@ related:
   - "../../../system/.os/contracts/run-record-contract.md"
   - "../../../system/.os/contracts/finding-contract.md"
   - "../developer/operating-layer-contracts-maintenance.md"
+  - "../developer/operating-layer-entities-consolidation-and-resolution.md"
 ---
 
 # Understand Workspace Artifacts
@@ -27,6 +29,8 @@ related:
 Use this guide when you need to decide where operational artifacts belong. `system/workspace/` stores local run artifacts, qualified finding artifacts, and adopter-owned datasets used during Build OS operation.
 
 The workspace is evidence-oriented. It is not the place for generated indexes, canonical structured entity rows, or build-layer planning records.
+
+Entity consolidation does not move losing records into the workspace. Canonical entity rows remain under `system/.os/data/`, including rows that will later be marked `superseded`. Read-only audit reports and proposed mappings are review artifacts and must stay outside canonical JSONL directories until compatible tooling is implemented.
 
 ## Before You Begin
 
@@ -85,10 +89,13 @@ Use these operating-layer locations instead:
 | --- | --- |
 | `system/.os/data/runs.jsonl` | Structured run index rows appended by `buildos-discovery`. |
 | `system/.os/data/findings.jsonl` | Structured qualified finding index rows appended by `buildos-discovery`. |
+| `system/.os/data/personas.jsonl` and other entity JSONL files | Canonical entity rows, including historical losing rows after the consolidation feature is implemented. |
 | `system/.os/indexes/` | Rebuildable lookup catalogs. |
 | `system/assets/` | Converted source twins and side artifacts from intake conversion. |
 
 Run artifacts and finding artifacts should be treated as immutable once written. If a run discovers a raw observation, leave it in that run's `raw-findings.md` until deterministic qualification promotes it to a `FIND-NNN` artifact.
+
+The planned `system/.os/indexes/entity-resolution.json` will be a rebuildable map from historical IDs to terminal active records. It will not be the source of truth. A losing row keeps its original ID, evidence, and type-specific content in `.os/data`; old references may keep that ID while the resolver exposes the canonical ID and full chain.
 
 ## Troubleshooting
 
@@ -101,6 +108,8 @@ If a file is confirmation evidence for a qualified finding, use `buildos-discove
 If a qualified finding needs design or planning hand-off, use `buildos-design promote finding` so the finding keeps evidence traceability while the design lands under `system/docs/designs/`.
 
 If a file is a generated index, keep it under `system/.os/indexes/` and rebuild it from source artifacts.
+
+If a file proposes persona winners and losers before the resolver ships, keep it in a separate review-output directory. Do not copy its suggestions into `.os/data`, change lifecycle states, or create `entity-resolution.json` by hand.
 
 If a file is disposable manual-test input, use a scratch copy instead of adding it to the live shippable `system/` tree.
 
@@ -118,16 +127,23 @@ No. `.os/data` is for system-owned structured records. Adopter datasets live und
 
 No for normal operation. Use `buildos-discovery` so the artifact folder and JSONL row are created together.
 
+**Does a superseded entity move to an archive folder?**
+
+No. The planned contract keeps the historical row in its canonical JSONL dataset and points it to a reviewed successor. `archived` means retained without a successor and is different from `superseded`.
+
 ## Related Resources
 
 - [Record Discovery Runs and Qualify Findings](./record-discovery-runs-and-qualify-findings.md)
 - [Promote Qualified Findings to Designs](./promote-qualified-findings-to-designs.md)
 - [Validate System Data and Indexes](./validate-system-data-and-indexes.md)
+- [Curate and Resolve Duplicate Entity Records](./entities-consolidation-curate-and-resolve-records.md)
 - [Workspace Router](../../../system/workspace/AGENTS.md)
 - [Run Record Contract](../../../system/.os/contracts/run-record-contract.md)
 - [Finding Contract](../../../system/.os/contracts/finding-contract.md)
 - [Maintaining Operating Layer Contracts](../developer/operating-layer-contracts-maintenance.md)
+- [Entity Consolidation Maintainer Guide](../developer/operating-layer-entities-consolidation-and-resolution.md)
 
 ## Future Coverage
 
 - Add cleanup, retention, and archiving guidance after Build OS defines operational retention policy for workspace evidence.
+- Blocked by: W1 R4 entity resolver and derived index implementation. Update when: copied-root persona consolidation and strict validation pass. Guide change: add the final index shape, rebuild ownership, and examples showing requested IDs beside canonical IDs and resolution chains.

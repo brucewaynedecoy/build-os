@@ -170,9 +170,43 @@ Code anchors:
 - `toolkits/`
 - `docs/designs/2026-06-04-buildos-toolkit-cli-deployment-standard.md`
 
+### R-004 Deployed-instance entity consolidation compatibility
+
+| Status | Decision | Follow-Up |
+| --- | --- | --- |
+| Open | Inventory records and propose consolidation candidates now; do not mutate canonical entity records until the PRD 17 resolver, validator, writer, and index are built and deployed | Execute the W1 R4 delta backlog, rehearse against a copied legacy root, then approve binary deployment and live-data migration separately |
+
+**Issue**: The current entity-record contract permits `superseded` status but does not require a canonical target or define resolver behavior.
+Manually writing future-schema redirects into records managed by an older installed Build OS may break validators or tools and leave references unresolved.
+
+**Why it matters**: A source rebuild in an environment with an existing installation can expose live records to mixed contract and tooling versions, turning non-destructive cleanup into incompatible or only partially resolved data.
+
+**Recommendation**: Before the compatible feature is deployed, limit cleanup to inventories, candidate groups, proposed winners, and evidence-backed migration proposals outside canonical records.
+Implement PRD 17 through the W1 R4 plan,
+verify the source-built binary against a recoverable copy in compatibility and strict modes,
+then apply approved mappings through a separately authorized and audited migration.
+
+**To close**: The redirect and extraction contracts,
+`buildos-entities` resolver and writer,
+strict validator,
+deterministic index,
+redirect-aware integrations,
+copied-root rollback rehearsal,
+and maintainer and user procedures are validated;
+the verified binary is deployed under explicit approval;
+and approved proposals are migrated to the installed root with audit and rollback evidence.
+
+Code anchors:
+
+- [Entity consolidation and canonical resolution design](../designs/2026-07-21-entity-consolidation-and-canonical-resolution.md)
+- [PRD 17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md)
+- [W1 R4 entity consolidation and canonical resolution plan](../plans/2026-07-21-w1-r4-entity-consolidation-and-canonical-resolution/00-overview.md)
+- [Entity records contract](../../system/.os/contracts/entity-records-contract.md)
+
 ## Source Anchors
 
 - `docs/designs/2026-06-03-build-os-architecture.md`
+- `docs/designs/2026-07-21-entity-consolidation-and-canonical-resolution.md`
 - `docs/assets/references/output-contract.md`
 - `docs/assets/references/guide-contract.md`
 - `README.md`

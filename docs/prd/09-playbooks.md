@@ -38,6 +38,7 @@ Code anchors:
 ### Change Notes
 
 - Superseded by [13 Adopter-Owned Config Surface](./13-adopter-owned-config-surface.md): playbook scoped frontmatter no longer uses `env`/`for` or sentinel values such as `both` as effective contract vocabulary. Playbooks use `systems`, `environments`, and `owners` as config-backed lists of configured IDs.
+- Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): entity-valued playbook targets resolve through the shared canonical entity resolver while historical target IDs remain auditable.
 
 ## Integrations
 
@@ -47,6 +48,10 @@ Code anchors:
 
 - `system/.os/indexes/playbooks.json`
 
+### Change Notes
+
+- Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): playbook execution resolves losing target IDs to terminal active entities and writes canonical IDs for new target references.
+
 ## Rebuild Notes
 
 Keep the three axes orthogonal and the guardrail body distinct from procedure bodies. Only `active` instruments should be runnable; never encode category in the ID.
@@ -54,6 +59,10 @@ Keep the three axes orthogonal and the guardrail body distinct from procedure bo
 Code anchors:
 
 - `system/playbooks/AGENTS.md`
+
+### Change Notes
+
+- Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): validation and catalog rebuilds must reject unresolved or invalid redirect chains while preserving historical playbook text.
 
 ## Source Anchors
 
