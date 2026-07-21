@@ -51,11 +51,11 @@ W2 project installation and upgrade commands are later work inside the same `bui
 
 Keep these three locations separate:
 
-| Location | What it contains | Safe use before implementation |
+| Location | What it contains | Current W1 R4 use |
 | --- | --- | --- |
 | Source checkout | Build OS source, contracts, plans, and toolkit code | Read, build, and test without overwriting another installation. |
 | Installed program files | Binaries and wrappers currently used by the environment | Inventory only; do not replace or reroute during data rehearsal. |
-| Adopter-owned data root | The team's real `system/.os/data/`, indexes, assets, and workspace | Read-only audit only; rehearse future writes against a recoverable copy. |
+| Adopter-owned data root | The team's real `system/.os/data/`, indexes, assets, and workspace | Keep live data read-only; rehearse reviewed writes against a recoverable copy. |
 
 Never copy the source checkout's entire `system/` tree over an installed or adopter-owned root. A source scaffold is not an upgrade package and may replace local configuration, data, evidence, or operating state.
 
@@ -67,7 +67,17 @@ The authority boundaries are:
 - `related` remains an ordinary relationship and never changes canonical identity.
 - `.os/indexes/entity-resolution.json` is the contracted installed-root derived projection; `system/.os/indexes/entity-resolution.json` is its source-scaffold counterpart. It is rebuildable and never replaces the canonical JSONL rows.
 - `references.json` remains an intake-source index and must not carry entity redirects.
-- `toolkits/buildos/pkg/entities` is the temporary shared resolver boundary during W1 R4. P4 will wire existing Go consumers through explicit local dependencies; those consumers must not invoke the CLI as a subprocess.
+- `toolkits/buildos/pkg/entities` is the temporary shared resolver boundary during W1 R4. P4 wires the existing discovery and design modules through explicit local dependencies; those consumers must not invoke the CLI as a subprocess.
+
+## Delivery Horizon
+
+| Horizon | Maintainer posture | Not yet authorized or available |
+| --- | --- | --- |
+| W1 R4 current | Build `toolkits/buildos/cmd/buildos` from source and invoke `buildos entities` by explicit staged path. Existing discovery and design modules import the temporary shared entity package directly. | No package-manager install, installed-binary replacement, compatibility aliases, or live-data migration. |
+| W1 R5 future | Migrate intake, discovery, and design into the unified module, prove command parity, ship temporary legacy-name aliases, and package `buildos 0.1.0` through signed archives and Homebrew. | Do not describe these package or alias workflows as current until their release gates pass. |
+| W2 future | Add manifest-backed `setup`, `update`, backup, project removal, and machine uninstall commands to the same executable. | Do not use the W1 R4 source checkout as an installer or hand-roll in-place scaffold synchronization. |
+
+Unsigned source builds remain development-only. W1 R5 release acceptance requires checksums, SBOMs, provenance, platform archives, Homebrew checksum verification, and install, upgrade, rollback, and uninstall smoke evidence before package-manager guidance becomes current.
 
 ## Current Source-Build Workflow
 
@@ -180,6 +190,39 @@ buildos entities rebuild-index --root <copied-root> --mode compat|strict [--chec
 
 Human-readable output is the default. `--json` emits the shared envelope with `ok`, dotted `command`, `version`, `source_revision`, resolved `root`, `mode`, string `write_status`, `result`, and `diagnostics`. Exit codes are `0` success, `2` usage, `3` input/root load, `4` validation or remap conflict, `5` canonical-write failure, and `6` canonical data applied but index rebuild failed.
 
+## Maintainer Test and Release Checks
+
+Run the unified entity-domain gates from its module:
+
+```sh
+cd toolkits/buildos
+go test ./...
+go test -race ./...
+go vet ./...
+go build ./...
+go test ./internal/cli -run TestPersonaCopiedRootRehearsal -count=1
+```
+
+The focused rehearsal must prove compatibility assessment, non-writing preview, reviewed apply, strict validation, multi-hop resolution, losing-row provenance and unknown-field preservation, deterministic index rebuilding, byte-stable replay, conflicting-remap refusal, injected pre-commit write failure, and byte-identical rollback.
+
+When the temporary shared resolver API or governed-reference behavior changes, also run the consumer module gates:
+
+```sh
+cd toolkits/buildos-discovery
+go test ./...
+go test -race ./...
+go vet ./...
+
+cd ../buildos-design
+go test ./...
+go test -race ./...
+go vet ./...
+```
+
+Use the failure suites as contract evidence, not merely coverage. They must show that invalid JSONL, cycles, missing and cross-type targets, inactive terminals, remap conflicts, stale or malformed indexes, and pre-commit I/O failures fail without changing canonical bytes. They must separately show that a post-commit index failure reports `write_status: canonical_applied_index_failed`, exits `6`, preserves the canonical write, and supplies one exact recovery command.
+
+Before closeout, also run the repository config/frontmatter validator, path-hygiene checks, documentation link check, and `git diff --check`. The Python validator complements the graph engine; it does not replace `buildos entities validate`.
+
 ## Source-Build Rehearsal Boundary
 
 Maintainers must first build `buildos` into a staging directory from a separate source checkout and invoke that exact binary path against a copied adopter root. Record the reported version, source revision, binary checksum, copied-root or snapshot identity, proposal-manifest checksum, validation results, index diff, and rollback location.
@@ -202,6 +245,8 @@ If a copied-root test changes installed files or the live root, stop and restore
 If the planned index differs between identical rebuilds, treat the builder as non-deterministic and block release. Do not hand-edit the index.
 
 If a graph error is found after a canonical write, preserve the written JSONL and follow the tool's recovery output. Do not improvise a bulk rewrite or delete losing records.
+
+If the command exits `3`, correct the explicit root, mode, input, or manifest and rerun without `--apply`. If it exits `4`, treat the graph or remap as invalid and make no write. If it exits `5`, verify the copied root remains byte-identical before retrying. If it exits `6`, retain the canonical write, run the exact reported `rebuild-index --apply` command, then repeat strict validation and `rebuild-index --check`.
 
 If the actual adopter-owned root is unavailable, stop after the sanitized fixture rehearsal. A source checkout's `system/` directory is not proof of the installed root.
 

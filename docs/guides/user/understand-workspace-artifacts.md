@@ -30,7 +30,7 @@ Use this guide when you need to decide where operational artifacts belong. `syst
 
 The workspace is evidence-oriented. It is not the place for generated indexes, canonical structured entity rows, or build-layer planning records.
 
-Entity consolidation does not move losing records into the workspace. Canonical entity rows remain under `system/.os/data/`, including rows that will later be marked `superseded`. Read-only audit reports and proposed mappings are review artifacts and must stay outside canonical JSONL directories until compatible tooling is implemented.
+Entity consolidation does not move losing records into the workspace. Canonical entity rows remain under `system/.os/data/`, including rows marked `superseded` by an approved apply. Read-only audit reports, proposed mappings, manifests, checksums, and rehearsal evidence are review artifacts and must stay outside canonical JSONL directories.
 
 ## Before You Begin
 
@@ -89,13 +89,13 @@ Use these operating-layer locations instead:
 | --- | --- |
 | `system/.os/data/runs.jsonl` | Structured run index rows appended by `buildos-discovery`. |
 | `system/.os/data/findings.jsonl` | Structured qualified finding index rows appended by `buildos-discovery`. |
-| `system/.os/data/personas.jsonl` and other entity JSONL files | Canonical entity rows, including historical losing rows after the consolidation feature is implemented. |
-| `system/.os/indexes/` | Rebuildable lookup catalogs. |
+| `system/.os/data/personas.jsonl` and other entity JSONL files | Canonical entity rows, including historical losing rows after an approved consolidation. |
+| `system/.os/indexes/` | Rebuildable lookup catalogs, including source-built W1 R4 `entity-resolution.json`. |
 | `system/assets/` | Converted source twins and side artifacts from intake conversion. |
 
 Run artifacts and finding artifacts should be treated as immutable once written. If a run discovers a raw observation, leave it in that run's `raw-findings.md` until deterministic qualification promotes it to a `FIND-NNN` artifact.
 
-The planned `system/.os/indexes/entity-resolution.json` will be a rebuildable map from historical IDs to terminal active records. It will not be the source of truth. A losing row keeps its original ID, evidence, and type-specific content in `.os/data`; old references may keep that ID while the resolver exposes the canonical ID and full chain.
+`system/.os/indexes/entity-resolution.json` is a rebuildable map from historical IDs to terminal active records. It is not the source of truth. A losing row keeps its original ID, evidence, and type-specific content in `.os/data`; old references may keep that ID while the resolver exposes the canonical ID and full chain. Do not edit this index by hand.
 
 ## Troubleshooting
 
@@ -109,7 +109,7 @@ If a qualified finding needs design or planning hand-off, use `buildos-design pr
 
 If a file is a generated index, keep it under `system/.os/indexes/` and rebuild it from source artifacts.
 
-If a file proposes persona winners and losers before the resolver ships, keep it in a separate review-output directory. Do not copy its suggestions into `.os/data`, change lifecycle states, or create `entity-resolution.json` by hand.
+If a file proposes persona winners and losers, keep it in a separate review-output directory. Proposal-only auditing must not copy suggestions into `.os/data`, change lifecycle states, or create `entity-resolution.json` by hand. Only the explicitly staged `buildos entities` command may apply an approved manifest, and it must be rehearsed against a copied root first.
 
 If a file is disposable manual-test input, use a scratch copy instead of adding it to the live shippable `system/` tree.
 
@@ -129,7 +129,7 @@ No for normal operation. Use `buildos-discovery` so the artifact folder and JSON
 
 **Does a superseded entity move to an archive folder?**
 
-No. The planned contract keeps the historical row in its canonical JSONL dataset and points it to a reviewed successor. `archived` means retained without a successor and is different from `superseded`.
+No. The current contract keeps the historical row in its canonical JSONL dataset and points it to a reviewed successor. `archived` means retained without a successor and is different from `superseded`.
 
 ## Related Resources
 
@@ -146,4 +146,4 @@ No. The planned contract keeps the historical row in its canonical JSONL dataset
 ## Future Coverage
 
 - Add cleanup, retention, and archiving guidance after Build OS defines operational retention policy for workspace evidence.
-- Blocked by: W1 R4 entity resolver and derived index implementation. Update when: copied-root persona consolidation and strict validation pass. Guide change: add the final index shape, rebuild ownership, and examples showing requested IDs beside canonical IDs and resolution chains.
+- Blocked by: W1 R5 package distribution and W2 project lifecycle. Update when: verified package installation plus backup, update, removal, and uninstall commands exist. Guide change: document where their review packets and backups belong without changing the canonical-versus-derived boundary.

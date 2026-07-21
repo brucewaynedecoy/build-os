@@ -27,11 +27,14 @@ related:
   - "../user/understand-workspace-artifacts.md"
   - "../user/entities-consolidation-curate-and-resolve-records.md"
   - "../../../system/.os/contracts/entity-records-contract.md"
+  - "../../../system/.os/contracts/entity-consolidation-contract.md"
+  - "../../../system/.os/contracts/persona-identity-contract.md"
   - "../../../system/.os/contracts/run-record-contract.md"
   - "../../../system/.os/contracts/finding-contract.md"
   - "../../../system/.os/contracts/converted-source-contract.md"
   - "../../../system/.os/contracts/extraction-contract.md"
   - "../../prd/16-revise-toolkit-ownership-boundaries.md"
+  - "../../prd/18-revise-unified-buildos-cli-and-distribution.md"
   - "../../prd/17-enhance-entity-consolidation-and-canonical-resolution.md"
   - "../../../system/workspace/AGENTS.md"
   - "../../../system/workspace/runs/AGENTS.md"
@@ -57,7 +60,7 @@ related:
 
 Use this guide when adding or changing Build OS operating-layer contracts, `.os` routers, active guardrails, scoped metadata, workspace run/finding artifacts, or system-owned data/index routing. The current operating layer is contract first: contracts define authority, shape, lifecycle, and link rules; guardrails define always-on safety rules; routers only tell contributors where to go next.
 
-The entity-consolidation contract is newer than the current runtime implementation. Redirect-bearing data, terminal resolution, and the entity-resolution index are authoritative planned behavior, but the compatible resolver, validator, writer, and index builder are not yet shipped. Until they are implemented, use the pre-upgrade audit only for read-only proposals and do not mutate canonical rows.
+W1 R4 now implements redirect-aware graph loading, terminal resolution, compatibility and strict validation, reviewed consolidation, and deterministic index rebuilding through the source-built `buildos entities` domain. This is not an installed or packaged release. Use it only from an explicit staged binary against fixtures or a recoverable copied root; binary deployment and live-data migration remain separate operator approvals.
 
 Coverage outcome: `developer`. The durable knowledge here is maintainer-facing because it describes source-of-truth boundaries, extension points, validation, shipping boundaries, and safe-change rules. User-facing operation of the shipped filesystem is covered by the companion user guides for getting started, configuration, validation, playbooks, discovery, and workspace artifacts.
 
@@ -85,6 +88,8 @@ The current operating-layer contract set includes:
 | [config-contract.md](../../../system/.os/contracts/config-contract.md) | Adopter-owned instance config shape, configured `systems`, `environments`, and `owners`, defaults, and scoped metadata reference rules. |
 | [playbook-contract.md](../../../system/.os/contracts/playbook-contract.md) | Playbook frontmatter, guardrail/procedure body shapes, lifecycle, and scoped metadata expectations for playbooks. |
 | [entity-records-contract.md](../../../system/.os/contracts/entity-records-contract.md) | Canonical `.os/data/*.jsonl` entity envelopes, ID prefixes, anchors, per-type fields, lifecycle, reviewed redirects, and terminal canonical-resolution rules. |
+| [entity-consolidation-contract.md](../../../system/.os/contracts/entity-consolidation-contract.md) | Version 1 reviewed manifests, single-dataset atomic mutation, compatibility/strict validation, deterministic index projection, and post-write recovery. |
+| [persona-identity-contract.md](../../../system/.os/contracts/persona-identity-contract.md) | Persona-only exact ID, approved-alias, and `persona-v1` identity matching; ambiguous or probabilistic matches remain review-only. |
 | [run-record-contract.md](../../../system/.os/contracts/run-record-contract.md) | Run artifact directories, immutable run evidence, outcome values, raw findings, and `.os/data/runs.jsonl` index fields. |
 | [finding-contract.md](../../../system/.os/contracts/finding-contract.md) | Raw to qualified to optional design lifecycle, deterministic qualification tests, and negative-finding qualification. |
 | [converted-source-contract.md](../../../system/.os/contracts/converted-source-contract.md) | Converted twin provenance frontmatter for source, hash, converter, timestamp, type, and status. |
@@ -100,8 +105,8 @@ The current operating-layer contract set includes:
 6. When changing scoped metadata, read `config-contract.md`, use `systems`, `environments`, and `owners` as list fields, and reference only configured IDs from `system/.os/config/instance.yaml` when scope applies.
 7. When a phase creates canonical `.os/data` JSONL files, create the file shape first and keep rows empty unless converted source twins or other real source evidence exist.
 8. For entity rows, use the common envelope, require `source_anchor`, and require `doc_anchor` once `status` is not `draft`.
-9. For planned consolidation work, preserve every losing row and its provenance. Use `superseded` only with one reviewed redirect to an immediate same-type successor; never use `related` as a canonical pointer or hand-maintain reverse members on the winner.
-10. Before the redirect-aware implementation ships, stop at inventory and proposal output. Do not add redirect fields, change statuses, rewrite references, or create an entity-resolution index by hand.
+9. For consolidation work, preserve every losing row and its provenance. Use `superseded` only with one reviewed redirect to an immediate same-type successor; never use `related` as a canonical pointer or hand-maintain reverse members on the winner.
+10. Build the W1 R4 `buildos` seed under `toolkits/buildos/` and invoke it by explicit path. Preview reviewed manifests without `--apply`, and apply only to a recoverable copied root unless separate live-data approval has been recorded.
 11. Rebuild indexes with the command named by the owning router. Do not hand-maintain derived JSON catalogs.
 12. After the edit, update the active work backlog and history record only after validation.
 
@@ -143,7 +148,7 @@ For manual UAT, prefer a scratch copy of the repository when the current checkou
 - Use configured scoped metadata fields: `systems`, `environments`, and `owners`. Do not use legacy fields such as `env`, `envs`, `for`, or `target_systems`, and do not invent local scoped-value enums.
 - Keep `system/.gitignore` runtime-only. It may ignore ephemera such as `node_modules/`, `.playwright/`, and `test-results/`, but it must not hide `.os/data/` or `workspace/datasets/` by default.
 - Do not add new ID prefixes without updating [entity-records-contract.md](../../../system/.os/contracts/entity-records-contract.md).
-- Preserve the originally recorded entity ID on historical reads while exposing the terminal canonical ID and full resolution chain. New writes eventually store only the terminal canonical ID.
+- Preserve the originally recorded entity ID on historical reads while exposing the terminal canonical ID and full resolution chain. W1 R4 discovery and design integrations store terminal canonical IDs in new governed references while retaining requested IDs and chains for provenance.
 - Reject missing redirect targets, self-links, cross-type targets, cycles, inactive terminals, duplicate IDs, illegal redirect statuses, and conflicting remaps. Never guess a successor for a legacy `superseded` row.
 - Treat `entity-resolution.json` as a derived index built only from canonical JSONL. Do not put entity aliases or redirects in `references.json`.
 - Keep `draft` as the pending promotion state for entity and extraction rows. Do not introduce a separate `candidate` status unless the contract and PRD vocabulary are deliberately revised together.
@@ -165,7 +170,20 @@ python3 system/.os/scripts/validate_config.py --self-test
 python3 system/.os/scripts/validate_config.py
 ```
 
-These current commands do not prove that redirect-bearing data is safe. Until `buildos-entities` is implemented, current validation success is not authorization to add redirects or migrate adopter data.
+These Python commands do not prove that redirect-bearing data is safe. Whole-graph and redirect certification belongs to the source-built `buildos entities validate`; there is no public `buildos-entities` executable. A successful source-build test still does not authorize installed-binary replacement or live-data migration.
+
+Run the unified module checks after changing entity contracts, graph behavior, canonical mutation, or the derived index:
+
+```sh
+cd toolkits/buildos
+go test ./...
+go test -race ./...
+go vet ./...
+go build ./...
+go test ./internal/cli -run TestPersonaCopiedRootRehearsal -count=1
+```
+
+Run discovery and design module tests when shared resolution or governed-reference behavior changes, because W1 R4 temporarily shares `toolkits/buildos/pkg/entities` through explicit local module dependencies. W1 R5 removes that temporary boundary after those domains migrate into the unified module.
 
 Then refresh the project documentation index and check links where practical. Review the diff for:
 
@@ -197,6 +215,8 @@ If a new data file seems necessary, first decide whether it is authority data, a
 If `validate_config.py` reports a JSONL row failure, fix the source-of-truth row instead of suppressing validation. Common causes are file/type mismatches, bad ID prefixes, `candidate` status, missing `source_anchor`, missing promoted `doc_anchor`, or scoped IDs that are not configured in `system/.os/config/instance.yaml`.
 
 If a generated index is stale, rerun the owning rebuild command and inspect the deterministic order before editing the output. A generated index should be explainable from its source files.
+
+If `buildos entities` exits `5`, the canonical write did not complete; preserve the diagnostic and verify that copied-root bytes remain unchanged. If it exits `6`, the canonical row update completed but index rebuilding failed; do not roll back or hand-edit the index automatically. Run the exact `buildos entities rebuild-index ... --apply` correction reported by the diagnostic, then repeat strict validation and the index check.
 
 If a build category playbook does not appear in Git status or the generated playbook index, check the root `.gitignore` exception for `system/playbooks/build/` before changing the playbook scanner.
 
@@ -247,4 +267,5 @@ If link checking reports repository-wide noise, separate baseline failures from 
 ## Future Coverage
 
 - Blocked by: Later phases that implement extraction loaders, additional index rebuilds, live computer-use harness adapters, and operational recovery paths. Update when: those phases introduce runnable commands, generated artifacts, or recovery paths beyond the current filesystem-first run/finding recorders. Guide change: Add adapter-specific command examples, generator ownership rules, artifact cleanup guidance, and troubleshooting for failed conversions, harness execution, or index rebuilds.
-- Blocked by: W1 R4 P2 through P4 implementation of entity resolution, consolidation, index generation, and consumer integration. Update when: strict graph validation, atomic mutation, deterministic index checks, and redirect-aware read/write tests pass. Guide change: add exact validation commands, generated-index ownership, integration checks, and recovery procedures.
+- Blocked by: W1 R5 unified CLI consolidation and distribution. Update when: intake, discovery, and design command parity, temporary legacy-name aliases, signed `buildos 0.1.0` archives, checksums, SBOMs, provenance, and Homebrew workflows pass. Guide change: replace the source-build and temporary cross-module boundary with the verified packaged maintenance workflow.
+- Blocked by: W2 installation lifecycle. Update when: manifest-backed setup, update, backup, project removal, and machine uninstall behavior passes. Guide change: add managed/adopter-owned/derived file classifications and verified lifecycle recovery procedures.

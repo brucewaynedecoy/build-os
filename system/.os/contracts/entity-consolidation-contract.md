@@ -163,7 +163,7 @@ Malformed redirect objects or manifests use an input-contract diagnostic that na
 
 ## Fixtures
 
-The compact fixture corpus in [examples/entity-resolution/](examples/entity-resolution/) is normative test input for these semantics.
+The compact fixture corpus described in [the entity-resolution fixture README](examples/entity-resolution/README.md) is normative test input for these semantics.
 Valid rows deliberately retain type-specific and unknown extension fields.
 Invalid cases isolate missing targets, self redirects, cross-type redirects, cycles, inactive terminals, illegal redirect statuses, duplicate IDs, remap conflicts, legacy missing redirects, and stale or non-reproducible indexes.
 

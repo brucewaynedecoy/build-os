@@ -63,9 +63,14 @@ This PRD set is the descriptive source-of-truth for **Build OS** — a general-p
 
 Read `01` → `02` → `06` (operating layer) → the subsystem doc for the area you'll work in, then the matching backlog phase under `docs/work/2026-06-03-w1-r0-build-os-baseline/`.
 For entity consolidation or canonical-reference work,
-continue through `08` → `16` → `17` → `18` and the W1 R4 plan.
+continue through `08` → `16` →
+[17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md) →
+[18 Revise Unified BuildOS CLI and Distribution](./18-revise-unified-buildos-cli-and-distribution.md)
+and the W1 R4 plan.
 For CLI consolidation or distribution work,
-continue through `14` → `16` → `18` and the W1 R5 plan.
+continue through `14` → `16` →
+[18 Revise Unified BuildOS CLI and Distribution](./18-revise-unified-buildos-cli-and-distribution.md)
+and the W1 R5 plan.
 
 ### Product or technical lead
 

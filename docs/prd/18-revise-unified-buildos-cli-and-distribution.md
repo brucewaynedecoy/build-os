@@ -151,6 +151,21 @@ W1 R4 P1 froze this command, flag, output-envelope, version-metadata, exit-code,
 
 P4 completes canonical reference behavior across the existing discovery and design domains through direct local imports of `toolkits/buildos/pkg/entities`; neither domain invokes a subprocess or duplicates graph traversal. Discovery resolves governed playbook targets, explicit targets, and run IDs, persists terminal canonical IDs in new governed references, and retains requested IDs and complete chains for provenance. Design applies the same behavior to finding promotion. The shared module also provides persona-only exact matching and extraction-outcome validation, including a playbook-aware API because `PB-NNN` values use the authoritative playbook registry rather than the eight-dataset entity graph. These are source-module integrations only: W1 R5 migration, compatibility aliases, packaging, installed-binary replacement, and live-data migration remain unimplemented and unauthorized.
 
+W1 R4 P5 completes the documented and validated source-build seed.
+It does not change the W1 R5 distribution gate:
+existing intake,
+discovery,
+and design executables remain separately built and installed,
+no compatibility alias is released,
+and Homebrew,
+archives,
+checksums,
+SBOMs,
+signatures,
+packaged upgrades,
+and lifecycle automation remain future work.
+Deploying a newly built binary and migrating redirect-bearing live data are still distinct operator decisions.
+
 ### W1 R5 consolidation and compatibility contract
 
 W1 R5 migrates intake, discovery, and design into isolated packages within `toolkits/buildos/` and proves command parity before removing their old source modules. Canonical command mappings include:

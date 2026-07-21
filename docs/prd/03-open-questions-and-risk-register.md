@@ -177,7 +177,7 @@ Code anchors:
 
 | Status | Decision | Follow-Up |
 | --- | --- | --- |
-| Open | Inventory records and propose consolidation candidates now; do not mutate canonical entity records until the PRD 17 resolver, validator, writer, and index are built and deployed | Execute the W1 R4 delta backlog, rehearse against a copied legacy root, then approve binary deployment and live-data migration separately |
+| Open | W1 R4's source-built resolver, validator, writer, index, integrations, copied-root rehearsal, and operator procedures are validated; do not mutate an installed root until that exact binary is deployed and live-data migration is separately approved | Rehearse the verified source build against a recoverable copy of the actual installed root, then approve binary deployment and live-data migration separately |
 
 **Issue**: The current entity-record contract permits `superseded` status but does not require a canonical target or define resolver behavior.
 Manually writing future-schema redirects into records managed by an older installed Build OS may break validators or tools and leave references unresolved.
@@ -185,9 +185,10 @@ Manually writing future-schema redirects into records managed by an older instal
 **Why it matters**: A source rebuild in an environment with an existing installation can expose live records to mixed contract and tooling versions, turning non-destructive cleanup into incompatible or only partially resolved data.
 
 **Recommendation**: Before the compatible feature is deployed, limit cleanup to inventories, candidate groups, proposed winners, and evidence-backed migration proposals outside canonical records.
-Implement PRD 17 through the W1 R4 plan,
-verify the source-built binary against a recoverable copy in compatibility and strict modes,
-then apply approved mappings through a separately authorized and audited migration.
+PRD 17 and the W1 R4 source implementation now provide the required compatible tooling and sanitized copied-root evidence.
+An adopter must still verify the exact staged binary against a recoverable copy of its own installed root in compatibility and strict modes,
+approve binary deployment separately,
+and only then apply approved mappings through a separately authorized and audited live-data migration.
 
 **To close**: The redirect and extraction contracts,
 `buildos entities` resolver and writer,

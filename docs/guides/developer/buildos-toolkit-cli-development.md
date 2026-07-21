@@ -327,6 +327,33 @@ go test ./...
 go build ./...
 ```
 
+For the current W1 R4 unified seed, use the complete entity-domain gate:
+
+```sh
+cd toolkits/buildos
+go test ./...
+go test -race ./...
+go vet ./...
+go build ./...
+go test ./internal/cli -run TestPersonaCopiedRootRehearsal -count=1
+```
+
+If `toolkits/buildos/pkg/entities` or governed-reference behavior changes, run the temporary W1 R4 consumer gates as well:
+
+```sh
+cd toolkits/buildos-discovery
+go test ./...
+go test -race ./...
+go vet ./...
+
+cd ../buildos-design
+go test ./...
+go test -race ./...
+go vet ./...
+```
+
+The entity failure suites are release requirements. Preflight validation, remap conflicts, and injected canonical-write failures must leave canonical bytes unchanged. A simulated post-commit index failure must instead retain the canonical write, emit `write_status: canonical_applied_index_failed`, exit `6`, and provide the exact `buildos entities rebuild-index ... --apply` recovery command. Repeated unchanged index builds and approved-manifest replays must be byte-identical.
+
 After changing an index builder, regenerate the affected catalog from the real checkout and then run repository validation. For playbooks:
 
 ```sh
@@ -369,6 +396,8 @@ If `buildos` is absent from `PATH`, that is expected during W1 R4. Invoke the st
 If the actual adopter-owned root is unavailable or ambiguous, stop at the sanitized fixture rehearsal. Record the missing live authority and do not substitute the source scaffold or a guessed installed path.
 
 If a staged binary or manifest checksum differs from the recorded review package, rebuild or re-review before applying. Do not continue merely because the command still runs.
+
+If `buildos entities` exits `3`, correct the explicit root, mode, or input before retrying. Exit `4` means the graph or remap is invalid and no mutation is allowed. Exit `5` means canonical writing failed before commit; verify copied-root byte identity. Exit `6` means canonical data committed but index completion failed; preserve that write, run the exact correction from the diagnostic, then repeat strict validation and `rebuild-index --check`.
 
 ## Related Resources
 

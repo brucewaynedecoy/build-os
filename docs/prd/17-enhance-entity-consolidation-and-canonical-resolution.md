@@ -222,6 +222,24 @@ The P3 copied-root acceptance requirements are satisfied by the sanitized person
 - W1 R4 P4 wires `buildos-discovery` and `buildos-design` directly to the temporary `toolkits/buildos/pkg/entities` Go package through explicit local module dependencies. Discovery resolves authored playbook targets, explicit targets, and requested run IDs before runtime use; design resolves the requested finding before promotion. Both preserve requested IDs and full chains for provenance while new governed references use terminal canonical IDs.
 - P4 also implements the persona-only exact-match adapter and the `extraction-outcomes-v1` validator as shared package APIs. Exact IDs, unique approved aliases, and unique `persona-v1` keys may resolve automatically; ambiguous, colliding, inactive, fuzzy, semantic, unsupported-type, and malformed inputs remain non-mutating review outcomes.
 - P4 does not migrate live data, publish a package, replace installed binaries, or add a general extraction command. Existing discovery and design binaries remain separate until W1 R5.
+- W1 R4 P5 closes the source implementation with naive-reader maintainer and operator guidance,
+  full unit,
+  integration,
+  race,
+  vet,
+  fixture,
+  copied-root,
+  failure,
+  configuration,
+  data,
+  path,
+  link,
+  and diff validation,
+  and a release-evidence breadcrumb.
+  The source-built feature is complete;
+  binary deployment and any live-data migration remain separate,
+  ungranted operator approvals,
+  so R-004 remains open until those deployed-instance gates are satisfied.
 
 ## Affected Baseline Docs
 

@@ -32,31 +32,31 @@ Use this guide when your Build OS data contains several records that describe th
 
 Build OS is designed to keep the losing records as history. W1 R4 P2 now provides a source-built `buildos entities` command that validates the complete graph, previews or applies a reviewed redirect, resolves historical IDs, and checks or rebuilds the derived index. It is still development tooling: use an explicit staged binary path and a copied Build OS root. P2 does not authorize changing live data or replacing an installed binary.
 
-The source-built command is `buildos entities`.
-There will not be a separate `buildos-entities` program.
-During W1 R4,
-intake,
-discovery,
-and design will still use their existing separate binaries;
-W1 R5 will later consolidate and package them,
-and W2 will later add project setup,
-update,
-backup,
-removal,
-and tool-uninstall workflows.
+The source-built command is `buildos entities`; there is no separate `buildos-entities` program.
+
+| Delivery stage | What an operator can use |
+| --- | --- |
+| Current W1 R4 | Build `buildos` from source and invoke its explicit path for `entities` commands. Keep the separately installed `buildos-intake`, `buildos-discovery`, and `buildos-design` binaries in place. No package-manager installation or automatic upgrade is available. |
+| Future W1 R5 | Package and distribute one `buildos` command, migrate the other domains under it, and provide compatible legacy command routing during the transition. Do not follow those installation steps until a verified release exists. |
+| Future W2 | Add project setup, update, backup, removal, and tool-uninstall workflows. These commands do not exist in W1 R4. |
+
+Keeping the legacy binaries installed does not prove that an older deployed version understands redirects. Keep live data unchanged until binary routing has been approved, and do not allow redirect-unaware tools to write after a future migration.
 
 ## Before You Begin
 
-Identify four different locations:
+Identify these locations before running a command:
 
 1. The source checkout where Build OS can be built.
-2. The installed Build OS program files currently used by your environment.
-3. The adopter-owned data root containing your real records.
-4. A review-output directory outside every canonical JSONL directory.
+2. A staging directory for the new source-built binary.
+3. The installed Build OS command or wrapper currently used by your environment.
+4. The live adopter-owned Build OS root containing `.os/data/` and `.os/indexes/`.
+5. An untouched snapshot of that live root.
+6. A disposable copied root used for rehearsal.
+7. A review-output directory outside every canonical JSONL directory.
 
 Stop if you cannot tell these locations apart. Do not copy the source checkout's `system/` folder over the installed system or your data root.
 
-Create a recoverable snapshot or copy of the adopter-owned data root. Keep the snapshot untouched so an operator can restore it later.
+Create the snapshot and copied root as new paths. Keep the snapshot untouched so an operator can prove restoration later. The examples below use sanitized placeholders; replace every placeholder with a reviewed, explicit path.
 
 ## What Winner and Loser Mean
 
@@ -117,9 +117,29 @@ Command output reports the requested ID, canonical ID, and complete chain so you
 
 ## Current Source-Build Workflow
 
-Set two paths explicitly. `<staged-buildos>` is the binary you built from this source checkout. `<copied-root>` is a disposable copy of the installed Build OS `system/` root, the directory that contains `.os/data/` and `.os/indexes/`.
+This is the current W1 R4 workflow. It is a copied-root rehearsal, not an installed upgrade and not a live-data migration.
 
-1. Build `toolkits/buildos/cmd/buildos` into a staging directory outside the checkout:
+Set the paths explicitly. `<staged-buildos>` is the binary you build from the source checkout. `<live-root>` is the adopter-owned Build OS root that contains `.os/data/` and `.os/indexes/`. `<snapshot-root>` and `<copied-root>` must be new, separate paths on storage with enough free space.
+
+1. Confirm the live root before copying it:
+
+   ```sh
+   test -d <live-root>/.os/data
+   test -d <live-root>/.os/indexes
+   ```
+
+   Stop if either check fails or if `<live-root>` points into the source checkout.
+
+2. Create one untouched snapshot and one disposable working copy. Do not reuse existing destination directories:
+
+   ```sh
+   cp -R <live-root> <snapshot-root>
+   cp -R <snapshot-root> <copied-root>
+   ```
+
+   Record checksums for the snapshot's `.os/data/` and `.os/indexes/`. From this point through the rehearsal, do not modify `<snapshot-root>` or `<live-root>`.
+
+3. Build `toolkits/buildos/cmd/buildos` into a staging directory outside the checkout:
 
    ```sh
    cd <source-checkout>/toolkits/buildos
@@ -128,34 +148,34 @@ Set two paths explicitly. `<staged-buildos>` is the binary you built from this s
 
    Use `<staging-directory>/buildos` as `<staged-buildos>` in every command below.
 
-2. Record the exact source revision and binary checksum. A development build reports version `dev` and source revision `unknown` unless build flags injected other values.
-3. Confirm the binary and copied root before every command:
+4. Record the exact source revision and binary checksum. A development build reports version `dev` and source revision `unknown` unless build flags injected other values.
+5. Confirm the binary and copied root before every command:
 
    ```sh
    <staged-buildos> version
    <staged-buildos> entities validate --root <copied-root> --mode compat
    ```
 
-4. Resolve a representative historical ID without writing:
+6. Resolve a representative historical ID without writing:
 
    ```sh
    <staged-buildos> entities resolve --root <copied-root> --mode compat --id <entity-id>
    ```
 
-5. Confirm every loser in the version 1 manifest comes from the same canonical JSONL dataset. Split a cross-dataset review into one manifest per dataset. Preview one reviewed manifest; `consolidate` is a dry run unless `--apply` is present:
+7. Confirm every loser in the version 1 manifest comes from the same canonical JSONL dataset. Split a cross-dataset review into one manifest per dataset. Preview one reviewed manifest; `consolidate` is a dry run unless `--apply` is present:
 
    ```sh
    <staged-buildos> entities consolidate --root <copied-root> --mode compat --manifest <reviewed-manifest>
    ```
 
-6. Review the complete plan and diagnostics. Stop on a missing target, cycle, cross-type redirect, inactive terminal, conflicting remap, unclear root, or unexpected affected file.
-7. Apply only after the copied root, snapshot, and manifest have been approved:
+8. Review the complete plan and diagnostics. Confirm the preview reports no write. Stop on a missing target, cycle, cross-type redirect, inactive terminal, conflicting remap, unclear root, or unexpected affected file.
+9. Apply only after the copied root, snapshot, manifest, and dry-run output have been approved. The explicit `--apply` below authorizes a write to `<copied-root>` only:
 
    ```sh
    <staged-buildos> entities consolidate --root <copied-root> --mode compat --manifest <reviewed-manifest> --apply
    ```
 
-8. Require strict validation and a current derived index:
+10. Require strict validation and a current derived index:
 
    ```sh
    <staged-buildos> entities validate --root <copied-root> --mode strict
@@ -168,8 +188,17 @@ Set two paths explicitly. `<staged-buildos>` is the binary you built from this s
    <staged-buildos> entities rebuild-index --root <copied-root> --mode strict --apply
    ```
 
-9. Repeat the check and prove that the untouched snapshot can restore the original copy.
-10. Obtain separate approvals for installed-binary routing and live-data migration. Success on a copy grants neither approval.
+11. Repeat the check and prove rollback without overwriting the tested copy. Create a new `<restored-root>` from the untouched snapshot, compare its data and index checksums with the recorded baseline, and run compatibility validation against `<restored-root>`:
+
+    ```sh
+    cp -R <snapshot-root> <restored-root>
+    diff -qr <snapshot-root>/.os/data <restored-root>/.os/data
+    diff -qr <snapshot-root>/.os/indexes <restored-root>/.os/indexes
+    <staged-buildos> entities validate --root <restored-root> --mode compat
+    ```
+
+    Expected result: both `diff` commands print nothing and validation succeeds.
+12. Save the review packet, then stop. Obtain separate approvals for installed-binary routing and live-data migration. Success on a copy grants neither approval.
 
 Add `--json` to any entity command when an agent or script needs the stable automation envelope. It reports `ok`, the dotted command name, version, source revision, resolved root, mode, write status, result, and diagnostics. Human output is the default.
 
@@ -189,6 +218,7 @@ The implemented command family is `buildos entities resolve`,
 `consolidate`,
 and `rebuild-index`.
 These commands are source-build-only in W1 R4 and must be invoked by explicit staged path against a copy first.
+Do not put the staged binary on `PATH`, replace an installed wrapper, or interpret the absence of `--apply` on one command as permission for a later command.
 
 ## What the P3 Rehearsal Proved
 
@@ -226,7 +256,9 @@ Stop without writing when the data root is unclear, the snapshot cannot be resto
 
 To rehearse rollback, restore the entire copied `.os/data/` and `.os/indexes/` state from the untouched snapshot, compare their checksums with the recorded baseline, then rerun compatibility validation. If any baseline checksum differs, the rollback is not proven and live migration must remain blocked.
 
-If a future live migration fails, stop using redirect-unaware tools, preserve the failure output, and follow the verified rollback procedure from the copied-root rehearsal. Do not delete losing rows or hand-edit the generated resolution index.
+Prefer proving rollback into a new `<restored-root>` rather than deleting or overwriting the failed rehearsal. If a future live migration fails, stop using redirect-unaware tools, preserve the failure output and affected root, and follow the separately approved rollback procedure from the copied-root rehearsal. Do not delete losing rows or hand-edit the generated resolution index.
+
+Exit code `6` is a special safe stop: canonical data committed, but index rebuilding failed. Do not restore only one file or rerun consolidation blindly. Preserve the output and run the exact `rebuild-index` recovery command reported by the tool against the same approved root.
 
 ## Troubleshooting
 
@@ -244,9 +276,13 @@ If a checksum differs from the approved review packet, stop before `--apply`. Co
 
 ## FAQ
 
-**Can we clean up personas before the feature ships?**
+**Can we begin cleanup before package distribution and live deployment?**
 
-You can inventory, group, and review them now, then use the P2 source-built command against a copied root. Do not mutate live canonical records or references until copied-root rehearsal and separate migration approval are complete.
+You can inventory,
+group,
+and review personas now,
+then use the current W1 R4 source-built command against a copied root.
+Do not mutate live canonical records or references until copied-root rehearsal and separate migration approval are complete.
 
 **Should we delete losing records after choosing a winner?**
 
@@ -254,7 +290,7 @@ No. The losing record preserves history, provenance, and old references.
 
 **Can a winner be replaced later?**
 
-Yes. The future resolver follows the full chain to the newest active canonical record.
+Yes. The current source-built resolver follows the full chain to the newest active canonical record.
 
 **Does a high similarity score create a redirect?**
 
@@ -263,6 +299,10 @@ No. Fuzzy, semantic, or ambiguous matches always require human review.
 **Is building from source the same as upgrading the installed environment?**
 
 No. Building produces a separate binary. Replacing installed binary routing and changing live data are separate operator approvals.
+
+**Can I install this with a package manager?**
+
+Not in W1 R4. Use the explicitly staged source build for copied-root rehearsal. Wait for a verified W1 R5 package before following package-manager or in-place upgrade instructions.
 
 ## Related Resources
 

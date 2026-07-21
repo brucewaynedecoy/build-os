@@ -32,7 +32,9 @@ Use this guide when you need to turn local source files into Build OS converted 
 
 `buildos-intake` is intentionally limited to intake and conversion. It does not extract requirements, qualify findings, or run discovery.
 
-Entity matching and canonical resolution remain outside `buildos-intake`. The current checkout does not yet resolve extracted persona references or consolidate duplicates. Pre-upgrade cleanup is audit-and-proposal-only.
+Entity matching and canonical resolution remain outside `buildos-intake`. The current checkout provides source-built resolver and matching libraries plus `buildos entities`, but intake conversion does not call them and no user-facing extraction writer is available yet. Pre-upgrade auditing remains proposal-only; reviewed consolidation is a separate copied-root-first workflow.
+
+During W1 R4, continue using the separately installed `buildos-intake` binary for conversion. Do not replace it with the source-built `buildos` entity binary. W1 R5 will package the domains under one `buildos` command; W2 will add project update and backup workflows.
 
 ## Before You Begin
 
@@ -137,7 +139,7 @@ No. It is derived from converted twin frontmatter. Rebuild it instead.
 
 **Will conversion deduplicate personas?**
 
-No. Conversion preserves source material. Future extraction may reuse a reviewed canonical persona, but uncertain similarity will still require human review.
+No. Conversion preserves source material. W1 R4 validates exact persona reuse behavior in the shared entity layer, but intake does not perform that match and there is not yet a user-facing extraction writer. Uncertain similarity always requires human review.
 
 ## Related Resources
 
@@ -153,4 +155,4 @@ No. Conversion preserves source material. Future extraction may reuse a reviewed
 ## Future Coverage
 
 - Add extraction-loader steps when Build OS ships a dedicated extraction toolkit or user-facing extraction command.
-- Blocked by: W1 R4 P4 redirect-aware extraction integration. Update when: repeated persona extraction, exact-ID resolution, unique approved aliases, and ambiguous-review fixtures pass. Guide change: add verified extraction examples showing newly minted, reused, and updated canonical IDs without implying that intake conversion owns entity matching.
+- Blocked by: a user-facing extraction writer. Update when: it persists validated `minted`, `referenced`, and `updated` outcomes. Guide change: add verified extraction examples without implying that intake conversion owns entity matching.
