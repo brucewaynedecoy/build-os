@@ -4,6 +4,7 @@ This directory is the operating-layer wrapper, command router, compatibility, an
 
 ## Scripts
 
+- [`buildos`](buildos) — thin wrapper for the source-built unified `buildos` CLI seed.
 - [`buildos-intake`](buildos-intake) — thin wrapper for the packaged `buildos-intake` toolkit.
 - [`buildos-discovery`](buildos-discovery) — thin wrapper for the packaged `buildos-discovery` toolkit.
 - [`validate_config.py`](validate_config.py) — validates `config/instance.yaml` against [`../contracts/config-contract.md`](../contracts/config-contract.md) and checks scoped frontmatter hygiene for playbooks and playbook templates.

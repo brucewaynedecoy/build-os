@@ -75,6 +75,7 @@ Manifest rules:
 - Each mapping contains exactly the fields shown above.
   Redirect field values follow the redirect-object rules in the entity records contract.
 - `source_id` occurs at most once in one manifest.
+- Every `source_id` in a version 1 manifest belongs to the same canonical JSONL dataset. A review that spans entity types or dataset files must be split into one manifest and one apply operation per dataset. This bound lets one apply operation replace at most one canonical file atomically; version 1 does not claim transactionality across files.
 - Source and target are immediate graph neighbors, not merely the current terminal pair.
 - The manifest is root-independent and must not contain a source checkout path, installed root, or implicit target root.
 - A manifest is reviewed input, not authority by itself.

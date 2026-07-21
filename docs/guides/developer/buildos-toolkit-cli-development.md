@@ -118,22 +118,37 @@ Do not place entity graph behavior in intake,
 config,
 or a general extraction helper.
 PRD 17 assigns the graph contract and PRD 18 assigns its public surface to `buildos entities` inside `toolkits/buildos/`.
-Until W1 R4 implements and validates that seed,
-entity cleanup remains audit-and-proposal-only.
+W1 R4 P2 implements and validates that source-built seed.
+Live entity cleanup remains separately approved work after copied-root rehearsal.
 
-## W1 R4 P1 `buildos entities` Boundary
+## W1 R4 P2 `buildos entities` Seed
 
-`buildos entities` owns the contracted domain for resolution, whole-graph validation, reviewed consolidation, and the derived entity-resolution index. P1 freezes the command families `consolidate`, `resolve`, `validate`, and `rebuild-index`, plus their flags, result envelope, version metadata, and exit-code policy. These contracts and their fixtures are reviewable source artifacts, but the commands remain non-runnable until P2 implements and tests the unified CLI seed.
+`buildos entities` owns resolution, whole-graph validation, reviewed consolidation, and the derived entity-resolution index. P2 implements the command families `consolidate`, `resolve`, `validate`, and `rebuild-index` under the unified root command, plus shared help, version metadata, human output, stable JSON, and exit codes.
 
-Maintainers should read the entity records, entity consolidation, persona identity, and extraction contracts together before implementing this domain. The contracts freeze immediate-successor redirects, version 1 reviewed manifests and derived indexes, compatibility and strict behavior, exact persona-only identity reuse, and `minted`/`referenced`/`updated` extraction outcomes. P2 code must implement those contracts rather than inventing a parallel schema in Go.
+Maintainers should read the entity records, entity consolidation, persona identity, and extraction contracts together before changing this domain. The contracts freeze immediate-successor redirects, version 1 reviewed manifests and derived indexes, compatibility and strict behavior, exact persona-only identity reuse, and `minted`/`referenced`/`updated` extraction outcomes. Go code must implement those contracts rather than inventing a parallel schema.
 
-W1 R4 temporarily exposes `toolkits/buildos/pkg/entities` so the current discovery and design modules can import the same resolver through explicit local module dependencies.
+Build and exercise the seed from its module:
+
+```sh
+cd toolkits/buildos
+go test ./...
+go build -o <staging-directory>/buildos ./cmd/buildos
+<staging-directory>/buildos help
+<staging-directory>/buildos version
+<staging-directory>/buildos entities validate --root <copied-root> --mode compat
+```
+
+The root must be the Build OS `system/` root that contains `.os/data/` and `.os/indexes/`. Always invoke the staged binary by explicit path. Add `--json` for the stable envelope: `ok`, dotted `command`, `version`, `source_revision`, resolved `root`, `mode`, string `write_status`, `result`, and `diagnostics`. Source builds default to version `dev` and revision `unknown` unless linker flags inject them.
+
+Use the shared exit policy in tests and integrations: `0` success, `2` usage, `3` input or root load, `4` validation or remap conflict, `5` canonical-write failure, and `6` canonical data applied but index rebuild failed. Exit `6` is not a rollback request; retain the canonical write and run the exact recovery command in the diagnostic.
+
+W1 R4 temporarily exposes `toolkits/buildos/pkg/entities` so P4 can make the current discovery and design modules import the same resolver through explicit local module dependencies.
 Consumers must not shell out to `buildos entities` or copy redirect traversal.
 W1 R5 removes the local replacements and internalizes the package after those domains migrate into the unified module.
 
 The implementation must distinguish three roots: the source checkout, installed program files, and adopter-owned data. Building in the source checkout must not replace an installed binary. Testing must invoke the source-built binary by explicit path against a recoverable copy of adopter data, never the live root first.
 
-Mutation must be dry-run by default, require an explicit root and explicit apply authorization, validate the complete graph before writing, use same-filesystem temporary output and atomic replacement, preserve permissions, and rebuild the derived index. Binary deployment and live-data mutation require separate operator approvals.
+Mutation must be dry-run by default, require an explicit root and explicit apply authorization, validate the complete graph before writing, and limit each version 1 manifest to one canonical JSONL dataset. It uses same-filesystem temporary output and atomic replacement for that one affected file, preserves permissions and unknown row fields, and rebuilds the derived index. Binary deployment and live-data mutation require separate operator approvals.
 
 W1 R4 is source-build-only.
 It does not provide Homebrew installation,
@@ -299,7 +314,7 @@ For playbook index changes, inspect the generated JSON before closing out:
 
 After edits, refresh the project documentation and code indexes when the jdocmunch and jcodemunch MCP servers are available.
 
-For planned entity consolidation, do not substitute the current Python validator or hand-edited JSON for the missing toolkit. Current checks are not redirect-aware and cannot certify a migration.
+For entity consolidation, do not substitute the Python validator or hand-edited JSON for `buildos entities`. The Python checks are not whole-graph or redirect-resolution certification.
 
 ## Troubleshooting
 
@@ -353,6 +368,5 @@ If enterprise distribution concerns block a rollout, track them against R-003 in
 ## Future Coverage
 
 - Blocked by: W1 R5 package distribution. Update when `buildos 0.1.0` has verified signed archives, checksums, SBOMs, provenance, Homebrew install/upgrade/uninstall, and legacy aliases. Guide change: replace multi-tool installation guidance with the verified unified release procedure.
-- Blocked by: W1 R4 P2 implementation of `toolkits/buildos/`. Update when: its CLI, unit, fixture, failure-injection, deterministic-index, and no-extra-binary tests pass. Guide change: add verified build commands, exact `buildos entities` syntax and output, version/source reporting, copied-root test commands, and recovery behavior.
 - Blocked by: W1 R4 P3 source-build migration rehearsal. Update when: the persona pilot proves snapshot restore and side-by-side binary isolation. Guide change: add the tested packaging, checksum, binary-routing, copied-root, and separate-approval procedure.
 - Blocked by: W2 project installation lifecycle. Update when: manifest-backed setup, update, backup, remove, and uninstall behavior is implemented. Guide change: replace manual project synchronization notes with the verified lifecycle commands while preserving rollback guidance.

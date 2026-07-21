@@ -35,7 +35,7 @@ related:
 
 Use this guide when maintaining or preparing Build OS support for duplicate or replaced entity records. The accepted contract keeps every losing record, marks it `superseded`, and gives it one reviewed redirect to an immediate successor. A shared resolver follows that chain to one active canonical record.
 
-W1 R4 P1 freezes the data, graph, resolver, manifest, index, persona-identity, extraction-outcome, and unified CLI contracts in the source tree. It does not implement the `buildos` executable. Today, maintainers may inspect those contracts, validate their examples and fixtures, inventory adopter records, and prepare review proposals only. Do not add redirect fields to live data, change live lifecycle states, rewrite references, or delete records until the P2 resolver, validator, writer, and index builder exist and later copied-root testing passes.
+W1 R4 P2 implements the first source-built `buildos` executable, whole-graph resolver and validator, deterministic entity-resolution index, and reviewed consolidation writer. Maintainers can now build and test the entity domain against fixtures or a recoverable copied root. P2 is not a packaged release and does not authorize changing a live adopter root, installed binary, or historical reference.
 
 The canonical planned surface is `buildos entities`,
 implemented as the W1 R4 seed of `toolkits/buildos/`.
@@ -52,7 +52,7 @@ Keep these three locations separate:
 
 | Location | What it contains | Safe use before implementation |
 | --- | --- | --- |
-| Source checkout | Build OS source, contracts, plans, and future toolkit code | Read, build, and test without overwriting another installation. |
+| Source checkout | Build OS source, contracts, plans, and toolkit code | Read, build, and test without overwriting another installation. |
 | Installed program files | Binaries and wrappers currently used by the environment | Inventory only; do not replace or reroute during data rehearsal. |
 | Adopter-owned data root | The team's real `system/.os/data/`, indexes, assets, and workspace | Read-only audit only; rehearse future writes against a recoverable copy. |
 
@@ -66,18 +66,20 @@ The authority boundaries are:
 - `related` remains an ordinary relationship and never changes canonical identity.
 - `.os/indexes/entity-resolution.json` is the contracted installed-root derived projection; `system/.os/indexes/entity-resolution.json` is its source-scaffold counterpart. It is rebuildable and never replaces the canonical JSONL rows.
 - `references.json` remains an intake-source index and must not carry entity redirects.
-- `toolkits/buildos/pkg/entities` is the temporary shared resolver boundary during W1 R4; existing Go consumers import it through explicit local dependencies and must not invoke the CLI as a subprocess.
+- `toolkits/buildos/pkg/entities` is the temporary shared resolver boundary during W1 R4. P4 will wire existing Go consumers through explicit local dependencies; those consumers must not invoke the CLI as a subprocess.
 
-## Current Safe Workflow
+## Current Source-Build Workflow
 
-1. Identify the source checkout, installed program files, adopter-owned data root, and a separate review-output directory. Stop if any two are ambiguous.
-2. Create a recoverable snapshot or copy of the adopter-owned root before preparing for later migration.
-3. Run the [pre-upgrade entity consolidation audit prompt](../../assets/prompts/pre-upgrade-entity-consolidation-audit.prompt.md) with a local coding agent in read-only mode.
-4. Review inventories, duplicate groups, proposed winners, proposed losers, evidence, confidence, ambiguity, checksums, and the proposed migration manifest.
-5. Keep uncertain groups unresolved. Similar wording or a high confidence score is not permission to consolidate.
-6. Store review output outside canonical JSONL directories and do not feed it to old tooling as though redirects already exist.
+1. Identify the source checkout, installed program files, adopter-owned data root, a recoverable copied root, and a separate staging directory. Stop if any two are ambiguous.
+2. From `toolkits/buildos/`, run `go test ./...`, then build `./cmd/buildos` to the staging directory. Invoke that binary by its explicit path; do not rely on `PATH`.
+3. Record `git rev-parse HEAD`, the binary checksum, and `<staged-buildos> version`. Uninjected source builds report `dev` and `unknown`.
+4. Run `entities validate` in `compat` mode against the copy. Compatibility warnings identify legacy `superseded` rows without redirects and exclude them from automatic resolution.
+5. Confirm every loser in the version 1 manifest belongs to the same canonical JSONL dataset, then run it through `entities consolidate` without `--apply`. Split a cross-dataset review into separately approved manifests. Inspect every planned change and diagnostic.
+6. Apply only to the copy with `--apply`, then require strict validation and a current index with `rebuild-index --check`.
+7. If the index is missing or stale, run the exact `rebuild-index ... --apply` recovery command from the diagnostic, then repeat the check.
+8. Prove snapshot restoration before asking for separate binary-routing and live-data-migration approvals.
 
-Current validation does not understand redirect-bearing rows. A successful run of `validate_config.py` therefore does not authorize adding the planned redirect shape to live data.
+The exact command sequence appears in the [user guide](../user/entities-consolidation-curate-and-resolve-records.md#current-source-build-workflow). `validate_config.py` remains limited to config, frontmatter, and basic row hygiene; it does not replace graph validation or certify a redirect migration.
 
 ## Redirect and Resolver Contract
 
@@ -112,13 +114,13 @@ Each outcome stores the terminal canonical ID as it existed at extraction time. 
 
 ## Validation and Recovery Expectations
 
-Before any P2 mutation, the implementation must load and validate the complete entity graph. Missing targets, self-redirects, cross-type targets, cycles, inactive terminal records, duplicate IDs, invalid statuses, remap conflicts, and stale indexes must stop the write with a useful diagnostic.
+Before any mutation, the implementation loads and validates the complete entity graph. Missing targets, self-redirects, cross-type targets, cycles, inactive terminal records, duplicate IDs, invalid statuses, remap conflicts, and stale indexes stop the relevant operation with a useful diagnostic.
 
 Compatibility mode is only a temporary assessment aid for legacy `superseded` rows without redirects. It warns and excludes those rows from automatic resolution. Strict mode is the release and post-migration gate and rejects them.
 
-Future mutation must be dry-run by default, require an explicit adopter root and explicit apply approval, write through a same-filesystem temporary file, replace the affected JSONL atomically, preserve permissions, and rebuild the derived index. If the canonical write succeeds but index rebuilding fails, recovery must preserve the canonical rows and provide a deterministic index-rebuild command.
+Mutation is dry-run by default, requires an explicit adopter root and explicit apply approval, and accepts only one canonical JSONL dataset per version 1 manifest. It writes through a same-filesystem temporary file, atomically replaces that one affected JSONL file, preserves permissions and unknown row fields, and rebuilds the derived index. If the canonical write succeeds but index rebuilding fails, the canonical rows remain authoritative, the command exits `6`, and its diagnostic provides the deterministic index-rebuild command.
 
-The planned W1 R4 command families are:
+The implemented W1 R4 P2 command families are:
 
 ```text
 buildos help
@@ -129,9 +131,7 @@ buildos entities consolidate --root <copied-root> --mode compat|strict --manifes
 buildos entities rebuild-index --root <copied-root> --mode compat|strict [--check|--apply] [--json]
 ```
 
-These commands are frozen P1 contract examples,
-not runnable instructions yet.
-Replace them with tested commands and output only after the implementation phase passes.
+Human-readable output is the default. `--json` emits the shared envelope with `ok`, dotted `command`, `version`, `source_revision`, resolved `root`, `mode`, string `write_status`, `result`, and `diagnostics`. Exit codes are `0` success, `2` usage, `3` input/root load, `4` validation or remap conflict, `5` canonical-write failure, and `6` canonical data applied but index rebuild failed.
 
 ## Source-Build Rehearsal Boundary
 
@@ -174,7 +174,6 @@ If a graph error is found after a canonical write, preserve the written JSONL an
 
 ## Future Coverage
 
-- Blocked by: W1 R4 P2 implementation of `toolkits/buildos/` and stable diagnostics. Update when: the root CLI, resolver, compatibility and strict validators, consolidation writer, deterministic index builder, and no-extra-binary tests pass. Guide change: add verified build commands, exact command syntax, exit behavior, example output, and failure-recovery commands.
 - Blocked by: W1 R4 P3 copied-root persona pilot. Update when: the approved persona fixture set and rollback rehearsal pass. Guide change: replace the contract-shaped rehearsal outline with an executed maintainer runbook and sanitized evidence examples.
 - Blocked by: W1 R4 P4 consumer and producer integration. Update when: redirect-aware reads and terminal-canonical writes pass integration tests. Guide change: list each integration point, its original-ID behavior, its canonical-ID behavior, and its failure mode.
 - Blocked by: W1 R5 distribution. Update when: the unified command migration, legacy aliases, archives, checksums, SBOMs, signing, and Homebrew workflows pass. Guide change: add package installation and compatibility-alias maintenance, and remove source-build-only caveats where verified.

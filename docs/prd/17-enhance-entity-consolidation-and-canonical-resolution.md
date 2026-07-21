@@ -75,10 +75,11 @@ buildos entities rebuild-index
 Mutation is dry-run by default and requires explicit `--apply` authorization.
 Every mutating invocation requires an explicit adopter root,
 loads and validates the complete entity graph before writing,
-uses same-filesystem temporary output and atomic replacement for the affected JSONL file,
+requires every version 1 manifest source to belong to one canonical JSONL dataset,
+uses same-filesystem temporary output and atomic replacement for that one affected JSONL file,
 preserves file permissions,
 and rebuilds the derived index after the canonical write.
-The command reports its executable version or source revision,
+The command reports its executable version and source revision,
 resolved root,
 operating mode,
 and whether a write occurred.
@@ -183,6 +184,7 @@ Old tooling remains read-only for redirect-bearing datasets until cutover is com
 - A later replacement of a current winner preserves correct terminal resolution.
 - The same consolidation is idempotent;
   redirecting one loser to a different target is a reviewed conflict.
+- A version 1 manifest affects at most one canonical JSONL dataset; cross-dataset reviews are split into separately previewed and approved manifests.
 - The resolver and validator produce actionable failures for missing targets,
   self-redirects,
   type mismatches,
@@ -212,6 +214,7 @@ Old tooling remains read-only for redirect-bearing datasets until cutover is com
 ### Change Notes
 
 - Superseded by [18 Revise Unified BuildOS CLI and Distribution](./18-revise-unified-buildos-cli-and-distribution.md) for the public executable and source-module topology: W1 R4 seeds `toolkits/buildos/` and `buildos entities`; W1 R5 later consolidates the existing domains and packages `buildos 0.1.0`. The entity data, resolver, mutation, index, validation, and migration-safety requirements in this PRD remain effective.
+- W1 R4 P2 implements the source-built CLI seed, graph engine, deterministic index, and reviewed mutation surface. Version 1 manifests are explicitly limited to one canonical JSONL dataset so a successful apply performs one atomic canonical-file replacement; multi-dataset reviews require separate manifests and approvals.
 
 ## Affected Baseline Docs
 
@@ -286,8 +289,10 @@ and the redirect decision fields `kind`,
 `decided_by`,
 `reason`,
 and `evidence_refs`.
+Every version 1 mapping source in one manifest must belong to the same canonical JSONL dataset.
+Split cross-dataset reviews into separate manifests and apply operations.
 The manifest is root-independent reviewed input rather than canonical authority;
-authority changes only after a future validated apply operation atomically updates the losing row.
+authority changes only after a validated apply operation atomically updates the losing row.
 
 ### Derived index
 

@@ -1,0 +1,21 @@
+#!/usr/bin/env sh
+set -eu
+
+if [ "${BUILDOS_BIN:-}" ]; then
+  exec "$BUILDOS_BIN" "$@"
+fi
+
+if command -v buildos >/dev/null 2>&1; then
+  exec buildos "$@"
+fi
+
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+dev_root=$(CDPATH= cd -- "$script_dir/../../.." && pwd)
+local_bin="$dev_root/toolkits/buildos/bin/buildos"
+
+if [ -x "$local_bin" ]; then
+  exec "$local_bin" "$@"
+fi
+
+printf '%s\n' "buildos binary not found. Set BUILDOS_BIN or build the staged source binary with 'just build-buildos'." >&2
+exit 127

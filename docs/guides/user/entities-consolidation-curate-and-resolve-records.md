@@ -29,12 +29,11 @@ related:
 
 Use this guide when your Build OS data contains several records that describe the same persona or another entity and you want to choose one winner without deleting the others.
 
-Build OS is designed to keep the losing records as history. The W1 R4 P1 contracts now define how a reviewed redirect points each loser toward its immediate successor and how Build OS follows that chain to one active canonical record. The command that safely applies those contracts is not implemented until P2. For now, you may audit and propose mappings, but you must not change live entity data.
+Build OS is designed to keep the losing records as history. W1 R4 P2 now provides a source-built `buildos entities` command that validates the complete graph, previews or applies a reviewed redirect, resolves historical IDs, and checks or rebuilds the derived index. It is still development tooling: use an explicit staged binary path and a copied Build OS root. P2 does not authorize changing live data or replacing an installed binary.
 
-When P2 implements the W1 R4 CLI seed,
-the source-built command will be `buildos entities`.
+The source-built command is `buildos entities`.
 There will not be a separate `buildos-entities` program.
-At that stage,
+During W1 R4,
 intake,
 discovery,
 and design will still use their existing separate binaries;
@@ -103,29 +102,80 @@ Build OS will not treat similar wording as an exact identity. Fuzzy or semantic 
 
 When extraction integration arrives in P4, its record will say whether it minted a new entity, referenced an unchanged canonical entity, or deliberately updated an existing one. That history remains tied to the canonical ID known at extraction time.
 
-## Expected Future Workflow
+## Current Source-Build Workflow
 
-After P2 implements the contracted command, the safe path will be:
+Set two paths explicitly. `<staged-buildos>` is the binary you built from this source checkout. `<copied-root>` is a disposable copy of the installed Build OS `system/` root, the directory that contains `.os/data/` and `.os/indexes/`.
 
-1. Build `buildos` into a staging directory from a separate source checkout.
-2. Record the exact source revision and binary checksum.
-3. Invoke that exact binary path against a copied data root, never the live root first.
-4. Run compatibility assessment and a non-writing preview.
-5. Review every warning, proposed redirect, resolution chain, and index change.
-6. Apply only an approved mapping to the copy.
-7. Run strict validation, rebuild and check the derived resolution index, and test representative reads and writes.
-8. Prove that the untouched snapshot can restore the original state.
-9. Obtain separate approval to change installed binary routing.
-10. Obtain separate approval to change live adopter-owned data.
+1. Build `toolkits/buildos/cmd/buildos` into a staging directory outside the checkout:
 
-Success in the copy does not automatically authorize either live action.
+   ```sh
+   cd <source-checkout>/toolkits/buildos
+   go build -o <staging-directory>/buildos ./cmd/buildos
+   ```
 
-The planned command family is `buildos entities resolve`,
+   Use `<staging-directory>/buildos` as `<staged-buildos>` in every command below.
+
+2. Record the exact source revision and binary checksum. A development build reports version `dev` and source revision `unknown` unless build flags injected other values.
+3. Confirm the binary and copied root before every command:
+
+   ```sh
+   <staged-buildos> version
+   <staged-buildos> entities validate --root <copied-root> --mode compat
+   ```
+
+4. Resolve a representative historical ID without writing:
+
+   ```sh
+   <staged-buildos> entities resolve --root <copied-root> --mode compat --id <entity-id>
+   ```
+
+5. Confirm every loser in the version 1 manifest comes from the same canonical JSONL dataset. Split a cross-dataset review into one manifest per dataset. Preview one reviewed manifest; `consolidate` is a dry run unless `--apply` is present:
+
+   ```sh
+   <staged-buildos> entities consolidate --root <copied-root> --mode compat --manifest <reviewed-manifest>
+   ```
+
+6. Review the complete plan and diagnostics. Stop on a missing target, cycle, cross-type redirect, inactive terminal, conflicting remap, unclear root, or unexpected affected file.
+7. Apply only after the copied root, snapshot, and manifest have been approved:
+
+   ```sh
+   <staged-buildos> entities consolidate --root <copied-root> --mode compat --manifest <reviewed-manifest> --apply
+   ```
+
+8. Require strict validation and a current derived index:
+
+   ```sh
+   <staged-buildos> entities validate --root <copied-root> --mode strict
+   <staged-buildos> entities rebuild-index --root <copied-root> --mode strict --check
+   ```
+
+   If the check says the index is missing or stale, use the exact recovery command in the diagnostic. Its operation is equivalent to:
+
+   ```sh
+   <staged-buildos> entities rebuild-index --root <copied-root> --mode strict --apply
+   ```
+
+9. Repeat the check and prove that the untouched snapshot can restore the original copy.
+10. Obtain separate approvals for installed-binary routing and live-data migration. Success on a copy grants neither approval.
+
+Add `--json` to any entity command when an agent or script needs the stable automation envelope. It reports `ok`, the dotted command name, version, source revision, resolved root, mode, write status, result, and diagnostics. Human output is the default.
+
+Exit codes identify the failure class:
+
+| Code | Meaning |
+| --- | --- |
+| `0` | Success, including a clean check or dry run. |
+| `2` | Invalid command or flags. |
+| `3` | The root or required input could not be loaded or parsed. |
+| `4` | Validation or a reviewed-remap conflict blocked the operation. |
+| `5` | A canonical write could not be committed. |
+| `6` | Canonical data committed, but index rebuilding failed; run the reported recovery command. |
+
+The implemented command family is `buildos entities resolve`,
 `validate`,
 `consolidate`,
 and `rebuild-index`.
-These names describe the frozen P1 contract only;
-do not attempt to run them until your source build contains the implemented W1 R4 command and your team has verified it on a copied root.
+These commands are source-build-only in W1 R4 and must be invoked by explicit staged path against a copy first.
 
 ## Rollback and Safe Stops
 
@@ -141,13 +191,13 @@ If a coding agent cannot distinguish the source checkout from the installed file
 
 If many personas look similar, ask reviewers to compare source anchors and intended use. Similar names or descriptions are not enough for an automatic merge.
 
-If an old reference points to a loser, leave the historical reference unchanged for now. The future resolver will preserve that requested ID while reporting the canonical winner and chain.
+If an old reference points to a loser, leave the historical reference unchanged. The resolver preserves that requested ID while reporting the canonical winner and chain.
 
 ## FAQ
 
 **Can we clean up personas before the feature ships?**
 
-You can inventory, group, and review them now. P1 contracts and fixtures make the intended rules reviewable, but they do not make live mutation safe. Do not mutate canonical records or references until the compatible P2 tooling is implemented and verified.
+You can inventory, group, and review them now, then use the P2 source-built command against a copied root. Do not mutate live canonical records or references until copied-root rehearsal and separate migration approval are complete.
 
 **Should we delete losing records after choosing a winner?**
 
@@ -178,7 +228,6 @@ No. Building produces a separate binary. Replacing installed binary routing and 
 
 ## Future Coverage
 
-- Blocked by: W1 R4 P2 unified CLI seed. Update when: the source-built `buildos entities` command surface and diagnostics pass validation. Guide change: add exact preview, apply, resolve, validate, and index-check commands with verified example output.
 - Blocked by: W1 R4 P3 copied-root persona rehearsal. Update when: the persona pilot and restore test pass. Guide change: add a complete sanitized operator walkthrough, review checklist, expected warnings, and rollback steps.
 - Blocked by: W1 R4 P4 extraction and consumer integration. Update when: redirect-aware reads and canonical writes are available. Guide change: show how old references appear, how new references are stored, and how repeated persona extraction reuses a reviewed canonical record.
 - Blocked by: W1 R5 package distribution. Update when: a verified `buildos 0.1.0` package and legacy command aliases are available. Guide change: replace source-build-only setup with package installation and upgrade steps.

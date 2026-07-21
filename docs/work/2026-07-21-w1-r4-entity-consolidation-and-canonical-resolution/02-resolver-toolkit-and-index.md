@@ -21,11 +21,11 @@ This phase creates the source-build-only `toolkits/buildos/` Go module and `buil
 
 ### Tasks
 
-- [ ] t1: Create `toolkits/buildos/` with Go module metadata, `cmd/buildos`, local README and agent routers, root help and version behavior, build targets, and source-build defaults of version `dev` and revision `unknown`.
-- [ ] t2: Implement a whole-graph loader that reads all governed JSONL datasets, rejects invalid JSONL and duplicate IDs, and indexes records by stable ID and entity type.
-- [ ] t3: Implement terminal resolution for zero-hop, one-hop, and multi-hop chains with the contractually stable result shape and fail-closed diagnostics.
-- [ ] t4: Add graph tests for each entity type, every redirect kind, later winner replacement, same-type enforcement, missing and self targets, cycles, inactive terminals, illegal statuses, and remap conflicts.
-- [ ] t5: Expose the resolver temporarily through `toolkits/buildos/pkg/entities` with an interface existing Go modules can import without subprocess calls or duplicated chain logic.
+- [x] t1: Create `toolkits/buildos/` with Go module metadata, `cmd/buildos`, local README and agent routers, root help and version behavior, build targets, and source-build defaults of version `dev` and revision `unknown`.
+- [x] t2: Implement a whole-graph loader that reads all governed JSONL datasets, rejects invalid JSONL and duplicate IDs, and indexes records by stable ID and entity type.
+- [x] t3: Implement terminal resolution for zero-hop, one-hop, and multi-hop chains with the contractually stable result shape and fail-closed diagnostics.
+- [x] t4: Add graph tests for each entity type, every redirect kind, later winner replacement, same-type enforcement, missing and self targets, cycles, inactive terminals, illegal statuses, and remap conflicts.
+- [x] t5: Expose the resolver temporarily through `toolkits/buildos/pkg/entities` with an interface existing Go modules can import without subprocess calls or duplicated chain logic.
 
 ### Acceptance criteria
 
@@ -43,11 +43,11 @@ This phase creates the source-build-only `toolkits/buildos/` Go module and `buil
 
 ### Tasks
 
-- [ ] t6: Implement `buildos entities validate --root <path> --mode compat|strict [--json]` with structured compatibility warnings and strict graph enforcement.
-- [ ] t7: Implement `buildos entities resolve --root <path> --mode compat|strict --id <entity-id> [--json]` with requested ID, canonical ID, chain, and resolution state.
-- [ ] t8: Implement `buildos entities rebuild-index --root <path> --mode compat|strict [--check|--apply] [--json]` to emit stable lexical ordering from canonical JSONL only.
-- [ ] t9: Implement the shared human-readable result and stable JSON envelope plus common exit-code behavior across help, version, and entity commands.
-- [ ] t10: Add CLI, reproducibility, stale-index, and no-`buildos-entities` tests that compare repeated byte output and report exact remediation commands.
+- [x] t6: Implement `buildos entities validate --root <path> --mode compat|strict [--json]` with structured compatibility warnings and strict graph enforcement.
+- [x] t7: Implement `buildos entities resolve --root <path> --mode compat|strict --id <entity-id> [--json]` with requested ID, canonical ID, chain, and resolution state.
+- [x] t8: Implement `buildos entities rebuild-index --root <path> --mode compat|strict [--check|--apply] [--json]` to emit stable lexical ordering from canonical JSONL only.
+- [x] t9: Implement the shared human-readable result and stable JSON envelope plus common exit-code behavior across help, version, and entity commands.
+- [x] t10: Add CLI, reproducibility, stale-index, and no-`buildos-entities` tests that compare repeated byte output and report exact remediation commands.
 
 ### Acceptance criteria
 
@@ -66,11 +66,11 @@ This phase creates the source-build-only `toolkits/buildos/` Go module and `buil
 
 ### Tasks
 
-- [ ] t11: Implement `buildos entities consolidate --root <path> --mode compat|strict --manifest <path> [--apply] [--json]` as a dry-run operation that displays exact planned row and index changes.
-- [ ] t12: Add explicit `--apply` handling that validates the entire graph before mutation, writes through a same-filesystem temporary file, atomically replaces only the affected canonical JSONL file, and preserves permissions.
-- [ ] t13: Rebuild the derived index after a successful canonical write and report an exact recovery command if index generation then fails.
-- [ ] t14: Add tests for identical-manifest idempotence, conflicting-target non-writes, ambiguous or missing roots, unwritable roots, interrupted writes, invalid JSONL, and post-write index failure.
-- [ ] t15: Add only thin `system/.os/scripts/` routing if required after the CLI stabilizes; do not add durable Python logic or migrate the legacy domains into `toolkits/buildos/` during W1 R4.
+- [x] t11: Implement `buildos entities consolidate --root <path> --mode compat|strict --manifest <path> [--apply] [--json]` as a dry-run operation that displays exact planned row and index changes.
+- [x] t12: Add explicit `--apply` handling that validates the entire graph before mutation, writes through a same-filesystem temporary file, atomically replaces only the affected canonical JSONL file, and preserves permissions.
+- [x] t13: Rebuild the derived index after a successful canonical write and report an exact recovery command if index generation then fails.
+- [x] t14: Add tests for identical-manifest idempotence, conflicting-target non-writes, ambiguous or missing roots, unwritable roots, interrupted writes, invalid JSONL, and post-write index failure.
+- [x] t15: Add only thin `system/.os/scripts/` routing if required after the CLI stabilizes; do not add durable Python logic or migrate the legacy domains into `toolkits/buildos/` during W1 R4.
 
 ### Acceptance criteria
 

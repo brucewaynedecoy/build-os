@@ -28,6 +28,7 @@ build/
 !system/playbooks/build/**
 out/
 wheels/
+/toolkits/buildos/bin/
 *.tsbuildinfo
 next-env.d.ts
 

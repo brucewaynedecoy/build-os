@@ -141,11 +141,13 @@ buildos entities rebuild-index \
 
 `consolidate` defaults to a dry run. `rebuild-index` defaults to check behavior when neither `--check` nor `--apply` is present; the two flags are mutually exclusive. All commands require an explicit root and mode rather than inferring a live installation.
 
-The entity commands retain PRD 17's explicit-root, dry-run-by-default, compatibility/strict, atomic-write, deterministic-index, recovery, and copied-root requirements. The derived index remains `.os/indexes/entity-resolution.json` in an installed root; the source scaffold counterpart is `system/.os/indexes/entity-resolution.json`. `references.json` remains intake-owned and never carries entity redirects.
+The entity commands retain PRD 17's explicit-root, dry-run-by-default, compatibility/strict, atomic-write, deterministic-index, recovery, and copied-root requirements. A version 1 consolidation manifest may affect only one canonical JSONL dataset, so one apply operation performs at most one atomic canonical-file replacement; cross-dataset reviews require separately previewed and approved manifests. The derived index remains `.os/indexes/entity-resolution.json` in an installed root; the source scaffold counterpart is `system/.os/indexes/entity-resolution.json`. `references.json` remains intake-owned and never carries entity redirects.
+
+W1 R4 P2 implements this source-build-only seed, including the shared command envelope and exit policy, whole-graph resolution and validation, deterministic index checking and rebuilding, and single-dataset reviewed consolidation. It does not implement W1 R5 migration or distribution.
 
 W1 R4 is source-build-only. It does not replace existing installed binaries, publish packages, mutate live adopter data, or absorb the intake, discovery, and design implementations into the unified module.
 
-W1 R4 P1 freezes this command, flag, output-envelope, version-metadata, exit-code, and temporary package-sharing contract in authoritative documentation and normative examples. The `buildos` executable and entity graph engine are P2 work; P1 does not make these commands runnable.
+W1 R4 P1 froze this command, flag, output-envelope, version-metadata, exit-code, and temporary package-sharing contract in authoritative documentation and normative examples. P2 implements and tests the source-built `buildos` executable, entity graph engine, index, and mutation surface. P3 still owns the copied-root persona rehearsal and rollback evidence.
 
 ### W1 R5 consolidation and compatibility contract
 

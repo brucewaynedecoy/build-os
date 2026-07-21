@@ -3,6 +3,23 @@ set shell := ["bash", "-uc"]
 default:
     @just --list
 
+build-buildos output="toolkits/buildos/bin/buildos":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    output_path="{{output}}"
+    if [[ "$output_path" != /* ]]; then
+      output_path="$PWD/$output_path"
+    fi
+    mkdir -p "$(dirname "$output_path")"
+    (cd toolkits/buildos && go build -o "$output_path" ./cmd/buildos)
+    chmod 0755 "$output_path"
+    printf '%s\n' "built $output_path"
+
+test-buildos:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    (cd toolkits/buildos && go test ./...)
+
 install-toolkits:
     #!/usr/bin/env bash
     set -euo pipefail

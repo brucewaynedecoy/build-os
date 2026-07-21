@@ -20,7 +20,9 @@ Any third-party or native dependency must be documented in the owning toolkit RE
 
 ## Current Transition State
 
-W1 R4 seeds the unified module with `buildos entities`. Its P1 contracts are authoritative, but the executable is not present until P2. W1 R5 later migrates intake, discovery, and design after parity tests, then keeps their old names as temporary compatibility aliases for one stable minor-release cycle.
+W1 R4 P2 seeds the unified module with the source-built `buildos entities` executable, graph resolver and validator, deterministic resolution index, and single-dataset reviewed consolidation writer. It is development tooling rather than a packaged installation. W1 R5 later migrates intake, discovery, and design after parity tests, then keeps their old names as temporary compatibility aliases for one stable minor-release cycle.
+
+Build and test the seed from `toolkits/buildos/` with `go test ./...` and `go build ./cmd/buildos`. Invoke the resulting binary by explicit path against fixtures or a copied Build OS root. Do not replace an installed binary or mutate live adopter data as part of source-build validation.
 
 The separately runnable modules below remain current behavior during W1 R4:
 
@@ -29,6 +31,8 @@ The separately runnable modules below remain current behavior during W1 R4:
 | [buildos-intake](./buildos-intake/) | `buildos-intake` | Initial implementation | Intake, conversion, and reference-index toolkit for W1 R0 P3 |
 | [buildos-discovery](./buildos-discovery/) | `buildos-discovery` | Initial implementation | Discovery-run recording, raw-finding anchoring, and finding qualification toolkit for W1 R0 P6 |
 | [buildos-design](./buildos-design/) | `buildos-design` | Initial implementation | Qualified-finding to design promotion toolkit for W1 R0 P7 |
+
+The unified seed lives at [buildos](./buildos/). It emits only the `buildos` binary; no public entity-specific binary is built.
 
 ## Development Flow
 
