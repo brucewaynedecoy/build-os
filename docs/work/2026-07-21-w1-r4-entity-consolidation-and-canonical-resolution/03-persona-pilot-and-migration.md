@@ -20,10 +20,12 @@ The pre-upgrade prompt may prepare evidence and proposed mappings, but it remain
 
 ### Tasks
 
-- [ ] t1: Run the [pre-upgrade audit prompt](../../assets/prompts/pre-upgrade-entity-consolidation-audit.prompt.md) against an approved read-only or sanitized dataset to inventory personas, inbound references, evidence, and likely duplicate groups.
-- [ ] t2: Produce a proposed mapping manifest with winners, losers, redirect kinds, reasons, evidence references, confidence, ambiguity flags, source checksums, and no canonical mutations.
-- [ ] t3: Review each proposed mapping with the configured decision owner and separate approved mappings from unresolved or ambiguous groups.
-- [ ] t4: Create sanitized persona fixtures for one-hop and multi-hop redirects, a winner later superseded, an identical replay, a conflicting remap, ambiguous aliases, repeated extraction, and provenance preservation.
+- [x] t1: Run the [pre-upgrade audit prompt](../../assets/prompts/pre-upgrade-entity-consolidation-audit.prompt.md) against an approved read-only or sanitized dataset to inventory personas, inbound references, evidence, and likely duplicate groups.
+- [x] t2: Produce a proposed mapping manifest with winners, losers, redirect kinds, reasons, evidence references, confidence, ambiguity flags, source checksums, and no canonical mutations.
+- [x] t3: Review each proposed mapping with the configured decision owner and separate approved mappings from unresolved or ambiguous groups.
+- [x] t4: Create sanitized persona fixtures for one-hop and multi-hop redirects, a winner later superseded, an identical replay, a conflicting remap, ambiguous aliases, repeated extraction, and provenance preservation.
+
+Completion evidence lives under `toolkits/buildos/testdata/persona-pilot/review/`, `toolkits/buildos/testdata/persona-pilot/manifests/`, and `toolkits/buildos/testdata/persona-pilot/root/`. The review package is explicitly proposal-only, records reviewer decisions, and leaves the ambiguous group unresolved.
 
 ### Acceptance criteria
 
@@ -41,12 +43,14 @@ The pre-upgrade prompt may prepare evidence and proposed mappings, but it remain
 
 ### Tasks
 
-- [ ] t5: Inventory installed binary paths, wrapper behavior, installed versions, and the actual adopter-owned data root without modifying them.
-- [ ] t6: Build `buildos` into a staging directory from a separate source checkout and record the source revision, explicit binary path, and binary checksum without replacing the still-separate installed binaries.
-- [ ] t7: Create and identify a recoverable snapshot or copied working root containing canonical JSONL and current indexes.
-- [ ] t8: Invoke the staged `buildos` binary by explicit path against the copy in compatibility and dry-run modes, then review warnings, chains, planned row changes, and the projected index diff.
-- [ ] t9: Apply only the approved persona manifest to the copy, rebuild the index, run strict validation and representative lookups, and record validation outputs and mapping-manifest checksum.
-- [ ] t10: Restore from the untouched snapshot or recreate the copied root and verify that rollback returns the pre-migration identity and index state.
+- [x] t5: Inventory installed binary paths, wrapper behavior, available version or help output, and whether an operator-authoritative adopter-owned data root is available without modifying them; record an unavailable root rather than guessing one.
+- [x] t6: Build `buildos` into a staging directory from a separate source checkout and record the source revision, explicit binary path, and binary checksum without replacing the still-separate installed binaries.
+- [x] t7: Create and identify a recoverable snapshot or copied working root containing canonical JSONL and current indexes.
+- [x] t8: Invoke the staged `buildos` binary by explicit path against the copy in compatibility and dry-run modes, then review warnings, chains, planned row changes, and the projected index diff.
+- [x] t9: Apply only the approved persona manifest to the copy, rebuild the index, run strict validation and representative lookups, and record validation outputs and mapping-manifest checksum.
+- [x] t10: Restore from the untouched snapshot or recreate the copied root and verify that rollback returns the pre-migration identity and index state.
+
+Completion evidence uses the staged binary by explicit path against a disposable copy of `toolkits/buildos/testdata/persona-pilot/root/`. The inventory confirmed the unified binary was absent from `PATH`, the three existing legacy commands remained separately installed and responsive, and the actual adopter-owned root was unavailable. That safe stop is recorded rather than replaced with an invented live path. The copied-root rehearsal and `toolkits/buildos/internal/cli/persona_rehearsal_test.go` prove preview, apply, strict validation, deterministic replay, conflict refusal, injected failure, and byte-identical rollback without changing installed binaries or live data.
 
 ### Acceptance criteria
 

@@ -178,6 +178,8 @@ The operator must:
 The source checkout's `system/` scaffold must never be copied wholesale over an installed or adopter-owned root.
 Old tooling remains read-only for redirect-bearing datasets until cutover is complete.
 
+W1 R4 P3 proves this procedure against the sanitized fixture root at `toolkits/buildos/testdata/persona-pilot/root/`, not against adopter-owned production data. The fixture review package records inventory, proposal-only mappings, explicit reviewer decisions, an unresolved ambiguous group, approved manifests, and checksums under `toolkits/buildos/testdata/persona-pilot/review/`. `toolkits/buildos/internal/cli/persona_rehearsal_test.go` proves compatibility assessment, non-mutating preview, approved apply, strict validation, representative resolution, byte-stable replay, conflict refusal, injected write failure, and exact snapshot restoration. No installed binary or live record was changed, and the rehearsal grants neither binary-routing approval nor live-data-migration approval.
+
 ### Acceptance requirements
 
 - One-hop and multi-hop redirects resolve to one active canonical record without erasing the losing rows.
@@ -210,6 +212,8 @@ Old tooling remains read-only for redirect-bearing datasets until cutover is com
   interrupted or unwritable canonical writes,
   stale indexes,
   and a successful canonical write followed by an index rebuild failure.
+
+The P3 copied-root acceptance requirements are satisfied by the sanitized persona pilot and the staged-binary rehearsal evidence. The actual adopter-owned root was unavailable during this phase, so these requirements remain a prerequisite for any later live migration rather than evidence that a live migration occurred.
 
 ### Change Notes
 
@@ -352,3 +356,5 @@ the index may be deleted and rebuilt.
 - [PRD 15 Revise Extraction Draft Lifecycle](./15-revise-extraction-draft-lifecycle.md)
 - [PRD 16 Revise Toolkit Ownership Boundaries](./16-revise-toolkit-ownership-boundaries.md)
 - [PRD 18 Revise Unified BuildOS CLI and Distribution](./18-revise-unified-buildos-cli-and-distribution.md)
+- `toolkits/buildos/testdata/persona-pilot/`
+- `toolkits/buildos/internal/cli/persona_rehearsal_test.go`

@@ -1,0 +1,7 @@
+{"reference_id":"REF-001","source":"root/.os/data/requirements.jsonl#REQ-001","field":"related","requested_id":"PER-001","terminal_id":"PER-001","provenance":"canonical-current-reference","sanitized":true}
+{"reference_id":"REF-002","source":"root/.os/data/capabilities.jsonl#CAP-001","field":"related","requested_id":"PER-002","terminal_id":"PER-001","provenance":"historical-authored-reference-preserved","sanitized":true}
+{"reference_id":"REF-003","source":"root/.os/data/capabilities.jsonl#CAP-001","field":"related","requested_id":"PER-003","terminal_id":"PER-001","provenance":"historical-authored-reference-preserved","sanitized":true}
+{"reference_id":"REF-004","source":"root/.os/data/extractions.jsonl#EXT-001","field":"minted","requested_id":"PER-004","terminal_id":"PER-004","provenance":"event-time-outcome-before-consolidation","sanitized":true}
+{"reference_id":"REF-005","source":"root/.os/data/extractions.jsonl#EXT-002","field":"referenced","requested_id":"PER-001","terminal_id":"PER-001","provenance":"exact-approved-alias-match","sanitized":true}
+{"reference_id":"REF-006","source":"root/.os/data/extractions.jsonl#EXT-003","field":"referenced","requested_id":"PER-001","terminal_id":"PER-001","provenance":"exact-persona-v1-match","sanitized":true}
+{"reference_id":"REF-007","source":"root/.os/data/extractions.jsonl#EXT-004","field":"updated","requested_id":"PER-001","terminal_id":"PER-001","provenance":"deliberate-reviewed-canonical-edit","sanitized":true}

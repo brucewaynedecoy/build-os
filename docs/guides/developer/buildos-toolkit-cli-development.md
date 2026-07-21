@@ -41,6 +41,7 @@ related:
   - "../../assets/history/2026-06-04-w1-r0-p5-playbooks.md"
   - "../../assets/history/2026-06-05-w1-r0-p6-discovery-runs-qualification.md"
   - "../../assets/history/2026-06-05-w1-r0-p7-qualified-finding-design-promotion.md"
+  - "../../assets/history/2026-07-21-w1-r4-p3-reviewed-persona-consolidation-and-copied-root-rehearsal.md"
   - "../../../toolkits/README.md"
   - "../../../toolkits/buildos-intake/README.md"
   - "../../../toolkits/buildos-discovery/README.md"
@@ -156,6 +157,23 @@ signed archives,
 automatic executable replacement,
 or project lifecycle commands.
 Those belong to W1 R5 distribution work and W2 lifecycle work respectively.
+
+## W1 R4 P3 Copied-Root Reference Rehearsal
+
+P3 proves the source-build boundary without replacing any installed command or touching live adopter data. The coordinator built `<staging-dir>/buildos` from revision `ce5aafb62bcd233a4671ca0d6eb4fe39ea38dca5`, injected that revision into the development build, and recorded binary SHA-256 `f28a1b83ba20065a39035f38fec045b04863212ee5173e4a019a1d8a04596946`. The binary reported version `dev` and the injected source revision.
+
+The inventory found no `buildos` command on `PATH`. The existing `buildos-intake`, `buildos-discovery`, and `buildos-design` commands remained under `<user-home>/.local/bin/`; each `help` command exited successfully. The three shipped wrappers inspected in the checkout remained executable. The actual adopter-owned root was unavailable, so the rehearsal used a disposable copy of `toolkits/buildos/testdata/persona-pilot/root/` and did not invent or infer a live path.
+
+The sanitized review package and manifests live under `toolkits/buildos/testdata/persona-pilot/`. Maintainers can reproduce the code-level rehearsal with:
+
+```sh
+cd toolkits/buildos
+go test ./internal/cli -run TestPersonaCopiedRootRehearsal -count=1
+go test ./...
+go test -race ./...
+```
+
+The test copies the fixture root into a temporary directory, then proves compatibility validation, dry-run byte preservation, approved apply, strict validation, representative multi-hop resolution, preservation of provenance and unknown fields, deterministic index rebuilding, byte-stable replay, fail-closed conflicting remap, injected canonical-write failure, and byte-identical rollback. A passing test is evidence for the sanitized reference workflow only. It is not approval to change installed binary routing or live data.
 
 ## buildos-intake Reference
 
@@ -316,6 +334,8 @@ After edits, refresh the project documentation and code indexes when the jdocmun
 
 For entity consolidation, do not substitute the Python validator or hand-edited JSON for `buildos entities`. The Python checks are not whole-graph or redirect-resolution certification.
 
+For the P3 persona rehearsal, run the focused integration test, the full module suite, and the race-enabled suite shown above. Confirm the approved-manifest, baseline persona, and baseline index checksums against `toolkits/buildos/testdata/persona-pilot/review/checksums.txt` before treating a copied-root result as comparable evidence.
+
 ## Troubleshooting
 
 If a wrapper starts doing parsing, conversion, indexing, or validation logic, move that logic into the toolkit and leave the script as a call-through.
@@ -333,6 +353,12 @@ If draft, reviewed, or archived playbooks appear under `runnable_playbooks`, fix
 If a proposed command does not fit the toolkit's README and local `AGENTS.md`, stop and route the work through [PRD 16](../../prd/16-revise-toolkit-ownership-boundaries.md) instead of broadening the current toolkit by convenience.
 
 If enterprise distribution concerns block a rollout, track them against R-003 in [03 Open Questions and Risk Register](../../prd/03-open-questions-and-risk-register.md) instead of hiding them inside a toolkit README.
+
+If `buildos` is absent from `PATH`, that is expected during W1 R4. Invoke the staged binary by its explicit path. Do not create a symlink or replace a legacy command as part of a copied-root rehearsal.
+
+If the actual adopter-owned root is unavailable or ambiguous, stop at the sanitized fixture rehearsal. Record the missing live authority and do not substitute the source scaffold or a guessed installed path.
+
+If a staged binary or manifest checksum differs from the recorded review package, rebuild or re-review before applying. Do not continue merely because the command still runs.
 
 ## Related Resources
 
@@ -368,5 +394,4 @@ If enterprise distribution concerns block a rollout, track them against R-003 in
 ## Future Coverage
 
 - Blocked by: W1 R5 package distribution. Update when `buildos 0.1.0` has verified signed archives, checksums, SBOMs, provenance, Homebrew install/upgrade/uninstall, and legacy aliases. Guide change: replace multi-tool installation guidance with the verified unified release procedure.
-- Blocked by: W1 R4 P3 source-build migration rehearsal. Update when: the persona pilot proves snapshot restore and side-by-side binary isolation. Guide change: add the tested packaging, checksum, binary-routing, copied-root, and separate-approval procedure.
 - Blocked by: W2 project installation lifecycle. Update when: manifest-backed setup, update, backup, remove, and uninstall behavior is implemented. Guide change: replace manual project synchronization notes with the verified lifecycle commands while preserving rollback guidance.

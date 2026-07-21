@@ -20,6 +20,7 @@ related:
   - "../../assets/prompts/pre-upgrade-entity-consolidation-audit.prompt.md"
   - "../../designs/2026-07-21-entity-consolidation-and-canonical-resolution.md"
   - "../../prd/17-enhance-entity-consolidation-and-canonical-resolution.md"
+  - "../../assets/history/2026-07-21-w1-r4-p3-reviewed-persona-consolidation-and-copied-root-rehearsal.md"
   - "../../prd/18-revise-unified-buildos-cli-and-distribution.md"
 ---
 
@@ -177,9 +178,41 @@ The implemented command family is `buildos entities resolve`,
 and `rebuild-index`.
 These commands are source-build-only in W1 R4 and must be invoked by explicit staged path against a copy first.
 
+## What the P3 Rehearsal Proved
+
+Build OS maintainers completed a reference rehearsal with a source-built binary and a disposable copy of sanitized persona fixtures. They did not change an installed binary or live adopter data. The actual adopter-owned root was unavailable, so the rehearsal stopped at the safe fixture boundary.
+
+The reference build reported version `dev`, carried source revision `ce5aafb62bcd233a4671ca0d6eb4fe39ea38dca5`, and had SHA-256 `f28a1b83ba20065a39035f38fec045b04863212ee5173e4a019a1d8a04596946`. The approved example manifest had SHA-256 `db5642e06bb950fb56e3c917305ab5540b75734cad161efb62640860aeca55f2`. The untouched fixture, snapshot, and working copy shared tree SHA-256 `a24550f9329324372b4533d2d8a0b8086198b423fd45ede0d06523686a65c326`; after apply, the copied tree had SHA-256 `f8a716a5b54c205cc35375b0123328c986832c71b28038cfba26aeffd67543dc`; recreating the copy from the snapshot restored the baseline tree hash exactly. These values identify the reference evidence only; your locally built binary, reviewed manifest, and copied root need their own recorded checksums.
+
+The rehearsal proved that:
+
+- compatibility validation can assess the copy without changing it;
+- preview leaves persona and index bytes unchanged;
+- only explicitly approved persona mappings are applied;
+- an ambiguous persona remains active and resolves to itself;
+- strict validation and representative lookups succeed after apply;
+- old evidence, anchors, and extra fields remain on losing rows;
+- an identical apply is byte-stable;
+- a conflicting remap fails without writing;
+- an injected write failure leaves canonical data unchanged; and
+- restoring the snapshot returns persona and index bytes exactly to their baseline state.
+
+Before asking for any live-data approval, save a review packet containing:
+
+1. The source revision, staged binary version, and staged binary checksum.
+2. The copied-root or snapshot identity and baseline data/index checksums.
+3. The reviewed manifest and its checksum.
+4. The dry-run plan and every warning.
+5. Strict validation, index-check, and representative lookup results.
+6. The rollback location and proof that restoration worked.
+
+Keep the binary-routing approval separate from the live-data-migration approval. A successful copy rehearsal does not grant either one.
+
 ## Rollback and Safe Stops
 
 Stop without writing when the data root is unclear, the snapshot cannot be restored, a target is missing, two records have different entity types, a chain loops, a chain ends at an inactive record, a proposed mapping conflicts with an earlier decision, or an identity match is ambiguous.
+
+To rehearse rollback, restore the entire copied `.os/data/` and `.os/indexes/` state from the untouched snapshot, compare their checksums with the recorded baseline, then rerun compatibility validation. If any baseline checksum differs, the rollback is not proven and live migration must remain blocked.
 
 If a future live migration fails, stop using redirect-unaware tools, preserve the failure output, and follow the verified rollback procedure from the copied-root rehearsal. Do not delete losing rows or hand-edit the generated resolution index.
 
@@ -192,6 +225,10 @@ If a coding agent cannot distinguish the source checkout from the installed file
 If many personas look similar, ask reviewers to compare source anchors and intended use. Similar names or descriptions are not enough for an automatic merge.
 
 If an old reference points to a loser, leave the historical reference unchanged. The resolver preserves that requested ID while reporting the canonical winner and chain.
+
+If the real installed root is unavailable, do not use the source checkout's `system/` directory as a substitute. Continue only with the sanitized fixture rehearsal and record that the live step remains unapproved.
+
+If a checksum differs from the approved review packet, stop before `--apply`. Confirm whether the binary, data copy, or manifest changed and obtain a fresh review when needed.
 
 ## FAQ
 
@@ -228,7 +265,6 @@ No. Building produces a separate binary. Replacing installed binary routing and 
 
 ## Future Coverage
 
-- Blocked by: W1 R4 P3 copied-root persona rehearsal. Update when: the persona pilot and restore test pass. Guide change: add a complete sanitized operator walkthrough, review checklist, expected warnings, and rollback steps.
 - Blocked by: W1 R4 P4 extraction and consumer integration. Update when: redirect-aware reads and canonical writes are available. Guide change: show how old references appear, how new references are stored, and how repeated persona extraction reuses a reviewed canonical record.
 - Blocked by: W1 R5 package distribution. Update when: a verified `buildos 0.1.0` package and legacy command aliases are available. Guide change: replace source-build-only setup with package installation and upgrade steps.
 - Blocked by: W2 project lifecycle. Update when: manifest-backed setup, update, backup, removal, and uninstall commands are available. Guide change: add the automated in-place project lifecycle path while keeping separate data-migration approvals.

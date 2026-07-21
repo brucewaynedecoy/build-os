@@ -23,6 +23,7 @@ related:
   - "../../plans/2026-07-21-w1-r4-entity-consolidation-and-canonical-resolution/00-overview.md"
   - "../../work/2026-07-21-w1-r4-entity-consolidation-and-canonical-resolution/00-index.md"
   - "../../assets/prompts/pre-upgrade-entity-consolidation-audit.prompt.md"
+  - "../../assets/history/2026-07-21-w1-r4-p3-reviewed-persona-consolidation-and-copied-root-rehearsal.md"
   - "../../../system/.os/contracts/entity-records-contract.md"
   - "../../../system/.os/contracts/entity-consolidation-contract.md"
   - "../../../system/.os/contracts/persona-identity-contract.md"
@@ -81,6 +82,34 @@ The authority boundaries are:
 
 The exact command sequence appears in the [user guide](../user/entities-consolidation-curate-and-resolve-records.md#current-source-build-workflow). `validate_config.py` remains limited to config, frontmatter, and basic row hygiene; it does not replace graph validation or certify a redirect migration.
 
+## Executed P3 Reference Rehearsal
+
+P3 executed the workflow against a disposable copy of the sanitized persona pilot at `toolkits/buildos/testdata/persona-pilot/root/`. The actual adopter-owned root was unavailable. That absence was treated as a safe stop: the rehearsal did not guess a live root, copy the source scaffold over an installation, or claim that production data was tested.
+
+The source-build inventory recorded:
+
+| Evidence | Recorded value |
+| --- | --- |
+| Source revision | `ce5aafb62bcd233a4671ca0d6eb4fe39ea38dca5` |
+| Staged version | `dev` |
+| Staged source revision | `ce5aafb62bcd233a4671ca0d6eb4fe39ea38dca5` |
+| Staged binary SHA-256 | `f28a1b83ba20065a39035f38fec045b04863212ee5173e4a019a1d8a04596946` |
+| Unified command on `PATH` | Absent, as expected for W1 R4 |
+| Legacy commands | `buildos-intake`, `buildos-discovery`, and `buildos-design` remained separate; each `help` exited `0` |
+| Approved manifest SHA-256 | `db5642e06bb950fb56e3c917305ab5540b75734cad161efb62640860aeca55f2` |
+| Replay manifest SHA-256 | `848530b32e2752d5653e21ffc579c879375858fa45a8b27645099f9ca23e6fd8` |
+| Conflict manifest SHA-256 | `1fba32730be92a18248b5b4146b617efd926b42b8712697f4a661184e87acaa5` |
+| Baseline fixture, snapshot, and working-copy tree SHA-256 | `a24550f9329324372b4533d2d8a0b8086198b423fd45ede0d06523686a65c326` |
+| Baseline personas SHA-256 | `7c81bb787b1e415be241c73b747009df1f645da5e1bc493c47c072750e1cd521` |
+| Baseline index SHA-256 | `941c43d958ae76c8aa3b5b6775883675dc230f8776c806ee4a9afcb49c5061e9` |
+| Applied copied-root tree SHA-256 | `f8a716a5b54c205cc35375b0123328c986832c71b28038cfba26aeffd67543dc` |
+| Applied personas SHA-256 | `f61575c1a8751c8df4b7bb3cae4bbf1e0d7f37eb98dc50072d09718f0d8699c3` |
+| Applied index SHA-256 | `afe1935e3ed50c416498f912bd09150a3f8fe625a8f6c1007d3749d3198853cd` |
+
+The focused rehearsal, full Go suite, and race-enabled suite passed. The integration test copies the fixture root into a temporary directory and proves compatibility validation, a non-mutating dry run, approved apply, strict validation, representative one-hop and multi-hop resolution, preservation of evidence and unknown fields, deterministic rebuilding, identical replay, fail-closed conflicting remap, injected canonical-write failure, and byte-identical snapshot restoration.
+
+For a real adopter rehearsal, repeat the same sequence only after an operator supplies the authoritative installed root and a recoverable copy. Record new source, binary, manifest, snapshot, and output checksums; the fixture values above are comparison evidence, not values to reuse for live data.
+
 ## Redirect and Resolver Contract
 
 A losing record governed by the P1 contract retains its original content and uses a reviewed redirect containing `target_id`, `kind`, `decided_at`, `decided_by`, `reason`, and `evidence_refs`. The allowed kinds are `duplicate`, `consolidated`, and `replaced`. This is an authoritative data contract, not permission to write redirect-bearing rows with pre-P2 tooling.
@@ -135,7 +164,7 @@ Human-readable output is the default. `--json` emits the shared envelope with `o
 
 ## Source-Build Rehearsal Boundary
 
-When the implementation exists, maintainers must first build `buildos` into a staging directory from a separate source checkout and invoke that exact binary path against a copied adopter root. Record the reported version, source revision, binary checksum, copied-root or snapshot identity, proposal-manifest checksum, validation results, index diff, and rollback location.
+Maintainers must first build `buildos` into a staging directory from a separate source checkout and invoke that exact binary path against a copied adopter root. Record the reported version, source revision, binary checksum, copied-root or snapshot identity, proposal-manifest checksum, validation results, index diff, and rollback location.
 
 Treat these as separate approvals:
 
@@ -156,6 +185,10 @@ If the planned index differs between identical rebuilds, treat the builder as no
 
 If a graph error is found after a canonical write, preserve the written JSONL and follow the tool's recovery output. Do not improvise a bulk rewrite or delete losing records.
 
+If the actual adopter-owned root is unavailable, stop after the sanitized fixture rehearsal. A source checkout's `system/` directory is not proof of the installed root.
+
+If any recorded checksum changes unexpectedly, stop before apply. Rebuild the staged binary or repeat proposal review, then record the new evidence deliberately.
+
 ## Related Resources
 
 - [Entity Consolidation and Canonical Resolution PRD](../../prd/17-enhance-entity-consolidation-and-canonical-resolution.md)
@@ -174,7 +207,6 @@ If a graph error is found after a canonical write, preserve the written JSONL an
 
 ## Future Coverage
 
-- Blocked by: W1 R4 P3 copied-root persona pilot. Update when: the approved persona fixture set and rollback rehearsal pass. Guide change: replace the contract-shaped rehearsal outline with an executed maintainer runbook and sanitized evidence examples.
 - Blocked by: W1 R4 P4 consumer and producer integration. Update when: redirect-aware reads and terminal-canonical writes pass integration tests. Guide change: list each integration point, its original-ID behavior, its canonical-ID behavior, and its failure mode.
 - Blocked by: W1 R5 distribution. Update when: the unified command migration, legacy aliases, archives, checksums, SBOMs, signing, and Homebrew workflows pass. Guide change: add package installation and compatibility-alias maintenance, and remove source-build-only caveats where verified.
 - Blocked by: W2 lifecycle implementation. Update when: manifest-backed project setup, update, backup, removal, and machine uninstall behavior passes. Guide change: replace manual synchronization guidance with the verified in-place lifecycle procedure.

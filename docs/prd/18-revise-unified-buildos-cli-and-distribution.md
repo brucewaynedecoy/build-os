@@ -147,7 +147,7 @@ W1 R4 P2 implements this source-build-only seed, including the shared command en
 
 W1 R4 is source-build-only. It does not replace existing installed binaries, publish packages, mutate live adopter data, or absorb the intake, discovery, and design implementations into the unified module.
 
-W1 R4 P1 froze this command, flag, output-envelope, version-metadata, exit-code, and temporary package-sharing contract in authoritative documentation and normative examples. P2 implements and tests the source-built `buildos` executable, entity graph engine, index, and mutation surface. P3 still owns the copied-root persona rehearsal and rollback evidence.
+W1 R4 P1 froze this command, flag, output-envelope, version-metadata, exit-code, and temporary package-sharing contract in authoritative documentation and normative examples. P2 implements and tests the source-built `buildos` executable, entity graph engine, index, and mutation surface. P3 proves the reviewed persona workflow, staged-binary isolation, copied-root apply, strict validation, deterministic replay, conflict refusal, and rollback against sanitized fixtures. The actual adopter-owned root was unavailable, so P3 does not claim live migration or authorize binary replacement. P4 owns canonical reference behavior across existing discovery, design, and extraction paths.
 
 ### W1 R5 consolidation and compatibility contract
 
@@ -231,3 +231,5 @@ Code anchors:
 - [Entity consolidation contract](../../system/.os/contracts/entity-consolidation-contract.md)
 - [Persona identity contract](../../system/.os/contracts/persona-identity-contract.md)
 - [Extraction contract](../../system/.os/contracts/extraction-contract.md)
+- `toolkits/buildos/testdata/persona-pilot/`
+- `toolkits/buildos/internal/cli/persona_rehearsal_test.go`
