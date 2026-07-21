@@ -21,10 +21,10 @@ This phase fixes the executable contract for redirect-bearing rows, terminal res
 
 ### Tasks
 
-- [ ] t1: Extend `system/.os/contracts/entity-records-contract.md` with the required `redirect` object, allowed kinds, field meanings, and lifecycle rules for `draft`, `active`, `superseded`, and `archived` rows.
-- [ ] t2: Specify graph invariants for existing targets, non-self targets, same-type edges, acyclic chains, active terminals, preserved losing-record fields, derived reverse membership, and non-canonical `related` edges.
-- [ ] t3: Specify idempotent replay and reviewed remap-conflict behavior so an identical mapping is safe and a different target cannot overwrite an existing decision implicitly.
-- [ ] t4: Add contract examples and fixtures for valid redirects and each invalid graph condition across every governed entity type.
+- [x] t1: Extend `system/.os/contracts/entity-records-contract.md` with the required `redirect` object, allowed kinds, field meanings, and lifecycle rules for `draft`, `active`, `superseded`, and `archived` rows.
+- [x] t2: Specify graph invariants for existing targets, non-self targets, same-type edges, acyclic chains, active terminals, preserved losing-record fields, derived reverse membership, and non-canonical `related` edges.
+- [x] t3: Specify idempotent replay and reviewed remap-conflict behavior so an identical mapping is safe and a different target cannot overwrite an existing decision implicitly.
+- [x] t4: Add contract examples and fixtures for valid redirects and each invalid graph condition across every governed entity type.
 
 ### Acceptance criteria
 
@@ -42,12 +42,12 @@ This phase fixes the executable contract for redirect-bearing rows, terminal res
 
 ### Tasks
 
-- [ ] t5: Define the stable resolver result containing `requested_id`, `canonical_id`, `chain`, and `resolved`, including zero-hop and multi-hop semantics.
-- [ ] t6: Define `system/.os/indexes/entity-resolution.json` as a rebuildable canonical-JSONL projection with versioned, lexically ordered `canonical_by_id` and `members_by_canonical` maps.
-- [ ] t7: Extend extraction contracts so minted-output metadata distinguishes a new entity from a reference or update to an existing canonical entity.
-- [ ] t8: Specify compatibility warnings for legacy superseded rows without redirects and strict failures for all graph, duplicate-ID, remap, and stale-index violations.
-- [ ] t9: Reconcile contract links and routers so `references.json` remains the converted-source intake index and `buildos entities` owns entity-graph behavior without changing PRD 07 semantics.
-- [ ] t10: Freeze the unified root commands, domain command names, common flags, result envelope, version metadata, exit-code policy, and temporary `pkg/entities` package boundary required by PRD 18.
+- [x] t5: Define the stable resolver result containing `requested_id`, `canonical_id`, `chain`, and `resolved`, including zero-hop and multi-hop semantics.
+- [x] t6: Define `system/.os/indexes/entity-resolution.json` as a rebuildable canonical-JSONL projection with versioned, lexically ordered `canonical_by_id` and `members_by_canonical` maps.
+- [x] t7: Extend extraction contracts so minted-output metadata distinguishes a new entity from a reference or update to an existing canonical entity.
+- [x] t8: Specify compatibility warnings for legacy superseded rows without redirects and strict failures for all graph, duplicate-ID, remap, and stale-index violations.
+- [x] t9: Reconcile contract links and routers so `references.json` remains the converted-source intake index and `buildos entities` owns entity-graph behavior without changing PRD 07 semantics.
+- [x] t10: Freeze the unified root commands, domain command names, common flags, result envelope, version metadata, exit-code policy, and temporary `pkg/entities` package boundary required by PRD 18.
 
 ### Acceptance criteria
 

@@ -1,0 +1,12 @@
+{
+  "id": "EXT-002",
+  "type": "extraction",
+  "status": "draft",
+  "source_anchor": "system/assets/sample/personas.md#known-support-lead",
+  "outcome_contract": "extraction-outcomes-v1",
+  "minted": [],
+  "referenced": ["PER-003"],
+  "updated": [],
+  "extracted_by": "fixture",
+  "extracted_at": "2026-07-21T12:01:00Z"
+}

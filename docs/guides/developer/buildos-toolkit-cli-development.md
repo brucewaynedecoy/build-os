@@ -2,7 +2,7 @@
 title: "Build OS Toolkit CLI Development"
 path: "buildos/toolkit/cli"
 status: draft
-version: "2026-06-04"
+version: "2026-07-21"
 order: 100
 tags:
   - toolkits
@@ -30,6 +30,8 @@ related:
   - "../../../system/.os/contracts/playbook-contract.md"
   - "../../../system/.os/contracts/run-record-contract.md"
   - "../../../system/.os/contracts/finding-contract.md"
+  - "../../../system/.os/contracts/entity-consolidation-contract.md"
+  - "../../../system/.os/contracts/persona-identity-contract.md"
   - "../../../system/.os/indexes/AGENTS.md"
   - "../../../system/playbooks/administrative/manual-intake-conversion.md"
   - "../../work/2026-06-03-w1-r0-build-os-baseline/04-data-and-extraction.md"
@@ -119,9 +121,11 @@ PRD 17 assigns the graph contract and PRD 18 assigns its public surface to `buil
 Until W1 R4 implements and validates that seed,
 entity cleanup remains audit-and-proposal-only.
 
-## Planned `buildos entities` Boundary
+## W1 R4 P1 `buildos entities` Boundary
 
-`buildos entities` will own resolution, whole-graph validation, reviewed consolidation, and the derived entity-resolution index. The accepted command families are `consolidate`, `resolve`, `validate`, and `rebuild-index`. Their planned flags and shared result envelope are contractually frozen, but they remain non-runnable guidance until W1 R4 tests the implementation.
+`buildos entities` owns the contracted domain for resolution, whole-graph validation, reviewed consolidation, and the derived entity-resolution index. P1 freezes the command families `consolidate`, `resolve`, `validate`, and `rebuild-index`, plus their flags, result envelope, version metadata, and exit-code policy. These contracts and their fixtures are reviewable source artifacts, but the commands remain non-runnable until P2 implements and tests the unified CLI seed.
+
+Maintainers should read the entity records, entity consolidation, persona identity, and extraction contracts together before implementing this domain. The contracts freeze immediate-successor redirects, version 1 reviewed manifests and derived indexes, compatibility and strict behavior, exact persona-only identity reuse, and `minted`/`referenced`/`updated` extraction outcomes. P2 code must implement those contracts rather than inventing a parallel schema in Go.
 
 W1 R4 temporarily exposes `toolkits/buildos/pkg/entities` so the current discovery and design modules can import the same resolver through explicit local module dependencies.
 Consumers must not shell out to `buildos entities` or copy redirect traversal.
@@ -338,6 +342,8 @@ If enterprise distribution concerns block a rollout, track them against R-003 in
 - [Playbook contract](../../../system/.os/contracts/playbook-contract.md)
 - [Run record contract](../../../system/.os/contracts/run-record-contract.md)
 - [Finding contract](../../../system/.os/contracts/finding-contract.md)
+- [Entity consolidation contract](../../../system/.os/contracts/entity-consolidation-contract.md)
+- [Persona identity contract](../../../system/.os/contracts/persona-identity-contract.md)
 - [Toolkits root README](../../../toolkits/README.md)
 - [Toolkits router](../../../toolkits/AGENTS.md)
 - [buildos-discovery README](../../../toolkits/buildos-discovery/README.md)

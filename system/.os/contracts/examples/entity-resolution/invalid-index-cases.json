@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "source_fixture": "valid-multi-hop.jsonl",
+  "canonical_index": "valid-index.json",
+  "cases": [
+    {
+      "name": "stale-index",
+      "index": {
+        "version": 1,
+        "canonical_by_id": {
+          "PER-102": "PER-101",
+          "PER-103": "PER-102"
+        },
+        "members_by_canonical": {
+          "PER-101": [
+            "PER-102"
+          ],
+          "PER-102": [
+            "PER-103"
+          ]
+        }
+      }
+    },
+    {
+      "name": "non-reproducible-index",
+      "note": "The mappings are semantically current but keys and member values are deliberately not in lexical order.",
+      "index": {
+        "version": 1,
+        "canonical_by_id": {
+          "PER-103": "PER-101",
+          "PER-102": "PER-101"
+        },
+        "members_by_canonical": {
+          "PER-101": [
+            "PER-103",
+            "PER-102"
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -120,6 +120,15 @@ Entity-producing workflows apply matching in this order:
    They never create redirects or mutate canonical records automatically.
 
 Persona identity is the first adapter and pilot.
+P1 defines the optional `persona-v1` identity key and reviewer-approved alias list for personas only.
+Comparison trims and collapses ASCII whitespace and lowercases ASCII letters;
+Unicode normalization,
+punctuation removal,
+stemming,
+synonym expansion,
+token reordering,
+fuzzy matching,
+and semantic matching remain review-only.
 Requirements,
 capabilities,
 findings,
@@ -128,6 +137,10 @@ results,
 runs,
 and extractions are enabled one type at a time after their identity rules are designed and validated.
 Extraction metadata distinguishes a newly minted ID from an update or reference to an existing canonical ID.
+New outcome-aware rows use `extraction-outcomes-v1` with disjoint `minted`,
+`referenced`,
+and `updated` terminal-at-event ID lists.
+Legacy rows retain their earlier minted-or-updated provenance and are not guessed or rewritten.
 
 ### Side-by-side source-build adoption
 
@@ -263,6 +276,19 @@ The stable resolver result contains:
 }
 ```
 
+### Reviewed consolidation manifest
+
+The P1 manifest contract uses UTF-8 JSON with integer `version: 1` and a non-empty `mappings` list.
+Each mapping names one `source_id`,
+its immediate `target_id`,
+and the redirect decision fields `kind`,
+`decided_at`,
+`decided_by`,
+`reason`,
+and `evidence_refs`.
+The manifest is root-independent reviewed input rather than canonical authority;
+authority changes only after a future validated apply operation atomically updates the losing row.
+
 ### Derived index
 
 `system/.os/indexes/entity-resolution.json` is a generated projection of all governed entity JSONL datasets.
@@ -312,6 +338,8 @@ the index may be deleted and rebuilt.
 - [Entity consolidation and canonical resolution design](../designs/2026-07-21-entity-consolidation-and-canonical-resolution.md)
 - [W1 R4 entity consolidation and canonical resolution plan](../plans/2026-07-21-w1-r4-entity-consolidation-and-canonical-resolution/00-overview.md)
 - [Entity records contract](../../system/.os/contracts/entity-records-contract.md)
+- [Entity consolidation contract](../../system/.os/contracts/entity-consolidation-contract.md)
+- [Persona identity contract](../../system/.os/contracts/persona-identity-contract.md)
 - [Extraction contract](../../system/.os/contracts/extraction-contract.md)
 - [Pre-upgrade entity consolidation audit prompt](../assets/prompts/pre-upgrade-entity-consolidation-audit.prompt.md)
 - [PRD 08 Data Layer and Extraction](./08-data-and-extraction.md)

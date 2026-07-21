@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "mappings": [
+    {
+      "source_id": "PER-102",
+      "target_id": "PER-101",
+      "kind": "replaced",
+      "decided_at": "2026-07-21T16:00:00Z",
+      "decided_by": "fixture-reviewer",
+      "reason": "The approved administrator persona replaced the intermediate winner.",
+      "evidence_refs": [
+        "sources/personas.md#winner-review"
+      ]
+    },
+    {
+      "source_id": "PER-103",
+      "target_id": "PER-102",
+      "kind": "duplicate",
+      "decided_at": "2026-07-20T16:00:00Z",
+      "decided_by": "fixture-reviewer",
+      "reason": "The records represented the same administrator identity.",
+      "evidence_refs": [
+        "sources/personas.md#duplicate-review"
+      ]
+    }
+  ]
+}

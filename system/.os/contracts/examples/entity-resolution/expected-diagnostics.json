@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "fixture": "invalid-graph-cases.json#legacy-missing-redirect",
+      "code": "legacy_missing_redirect",
+      "compat": "warning",
+      "strict": "error"
+    },
+    {
+      "fixture": "invalid-graph-cases.json#missing-target",
+      "code": "redirect_missing_target",
+      "compat": "error",
+      "strict": "error"
+    },
+    {
+      "fixture": "invalid-graph-cases.json#self-redirect",
+      "code": "redirect_self",
+      "compat": "error",
+      "strict": "error"
+    },
+    {
+      "fixture": "invalid-graph-cases.json#cross-type",
+      "code": "redirect_cross_type",
+      "compat": "error",
+      "strict": "error"
+    },
+    {
+      "fixture": "invalid-graph-cases.json#cycle",
+      "code": "redirect_cycle",
+      "compat": "error",
+      "strict": "error"
+    },
+    {
+      "fixture": "invalid-graph-cases.json#inactive-terminal",
+      "code": "redirect_inactive_terminal",
+      "compat": "error",
+      "strict": "error"
+    },
+    {
+      "fixture": "invalid-graph-cases.json#illegal-redirect-status",
+      "code": "redirect_illegal_status",
+      "compat": "error",
+      "strict": "error"
+    },
+    {
+      "fixture": "invalid-graph-cases.json#duplicate-ids",
+      "code": "duplicate_id",
+      "compat": "error",
+      "strict": "error"
+    },
+    {
+      "fixture": "invalid-graph-cases.json#remap-conflict",
+      "code": "redirect_remap_conflict",
+      "compat": "error",
+      "strict": "error"
+    },
+    {
+      "fixture": "invalid-index-cases.json#stale-index",
+      "code": "index_stale",
+      "compat": "warning",
+      "strict": "error"
+    },
+    {
+      "fixture": "invalid-index-cases.json#non-reproducible-index",
+      "code": "index_non_reproducible",
+      "compat": "warning",
+      "strict": "error"
+    }
+  ]
+}

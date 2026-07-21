@@ -145,6 +145,8 @@ The entity commands retain PRD 17's explicit-root, dry-run-by-default, compatibi
 
 W1 R4 is source-build-only. It does not replace existing installed binaries, publish packages, mutate live adopter data, or absorb the intake, discovery, and design implementations into the unified module.
 
+W1 R4 P1 freezes this command, flag, output-envelope, version-metadata, exit-code, and temporary package-sharing contract in authoritative documentation and normative examples. The `buildos` executable and entity graph engine are P2 work; P1 does not make these commands runnable.
+
 ### W1 R5 consolidation and compatibility contract
 
 W1 R5 migrates intake, discovery, and design into isolated packages within `toolkits/buildos/` and proves command parity before removing their old source modules. Canonical command mappings include:
@@ -224,3 +226,6 @@ Code anchors:
 - [PRD 14 Revise Deterministic Toolkit Deployment](./14-revise-deterministic-toolkit-deployment.md)
 - [PRD 16 Revise Toolkit Ownership Boundaries](./16-revise-toolkit-ownership-boundaries.md)
 - [PRD 17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md)
+- [Entity consolidation contract](../../system/.os/contracts/entity-consolidation-contract.md)
+- [Persona identity contract](../../system/.os/contracts/persona-identity-contract.md)
+- [Extraction contract](../../system/.os/contracts/extraction-contract.md)

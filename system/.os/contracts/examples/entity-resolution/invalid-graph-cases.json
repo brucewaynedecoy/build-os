@@ -1,0 +1,384 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "name": "legacy-missing-redirect",
+      "records": [
+        {
+          "id": "PER-201",
+          "type": "persona",
+          "title": "Legacy superseded persona",
+          "status": "superseded",
+          "summary": "Legacy row has no redirect.",
+          "source_anchor": "sources/invalid.md#legacy",
+          "doc_anchor": "system/docs/research/personas.md#legacy",
+          "source_refs": [],
+          "related": [],
+          "created_at": "2026-07-19",
+          "updated_at": "2026-07-20",
+          "description": "Legacy description.",
+          "goals": [],
+          "needs": []
+        }
+      ]
+    },
+    {
+      "name": "missing-target",
+      "records": [
+        {
+          "id": "PER-202",
+          "type": "persona",
+          "title": "Missing-target source",
+          "status": "superseded",
+          "summary": "Redirect target is absent.",
+          "source_anchor": "sources/invalid.md#missing-target",
+          "doc_anchor": "system/docs/research/personas.md#missing-target",
+          "source_refs": [],
+          "related": [],
+          "created_at": "2026-07-19",
+          "updated_at": "2026-07-21",
+          "description": "Source description.",
+          "goals": [],
+          "needs": [],
+          "redirect": {
+            "target_id": "PER-299",
+            "kind": "duplicate",
+            "decided_at": "2026-07-21T15:30:00Z",
+            "decided_by": "fixture-reviewer",
+            "reason": "Fixture references an absent target.",
+            "evidence_refs": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "self-redirect",
+      "records": [
+        {
+          "id": "PER-203",
+          "type": "persona",
+          "title": "Self redirect",
+          "status": "superseded",
+          "summary": "Source targets itself.",
+          "source_anchor": "sources/invalid.md#self",
+          "doc_anchor": "system/docs/research/personas.md#self",
+          "source_refs": [],
+          "related": [],
+          "created_at": "2026-07-19",
+          "updated_at": "2026-07-21",
+          "description": "Source description.",
+          "goals": [],
+          "needs": [],
+          "redirect": {
+            "target_id": "PER-203",
+            "kind": "duplicate",
+            "decided_at": "2026-07-21T15:30:00Z",
+            "decided_by": "fixture-reviewer",
+            "reason": "Fixture creates a self edge.",
+            "evidence_refs": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "cross-type",
+      "records": [
+        {
+          "id": "PER-204",
+          "type": "persona",
+          "title": "Cross-type source",
+          "status": "superseded",
+          "summary": "Persona targets a requirement.",
+          "source_anchor": "sources/invalid.md#cross-type-source",
+          "doc_anchor": "system/docs/research/personas.md#cross-type-source",
+          "source_refs": [],
+          "related": [],
+          "created_at": "2026-07-19",
+          "updated_at": "2026-07-21",
+          "description": "Source description.",
+          "goals": [],
+          "needs": [],
+          "redirect": {
+            "target_id": "REQ-204",
+            "kind": "replaced",
+            "decided_at": "2026-07-21T15:30:00Z",
+            "decided_by": "fixture-reviewer",
+            "reason": "Fixture creates a cross-type edge.",
+            "evidence_refs": []
+          }
+        },
+        {
+          "id": "REQ-204",
+          "type": "requirement",
+          "title": "Cross-type target",
+          "status": "active",
+          "summary": "Active requirement cannot be a persona successor.",
+          "source_anchor": "sources/invalid.md#cross-type-target",
+          "doc_anchor": "system/docs/product/requirements.md#cross-type-target",
+          "source_refs": [],
+          "related": [],
+          "created_at": "2026-07-20",
+          "updated_at": "2026-07-21",
+          "statement": "The fixture must reject cross-type redirects.",
+          "rationale": "Types preserve domain meaning.",
+          "acceptance_refs": []
+        }
+      ]
+    },
+    {
+      "name": "cycle",
+      "records": [
+        {
+          "id": "PER-205",
+          "type": "persona",
+          "title": "Cycle source A",
+          "status": "superseded",
+          "summary": "First cycle member.",
+          "source_anchor": "sources/invalid.md#cycle-a",
+          "doc_anchor": "system/docs/research/personas.md#cycle-a",
+          "source_refs": [],
+          "related": [],
+          "created_at": "2026-07-19",
+          "updated_at": "2026-07-21",
+          "description": "Cycle member A.",
+          "goals": [],
+          "needs": [],
+          "redirect": {
+            "target_id": "PER-206",
+            "kind": "duplicate",
+            "decided_at": "2026-07-21T15:30:00Z",
+            "decided_by": "fixture-reviewer",
+            "reason": "Fixture edge A to B.",
+            "evidence_refs": []
+          }
+        },
+        {
+          "id": "PER-206",
+          "type": "persona",
+          "title": "Cycle source B",
+          "status": "superseded",
+          "summary": "Second cycle member.",
+          "source_anchor": "sources/invalid.md#cycle-b",
+          "doc_anchor": "system/docs/research/personas.md#cycle-b",
+          "source_refs": [],
+          "related": [],
+          "created_at": "2026-07-19",
+          "updated_at": "2026-07-21",
+          "description": "Cycle member B.",
+          "goals": [],
+          "needs": [],
+          "redirect": {
+            "target_id": "PER-205",
+            "kind": "duplicate",
+            "decided_at": "2026-07-21T15:31:00Z",
+            "decided_by": "fixture-reviewer",
+            "reason": "Fixture edge B to A.",
+            "evidence_refs": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "inactive-terminal",
+      "records": [
+        {
+          "id": "PER-207",
+          "type": "persona",
+          "title": "Inactive-terminal source",
+          "status": "superseded",
+          "summary": "Chain ends at an archived record.",
+          "source_anchor": "sources/invalid.md#inactive-source",
+          "doc_anchor": "system/docs/research/personas.md#inactive-source",
+          "source_refs": [],
+          "related": [],
+          "created_at": "2026-07-19",
+          "updated_at": "2026-07-21",
+          "description": "Source description.",
+          "goals": [],
+          "needs": [],
+          "redirect": {
+            "target_id": "PER-208",
+            "kind": "replaced",
+            "decided_at": "2026-07-21T15:30:00Z",
+            "decided_by": "fixture-reviewer",
+            "reason": "Fixture targets an archived record.",
+            "evidence_refs": []
+          }
+        },
+        {
+          "id": "PER-208",
+          "type": "persona",
+          "title": "Archived terminal",
+          "status": "archived",
+          "summary": "Archived records cannot terminate canonical chains.",
+          "source_anchor": "sources/invalid.md#inactive-target",
+          "doc_anchor": "system/docs/research/personas.md#inactive-target",
+          "source_refs": [],
+          "related": [],
+          "created_at": "2026-07-18",
+          "updated_at": "2026-07-20",
+          "description": "Archived target description.",
+          "goals": [],
+          "needs": []
+        }
+      ]
+    },
+    {
+      "name": "illegal-redirect-status",
+      "records": [
+        {
+          "id": "PER-209",
+          "type": "persona",
+          "title": "Illegal active redirect",
+          "status": "active",
+          "summary": "Active row illegally carries redirect.",
+          "source_anchor": "sources/invalid.md#illegal-status-source",
+          "doc_anchor": "system/docs/research/personas.md#illegal-status-source",
+          "source_refs": [],
+          "related": [],
+          "created_at": "2026-07-19",
+          "updated_at": "2026-07-21",
+          "description": "Source description.",
+          "goals": [],
+          "needs": [],
+          "redirect": {
+            "target_id": "PER-210",
+            "kind": "duplicate",
+            "decided_at": "2026-07-21T15:30:00Z",
+            "decided_by": "fixture-reviewer",
+            "reason": "Fixture places redirect on active row.",
+            "evidence_refs": []
+          }
+        },
+        {
+          "id": "PER-210",
+          "type": "persona",
+          "title": "Legal active target",
+          "status": "active",
+          "summary": "Target is active.",
+          "source_anchor": "sources/invalid.md#illegal-status-target",
+          "doc_anchor": "system/docs/research/personas.md#illegal-status-target",
+          "source_refs": [],
+          "related": [],
+          "created_at": "2026-07-20",
+          "updated_at": "2026-07-21",
+          "description": "Target description.",
+          "goals": [],
+          "needs": []
+        }
+      ]
+    },
+    {
+      "name": "duplicate-ids",
+      "records": [
+        {
+          "id": "PER-211",
+          "type": "persona",
+          "title": "Duplicate ID first row",
+          "status": "active",
+          "summary": "First occurrence.",
+          "source_anchor": "sources/invalid-a.md#duplicate",
+          "doc_anchor": "system/docs/research/personas.md#duplicate-a",
+          "source_refs": [],
+          "related": [],
+          "created_at": "2026-07-20",
+          "updated_at": "2026-07-21",
+          "description": "First duplicate.",
+          "goals": [],
+          "needs": []
+        },
+        {
+          "id": "PER-211",
+          "type": "persona",
+          "title": "Duplicate ID second row",
+          "status": "active",
+          "summary": "Second occurrence.",
+          "source_anchor": "sources/invalid-b.md#duplicate",
+          "doc_anchor": "system/docs/research/personas.md#duplicate-b",
+          "source_refs": [],
+          "related": [],
+          "created_at": "2026-07-20",
+          "updated_at": "2026-07-21",
+          "description": "Second duplicate.",
+          "goals": [],
+          "needs": []
+        }
+      ]
+    },
+    {
+      "name": "remap-conflict",
+      "records": [
+        {
+          "id": "PER-212",
+          "type": "persona",
+          "title": "Already redirected source",
+          "status": "superseded",
+          "summary": "Existing decision targets PER-213.",
+          "source_anchor": "sources/invalid.md#remap-source",
+          "doc_anchor": "system/docs/research/personas.md#remap-source",
+          "source_refs": [],
+          "related": [],
+          "created_at": "2026-07-19",
+          "updated_at": "2026-07-21",
+          "description": "Source description.",
+          "goals": [],
+          "needs": [],
+          "redirect": {
+            "target_id": "PER-213",
+            "kind": "duplicate",
+            "decided_at": "2026-07-21T15:30:00Z",
+            "decided_by": "fixture-reviewer",
+            "reason": "Existing reviewed decision.",
+            "evidence_refs": []
+          }
+        },
+        {
+          "id": "PER-213",
+          "type": "persona",
+          "title": "Existing target",
+          "status": "active",
+          "summary": "Existing active winner.",
+          "source_anchor": "sources/invalid.md#existing-target",
+          "doc_anchor": "system/docs/research/personas.md#existing-target",
+          "source_refs": [],
+          "related": [],
+          "created_at": "2026-07-20",
+          "updated_at": "2026-07-21",
+          "description": "Existing target.",
+          "goals": [],
+          "needs": []
+        },
+        {
+          "id": "PER-214",
+          "type": "persona",
+          "title": "Requested different target",
+          "status": "active",
+          "summary": "Requested alternative winner.",
+          "source_anchor": "sources/invalid.md#requested-target",
+          "doc_anchor": "system/docs/research/personas.md#requested-target",
+          "source_refs": [],
+          "related": [],
+          "created_at": "2026-07-20",
+          "updated_at": "2026-07-21",
+          "description": "Requested target.",
+          "goals": [],
+          "needs": []
+        }
+      ],
+      "manifest": {
+        "version": 1,
+        "mappings": [
+          {
+            "source_id": "PER-212",
+            "target_id": "PER-214",
+            "kind": "duplicate",
+            "decided_at": "2026-07-21T16:30:00Z",
+            "decided_by": "fixture-reviewer",
+            "reason": "Conflicting target must not overwrite the existing decision.",
+            "evidence_refs": []
+          }
+        ]
+      }
+    }
+  ]
+}

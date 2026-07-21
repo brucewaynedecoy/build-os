@@ -1,6 +1,6 @@
 # Build OS Toolkits
 
-`toolkits/` contains source and build metadata for first-party deterministic Build OS CLI toolkits. These toolkits are the durable implementation home for deterministic logic that should be packaged, installed, scanned, and invoked consistently.
+`toolkits/` contains source and build metadata for the first-party deterministic BuildOS CLI. BuildOS is converging on one public `buildos` executable with coherent domain packages and `buildos <domain>` subcommands. This keeps one help, version, root, diagnostic, and distribution surface without collapsing domain ownership.
 
 `system/.os/scripts/` remains the operational wrapper, command router, compatibility, and command documentation surface. Scripts can call toolkit binaries, but new durable deterministic logic should not accumulate as unmanaged Python, Node, or shell implementations.
 
@@ -11,12 +11,18 @@
 | Implementation language | Go |
 | Dependency posture | Standard library first |
 | Runtime posture | Local-only |
-| Binary naming | `buildos-<toolkit-slug>` |
+| Public binary naming | `buildos` |
+| Public command naming | `buildos <domain> <operation>` |
+| Source-module target | `toolkits/buildos/` |
 | Network calls | Disallowed unless a design approves them and the CLI requires opt-in flags |
 
 Any third-party or native dependency must be documented in the owning toolkit README with rationale, license notes, and packaging review notes.
 
-## Current Toolkits
+## Current Transition State
+
+W1 R4 seeds the unified module with `buildos entities`. Its P1 contracts are authoritative, but the executable is not present until P2. W1 R5 later migrates intake, discovery, and design after parity tests, then keeps their old names as temporary compatibility aliases for one stable minor-release cycle.
+
+The separately runnable modules below remain current behavior during W1 R4:
 
 | Toolkit | Binary | Status | Purpose |
 | --- | --- | --- | --- |
@@ -32,5 +38,7 @@ Any third-party or native dependency must be documented in the owning toolkit RE
 4. Keep toolkit logic local, deterministic, and testable.
 5. Keep `system/.os/scripts/` wrappers thin.
 6. Run repository validation and toolkit tests before closeout.
+
+For a new domain, add or plan an isolated package and `buildos <domain>` subcommand inside the unified module. Do not create another public `buildos-<domain>` executable. The only planned legacy public names are temporary aliases for the three binaries that already shipped.
 
 See [Build OS Toolkit CLI Development](../docs/guides/developer/buildos-toolkit-cli-development.md) for the full maintainer workflow.

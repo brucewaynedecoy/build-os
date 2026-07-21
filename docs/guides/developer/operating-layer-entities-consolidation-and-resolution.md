@@ -24,6 +24,8 @@ related:
   - "../../work/2026-07-21-w1-r4-entity-consolidation-and-canonical-resolution/00-index.md"
   - "../../assets/prompts/pre-upgrade-entity-consolidation-audit.prompt.md"
   - "../../../system/.os/contracts/entity-records-contract.md"
+  - "../../../system/.os/contracts/entity-consolidation-contract.md"
+  - "../../../system/.os/contracts/persona-identity-contract.md"
   - "../../../system/.os/contracts/extraction-contract.md"
 ---
 
@@ -33,7 +35,7 @@ related:
 
 Use this guide when maintaining or preparing Build OS support for duplicate or replaced entity records. The accepted contract keeps every losing record, marks it `superseded`, and gives it one reviewed redirect to an immediate successor. A shared resolver follows that chain to one active canonical record.
 
-This capability is planned but not implemented in the current checkout. Today, maintainers may inventory records and prepare review proposals only. Do not add redirect fields, change lifecycle states, rewrite references, or delete records until the compatible resolver, validator, writer, and index builder exist and have passed copied-root testing.
+W1 R4 P1 freezes the data, graph, resolver, manifest, index, persona-identity, extraction-outcome, and unified CLI contracts in the source tree. It does not implement the `buildos` executable. Today, maintainers may inspect those contracts, validate their examples and fixtures, inventory adopter records, and prepare review proposals only. Do not add redirect fields to live data, change live lifecycle states, rewrite references, or delete records until the P2 resolver, validator, writer, and index builder exist and later copied-root testing passes.
 
 The canonical planned surface is `buildos entities`,
 implemented as the W1 R4 seed of `toolkits/buildos/`.
@@ -62,7 +64,7 @@ The authority boundaries are:
 - A losing row retains its stable ID, evidence, anchors, and type-specific fields.
 - `status: superseded` plus one `redirect` expresses an immediate successor.
 - `related` remains an ordinary relationship and never changes canonical identity.
-- `system/.os/indexes/entity-resolution.json` is a planned derived projection. It is rebuildable and never replaces the canonical JSONL rows.
+- `.os/indexes/entity-resolution.json` is the contracted installed-root derived projection; `system/.os/indexes/entity-resolution.json` is its source-scaffold counterpart. It is rebuildable and never replaces the canonical JSONL rows.
 - `references.json` remains an intake-source index and must not carry entity redirects.
 - `toolkits/buildos/pkg/entities` is the temporary shared resolver boundary during W1 R4; existing Go consumers import it through explicit local dependencies and must not invoke the CLI as a subprocess.
 
@@ -79,7 +81,7 @@ Current validation does not understand redirect-bearing rows. A successful run o
 
 ## Redirect and Resolver Contract
 
-A future losing record will retain its original content and use a reviewed redirect containing `target_id`, `kind`, `decided_at`, `decided_by`, `reason`, and `evidence_refs`. The allowed kinds are `duplicate`, `consolidated`, and `replaced`.
+A losing record governed by the P1 contract retains its original content and uses a reviewed redirect containing `target_id`, `kind`, `decided_at`, `decided_by`, `reason`, and `evidence_refs`. The allowed kinds are `duplicate`, `consolidated`, and `replaced`. This is an authoritative data contract, not permission to write redirect-bearing rows with pre-P2 tooling.
 
 The whole graph must satisfy all of these rules:
 
@@ -92,9 +94,25 @@ The whole graph must satisfy all of these rules:
 
 A resolver result must preserve the requested historical ID while also reporting the terminal canonical ID, complete chain, and whether resolution occurred. Readers expose both identities. New references and intentional edits store the terminal canonical ID. Existing historical references do not require a bulk rewrite.
 
+## Persona Identity and Extraction Outcomes
+
+P1 defines deterministic identity reuse for personas only. A persona may have one reviewer-approved `identity` object using the `persona-v1` scheme and a sorted list of explicitly approved `aliases`. Matching trims and collapses ASCII whitespace and lowercases ASCII letters. It does not perform Unicode normalization, punctuation removal, stemming, synonym expansion, token reordering, or fuzzy comparison.
+
+An exact alias or `persona-v1` key may match automatically only when every matching historical row resolves to the same active terminal persona. Collisions, ambiguity, inactive terminals, fuzzy similarity, and semantic similarity remain review-only and never mutate a row. Other entity types require their own versioned identity contracts before automated identity matching is allowed.
+
+New outcome-aware extraction rows use `outcome_contract: extraction-outcomes-v1` and include three disjoint lists:
+
+| Outcome | Meaning |
+| --- | --- |
+| `minted` | The extraction created a new canonical entity row. |
+| `referenced` | The extraction reused an existing canonical entity without changing it. |
+| `updated` | The extraction deliberately changed an existing canonical entity. |
+
+Each outcome stores the terminal canonical ID as it existed at extraction time. Historical extraction rows that predate this contract retain their former `minted`-or-updated meaning; validators and migrations do not guess or rewrite them.
+
 ## Validation and Recovery Expectations
 
-Before any future mutation, the implementation must load and validate the complete entity graph. Missing targets, self-redirects, cross-type targets, cycles, inactive terminal records, duplicate IDs, invalid statuses, remap conflicts, and stale indexes must stop the write with a useful diagnostic.
+Before any P2 mutation, the implementation must load and validate the complete entity graph. Missing targets, self-redirects, cross-type targets, cycles, inactive terminal records, duplicate IDs, invalid statuses, remap conflicts, and stale indexes must stop the write with a useful diagnostic.
 
 Compatibility mode is only a temporary assessment aid for legacy `superseded` rows without redirects. It warns and excludes those rows from automatic resolution. Strict mode is the release and post-migration gate and rejects them.
 
@@ -111,7 +129,7 @@ buildos entities consolidate --root <copied-root> --mode compat|strict --manifes
 buildos entities rebuild-index --root <copied-root> --mode compat|strict [--check|--apply] [--json]
 ```
 
-These are contract examples,
+These commands are frozen P1 contract examples,
 not runnable instructions yet.
 Replace them with tested commands and output only after the implementation phase passes.
 
@@ -150,6 +168,8 @@ If a graph error is found after a canonical write, preserve the written JSONL an
 - [Maintaining Operating Layer Contracts](./operating-layer-contracts-maintenance.md)
 - [Build OS Toolkit CLI Development](./buildos-toolkit-cli-development.md)
 - [Entity Records Contract](../../../system/.os/contracts/entity-records-contract.md)
+- [Entity Consolidation Contract](../../../system/.os/contracts/entity-consolidation-contract.md)
+- [Persona Identity Contract](../../../system/.os/contracts/persona-identity-contract.md)
 - [Extraction Contract](../../../system/.os/contracts/extraction-contract.md)
 
 ## Future Coverage

@@ -29,9 +29,9 @@ related:
 
 Use this guide when your Build OS data contains several records that describe the same persona or another entity and you want to choose one winner without deleting the others.
 
-Build OS is designed to keep the losing records as history. A future redirect will point each loser toward its reviewed successor, and Build OS will follow that chain to one active canonical record. This capability is not implemented in the current checkout. For now, you may audit and propose mappings, but you must not change live entity data.
+Build OS is designed to keep the losing records as history. The W1 R4 P1 contracts now define how a reviewed redirect points each loser toward its immediate successor and how Build OS follows that chain to one active canonical record. The command that safely applies those contracts is not implemented until P2. For now, you may audit and propose mappings, but you must not change live entity data.
 
-When W1 R4 is implemented,
+When P2 implements the W1 R4 CLI seed,
 the source-built command will be `buildos entities`.
 There will not be a separate `buildos-entities` program.
 At that stage,
@@ -95,9 +95,17 @@ Use `duplicate` when two records mean the same thing, `consolidated` when severa
 
 If reviewers disagree, keep the records separate. A deferred decision is safer than an incorrect redirect.
 
+## Exact Persona Reuse
+
+P1 defines a future exact-match path for personas, but it does not add a runnable command yet. A team may approve aliases and one `persona-v1` identity phrase for a persona. Build OS may reuse that persona automatically only when the exact approved value leads to one active canonical persona after following redirects.
+
+Build OS will not treat similar wording as an exact identity. Fuzzy or semantic similarity, punctuation changes, synonym guesses, and ambiguous aliases remain review candidates. They do not create redirects or change records automatically.
+
+When extraction integration arrives in P4, its record will say whether it minted a new entity, referenced an unchanged canonical entity, or deliberately updated an existing one. That history remains tied to the canonical ID known at extraction time.
+
 ## Expected Future Workflow
 
-After the feature is implemented, the safe path will be:
+After P2 implements the contracted command, the safe path will be:
 
 1. Build `buildos` into a staging directory from a separate source checkout.
 2. Record the exact source revision and binary checksum.
@@ -116,7 +124,7 @@ The planned command family is `buildos entities resolve`,
 `validate`,
 `consolidate`,
 and `rebuild-index`.
-These names describe the accepted contract only;
+These names describe the frozen P1 contract only;
 do not attempt to run them until your source build contains the implemented W1 R4 command and your team has verified it on a copied root.
 
 ## Rollback and Safe Stops
@@ -139,7 +147,7 @@ If an old reference points to a loser, leave the historical reference unchanged 
 
 **Can we clean up personas before the feature ships?**
 
-You can inventory, group, and review them now. Do not mutate canonical records or references until the compatible tooling is implemented and verified.
+You can inventory, group, and review them now. P1 contracts and fixtures make the intended rules reviewable, but they do not make live mutation safe. Do not mutate canonical records or references until the compatible P2 tooling is implemented and verified.
 
 **Should we delete losing records after choosing a winner?**
 
