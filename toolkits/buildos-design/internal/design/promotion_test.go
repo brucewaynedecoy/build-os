@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	entityresolver "github.com/brucewaynedecoy/build-os/toolkits/buildos/pkg/entities"
 )
@@ -587,7 +588,7 @@ func readSingleFindingRowAt(t *testing.T, root, rel string) findingIndexRow {
 }
 
 func timeStampedDesignPath(slug string) string {
-	return filepath.ToSlash(filepath.Join("system/docs/designs", nowUTC()[:10]+"-"+slug+".md"))
+	return filepath.ToSlash(filepath.Join("system/docs/designs", time.Now().Format("2006-01-02")+"-"+slug+".md"))
 }
 
 func writeTextFile(t *testing.T, root, rel, body string) {
