@@ -1,1 +1,0 @@
-Run a `docs/` hygiene pass on the docs that have been edited / are in the diff (or if no docs are in the diff, please run a full hygiene pass): refresh doc indexes, follow all repo doc contracts, check formatting and links, fix clear mechanical issues, rerun validators, and report any remaining contract or baseline debt.
