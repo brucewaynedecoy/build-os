@@ -48,6 +48,10 @@ Code anchors:
 - `toolkits/buildos-discovery/`
 - `toolkits/buildos-design/`
 
+### Change Notes
+
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): domain packages now implement transport-neutral core operations rather than CLI-handler behavior, and the same Go program, executable, and distribution contain the headless core, CLI, and MCP server. Internal adapter boundaries remain mandatory.
+
 ### Canonical command and output contract
 
 The canonical public surface is one executable with domain subcommands:
@@ -97,6 +101,10 @@ Diagnostics are stable records in JSON mode and concise stderr messages in human
 `write_status` is one of `not_requested` for read-only operations, `planned` for an unapplied dry run, `applied` when every authorized write completes, or `canonical_applied_index_failed` for exit code `6`.
 
 No public `buildos-entities` or `buildos-lifecycle` binary is introduced.
+
+### Change Notes
+
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): this frozen CLI list is compatibility evidence, not the complete product contract. Phase 1 must approve the full core-operation inventory, stable request/result/receipt schemas, and same-change CLI/MCP mappings before implementation; PRD 18's shared diagnostics, version metadata, write-status, and exit evidence remain inputs.
 
 ### W1 R4 seed contract
 
@@ -182,6 +190,10 @@ buildos entities ...
 
 During one stable minor-release compatibility cycle, the invoked names `buildos-intake`, `buildos-discovery`, and `buildos-design` route to the same executable through aliases or symlinks. Invoked-basename routing preserves successful output and exit behavior while printing deprecation guidance to stderr. The root `justfile` installs one executable plus those temporary aliases and provides explicit rollback to the former binaries.
 
+### Change Notes
+
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): migration targets the approved core-operation domains and adds their CLI and MCP adapters in the same change, rather than moving legacy commands directly into CLI packages. Parity fixtures, compatibility aliases, staged adoption, and rollback remain required evidence.
+
 ### Distribution contract
 
 The first packaged public CLI version is `0.1.0` and uses the Apache-2.0 distribution license. Initial distribution channels are signed release archives and Homebrew.
@@ -189,6 +201,10 @@ The first packaged public CLI version is `0.1.0` and uses the Apache-2.0 distrib
 Release acceptance requires supported macOS, Linux, and Windows AMD64/ARM64 archives as applicable, a SHA-256 checksum manifest, CycloneDX JSON SBOMs, signed provenance or attestations, a Homebrew formula that verifies archive checksums, versioned release notes, upgrade compatibility notes, and clean archive/formula installation, upgrade, rollback, and uninstall smoke tests. Unsigned source builds remain development-only.
 
 Planning this distribution contract does not close R-003. That risk closes only after the release pipeline and installation evidence exist.
+
+### Change Notes
+
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): the packaged artifact must contain the cohesive headless core, CLI, and MCP server, not a CLI-only application. Cross-platform archives, checksums, SBOMs, provenance, signing, upgrade, rollback, uninstall, and smoke-test obligations remain effective and are reconciled through R-003.
 
 ### W2 installation-lifecycle follow-on
 
@@ -206,6 +222,10 @@ buildos uninstall
 W2 owns the embedded versioned scaffold, `.os/manifest.json`, managed/adopter-owned/derived/merge-required classifications, install and synchronization planning, backup, conservative project removal, pre-manifest adoption, executable-owner-aware update guidance, and copied-root rehearsal and rollback. `buildos setup remove` manages one project's BuildOS files; `buildos uninstall` manages the machine-level tool. `buildos update` delegates executable upgrades to Homebrew when Homebrew owns the binary and gives exact manual replacement guidance for archive installations rather than overwriting itself blindly.
 
 The complete W2 design, plan, PRD, and work bundle is finalized during W1 R5 closeout after the packaged command and compatibility behavior are proven.
+
+### Change Notes
+
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): project and machine lifecycle capabilities move into the phased core-operation map and include global settings/registry, project identity/relocation, repair/recovery, and the separate Make Docs companion lifecycle. Removing Build OS leaves Make Docs intact unless the operator explicitly requests both; exact public Make Docs operations and markers remain a later validation gate.
 
 ## Impacted Docs and Dependencies
 

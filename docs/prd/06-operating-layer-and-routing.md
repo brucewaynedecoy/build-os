@@ -32,6 +32,7 @@ Code anchors:
 
 - Enhanced by [13 Adopter-Owned Config Surface](./13-adopter-owned-config-surface.md): `.os/` also owns `config/` as the adopter-controlled operational configuration surface. `system/.os/config/instance.yaml`, `system/.os/contracts/config-contract.md`, `system/.os/templates/instance-config.yaml`, and `system/.os/scripts/validate_config.py` are part of the operating-layer authority for scoped values.
 - Revised by [14 Revise Deterministic Toolkit Deployment](./14-revise-deterministic-toolkit-deployment.md): `.os/scripts/` is no longer the default source home for new durable deterministic logic. New packaged first-party tooling should live under `toolkits/` and expose `buildos-*` binaries that scripts call or document.
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): current directories, routers, wrappers, and commands remain compatibility and migration evidence, but they do not define the complete operation contract. The approved core capability inventory and its same-change CLI/MCP projections define supported behavior, including which indexes are derived and rebuildable.
 
 ## Contracts and Data
 
@@ -41,6 +42,10 @@ Code anchors:
 
 - `system/.os/contracts/AGENTS.md`
 - `system/playbooks/AGENTS.md`
+
+### Change Notes
+
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): written contracts remain evidence, but only approved core operations may interpret authority or perform Build OS state transitions. Router forward-links cannot bypass plan, authorization, verification, receipt, locking, or recovery requirements.
 
 ## Integrations
 

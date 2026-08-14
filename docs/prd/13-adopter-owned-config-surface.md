@@ -28,6 +28,10 @@ The effective scoped vocabulary is:
 
 These fields must be plural lists where artifacts can apply to multiple configured IDs. Legacy scoped vocabulary is superseded for contract purposes: `env`, `for`, `envs`, `target_systems`, and sentinel values such as `both` must not be introduced or retained as effective contract vocabulary.
 
+### Change Notes
+
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): the established instance-config fields and validation rules remain compatibility constraints, while effective configuration behavior becomes the `CFG` and `PRJ` core-operation families. Machine-global settings and registry authority, project identity, and relocation behavior are separate Phase 1 decisions and must not be inferred from `instance.yaml`.
+
 ## Affected Baseline Docs
 
 - [00-index.md](./00-index.md) tracks this addition and connects impacted baseline docs to the effective requirement.
@@ -57,6 +61,10 @@ Reusable Build OS templates and contracts must not contain customer-, vendor-, p
 
 Frontmatter and structured rows that carry scoped metadata must use `systems`, `environments`, and `owners` as list fields. Empty lists are allowed only when the specific artifact contract permits system-neutral, environment-neutral, or owner-neutral scope.
 
+### Change Notes
+
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): these schema fields remain compatibility requirements, while reads, validation, updates, and defaults are governed by versioned core operations with CLI/MCP parity. The Phase 1 gate must settle canonical config authority, global registry interaction, project identity, relocation, and receipt behavior.
+
 ## Integration Impact
 
 The config surface affects operational contracts, generated indexes, playbook frontmatter, data rows, run records, findings, and docs handoff metadata. Artifacts that previously relied on fixed scoped tags must resolve scope through `system/.os/config/instance.yaml` and the config contract.
@@ -64,6 +72,10 @@ The config surface affects operational contracts, generated indexes, playbook fr
 `system/.os/scripts/validate_config.py` is part of the initial implementation scope, not deferred hardening. It must validate the config file, configured ID uniqueness and slug format, `environments[].systems` references, `defaults.*` references, and scoped frontmatter/data references.
 
 The validator must also include a frontmatter hygiene check for playbooks and other scoped Markdown artifacts. That check must parse Markdown frontmatter, require `systems`, `environments`, and `owners` to be lists of configured IDs, and report legacy scoped fields or unconfigured IDs as errors once the migration lands. The check may live inside `validate_config.py` initially, but it should be callable independently by future index builders or repository hygiene scripts.
+
+### Change Notes
+
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): config validation moves behind the cohesive core's operation surface and is no longer assigned to a standalone legacy script or independent toolkit. All dependent domains consume the same validated project/global configuration semantics through the core.
 
 ## Required Baseline Annotations
 

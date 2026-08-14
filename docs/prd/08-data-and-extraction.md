@@ -29,6 +29,7 @@ Code anchors:
 ### Change Notes
 
 - Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): the data layer gains redirect-bearing superseded rows, terminal entity resolution, a deterministic entity-resolution index, and reviewed persona-first consolidation.
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): the complete data and extraction contract is expressed as explicit core operations for authority-aware reads and writes, validation, query, extraction events and candidates, derived-index rebuilds, receipts, and recovery. The canonical-versus-derived classification and receipt integrity remain Phase 1 gate decisions rather than inferred consequences of today's directory layout.
 
 ## Contracts and Data
 
@@ -43,6 +44,7 @@ Code anchors:
 - Enhanced by [13 Adopter-Owned Config Surface](./13-adopter-owned-config-surface.md): structured rows that carry scoped metadata use `systems`, `environments`, and `owners` as config-backed list fields. Those values resolve to configured IDs in `system/.os/config/instance.yaml`, and validators reject legacy scoped fields or unconfigured IDs after the migration lands.
 - Revised by [15 Revise Extraction Draft Lifecycle](./15-revise-extraction-draft-lifecycle.md): entity and extraction rows use `draft` as the pending lifecycle state, and non-`draft` rows require `doc_anchor` in addition to `source_anchor`.
 - Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): `superseded` rows carry reviewed same-type redirects, reverse membership is derived, `related` remains non-canonical, and compatibility-to-strict graph validation governs migration.
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): canonical-versus-derived authority, provenance/receipt schemas, state-transition ownership, request/result versioning, locking, and recovery are explicit Phase 1 contract decisions. The current JSONL/CSV posture remains evidence and may not settle unresolved authority questions by convention.
 
 ## Integrations
 
@@ -55,6 +57,7 @@ Code anchors:
 ### Change Notes
 
 - Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): readers expose original and canonical IDs, producers store terminal canonical IDs, and extraction distinguishes newly minted entities from canonical references or updates.
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): data, extraction, playbook, run, finding, relationship, and provenance integrations occur through versioned core operations with matching CLI/MCP request and result schemas rather than direct cross-domain file mutation.
 
 ## Rebuild Notes
 
@@ -67,6 +70,7 @@ Code anchors:
 ### Change Notes
 
 - Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): rebuilds validate the complete redirect graph and reproduce `entity-resolution.json` byte-identically from authoritative JSONL without overloading intake `references.json`.
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): rebuild, validate, repair, and recover are distinct approved operations with dry-run, interruption safety, and auditable receipts. Phase 1 must first classify every artifact as canonical, derived, external, or compatibility-only.
 
 ## Source Anchors
 

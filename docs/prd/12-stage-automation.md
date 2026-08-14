@@ -28,6 +28,7 @@ Code anchors:
 
 - Revised by [14 Revise Deterministic Toolkit Deployment](./14-revise-deterministic-toolkit-deployment.md): deterministic command runners should call packaged `buildos-*` toolkits where applicable, with script or slash-command surfaces acting as routers rather than unmanaged logic implementations.
 - Superseded by [16 Revise Toolkit Ownership Boundaries](./16-revise-toolkit-ownership-boundaries.md) for toolkit-domain routing: stage-movers should orchestrate or call the owning domain toolkits instead of adding durable logic to unmanaged scripts or expanding unrelated existing toolkits.
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): stage movers are adapters over approved core operations and may not bypass plan, authorization, apply, verification, receipt, or recovery semantics. Every exposed mover must preserve CLI/MCP parity rather than introducing a transport-specific business workflow.
 
 ## Contracts and Data
 
@@ -41,6 +42,7 @@ Code anchors:
 
 - Enhanced by [13 Adopter-Owned Config Surface](./13-adopter-owned-config-surface.md): stage-movers must run or respect `system/.os/scripts/validate_config.py` for config-backed scoped metadata and frontmatter hygiene. Automation should fail on legacy scoped fields or unconfigured `systems`, `environments`, and `owners` IDs after the migration lands.
 - Superseded by [16 Revise Toolkit Ownership Boundaries](./16-revise-toolkit-ownership-boundaries.md) where config or scoped-metadata checks become durable deterministic behavior: those checks should route through `buildos-config` once that toolkit exists, with legacy script use treated as transitional.
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): stage automation may sequence only approved core operations and must preserve their authority, state, idempotency, dry-run, error, receipt, and recovery contracts. Hooks and slash commands do not become alternate business-logic surfaces.
 
 ## Integrations
 

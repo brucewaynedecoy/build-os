@@ -218,6 +218,7 @@ The P3 copied-root acceptance requirements are satisfied by the sanitized person
 ### Change Notes
 
 - Superseded by [18 Revise Unified BuildOS CLI and Distribution](./18-revise-unified-buildos-cli-and-distribution.md) for the public executable and source-module topology: W1 R4 seeds `toolkits/buildos/` and `buildos entities`; W1 R5 later consolidates the existing domains and packages `buildos 0.1.0`. The entity data, resolver, mutation, index, validation, and migration-safety requirements in this PRD remain effective.
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md) only for adapter/core placement and operation parity: entity contracts, resolver behavior, manifests, migration safeguards, and compatibility evidence remain effective, while the same transport-neutral entity operations must drive both CLI and MCP surfaces in the cohesive Go program.
 - W1 R4 P2 implements the source-built CLI seed, graph engine, deterministic index, and reviewed mutation surface. Version 1 manifests are explicitly limited to one canonical JSONL dataset so a successful apply performs one atomic canonical-file replacement; multi-dataset reviews require separate manifests and approvals.
 - W1 R4 P4 wires `buildos-discovery` and `buildos-design` directly to the temporary `toolkits/buildos/pkg/entities` Go package through explicit local module dependencies. Discovery resolves authored playbook targets, explicit targets, and requested run IDs before runtime use; design resolves the requested finding before promotion. Both preserve requested IDs and full chains for provenance while new governed references use terminal canonical IDs.
 - P4 also implements the persona-only exact-match adapter and the `extraction-outcomes-v1` validator as shared package APIs. Exact IDs, unique approved aliases, and unique `persona-v1` keys may resolve automatically; ambiguous, colliding, inactive, fuzzy, semantic, unsupported-type, and malformed inputs remain non-mutating review outcomes.
@@ -350,6 +351,10 @@ the index may be deleted and rebuilt.
   strict validation,
   deterministic index reproduction,
   and separately approved binary and data cutovers.
+
+### Change Notes
+
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md) only for integration placement: resolver, validation, migration, side-by-side adoption, and derived-index guarantees remain effective, while all entity consumers and producers use transport-neutral core operations with same-change CLI/MCP schemas and receipts.
 
 ## Required Baseline Annotations
 

@@ -30,6 +30,7 @@ Code anchors:
 ### Change Notes
 
 - Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): Build OS adds non-destructive entity consolidation, terminal canonical reference resolution, and reviewed persona-first identity reuse without erasing historical records.
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): the effective product contract is the approved core-operation inventory projected with CLI and MCP parity in one Go distribution; current directory and command behavior remains compatibility evidence, not the exhaustive capability contract.
 
 ## System Boundaries
 
@@ -39,6 +40,10 @@ Code anchors:
 
 - `system/playbooks/administrative/respect-make-docs-plugin-boundary.md`
 - `.make-docs/manifest.json`
+
+### Change Notes
+
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): Make Docs is an external companion dependency that Build OS may operate only through Make Docs' verified public lifecycle operations; Build OS does not bundle, copy, own, or directly mutate Make Docs global state or project internals.
 
 ## Current Limitations
 
@@ -52,6 +57,7 @@ Code anchors:
 
 - Superseded by [13 Adopter-Owned Config Surface](./13-adopter-owned-config-surface.md): adopter-owned `system/.os/config/instance.yaml`, `systems`, `environments`, `owners`, and config/frontmatter validation replace the concrete scoped placeholders as the effective requirement.
 - Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): the data layer still requires implementation, and its delivery now includes redirect-aware entity records, a canonical resolver, a deterministic index and toolkit, and staged source-build migration safeguards.
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): implementation readiness is now governed by the complete Phase 1 capability-map and PRD approval gate, not by extrapolating the limited implemented directories and toolkit commands into a full product contract.
 
 ## Source Anchors
 

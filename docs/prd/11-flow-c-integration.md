@@ -14,6 +14,10 @@ Code anchors:
 - `system/workspace/findings/`
 - `system/docs/designs/`
 
+### Change Notes
+
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): this subsystem ends at a Build OS-owned, user-gated `HOF-001` export/handoff receipt. Make Docs remains a separate product, and any project setup or downstream lifecycle mutation must use its verified public operations.
+
 ## Component and Capability Map
 
 | Component | Capability |
@@ -27,6 +31,10 @@ Code anchors:
 
 - `system/.os/contracts/` (finding contract)
 - `toolkits/buildos-design/`
+
+### Change Notes
+
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): direct Build OS design creation and Make Docs index updates are replaced by the `HOF-001` Build OS export/handoff operation. Any later Make Docs project mutation must use a separately verified public Make Docs operation; existing `buildos-design` behavior is retained only as compatibility and migration evidence until that gate closes.
 
 ## Contracts and Data
 
@@ -51,6 +59,7 @@ Code anchors:
 
 - Superseded by [13 Adopter-Owned Config Surface](./13-adopter-owned-config-surface.md): Flow C handoffs no longer pass `env`/`for` tags as effective scoped metadata. They pass config-backed `systems`, `environments`, and `owners` lists along with the finding ID and qualification anchor.
 - Revised by [16 Revise Toolkit Ownership Boundaries](./16-revise-toolkit-ownership-boundaries.md): deterministic qualified-finding design promotion belongs in `buildos-design`; stage-mover orchestration remains separate from the qualified-finding design hand-off.
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): Build OS no longer reads Make Docs internals and writes a design as its own operation. It validates a qualified finding, prepares a versioned external-handoff package and receipt, and invokes Make Docs only when a separately verified public contract and explicit authorization permit it.
 
 ## Integrations
 
@@ -61,6 +70,10 @@ Code anchors:
 - `system/docs/designs/AGENTS.md`
 - `system/docs/assets/references/design-workflow.md`
 - `system/docs/assets/references/design-contract.md`
+
+### Change Notes
+
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): integration authority belongs to the Build OS handoff contract and Make Docs' public lifecycle API, not internal routers, templates, or index files. Reconfiguration and removal use public companion operations; Build OS removal leaves Make Docs intact unless both are explicitly requested.
 
 ## Rebuild Notes
 

@@ -73,6 +73,7 @@ Code anchors:
 
 - Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): the entity-graph domain is owned by the new `buildos-entities` toolkit; extraction-specific helpers remain a separate ownership decision unless explicitly assigned later.
 - Superseded by [18 Revise Unified BuildOS CLI and Distribution](./18-revise-unified-buildos-cli-and-distribution.md): domain ownership remains mandatory, but domains become isolated packages and subcommands inside the single `toolkits/buildos/` module. Public binary boundaries no longer define domain boundaries, and W1 R4 seeds the entity domain as `buildos entities`.
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): domain ownership remains mandatory inside the cohesive Go program, but every domain is owned by transport-neutral core operations projected through same-change CLI and MCP adapters. Existing independent-toolkit product boundaries are compatibility and migration evidence, not the target product topology.
 
 ## Impacted Docs and Dependencies
 
@@ -97,6 +98,7 @@ Code anchors:
 
 - Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): PRD 17 resolves canonical entity graph operations into `buildos-entities` without granting unrelated extraction or playbook behavior to that toolkit.
 - Superseded by [18 Revise Unified BuildOS CLI and Distribution](./18-revise-unified-buildos-cli-and-distribution.md): W1 R5 migrates intake, discovery, design, and entities into the unified module only after command-parity tests, and temporary legacy-name aliases route to the same executable for one stable minor-release cycle.
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): migration targets core-operation domains rather than CLI command packages, and every migrated behavior requires same-change CLI/MCP parity, compatibility evidence, and explicit disposition in the approved capability map.
 
 ## Required Baseline Annotations
 

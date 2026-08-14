@@ -26,6 +26,10 @@ Code anchors:
 - `toolkits/buildos-intake/`
 - `system/.os/indexes/references.json`
 
+### Change Notes
+
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): the legacy `buildos-intake` command surface migrates behind transport-neutral evidence-intake, conversion, and reference-index core operations with CLI/MCP parity. Existing converter behavior, provenance fields, and deterministic reference-index rebuilds remain compatibility obligations and acceptance evidence.
+
 ## Contracts and Data
 
 Conversion is tool-first and deterministic; agents may do one-offs following the same provenance contract and intake translation contract. Output is a clean twin only — no semantics. `xlsx` multi-sheet becomes one CSV per sheet; html-directory inputs follow a documented mirror convention. Accessible non-PDF embedded media and diagrams may be copied as side artifacts under the same source directory and linked from converted twins, per the intake translation contract. PDF conversion is minimal text extraction only. `references.json` is rebuildable from twin frontmatter.
@@ -39,6 +43,7 @@ Code anchors:
 
 - Revised by [14 Revise Deterministic Toolkit Deployment](./14-revise-deterministic-toolkit-deployment.md): W1 R0 P3 converter/index logic should be implemented as the `buildos-intake` toolkit under `toolkits/buildos-intake/`; `.os/scripts/` may provide wrappers or command routers but should not become the durable implementation home.
 - W1 R0 P3 locks PDF posture to no Poppler bundle, no `pdftotext` requirement, no OCR, no table reconstruction promise, and no future rich-PDF extraction roadmap. Built-in PDF behavior is limited to rudimentary local text extraction through an approved Go package; manual or agent-assisted conversion is an intentional fallback when automated output is inadequate.
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): intake writes, provenance, idempotency, dry-run, diagnostics, receipt generation, and reference-index rebuilds must be defined as core-operation contracts shared by CLI and MCP. Existing formats and converter limitations remain explicit compatibility obligations rather than implicit handler behavior.
 
 ## Integrations
 

@@ -39,6 +39,7 @@ The safer baseline is to keep deterministic logic in versioned, buildable first-
 - Superseded by [16 Revise Toolkit Ownership Boundaries](./16-revise-toolkit-ownership-boundaries.md) where this revision was too broad about "toolkits" generally: new deterministic behavior must choose the correct domain-owned toolkit rather than expanding an unrelated existing Go CLI or legacy unmanaged script.
 - Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): entity graph operations use the independently buildable `buildos-entities` Go toolkit with dry-run defaults, explicit roots, atomic canonical writes, and auditable source revision output.
 - Superseded by [18 Revise Unified BuildOS CLI and Distribution](./18-revise-unified-buildos-cli-and-distribution.md): durable deterministic domains remain isolated, but they converge into packages and subcommands in one `toolkits/buildos/` Go module and one public `buildos` executable. W1 R4 therefore introduces `buildos entities`, not a `buildos-entities` binary.
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): the selected delivery is one cohesive Go program, installed executable, and distribution containing the headless core, CLI, and MCP server. Domain ownership remains internal package cohesion, and PRD 18/19 packaging, compatibility, rollback, and release-hardening obligations remain effective gates.
 
 ## Initial Toolkit Target
 
@@ -56,6 +57,7 @@ W1 R0 P3 intake/conversion work should implement converter/index logic through t
 
 - Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): source-built adoption keeps checkout, installed binary, and adopter data separate; binary deployment and live-data migration are distinct operator approvals.
 - Superseded by [18 Revise Unified BuildOS CLI and Distribution](./18-revise-unified-buildos-cli-and-distribution.md): W1 R5 consolidates existing domain commands, provides one-minor-release compatibility aliases, and packages `buildos 0.1.0` through signed archives and Homebrew. R-003 remains open until that release evidence exists.
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): migration, packaging, aliases, signing, upgrade, rollback, and removal remain required evidence, but they apply to one distribution containing the headless core, CLI, and MCP server. The Phase 1 capability and technology gates precede implementation sequencing.
 
 ## Required Baseline Annotations
 

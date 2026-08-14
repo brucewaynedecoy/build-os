@@ -27,6 +27,10 @@ Code anchors:
 - `system/playbooks/administrative/respect-make-docs-plugin-boundary.md`
 - `system/.os/templates/guardrail-playbook.md`
 
+### Change Notes
+
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): category directories and router procedures remain evidence, while the effective contract is the `PBK-001` inspect/validate/select operation family plus an explicitly classified, rebuildable playbook catalog. CLI and MCP must expose the same operation semantics and lifecycle gates.
+
 ## Contracts and Data
 
 A playbook carries three orthogonal axes in frontmatter — `category` (directory), `execution_mode` (`explicit-steps`/`guided-objective`/`inferred-actions`/`n/a`), and `state_nature` (`stateful`/`standing`/`guardrail`) — plus `status`, `audience`, `harness`, `env`/`for`, `targets`, `produces`. IDs are flat (`PB-NNN`); category is a property, not in the ID. Lifecycle is `draft → reviewed → active → archived`; only `active` playbooks run or are enforced (the review-to-activate gate).
@@ -39,6 +43,7 @@ Code anchors:
 
 - Superseded by [13 Adopter-Owned Config Surface](./13-adopter-owned-config-surface.md): playbook scoped frontmatter no longer uses `env`/`for` or sentinel values such as `both` as effective contract vocabulary. Playbooks use `systems`, `environments`, and `owners` as config-backed lists of configured IDs.
 - Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): entity-valued playbook targets resolve through the shared canonical entity resolver while historical target IDs remain auditable.
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): inspect, validate, select, and catalog-rebuild semantics become explicit core operations with shared schemas, receipts, idempotency, and error behavior. Lifecycle vocabulary remains evidence pending full capability-map approval.
 
 ## Integrations
 
@@ -51,6 +56,7 @@ Code anchors:
 ### Change Notes
 
 - Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): playbook execution resolves losing target IDs to terminal active entities and writes canonical IDs for new target references.
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): playbook consumers use the same core resolution and selection semantics through CLI or MCP, while the optional UI and server remain separate consumers and do not gain independent playbook authority.
 
 ## Rebuild Notes
 

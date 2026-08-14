@@ -26,6 +26,10 @@ Code anchors:
 - `system/workspace/runs/`
 - `system/.os/data/findings.jsonl`
 
+### Change Notes
+
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): run, raw-finding, and qualification behavior becomes explicit `RUN`, `FND`, and `QLF` core operations with CLI/MCP parity, authoritative state transitions, provenance receipts, and recovery behavior. The deterministic verify-to-promote floor remains effective, while qualification authority and review workflow stay open in Q-001.
+
 ## Contracts and Data
 
 A run record is immutable and carries `outcome ∈ {positive, negative, inconclusive}`. **Qualification is the verify-to-promote gate**: a finding is verified-and-reproducible exactly when a deterministic, repeatable test confirms it. Negative findings qualify via a test that *repeatably asserts the negative* — a regression guard against a silent fix. The finding lifecycle is raw (in the run) → qualified (`workspace/findings/`) → design (optional, `11`). For canonical entity resolution, `qualified` is a valid terminal status only for findings; `running`, `closed`, and `aborted` are valid run terminals in addition to the generic entity lifecycle. Design promotion still requires a terminal `qualified` finding.
@@ -39,6 +43,7 @@ Code anchors:
 - Enhanced by [13 Adopter-Owned Config Surface](./13-adopter-owned-config-surface.md): run and finding records that carry scoped metadata propagate `systems`, `environments`, and `owners` as configured ID lists. Qualification and promotion must preserve those lists rather than translating them back to legacy scoped fields.
 - Superseded by [16 Revise Toolkit Ownership Boundaries](./16-revise-toolkit-ownership-boundaries.md) for deterministic implementation ownership: Flow B run recording, raw-finding anchoring, finding qualification, negative assertions, and run/finding-specific validation belong in `buildos-discovery`, not `buildos-intake` or `validate_config.py`.
 - Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): W1 R4 P4 resolves governed discovery targets and requested run IDs through the shared resolver. New run and finding references use terminal canonical IDs, while requested IDs, raw anchors, and complete chains preserve authored provenance. Resolver failures occur before writes.
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): run and finding state transitions, immutable evidence, qualification decisions, operation receipts, and failure recovery must be enumerated in the approved core capability map. Qualification authority remains unresolved and cannot be inferred from the current deterministic-test implementation.
 
 ## Integrations
 
@@ -47,6 +52,10 @@ Consumes active playbooks (`09`) and `workspace/datasets/` fixtures; writes stru
 Code anchors:
 
 - `system/workspace/datasets/`
+
+### Change Notes
+
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): playbook execution, evidence capture, canonical reference resolution, and handoff are versioned core-operation integrations exposed with CLI/MCP parity. Browser capture and UI coordination remain separately gated and do not bypass evidence provenance or privacy decisions.
 
 ## Rebuild Notes
 

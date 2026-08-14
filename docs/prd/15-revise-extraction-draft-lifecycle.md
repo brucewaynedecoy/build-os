@@ -33,6 +33,7 @@ W1 R0 P4 introduced the first canonical entity JSONL files and validation. The i
 ### Change Notes
 
 - Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](./17-enhance-entity-consolidation-and-canonical-resolution.md): `superseded` means the row has one reviewed redirect to a successor, while `archived` means retained without a successor; neither replaces the pending `draft` state.
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md) only for transition authority and operation exposure: the established lifecycle vocabulary remains effective, while creation, promotion, supersession, archival, and extraction disposition must occur through explicit core operations with receipts and CLI/MCP parity.
 
 ## Impacted Docs and Dependencies
 
