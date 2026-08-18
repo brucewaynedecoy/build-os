@@ -1,0 +1,210 @@
+{
+  "profile": "target17-new",
+  "defaults": {
+    "iteration_path": "BuildOS\\Backlog",
+    "tags": [
+      "BuildOS",
+      "Synthetic Fixture"
+    ]
+  },
+  "items": [
+    {
+      "work_item_type": "Epic",
+      "level": 1,
+      "title": "Build OS Azure Boards Backlog Export",
+      "summary": "Create one traceable Azure Boards import from an approved Build OS work backlog.",
+    "source_trace": {
+      "work_directory": "docs/work/2026-08-18-w1-r0-azure-boards-export",
+      "index_file": "docs/work/2026-08-18-w1-r0-azure-boards-export/00-index.md",
+      "labels": ["W1", "R0", "Approved"]
+    }
+    },
+    {
+      "work_item_type": "Feature",
+      "level": 2,
+      "title": "Backlog Selection and Mapping",
+      "summary": "Select one authoritative backlog and map its phases and stages into an Azure hierarchy.",
+      "tags": [
+        "w1-r0",
+        "p01"
+      ],
+      "source_trace": {
+        "work_directory": "docs/work/2026-08-18-w1-r0-azure-boards-export",
+        "phase_file": "docs/work/2026-08-18-w1-r0-azure-boards-export/01-selection-and-mapping.md",
+        "source_prd_docs": [
+          "docs/prd/20-azure-boards-export.md"
+        ]
+      }
+    },
+    {
+      "work_item_type": "Product Backlog Item",
+      "level": 3,
+      "title": "Select the authoritative Build OS backlog",
+      "description": {
+        "use_case": [
+          "The delivery owner needs one coherent source backlog so that the Azure tree does not mix unrelated revisions or blocked work."
+        ],
+        "outcomes": [
+          "Read the selected work index and all listed phase files.",
+          "Stop when backlog authority or scope is unclear."
+        ],
+        "technical_details": [
+          {
+            "text": "t1: Read the work-directory routing instructions.",
+            "children": [
+              "Read docs/work/AGENTS.md before source selection."
+            ]
+          },
+          {
+            "text": "t2: Reconcile the index Phase Map with the phase files.",
+            "children": [
+              "Record missing or extra phase files as blockers.",
+              "Preserve candidate, superseded, and approval-gate language."
+            ]
+          }
+        ]
+      },
+      "acceptance_criteria": [
+        "One work directory is selected as the export source.",
+        {
+          "text": "The source inventory is complete so that:",
+          "children": [
+            "every Phase Map entry resolves to one phase file;",
+            "every selected stage has tasks and acceptance criteria."
+          ]
+        },
+        "Candidate or superseded work is not presented as executable authority."
+      ],
+      "tags": [
+        "w1-r0",
+        "p01",
+        "stage-1"
+      ],
+      "source_trace": {
+        "work_directory": "docs/work/2026-08-18-w1-r0-azure-boards-export",
+        "phase_file": "docs/work/2026-08-18-w1-r0-azure-boards-export/01-selection-and-mapping.md",
+        "stage": "Stage 1 - Authoritative Backlog Selection",
+        "task_ids": [
+          "t1",
+          "t2"
+        ],
+        "source_prd_docs": [
+          "docs/prd/20-azure-boards-export.md"
+        ]
+      }
+    },
+    {
+      "work_item_type": "Feature",
+      "level": 2,
+      "title": "Azure Boards CSV Generation",
+      "summary": "Rewrite selected stages and emit the target Azure Boards import file.",
+      "tags": [
+        "w1-r0",
+        "p02"
+      ],
+      "source_trace": {
+        "work_directory": "docs/work/2026-08-18-w1-r0-azure-boards-export",
+        "phase_file": "docs/work/2026-08-18-w1-r0-azure-boards-export/02-csv-generation.md",
+        "source_prd_docs": [
+          "docs/prd/20-azure-boards-export.md"
+        ]
+      }
+    },
+    {
+      "work_item_type": "Product Backlog Item",
+      "level": 3,
+      "title": "Rewrite stage content into Azure rich text",
+      "description": {
+        "use_case": [
+          "Azure Boards users need consistent rich-text fields so that each work item separates its reason, outcome, and implementation detail."
+        ],
+        "outcomes": [
+          "Create the required Description sections.",
+          "Rewrite source acceptance bullets as observable end states."
+        ],
+        "technical_details": [
+          "t1: Write USE CASE, DESCRIPTION, and TECHNICAL DETAILS once and in that order.",
+          "t2: Preserve task IDs, paths, commands, dependencies, and gates.",
+          "t3: Add the BUILD OS SOURCE trace to Design Notes."
+        ]
+      },
+      "acceptance_criteria": [
+        "The Description contains all three required sections in the required order.",
+        "The Acceptance Criteria field contains an HTML unordered list of observable end states.",
+        "The Design Notes field contains the source work directory, phase file, stage, and task IDs."
+      ],
+      "tags": [
+        "w1-r0",
+        "p02",
+        "stage-1"
+      ],
+      "source_trace": {
+        "work_directory": "docs/work/2026-08-18-w1-r0-azure-boards-export",
+        "phase_file": "docs/work/2026-08-18-w1-r0-azure-boards-export/02-csv-generation.md",
+        "stage": "Stage 1 - Rich-Text Rewrite",
+        "task_ids": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "source_prd_docs": [
+          "docs/prd/20-azure-boards-export.md"
+        ]
+      }
+    },
+    {
+      "work_item_type": "Product Backlog Item",
+      "level": 3,
+      "title": "Emit and validate the hierarchical import CSV",
+      "description": {
+        "use_case": [
+          "The delivery owner needs one import-ready CSV so that Azure Boards can create the full parent-child tree without manual repair."
+        ],
+        "outcomes": [
+          "Emit the selected Azure Boards CSV profile.",
+          "Validate the complete file before delivery."
+        ],
+        "technical_details": [
+          {
+            "text": "t4: Emit the target profile.",
+            "children": [
+              "Write UTF-8 with a byte-order mark.",
+              "Write rows in Epic, Feature, and Product Backlog Item preorder."
+            ]
+          },
+          {
+            "text": "t5: Run structural validation.",
+            "children": [
+              "Reject invalid title hierarchy.",
+              "Reject missing HTML sections or source traces.",
+              "Reject populated ID, State, or Assigned To values in a new-item profile."
+            ]
+          }
+        ]
+      },
+      "acceptance_criteria": [
+        "The CSV starts with a UTF-8 byte-order mark.",
+        "Each row populates exactly one Title 1-4 field.",
+        "The validator exits with status 0 for the synthetic golden file.",
+        "No new-item row contains an ID, state, or assigned-user value."
+      ],
+      "tags": [
+        "w1-r0",
+        "p02",
+        "stage-2"
+      ],
+      "source_trace": {
+        "work_directory": "docs/work/2026-08-18-w1-r0-azure-boards-export",
+        "phase_file": "docs/work/2026-08-18-w1-r0-azure-boards-export/02-csv-generation.md",
+        "stage": "Stage 2 - CSV Emission and Validation",
+        "task_ids": [
+          "t4",
+          "t5"
+        ],
+        "source_prd_docs": [
+          "docs/prd/20-azure-boards-export.md"
+        ]
+      }
+    }
+  ]
+}
