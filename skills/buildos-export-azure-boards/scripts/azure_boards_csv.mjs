@@ -40,14 +40,71 @@ const TYPE_BY_LEVEL = {
   4: "Task",
 };
 
+const ADAPTER_IDS = ["dynamics-365-ce"];
+
 const ALLOWED_HTML_TAGS = new Set(["div", "b", "ul", "li", "br"]);
 const VOID_HTML_TAGS = new Set(["br"]);
 
 function usage() {
   return `Usage:
   node azure_boards_csv.mjs emit --input <manifest.json> --output <file.csv> [--profile target17-new|new|update]
-  node azure_boards_csv.mjs validate --input <file.csv> [--profile target17-new|new|update|auto]
-  node azure_boards_csv.mjs template --output <file.csv> [--profile target17-new|new|update]`;
+  node azure_boards_csv.mjs validate --input <file.csv> [--profile target17-new|new|update|auto] [--adapter <id>] [--adapter-params <json>] [--publisher-prefix <value>]
+  node azure_boards_csv.mjs template --output <file.csv> [--profile target17-new|new|update]
+  node azure_boards_csv.mjs adapters
+
+Registered adapters: ${ADAPTER_IDS.join(", ")}
+On emit, the adapter comes from the manifest keys 'adapter' and 'adapter_params'.`;
+}
+
+async function loadAdapter(name) {
+  if (!ADAPTER_IDS.includes(name)) {
+    throw new Error(`Unknown adapter '${name}'. Registered adapters: ${ADAPTER_IDS.join(", ")}.`);
+  }
+  return import(new URL(`./adapters/${name}.mjs`, import.meta.url).href);
+}
+
+// Resolves adapter parameters from the CLI, then the manifest, then the CSV itself.
+function resolveAdapterParams(adapter, supplied, rows) {
+  let params = supplied;
+  if ((!params || Object.keys(params).length === 0) && typeof adapter.inferParams === "function") {
+    params = adapter.inferParams(rows) ?? undefined;
+  }
+  return adapter.normalizeParams(params ?? {});
+}
+
+async function runAdapter(name, suppliedParams, validation) {
+  const adapter = await loadAdapter(name);
+  const { params, warnings } = resolveAdapterParams(adapter, suppliedParams, validation.adapterRows);
+  const result = adapter.validateRows({
+    headers: validation.headers,
+    rows: validation.adapterRows,
+    params,
+  });
+  return {
+    adapter: name,
+    adapterParams: params,
+    errors: result.errors,
+    warnings: [...warnings, ...result.warnings],
+  };
+}
+
+function parseAdapterParams(options) {
+  if (options["adapter-params"]) {
+    let parsed;
+    try {
+      parsed = JSON.parse(options["adapter-params"]);
+    } catch (error) {
+      throw new Error(`--adapter-params must be valid JSON: ${error.message}`);
+    }
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("--adapter-params must be a JSON object.");
+    }
+    return parsed;
+  }
+  if (options["publisher-prefix"]) {
+    return { publisher_prefix: options["publisher-prefix"] };
+  }
+  return undefined;
 }
 
 function parseArgs(argv) {
@@ -392,6 +449,7 @@ function validateCsvText(text, requestedProfileName = "auto") {
   const headerIndex = Object.fromEntries(headers.map((header, index) => [header, index]));
   const currentParent = { 1: false, 2: false, 3: false, 4: false };
   const counts = {};
+  const adapterRows = [];
 
   for (const [rowIndex, values] of dataRows.entries()) {
     const rowNumber = rowIndex + 2;
@@ -412,6 +470,12 @@ function validateCsvText(text, requestedProfileName = "auto") {
       errors.push(`Row ${rowNumber} must use Work Item Type '${expectedType}' for Title ${level}.`);
     }
     counts[workItemType || "(blank)"] = (counts[workItemType || "(blank)"] ?? 0) + 1;
+    adapterRows.push({
+      rowNumber,
+      level,
+      workItemType,
+      fields: Object.fromEntries(headers.map((header) => [header, value(header)])),
+    });
 
     if (level > 1 && !currentParent[level - 1]) {
       errors.push(`Row ${rowNumber} Title ${level} has no preceding Title ${level - 1} parent.`);
@@ -480,6 +544,21 @@ function validateCsvText(text, requestedProfileName = "auto") {
     counts,
     errors,
     warnings,
+    headers,
+    adapterRows,
+  };
+}
+
+function reportable(validation, adapterResult) {
+  const { headers: _headers, adapterRows: _rows, ...rest } = validation;
+  if (!adapterResult) return rest;
+  return {
+    ...rest,
+    valid: rest.valid && adapterResult.errors.length === 0,
+    adapter: adapterResult.adapter,
+    adapter_params: adapterResult.adapterParams,
+    errors: [...rest.errors, ...adapterResult.errors],
+    warnings: [...rest.warnings, ...adapterResult.warnings],
   };
 }
 
@@ -500,14 +579,22 @@ async function main() {
     const outputPath = requireOption(options, "output");
     const manifest = JSON.parse(await fs.readFile(inputPath, "utf8"));
     const profileName = options.profile ?? manifest.profile ?? "target17-new";
+    const adapterName = options.adapter ?? manifest.adapter ?? null;
+    const adapterParams = parseAdapterParams(options) ?? manifest.adapter_params;
+    if (adapterName) {
+      const adapter = await loadAdapter(adapterName);
+      adapter.normalizeParams(adapterParams ?? {});
+    }
     const { headers, rows } = buildRows(manifest, profileName);
     const csv = encodeCsv(headers, rows);
     const validation = validateCsvText(csv, profileName);
-    if (!validation.valid) {
-      throw new Error(`Generated CSV failed validation:\n${validation.errors.join("\n")}`);
+    const adapterResult = adapterName ? await runAdapter(adapterName, adapterParams, validation) : null;
+    const report = reportable(validation, adapterResult);
+    if (!report.valid) {
+      throw new Error(`Generated CSV failed validation:\n${report.errors.join("\n")}`);
     }
     await writeOutput(outputPath, csv);
-    console.log(JSON.stringify({ operation: "emit", output: path.resolve(outputPath), ...validation }, null, 2));
+    console.log(JSON.stringify({ operation: "emit", output: path.resolve(outputPath), ...report }, null, 2));
     return;
   }
 
@@ -517,8 +604,13 @@ async function main() {
     getProfile(profileName, true);
     const csv = await fs.readFile(inputPath, "utf8");
     const validation = validateCsvText(csv, profileName);
-    console.log(JSON.stringify({ operation: "validate", input: path.resolve(inputPath), ...validation }, null, 2));
-    if (!validation.valid) process.exitCode = 1;
+    const adapterName = options.adapter ?? null;
+    const adapterResult = adapterName
+      ? await runAdapter(adapterName, parseAdapterParams(options), validation)
+      : null;
+    const report = reportable(validation, adapterResult);
+    console.log(JSON.stringify({ operation: "validate", input: path.resolve(inputPath), ...report }, null, 2));
+    if (!report.valid) process.exitCode = 1;
     return;
   }
 
@@ -531,6 +623,16 @@ async function main() {
     console.log(
       JSON.stringify({ operation: "template", output: path.resolve(outputPath), profile: profileName }, null, 2),
     );
+    return;
+  }
+
+  if (command === "adapters") {
+    const adapters = [];
+    for (const name of ADAPTER_IDS) {
+      const adapter = await loadAdapter(name);
+      adapters.push({ id: adapter.id, label: adapter.label, required_params: adapter.requiredParams });
+    }
+    console.log(JSON.stringify({ operation: "adapters", adapters }, null, 2));
     return;
   }
 

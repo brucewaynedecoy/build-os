@@ -1,0 +1,349 @@
+{
+  "profile": "target17-new",
+  "adapter": "dynamics-365-ce",
+  "adapter_params": {
+    "publisher_prefix": "jd_"
+  },
+  "defaults": {},
+  "items": [
+    {
+      "work_item_type": "Epic",
+      "level": 1,
+      "title": "Rental Depreciation",
+      "summary": "Synthetic Dynamics 365 CE backlog used to test the dynamics-365-ce adapter. Not a real project backlog.",
+      "source_trace": {
+        "work_directory": "docs/work/2026-08-14-w1-r6-rental-depreciation",
+        "index_file": "docs/work/2026-08-14-w1-r6-rental-depreciation/00-index.md",
+        "labels": [
+          "W1",
+          "R6",
+          "Synthetic"
+        ]
+      }
+    },
+    {
+      "work_item_type": "Feature",
+      "level": 2,
+      "title": "Depreciation reference data",
+      "summary": "Configure the depreciation reference components.",
+      "source_trace": {
+        "work_directory": "docs/work/2026-08-14-w1-r6-rental-depreciation",
+        "phase_file": "docs/work/2026-08-14-w1-r6-rental-depreciation/01-configuration.md",
+        "labels": [
+          "Phase 1"
+        ]
+      }
+    },
+    {
+      "work_item_type": "Product Backlog Item",
+      "level": 3,
+      "title": "Depreciation (CFG) - Create Global Choices",
+      "description": {
+        "use_case": [
+          "Rental administrators need standard depreciation classifications so that every pricing class is set up the same way.",
+          "Rental administrators need to enable or disable automatic validation of depreciation rules per pricing class.",
+          "The depreciation calculation logic needs fixed reference values so that it can branch on the selected type."
+        ],
+        "outcomes": [
+          "Create the depreciation global choices in the Rental solution in CO DEVL.",
+          "Deploy the Rental solution to the upper CO environments for testing.",
+          "Deploy the Rental solution to Rental DEVL for customization."
+        ],
+        "technical_details": [
+          "Publisher Prefix: jd_",
+          {
+            "text": "t1: CO DEVL -> Rental -> Global Choices:",
+            "children": [
+              {
+                "text": "Create global choices:",
+                "children": [
+                  {
+                    "text": "Rental Depreciation Types:",
+                    "children": [
+                      "Schema: jd_RentalDepreciationTypes",
+                      "Logical Name: jd_rentaldepreciationtypes",
+                      "Description: Classifies how a pricing class depreciates.",
+                      {
+                        "text": "Choices:",
+                        "children": [
+                          "Fixed",
+                          "Activity",
+                          "Hybrid"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "text": "Rental Fixed Depreciation Frequency:",
+                    "children": [
+                      "Schema: jd_RentalFixedDepreciationFrequency",
+                      "Logical Name: jd_rentalfixeddepreciationfrequency",
+                      "Description: Sets how often a fixed depreciation run occurs.",
+                      {
+                        "text": "Choices:",
+                        "children": [
+                          "Monthly",
+                          "Weekly"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "text": "t2: Deploy the Rental solution.",
+            "children": [
+              "Target environments: CO TEST, CO PROD.",
+              "Target environment for customization: Rental DEVL.",
+              "Dependency: t1."
+            ]
+          }
+        ]
+      },
+      "acceptance_criteria": [
+        "The global choice Rental Depreciation Types will exist in the Rental solution in CO DEVL with the choices Fixed, Activity, and Hybrid.",
+        "The global choice Rental Fixed Depreciation Frequency will exist in the Rental solution in CO DEVL with the choices Monthly and Weekly.",
+        "The Rental solution will be deployed to the upper CO environments for testing.",
+        "The Rental solution will be deployed to the Rental DEVL environment for customization."
+      ],
+      "source_trace": {
+        "work_directory": "docs/work/2026-08-14-w1-r6-rental-depreciation",
+        "phase_file": "docs/work/2026-08-14-w1-r6-rental-depreciation/01-configuration.md",
+        "stage": "Stage 1 - Depreciation reference data",
+        "task_ids": [
+          "t1",
+          "t2"
+        ],
+        "labels": [
+          "Phase 1",
+          "CFG"
+        ]
+      }
+    },
+    {
+      "work_item_type": "Feature",
+      "level": 2,
+      "title": "Depreciation calculation",
+      "summary": "Build the depreciation calculation logic.",
+      "source_trace": {
+        "work_directory": "docs/work/2026-08-14-w1-r6-rental-depreciation",
+        "phase_file": "docs/work/2026-08-14-w1-r6-rental-depreciation/02-development.md",
+        "labels": [
+          "Phase 2"
+        ]
+      }
+    },
+    {
+      "work_item_type": "Product Backlog Item",
+      "level": 3,
+      "title": "Depreciation (DEV) - Plugin: Do depreciation calculation by type",
+      "description": {
+        "use_case": [
+          "The rental business needs equipment depreciation calculated automatically when a depreciation line is created, so that no administrator computes values by hand.",
+          "Each depreciation type needs its own calculation method, so that fixed and activity pricing classes produce correct values.",
+          "The Equipment record needs its remaining value kept current, because rental pricing and reporting read that value."
+        ],
+        "outcomes": [
+          "Create a plug-in that runs when a Rental Depreciation Line is created.",
+          "Select the calculation method from the pricing class configuration.",
+          "Update the Equipment record and the triggering depreciation line with the calculated values."
+        ],
+        "technical_details": [
+          "Publisher Prefix: jd_",
+          {
+            "text": "t3: Create a plug-in:",
+            "children": [
+              "Entity: Rental Depreciation Line",
+              "Message: Create",
+              "Stage: Post Operation",
+              "Execution: Synchronous",
+              "Columns: jd_rentaldepreciationlog, jd_equipment, jd_invoiceline",
+              {
+                "text": "Logic:",
+                "children": [
+                  {
+                    "text": "Retrieve from the Pricing Class (jd_rentaldepreciationlog > jd_pricingclass):",
+                    "children": [
+                      "\"Depreciation Type\" (jd_depreciationtype)",
+                      "\"Fixed Depreciation Sub-Type\" (jd_fixeddepreciationsubtype)",
+                      "\"Activity Depreciation Sub-Type\" (jd_activitydepreciationsubtype)",
+                      "\"Depreciation Floor\" (jd_depreciationfloor)"
+                    ]
+                  },
+                  {
+                    "text": "Retrieve from the Equipment record:",
+                    "children": [
+                      "\"MDP Value\" (jd_mdpvalue)",
+                      "\"MDP Less Depreciation\" (jd_mdplessdepreciation)"
+                    ]
+                  },
+                  {
+                    "text": "IF \"Depreciation Type\" == \"Fixed\":",
+                    "children": [
+                      "Call helper function CalculateDepreciationByCost."
+                    ]
+                  },
+                  {
+                    "text": "ELSE IF \"Activity Depreciation Sub-Type\" == \"Revenue\":",
+                    "children": [
+                      "Call helper function CalculateDepreciationByRentalRevenuePercent."
+                    ]
+                  },
+                  {
+                    "text": "ELSE:",
+                    "children": [
+                      "Write no value and exit without error."
+                    ]
+                  },
+                  {
+                    "text": "IF the calculated value is below \"Depreciation Floor\":",
+                    "children": [
+                      "Set the calculated value to \"Depreciation Floor\"."
+                    ]
+                  },
+                  {
+                    "text": "Write the results:",
+                    "children": [
+                      "Update the Equipment column \"MDP Less Depreciation\" (jd_mdplessdepreciation).",
+                      "Update the triggering Rental Depreciation Line with the calculated amount."
+                    ]
+                  }
+                ]
+              },
+              "Dependency: t1 and the helper library in t4."
+            ]
+          }
+        ]
+      },
+      "acceptance_criteria": [
+        "A plug-in will exist that is registered on the Create message of the Rental Depreciation Line table in the Post Operation stage, running synchronously.",
+        "When the pricing class Depreciation Type is Fixed, the plug-in will call CalculateDepreciationByCost.",
+        "When the pricing class Activity Depreciation Sub-Type is Revenue, the plug-in will call CalculateDepreciationByRentalRevenuePercent.",
+        "When neither branch matches, the plug-in will exit without writing a value and without raising an error.",
+        "The plug-in will update the \"MDP Less Depreciation\" (jd_mdplessdepreciation) value on the Equipment record.",
+        "The plug-in will update the calculated amount on the Rental Depreciation Line that triggered it.",
+        "The plug-in assembly will be deployed to the Rental solution in CO DEVL."
+      ],
+      "source_trace": {
+        "work_directory": "docs/work/2026-08-14-w1-r6-rental-depreciation",
+        "phase_file": "docs/work/2026-08-14-w1-r6-rental-depreciation/02-development.md",
+        "stage": "Stage 2 - Depreciation calculation",
+        "task_ids": [
+          "t3"
+        ],
+        "labels": [
+          "Phase 2",
+          "DEV"
+        ]
+      }
+    },
+    {
+      "work_item_type": "Feature",
+      "level": 2,
+      "title": "Scheduled depreciation run",
+      "summary": "Automate the scheduled depreciation run.",
+      "source_trace": {
+        "work_directory": "docs/work/2026-08-14-w1-r6-rental-depreciation",
+        "phase_file": "docs/work/2026-08-14-w1-r6-rental-depreciation/03-integration.md",
+        "labels": [
+          "Phase 3"
+        ]
+      }
+    },
+    {
+      "work_item_type": "Product Backlog Item",
+      "level": 3,
+      "title": "Depreciation (INT) - Power Automate: Scheduled depreciation calculation",
+      "description": {
+        "use_case": [
+          "Dealers need depreciation calculated on a schedule, so that fixed pricing classes are processed without manual work.",
+          "Each dealer needs the run to follow its own configured scheduling preference.",
+          "The depreciation custom action needs a caller, because nothing else triggers a fixed-type run."
+        ],
+        "outcomes": [
+          "Create a scheduled Power Automate flow in the Rental solution.",
+          "Read the dealer scheduling configuration from the Rental Settings record.",
+          "Call the depreciation custom action with the eligible pricing classes."
+        ],
+        "technical_details": [
+          "Publisher Prefix: jd_",
+          {
+            "text": "t5: Create a Power Automate Flow:",
+            "children": [
+              "Flow: Scheduled Rental Depreciation Calculation",
+              "Solution: Rental",
+              "Trigger: Schedule, daily at 4:00 AM Eastern",
+              "Connections: Dataverse, service principal",
+              {
+                "text": "Actions:",
+                "children": [
+                  {
+                    "text": "Retrieve columns from the Rental Settings record:",
+                    "children": [
+                      "\"Rental Depreciation Schedule Strategy\" (jd_rentaldepreciationschedulestrategy)",
+                      "\"Rental Depreciation Day of Week\" (jd_rentaldepreciationdayofweek)",
+                      "\"Rental Depreciation Day\" (jd_rentaldepreciationday)",
+                      "\"Rental Depreciation Week\" (jd_rentaldepreciationweek)"
+                    ]
+                  },
+                  {
+                    "text": "IF \"Rental Depreciation Schedule Strategy\" == \"First of month\":",
+                    "children": [
+                      "IF today is not the first day of the month, escape the flow."
+                    ]
+                  },
+                  {
+                    "text": "ELSE IF \"Rental Depreciation Schedule Strategy\" == \"Day of month\":",
+                    "children": [
+                      "IF today does not match \"Rental Depreciation Day\", escape the flow."
+                    ]
+                  },
+                  {
+                    "text": "ELSE:",
+                    "children": [
+                      "Escape the flow, because no other strategy is defined."
+                    ]
+                  },
+                  {
+                    "text": "Retrieve multiple Pricing Class records:",
+                    "children": [
+                      "Filter: jd_depreciationtype == \"Fixed\" AND jd_depreciationrulesvalidated == TRUE"
+                    ]
+                  },
+                  "Call custom action jd_GenerateRentalDepreciationLogs with the retrieved pricing class identifiers."
+                ]
+              },
+              "On failure, record the run outcome on the Rental Settings record and notify the rental operations mailbox.",
+              "Re-running on the same day creates no duplicate depreciation log.",
+              "Dependency: the custom API in t6."
+            ]
+          }
+        ]
+      },
+      "acceptance_criteria": [
+        "A Power Automate flow will exist in the Rental solution with a schedule trigger that runs daily at 4:00 AM Eastern.",
+        "The flow will read the four scheduling columns from the Rental Settings record on every run.",
+        "When the schedule strategy is First of month and today is not the first day, the flow will escape without calling the custom action.",
+        "When the schedule strategy is Day of month and today does not match the configured day, the flow will escape without calling the custom action.",
+        "When the schedule conditions are met, the flow will retrieve every Pricing Class where Depreciation Type is Fixed and depreciation rules are validated.",
+        "The flow will pass the retrieved pricing class identifiers to jd_GenerateRentalDepreciationLogs.",
+        "A second run on the same day will create no duplicate depreciation log.",
+        "A failed run will notify the rental operations mailbox."
+      ],
+      "source_trace": {
+        "work_directory": "docs/work/2026-08-14-w1-r6-rental-depreciation",
+        "phase_file": "docs/work/2026-08-14-w1-r6-rental-depreciation/03-integration.md",
+        "stage": "Stage 3 - Scheduled depreciation run",
+        "task_ids": [
+          "t5"
+        ],
+        "labels": [
+          "Phase 3",
+          "INT"
+        ]
+      }
+    }
+  ]
+}

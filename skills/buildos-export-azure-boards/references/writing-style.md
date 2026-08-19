@@ -2,11 +2,20 @@
 
 ## Contents
 
+- [Adapter precedence](#adapter-precedence)
 - [Style summary](#style-summary)
 - [Description grammar](#description-grammar)
 - [Acceptance Criteria grammar](#acceptance-criteria-grammar)
 - [Canonical HTML](#canonical-html)
 - [Cross-field review](#cross-field-review)
+
+## Adapter precedence
+
+This file sets the base grammar for platform-neutral work. A target-platform adapter adds rules on top of it: title grammar, work type codes, naming and casing conventions, per-section depth targets, required property sets, and acceptance coverage classes.
+
+When an adapter is selected, read its files after this one and apply both. The adapter tightens these rules; it never relaxes them. Where an adapter states an explicit deviation, such as an accepted acceptance-criteria tense or a substitute for inline emphasis, the adapter wins and states its reason.
+
+See [../adapters/00-adapter-registry.md](../adapters/00-adapter-registry.md).
 
 ## Style summary
 

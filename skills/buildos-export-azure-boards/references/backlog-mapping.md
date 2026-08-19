@@ -52,6 +52,19 @@ Keep completed task state as content only when it matters. Do not set Azure `Sta
 
 Treat source labels as tag candidates. Add them to `Tags` only when the user or target process approves those exact values. Otherwise, leave `Tags` blank and keep useful labels in the source trace.
 
+## Adapter splits
+
+A target-platform adapter can require one Build OS stage to become two or more Product Backlog Items, because the platform treats the parts as different work classes. The Dynamics 365 CE adapter does this, for example when one stage creates a table and a plug-in.
+
+When an adapter splits a stage:
+
+- Every resulting item keeps the same originating `source_trace.stage` value.
+- Every source task ID lands in exactly one resulting item.
+- Every source acceptance bullet lands in exactly one resulting item. The adapter may add criteria on top; it may not drop one.
+- The reconciliation rule below changes from one Product Backlog Item per stage to at least one Product Backlog Item per stage, with the task ID and acceptance bullet counts still balancing exactly.
+
+Record every split and its reason in the delivery report.
+
 ## Row-order rules
 
 Use preorder traversal:
@@ -84,7 +97,7 @@ After row planning, reconcile counts:
 
 - one Epic per selected work directory;
 - one Feature per included phase;
-- one Product Backlog Item per included stage;
+- one Product Backlog Item per included stage, or more when an adapter splits the stage;
 - every selected task ID appears in exactly one Product Backlog Item;
 - every selected acceptance bullet appears in exactly one Product Backlog Item.
 

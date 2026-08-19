@@ -4,6 +4,7 @@
 
 - [Profiles](#profiles)
 - [Manifest schema](#manifest-schema)
+- [Adapter keys](#adapter-keys)
 - [Structured list values](#structured-list-values)
 - [Optional item fields](#optional-item-fields)
 - [Commands](#commands)
@@ -45,6 +46,8 @@ The emitter accepts one JSON object:
 ```json
 {
   "profile": "target17-new",
+  "adapter": "dynamics-365-ce",
+  "adapter_params": { "publisher_prefix": "jd_" },
   "defaults": {
     "iteration_path": "Target Project\\Backlog",
     "tags": ["BuildOS"]
@@ -92,6 +95,19 @@ The emitter accepts one JSON object:
 ```
 
 Use `source_trace.labels` for useful source labels that do not have approved Azure `Tags` values. The emitter writes them into the `BUILD OS SOURCE` list in Design Notes.
+
+## Adapter keys
+
+Two optional top-level keys record the target-platform adapter:
+
+| Key | Type | Rule |
+| --- | --- | --- |
+| `adapter` | string | A registered adapter id from [../adapters/00-adapter-registry.md](../adapters/00-adapter-registry.md). Omit it when no adapter applies. |
+| `adapter_params` | object | The adapter's required parameters. Required whenever `adapter` is set. |
+
+The emitter fails when `adapter` names an unregistered adapter, when a required parameter is missing, or when an adapter check reports an error. Adapter warnings do not block the write; read them and either fix them or explain them in the delivery report.
+
+Set these keys from the confirmed adapter selection. Do not copy an adapter parameter from an example file.
 
 ## Structured list values
 
@@ -144,6 +160,26 @@ node scripts/azure_boards_csv.mjs validate \
   --profile target17-new
 ```
 
+Validate with an adapter. The adapter reads its parameters from `--adapter-params`, then from the CSV itself:
+
+```sh
+node scripts/azure_boards_csv.mjs validate \
+  --input /tmp/azure-boards.csv \
+  --profile target17-new \
+  --adapter dynamics-365-ce
+
+node scripts/azure_boards_csv.mjs validate \
+  --input /tmp/azure-boards.csv \
+  --adapter dynamics-365-ce \
+  --adapter-params '{"publisher_prefix":"jd_"}'
+```
+
+List registered adapters and their required parameters:
+
+```sh
+node scripts/azure_boards_csv.mjs adapters
+```
+
 Create a header-only target template:
 
 ```sh
@@ -171,6 +207,8 @@ The script validates deterministic structure. The agent validates meaning.
 
 The script checks:
 
+- adapter registration and required parameters;
+- every deterministic rule the selected adapter declares;
 - encoding and headers;
 - row width and count;
 - title-level hierarchy;
@@ -184,6 +222,8 @@ The script checks:
 
 The agent checks:
 
+- adapter selection and its evidence;
+- adapter warnings, each fixed or explained;
 - authority and scope;
 - complete source coverage;
 - writing style and voice;
