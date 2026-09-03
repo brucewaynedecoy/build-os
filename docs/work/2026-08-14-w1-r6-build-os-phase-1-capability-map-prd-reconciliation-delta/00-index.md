@@ -4,9 +4,12 @@
 
 Provide a dependency-ordered first implementation-backlog candidate for the single Go Build OS distribution containing the headless core, CLI, and MCP server. This directory is a planning artifact only and is not authoritative or executable.
 
-Execution is blocked until the owner approves anticipated [PRD 19](../../prd/19-revise-build-os-headless-core-cli-and-mcp-program.md) and its complete capability map, the reconciled [open questions and risk register](../../prd/03-open-questions-and-risk-register.md), the [W1 R6 plan](../../plans/2026-08-14-w1-r6-build-os-phase-1-capability-map-prd-reconciliation/00-overview.md), this backlog, the W1 R6 coordinate, and the commit or merge state that makes those artifacts repository authority. A separate implementation instruction is required after those gates pass.
+Execution is blocked until the owner approves anticipated [PRD 19](../../prd/19-revise-build-os-headless-core-cli-and-mcp-program.md) and its complete capability map, the reconciled [open questions and risk register](../../prd/03-open-questions-and-risk-register.md), the [W1 R6 plan](../../plans/2026-08-14-w1-r6-build-os-phase-1-capability-map-prd-reconciliation/00-overview.md), this backlog, and the commit or merge state that makes those artifacts repository authority.
+A separate implementation instruction is required after those gates pass.
 
-W1 R6 is a recommended revision coordinate derived from the W1 R5 lineage and remains subject to owner review. [W1 R5](../../plans/2026-07-21-w1-r5-unified-buildos-cli-and-distribution/00-overview.md) remains untouched and unexecuted.
+W1 R6 is the adopted successor execution coordinate derived from the W1 R5 lineage.
+The [W1 R5 plan](../../plans/2026-07-21-w1-r5-unified-buildos-cli-and-distribution/00-overview.md) and [backlog](../2026-07-21-w1-r5-unified-buildos-cli-and-distribution/00-index.md) remain unexecuted and are retained in place as historical and compatibility evidence; they must not be executed.
+This adoption does not make the W1 R6 candidate executable, which remains subject to its technical and phase gates.
 
 ## Phase Map
 

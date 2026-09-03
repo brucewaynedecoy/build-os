@@ -14,11 +14,15 @@ This plan authorizes documentation and planning only. It does not authorize Go i
 
 ## Coordinate Decision
 
-- Recommended coordinate: `W1 R6`
-- Classification: `revision`, subject to owner review
-- Evidence: [W1 R5](../2026-07-21-w1-r5-unified-buildos-cli-and-distribution/00-overview.md) is the current unexecuted revision of the W1 unified-distribution lineage. The [product-boundary design](../../designs/2026-08-13-build-os-product-boundary-and-headless-operating-model.md) retains useful W1 R5 choices but revises its CLI-first application boundary, brings MCP into the same executable and release, and requires a complete capability-map gate before implementation. `W1 R6` is therefore the next unused revision recommended by lineage, not an already approved or authoritative coordinate.
+- Coordinate: `W1 R6`
+- Classification: `revision`; adopted successor execution coordinate
+- Evidence: [W1 R5](../2026-07-21-w1-r5-unified-buildos-cli-and-distribution/00-overview.md) is the unexecuted prior revision of the W1 unified-distribution lineage.
+  The [product-boundary design](../../designs/2026-08-13-build-os-product-boundary-and-headless-operating-model.md) retains useful W1 R5 choices but revises its CLI-first application boundary, brings MCP into the same executable and release, and requires a complete capability-map gate before implementation.
+  The owner adopted `W1 R6` as the successor execution coordinate in that lineage.
 
-W1 R5 remains untouched, unexecuted, and available as historical planning evidence until the owner decides whether W1 R6 supersedes it. Creating this plan does not close, execute, archive, or rewrite W1 R5.
+W1 R5 is superseded for execution, remains unexecuted, and is retained in place as historical and compatibility evidence; it must not be executed.
+This coordinate decision does not authorize implementation.
+W1 R6 remains subject to the technical, artifact-approval, repository-authority, and phase gates below.
 
 ## Change Classification
 
@@ -105,7 +109,7 @@ The map must cover project and global state, configuration and registries, evide
 1. The two uncommitted design inputs require owner acceptance and a separately authorized commit or merge before they can become repository authority for implementation.
 2. PRD 19, required baseline annotations, `docs/prd/00-index.md`, and the reconciled living register must be reviewed as one active-set evolution package.
 3. The complete initial capability map must contain no undispositioned in-scope capability, open question, or risk. A documented blocking or deferred disposition is valid; silence is not.
-4. The W1 R6 coordinate, plan, and candidate backlog require owner review. W1 R5 remains unexecuted unless the owner explicitly supersedes it.
+4. The W1 R6 coordinate is adopted and supersedes W1 R5 for execution. The W1 R6 plan and candidate backlog still require owner review; W1 R5 remains unexecuted historical and compatibility evidence and must not be executed.
 5. The candidate backlog remains non-authoritative until PRD 19, the capability map, the register, this plan, and commit or merge authority are approved.
 6. Implementation, toolkit mutation, publication, and deployment each require separate authorization after the documentation gates pass.
 7. The optional coordinating server, UI and browser evidence client, and Make Docs companion integration require later independent design and validation gates; none is implementation scope here.

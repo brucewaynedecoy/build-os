@@ -6,6 +6,10 @@
 
 **Purpose:** Evolve the active BuildOS toolkit architecture from separately distributed domain binaries to one modular `buildos` executable and prepare its first verified public package without implementing project installation lifecycle behavior prematurely.
 
+> **Execution status:** Superseded for execution by the [W1 R6 successor plan](../2026-08-14-w1-r6-build-os-phase-1-capability-map-prd-reconciliation/00-overview.md).
+> W1 R5 was not executed and is retained in place as historical and compatibility evidence.
+> Do not execute this plan or any of its phase files.
+
 ## Objective
 
 Implement the [unified CLI and distribution design](../../designs/2026-07-21-unified-buildos-cli-and-distribution.md) after W1 R4 is complete. Completion means intake, discovery, design, and entities run through one Go module and executable; legacy names are bounded aliases with parity evidence; version `0.1.0` can be installed from verified archives and Homebrew; and the documentation and risk register distinguish current capability from the W2 project-lifecycle follow-on.

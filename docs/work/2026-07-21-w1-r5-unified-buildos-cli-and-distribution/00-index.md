@@ -1,5 +1,9 @@
 # Unified BuildOS CLI and Distribution Delta Backlog
 
+> **Execution status:** Superseded for execution by the [W1 R6 successor backlog](../2026-08-14-w1-r6-build-os-phase-1-capability-map-prd-reconciliation-delta/00-index.md).
+> W1 R5 was not executed and is retained in place as historical and compatibility evidence.
+> Do not execute this backlog or any of its phase files.
+
 ## Purpose
 
 Provide the dependency-ordered W1 R5 implementation backlog for consolidating the current Go toolkits into one modular `buildos` executable, preserving existing commands through temporary aliases, and releasing BuildOS `0.1.0` through verified archives and Homebrew.
