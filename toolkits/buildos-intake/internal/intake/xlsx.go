@@ -6,6 +6,7 @@ import (
 	"encoding/csv"
 	"encoding/xml"
 	"fmt"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -81,8 +82,9 @@ func convertXLSX(path, assetsRoot, sourceSlug, sourceRel, sum string, dryRun, fo
 		entries[f.Name] = data
 	}
 
+	const workbookPart = "xl/workbook.xml"
 	var wb workbook
-	if err := readZipXML(entries, "xl/workbook.xml", &wb); err != nil {
+	if err := readZipXML(entries, workbookPart, &wb); err != nil {
 		return nil, nil, err
 	}
 	var rels relationships
@@ -91,7 +93,10 @@ func convertXLSX(path, assetsRoot, sourceSlug, sourceRel, sum string, dryRun, fo
 	}
 	relTargets := map[string]string{}
 	for _, rel := range rels.Rels {
-		target := filepath.ToSlash(filepath.Clean(filepath.Join("xl", rel.Target)))
+		target, err := resolvePackageRelationshipTarget(workbookPart, rel.Target)
+		if err != nil {
+			return nil, nil, fmt.Errorf("invalid worksheet relationship %s target %q: %w", rel.ID, rel.Target, err)
+		}
 		relTargets[rel.ID] = target
 	}
 	shared := parseSharedStrings(entries["xl/sharedStrings.xml"])
@@ -112,6 +117,24 @@ func convertXLSX(path, assetsRoot, sourceSlug, sourceRel, sum string, dryRun, fo
 		outputs = append(outputs, outputFor(assetsRoot, sourceSlug, assetSlug(path, sheet.Name), ".csv", sourceRel, sum, "csv", body))
 	}
 	return outputs, sideArtifacts, nil
+}
+
+func resolvePackageRelationshipTarget(sourcePart, target string) (string, error) {
+	cleanSource := path.Clean(sourcePart)
+	if path.IsAbs(cleanSource) || cleanSource == ".." || strings.HasPrefix(cleanSource, "../") {
+		return "", fmt.Errorf("source part %q escapes package root", sourcePart)
+	}
+
+	var resolved string
+	if strings.HasPrefix(target, "/") {
+		resolved = path.Clean(strings.TrimPrefix(target, "/"))
+	} else {
+		resolved = path.Clean(path.Join(path.Dir(cleanSource), target))
+	}
+	if path.IsAbs(resolved) || resolved == ".." || strings.HasPrefix(resolved, "../") {
+		return "", fmt.Errorf("target escapes package root")
+	}
+	return resolved, nil
 }
 
 func parseSharedStrings(data []byte) []string {

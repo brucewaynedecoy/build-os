@@ -121,6 +121,70 @@ func TestConvertXLSXWritesOneCSVPerWorksheet(t *testing.T) {
 	}
 }
 
+func TestConvertXLSXResolvesWorksheetRelationshipTargets(t *testing.T) {
+	tests := []struct {
+		name   string
+		target string
+		entry  string
+	}{
+		{name: "package root sheet", target: "/xl/worksheets/sheet.xml", entry: "xl/worksheets/sheet.xml"},
+		{name: "package root sheet2", target: "/xl/worksheets/sheet2.xml", entry: "xl/worksheets/sheet2.xml"},
+		{name: "relative sheet", target: "worksheets/sheet.xml", entry: "xl/worksheets/sheet.xml"},
+		{name: "relative sheet2", target: "worksheets/sheet2.xml", entry: "xl/worksheets/sheet2.xml"},
+		{name: "relative parent segment", target: "../xl/worksheets/sheet.xml", entry: "xl/worksheets/sheet.xml"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			root := t.TempDir()
+			source := filepath.Join(root, "book.xlsx")
+			writeZip(t, source, map[string]string{
+				"xl/workbook.xml":            `<workbook xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Sheet" sheetId="1" r:id="rId1"/></sheets></workbook>`,
+				"xl/_rels/workbook.xml.rels": fmt.Sprintf(`<Relationships><Relationship Id="rId1" Target="%s"/></Relationships>`, test.target),
+				"xl/sharedStrings.xml":       `<sst><si><t>Value</t></si></sst>`,
+				test.entry:                   `<worksheet><sheetData><row><c r="A1" t="s"><v>0</v></c></row><row><c r="A2"><v>1</v></c></row></sheetData></worksheet>`,
+			})
+			before, err := os.ReadFile(source)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			result, err := Convert(ConvertOptions{RepoRoot: root, Source: "book.xlsx", AssetsRoot: "system/assets"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(result.Outputs) != 1 {
+				t.Fatalf("outputs=%d", len(result.Outputs))
+			}
+			body, err := os.ReadFile(result.Outputs[0].Path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(string(body), "Value\n1\n") {
+				t.Fatalf("unexpected worksheet body:\n%s", body)
+			}
+			after, err := os.ReadFile(source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(after) != string(before) {
+				t.Fatal("source XLSX changed during conversion")
+			}
+		})
+	}
+}
+
+func TestResolvePackageRelationshipTargetRejectsPackageRootEscape(t *testing.T) {
+	for _, target := range []string{"../../worksheets/sheet.xml", "/../worksheets/sheet.xml"} {
+		t.Run(target, func(t *testing.T) {
+			_, err := resolvePackageRelationshipTarget("xl/workbook.xml", target)
+			if err == nil || !strings.Contains(err.Error(), "escapes package root") {
+				t.Fatalf("err=%v", err)
+			}
+		})
+	}
+}
+
 func TestConvertHTMLWritesMarkdown(t *testing.T) {
 	root := t.TempDir()
 	source := filepath.Join(root, "page.html")
