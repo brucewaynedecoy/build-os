@@ -14,7 +14,7 @@ This phase owns the PRD revision, affected baseline annotations, enterprise dist
 | --- | --- | --- | --- |
 | PRD revision | `docs/prd/14-revise-deterministic-toolkit-deployment.md` | Source design | Defines the effective requirement. |
 | Baseline annotations | `docs/prd/02-*`, `03-*`, `06-*`, `07-*`, `12-*`, `00-index.md` | PRD revision | Keeps W1 R0 context intact while recording PRD 14 as the active revision. |
-| Developer guide | `docs/guides/developer/buildos-toolkit-cli-development.md` | Guide contract | Gives future maintainers a repeatable workflow for new, revised, and converted toolkits. |
+| Developer guide | `docs/assets/maintainer/buildos-toolkit-cli-development.md` | Guide contract | Gives future maintainers a repeatable workflow for new, revised, and converted toolkits. |
 | Standard design | `docs/designs/2026-06-04-buildos-toolkit-cli-deployment-standard.md` | Design contract | Records the architectural decision. |
 | make-docs handoff | `docs/designs/2026-06-04-make-docs-buildos-toolkit-cli-import-strategy.md` | make-docs boundary | Keeps upstream make-docs changes out of this local Build OS phase. |
 

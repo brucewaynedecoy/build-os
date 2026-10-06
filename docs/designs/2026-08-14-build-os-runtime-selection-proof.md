@@ -97,6 +97,6 @@ This bounded proof did not include a real Make Docs invocation, Windows executio
 ## Intended Follow-On
 
 - Route: `change-plan`
-- Next Prompt: [designs-to-plan-change.prompt.md](../assets/prompts/designs-to-plan-change.prompt.md)
+- Next Prompt: [designs-to-plan-change.prompt.md](make-docs://system/prompt/designs-to-plan-change.prompt.md)
 - Why: If separately authorized, the retained runtime decision should revise the active headless-core and CLI planning path rather than create an unrelated baseline.
 - Coordinate Handoff: unresolved; planner must resolve before writing.

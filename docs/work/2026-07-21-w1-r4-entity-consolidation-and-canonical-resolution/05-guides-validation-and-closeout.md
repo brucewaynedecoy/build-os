@@ -23,7 +23,7 @@ Documentation must separate source checkout, installed program files, and adopte
 
 ### Tasks
 
-- [x] t1: Reconcile `docs/guides/developer/` coverage for redirect invariants, unified CLI ownership, temporary package sharing, graph loading, resolver behavior, compatibility and strict validation, atomic writes, deterministic indexes, failure recovery, fixtures, and integration expectations.
+- [x] t1: Reconcile `docs/assets/maintainer/` coverage for redirect invariants, unified CLI ownership, temporary package sharing, graph loading, resolver behavior, compatibility and strict validation, atomic writes, deterministic indexes, failure recovery, fixtures, and integration expectations.
 - [x] t2: Add or update a maintainer workflow that shows where canonical rows, derived indexes, toolkit code, wrappers, tests, and contracts live and how changes propagate safely.
 - [x] t3: Document safe release verification, including invalid-graph diagnostics, index reproducibility, post-write index recovery, and the prohibition on new durable Python logic.
 - [x] t4: Add reciprocal related-guide links and `Future Coverage` for verified downstream dependencies, including W1 R5 packaging and W2 lifecycle automation without describing either as current behavior.
@@ -43,7 +43,7 @@ Documentation must separate source checkout, installed program files, and adopte
 
 ### Tasks
 
-- [x] t5: Reconcile `docs/guides/user/` with novice-executable procedures for inventory, proposal review, explicit source build, copied-root setup, compatibility validation, dry-run review, approved apply, strict validation, rollback, and post-migration checks.
+- [x] t5: Reconcile `docs/assets/user/` with novice-executable procedures for inventory, proposal review, explicit source build, copied-root setup, compatibility validation, dry-run review, approved apply, strict validation, rollback, and post-migration checks.
 - [x] t6: State prominently that the pre-upgrade prompt is proposal-only and must not change lifecycle states, redirect fields, references, canonical JSONL, indexes, installed binaries, or live data.
 - [x] t7: Document the distinct source checkout, installed binary or wrapper, copied working root, snapshot, and live adopter root using sanitized placeholders.
 - [x] t8: Document hard-stop conditions for ambiguous roots, missing snapshots, invalid graphs, ambiguous mappings, failed writes, failed index rebuilds, or unresolved strict errors.

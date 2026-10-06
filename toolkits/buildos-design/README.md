@@ -48,6 +48,6 @@ go build -o bin/buildos-design ./cmd/buildos-design
 ## References
 
 - [Toolkit router](../AGENTS.md)
-- [Build OS Toolkit CLI Development](../../docs/guides/developer/buildos-toolkit-cli-development.md)
+- [Build OS Toolkit CLI Development](../../docs/assets/maintainer/buildos-toolkit-cli-development.md)
 - [Finding Contract](../../system/.os/contracts/finding-contract.md)
 - [PRD 16 Toolkit Ownership Boundaries](../../docs/prd/16-revise-toolkit-ownership-boundaries.md)

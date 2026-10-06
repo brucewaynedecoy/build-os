@@ -188,7 +188,7 @@ the shipped starter config and updated scoped artifacts.
 ## Intended Follow-On
 
 - Route: `change-plan`
-- Next Prompt: [designs-to-plan-change.prompt.md](../assets/prompts/designs-to-plan-change.prompt.md)
+- Next Prompt: [designs-to-plan-change.prompt.md](make-docs://system/prompt/designs-to-plan-change.prompt.md)
 - Why: This revises an already generated baseline architecture and work backlog by replacing fixed
   scoped vocabulary with adopter-owned configuration, including first-pass validation and
   frontmatter hygiene.

@@ -78,6 +78,6 @@ Enterprise release hardening remains open. Signing, checksums, SBOM generation, 
 ## Intended Follow-On
 
 - Route: `change-plan`
-- Next Prompt: [designs-to-plan-change.prompt.md](../assets/prompts/designs-to-plan-change.prompt.md)
+- Next Prompt: [designs-to-plan-change.prompt.md](make-docs://system/prompt/designs-to-plan-change.prompt.md)
 - Why: This revises the W1 R0 baseline before W1 R0 P3 implementation so intake/conversion can be built on the toolkit standard.
 - Coordinate Handoff: W1 R2 is the prerequisite change coordinate. W1 R0 P3 consumes `toolkits/buildos-intake/` and implements converter/index behavior through the `buildos-intake` CLI.

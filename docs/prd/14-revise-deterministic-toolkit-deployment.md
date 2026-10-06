@@ -70,7 +70,7 @@ This PRD revision should be referenced from the impacted baseline PRDs as a chan
 - `system/.os/scripts/`
 - `system/.os/contracts/intake-translation-contract.md`
 - `system/playbooks/administrative/manual-intake-conversion.md`
-- `docs/guides/developer/buildos-toolkit-cli-development.md`
+- `docs/assets/maintainer/buildos-toolkit-cli-development.md`
 - `docs/designs/2026-06-04-buildos-toolkit-cli-deployment-standard.md`
 - `docs/plans/2026-06-04-w1-r2-buildos-toolkit-cli-deployment-standard/`
 - `docs/work/2026-06-04-w1-r2-buildos-toolkit-cli-deployment-standard/`

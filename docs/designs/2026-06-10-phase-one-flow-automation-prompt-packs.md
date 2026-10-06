@@ -7,7 +7,9 @@
 
 Define a prompt-pack structure that lets an operator ask a long-running agent to run Flow A, Flow B, or Flow C end-to-end while preserving Build OS routing, approval gates, validation expectations, and no-change rationale.
 
-This is the first implementation step because it can reuse the current operator-facing scenarios in [USE_CASES_TESTING.md](../../USE_CASES_TESTING.md) and the existing Flow C process starter in [agent-prompt.md](../../agent_processes/3--design-plan-backlogs-build/agent-prompt.md) without waiting for a new flow runner or harness-specific plugin.
+This design originally proposed reusing the operator-facing scenarios in [USE_CASES_TESTING.md](../../USE_CASES_TESTING.md) and the Flow C process starter without waiting for a new flow runner or harness-specific plugin.
+
+Historical input: `agent_processes/3--design-plan-backlogs-build/agent-prompt.md`. Removed in commit `3c7d921` as an outdated agent process guide. The original text remains available in Git history.
 
 ## Context
 
@@ -118,6 +120,6 @@ Because the prompt packs live outside `system/` initially, follow-on planning mu
 ## Intended Follow-On
 
 - Route: `change-plan`
-- Next Prompt: [designs-to-plan-change.prompt.md](../assets/prompts/designs-to-plan-change.prompt.md)
+- Next Prompt: [designs-to-plan-change.prompt.md](make-docs://system/prompt/designs-to-plan-change.prompt.md)
 - Why: This is an additive process and documentation change against the active Build OS baseline. It should be implemented before the deterministic orchestrator so the later runner can encode proven prompt contracts instead of inventing its own flow language.
 - Coordinate Handoff: unresolved; planner must resolve before writing. Treat the baseline P8 stage automation surface as the related planned capability, but sequence this prompt-pack implementation ahead of any `buildos-flow` toolkit or harness-plugin work.

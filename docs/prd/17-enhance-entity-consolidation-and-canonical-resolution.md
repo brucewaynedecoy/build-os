@@ -380,7 +380,7 @@ the index may be deleted and rebuilt.
 - [Entity consolidation contract](../../system/.os/contracts/entity-consolidation-contract.md)
 - [Persona identity contract](../../system/.os/contracts/persona-identity-contract.md)
 - [Extraction contract](../../system/.os/contracts/extraction-contract.md)
-- [Pre-upgrade entity consolidation audit prompt](../assets/prompts/pre-upgrade-entity-consolidation-audit.prompt.md)
+- [Pre-upgrade entity consolidation audit prompt](../../.make-docs/system/prompts/pre-upgrade-entity-consolidation-audit.prompt.md)
 - [PRD 08 Data Layer and Extraction](./08-data-and-extraction.md)
 - [PRD 14 Revise Deterministic Toolkit Deployment](./14-revise-deterministic-toolkit-deployment.md)
 - [PRD 15 Revise Extraction Draft Lifecycle](./15-revise-extraction-draft-lifecycle.md)

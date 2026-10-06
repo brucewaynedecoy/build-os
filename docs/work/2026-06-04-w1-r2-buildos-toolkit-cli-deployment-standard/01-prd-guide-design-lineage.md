@@ -42,7 +42,7 @@ This phase captures the durable documentation surface for W1 R2. It defines the 
 
 ### Tasks
 
-- [x] t1: Add `docs/guides/developer/buildos-toolkit-cli-development.md` with reusable guidance for creating new toolkits, revising existing toolkits, and converting unmanaged scripts.
+- [x] t1: Add `docs/assets/maintainer/buildos-toolkit-cli-development.md` with reusable guidance for creating new toolkits, revising existing toolkits, and converting unmanaged scripts.
 - [x] t2: Add `docs/designs/2026-06-04-buildos-toolkit-cli-deployment-standard.md` with the architecture decision and W1 R0 P3 handoff.
 - [x] t3: Add `docs/designs/2026-06-04-make-docs-buildos-toolkit-cli-import-strategy.md` for upstream make-docs maintainer work.
 - [x] t4: Keep the make-docs handoff explicit that make-docs-owned assets should change upstream and be imported back later.
@@ -56,6 +56,6 @@ This phase captures the durable documentation surface for W1 R2. It defines the 
 
 ### Dependencies
 
-- `docs/guides/AGENTS.md`
+- `docs/assets/AGENTS.md`
 - `docs/designs/AGENTS.md`
 - `docs/assets/references/guide-contract.md`

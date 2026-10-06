@@ -35,7 +35,7 @@ This plan does not generate the matching work backlog, PRD change doc, or implem
 - [Phase One Flow Automation Prompt Packs](../../designs/2026-06-10-phase-one-flow-automation-prompt-packs.md)
 - [USE_CASES_TESTING.md](../../../USE_CASES_TESTING.md)
 - [USE_CASES.md](../../../USE_CASES.md)
-- Existing Flow C prompt starter under [agent_processes/3--design-plan-backlogs-build/](../../../agent_processes/3--design-plan-backlogs-build/agent-prompt.md)
+- Historical input: `agent_processes/3--design-plan-backlogs-build/agent-prompt.md`. Removed in commit `3c7d921` as an outdated agent process guide. The original text remains available in Git history.
 - Active PRD docs, especially [11-flow-c-integration.md](../../prd/11-flow-c-integration.md), [12-stage-automation.md](../../prd/12-stage-automation.md), and the flow-adjacent docs `07` through `10`.
 
 ## Baseline Context
@@ -55,7 +55,7 @@ The downstream execution should create or update:
 - a PRD change doc, expected as `docs/prd/17-revise-flow-automation-prompt-packs.md` unless another PRD is added first.
 - targeted baseline PRD annotations in `docs/prd/12-stage-automation.md` and any other flow PRD docs materially affected by the prompt-pack contract.
 - matching delta work backlog under `docs/work/2026-06-10-w1-r3-flow-automation-prompt-packs/` after this plan is approved for execution.
-- guide updates only if execution makes prompt-pack operation an adopter or maintainer workflow that belongs in `docs/guides/`.
+- guide updates only if execution makes prompt-pack operation an adopter or maintainer workflow that belongs in `docs/assets/`.
 
 No source-code toolkit implementation is in scope for this plan. Do not create `buildos-flow`, harness plugins, hooks, or new scripts as part of the phase-one prompt-pack implementation.
 

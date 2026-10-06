@@ -26,7 +26,7 @@ W2 installation lifecycle commands remain future work inside the same `buildos` 
 
 - Coordinate: `W1 R4`
 - Classification: `revision`
-- Source lineage: this work revises the entity data and extraction capability delivered as W1 R0 P4 and recorded in [the W1 R0 P4 closeout](../../assets/history/2026-06-04-w1-r0-p4-data-layer-extraction.md).
+- Source lineage: this work revises the entity data and extraction capability delivered as W1 R0 P4 and recorded in [the W1 R0 P4 closeout](../../../.make-docs/archive/history/2026-06-04-w1-r0-p4-data-layer-extraction.md).
 - Revision evidence: W1 R1, R2, and R3 are already occupied by adopter configuration, deterministic toolkit deployment, and flow-automation planning respectively, so R4 is the next unused revision in the lineage wave.
 - Scope evidence: the accepted [entity consolidation and canonical resolution design](../../designs/2026-07-21-entity-consolidation-and-canonical-resolution.md) explicitly routes to a change plan and extends the same W1 entity, extraction, validation, and toolkit surfaces rather than starting a separate end-to-end product initiative.
 
@@ -43,7 +43,7 @@ W2 installation lifecycle commands remain future work inside the same `buildos` 
 | Input | Format | Location | Confidence |
 | --- | --- | --- | --- |
 | Accepted consolidation decision | Design record | [Entity consolidation and canonical resolution](../../designs/2026-07-21-entity-consolidation-and-canonical-resolution.md) | High |
-| Pre-upgrade cleanup boundary | Reusable prompt | [Pre-upgrade entity consolidation audit](../../assets/prompts/pre-upgrade-entity-consolidation-audit.prompt.md) | High |
+| Pre-upgrade cleanup boundary | Reusable prompt | [Pre-upgrade entity consolidation audit](../../../.make-docs/system/prompts/pre-upgrade-entity-consolidation-audit.prompt.md) | High |
 | Entity envelope and lifecycle | Operating contract | `system/.os/contracts/entity-records-contract.md` | High |
 | Extraction provenance and minted-output behavior | Operating contract | `system/.os/contracts/extraction-contract.md` and `system/.os/data/extractions.jsonl` | High |
 | Existing index roles | Generated data and contracts | `system/.os/indexes/references.json`, `system/.os/indexes/playbooks.json`, and `system/.os/contracts/` | High |
@@ -110,7 +110,7 @@ The execution harness should use delegation-ready, disjoint scopes. If delegatio
 | Unified CLI and resolver worker | Root CLI seed, generic graph engine, index generator, and tests | `toolkits/buildos/`, owned wrappers, entity-resolution fixtures | Final contract invariants and PRD 18 root/output policy | `buildos entities`, shared help/version/output, dry-run/apply behavior, compat/strict validation, atomic writes, reproducible index |
 | Persona-migration worker | Persona adapter, reviewed fixtures, copied-root rehearsal, and recovery evidence | persona fixtures and migration-test artifacts only | Resolver toolkit complete | Persona pilot with one-hop, multi-hop, remap-conflict, ambiguity, and rollback coverage |
 | Integration worker | Redirect-aware consumers and entity-producing workflows | extraction, entity-reference, and playbook-target integration surfaces plus tests | Resolver API stable; persona pilot passing | Original-plus-canonical reads and terminal-canonical writes |
-| Guide worker | Maintainer and end-user reconciliation | `docs/guides/developer/`, `docs/guides/user/` | Stable CLI and migration behavior | Naive-reader procedures, safety warnings, troubleshooting, reciprocal links |
+| Guide worker | Maintainer and end-user reconciliation | `docs/assets/maintainer/`, `docs/assets/user/` | Stable CLI and migration behavior | Naive-reader procedures, safety warnings, troubleshooting, reciprocal links |
 | Backlog worker | Scoped implementation backlog | `docs/work/2026-07-21-w1-r4-entity-consolidation-and-canonical-resolution/` | Reconciled PRD 17 and baseline annotations | Dependency-ordered delta backlog with source PRD links |
 | Validation and closeout worker | Cross-scope validation, narrow fixes, and history | validation-only fixes plus W1 R4 history record | All other deliverables complete | Full validation report, link cleanup, closeout breadcrumb |
 

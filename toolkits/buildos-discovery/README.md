@@ -51,6 +51,6 @@ go build -o bin/buildos-discovery ./cmd/buildos-discovery
 ## References
 
 - [Toolkit router](../AGENTS.md)
-- [Build OS Toolkit CLI Development](../../docs/guides/developer/buildos-toolkit-cli-development.md)
+- [Build OS Toolkit CLI Development](../../docs/assets/maintainer/buildos-toolkit-cli-development.md)
 - [PRD 10 Discovery, Runs and Qualification](../../docs/prd/10-discovery-runs-and-qualification.md)
 - [PRD 16 Toolkit Ownership Boundaries](../../docs/prd/16-revise-toolkit-ownership-boundaries.md)

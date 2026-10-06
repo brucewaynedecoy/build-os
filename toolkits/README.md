@@ -45,4 +45,4 @@ The unified seed lives at [buildos](./buildos/). It emits only the `buildos` bin
 
 For a new domain, add or plan an isolated package and `buildos <domain>` subcommand inside the unified module. Do not create another public `buildos-<domain>` executable. The only planned legacy public names are temporary aliases for the three binaries that already shipped.
 
-See [Build OS Toolkit CLI Development](../docs/guides/developer/buildos-toolkit-cli-development.md) for the full maintainer workflow.
+See [Build OS Toolkit CLI Development](../docs/assets/maintainer/buildos-toolkit-cli-development.md) for the full maintainer workflow.

@@ -7,7 +7,7 @@ Create the authoritative enhancement contract before implementation so every lat
 ## Source Inputs
 
 - [Entity consolidation and canonical resolution design](../../designs/2026-07-21-entity-consolidation-and-canonical-resolution.md)
-- [Pre-upgrade audit prompt](../../assets/prompts/pre-upgrade-entity-consolidation-audit.prompt.md)
+- [Pre-upgrade audit prompt](../../../.make-docs/system/prompts/pre-upgrade-entity-consolidation-audit.prompt.md)
 - `system/.os/contracts/entity-records-contract.md`
 - `system/.os/contracts/extraction-contract.md`
 - Active PRDs 00, 01, 02, 03, 04, 08, 09, 14, 15, 16, 17, and 18

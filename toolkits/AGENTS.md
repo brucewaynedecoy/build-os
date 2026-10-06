@@ -28,7 +28,7 @@ BuildOS is converging on one public `buildos` executable while preserving narrow
 ## References
 
 - [Toolkit root README](./README.md)
-- [Build OS Toolkit CLI Development](../docs/guides/developer/buildos-toolkit-cli-development.md)
+- [Build OS Toolkit CLI Development](../docs/assets/maintainer/buildos-toolkit-cli-development.md)
 - [PRD 14 deterministic toolkit deployment revision](../docs/prd/14-revise-deterministic-toolkit-deployment.md)
 - [PRD 16 toolkit ownership boundary revision](../docs/prd/16-revise-toolkit-ownership-boundaries.md)
 - [PRD 18 unified BuildOS CLI and distribution revision](../docs/prd/18-revise-unified-buildos-cli-and-distribution.md)

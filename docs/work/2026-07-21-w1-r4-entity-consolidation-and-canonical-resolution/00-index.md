@@ -30,7 +30,7 @@ and design binaries remain separate until W1 R5.
 - Execute phases in numeric dependency order. Parallelize only tasks with disjoint write scopes and satisfied dependencies.
 - Task IDs are phase-local. Reference a task as `w1 r4 pN tN`.
 - All tasks are intentionally open. Mark them complete only after their stage acceptance criteria pass.
-- Treat the [pre-upgrade audit prompt](../../assets/prompts/pre-upgrade-entity-consolidation-audit.prompt.md) as proposal-only: it may inventory and recommend mappings but must not mutate canonical data.
+- Treat the [pre-upgrade audit prompt](../../../.make-docs/system/prompts/pre-upgrade-entity-consolidation-audit.prompt.md) as proposal-only: it may inventory and recommend mappings but must not mutate canonical data.
 - Treat the source checkout, installed program files, and adopter-owned data root as separate locations. Never copy the checkout's `system/` scaffold over installed or adopter-owned data.
 - Build verification, binary deployment, and live-data migration are separate actions. This repository backlog does not authorize deployment or mutation of a live adopter root.
 - Compatibility mode is a temporary read-oriented assessment aid. Strict validation is the release and post-migration gate.

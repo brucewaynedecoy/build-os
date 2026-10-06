@@ -67,7 +67,7 @@ Code anchors:
 - `toolkits/AGENTS.md`
 - `toolkits/buildos-intake/AGENTS.md`
 - `toolkits/buildos-design/`
-- `docs/guides/developer/buildos-toolkit-cli-development.md`
+- `docs/assets/maintainer/buildos-toolkit-cli-development.md`
 
 ### Change Notes
 
@@ -114,7 +114,7 @@ Code anchors:
 - `docs/prd/12-stage-automation.md`
 - `docs/work/2026-06-03-w1-r0-build-os-baseline/06-discovery-runs-qualification.md`
 - `docs/work/2026-06-03-w1-r0-build-os-baseline/07-flow-c-integration.md`
-- `docs/assets/history/2026-06-05-w1-r0-p6-discovery-runs-qualification.md`
+- `.make-docs/archive/history/2026-06-05-w1-r0-p6-discovery-runs-qualification.md`
 - `toolkits/`
 - `toolkits/buildos-intake/`
 - `toolkits/buildos-design/`

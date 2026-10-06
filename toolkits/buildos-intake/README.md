@@ -75,7 +75,7 @@ go build -o bin/buildos-intake ./cmd/buildos-intake
 ## References
 
 - [Toolkit router](../AGENTS.md)
-- [Build OS Toolkit CLI Development](../../docs/guides/developer/buildos-toolkit-cli-development.md)
+- [Build OS Toolkit CLI Development](../../docs/assets/maintainer/buildos-toolkit-cli-development.md)
 - [PRD 07 Intake and Conversion](../../docs/prd/07-intake-and-conversion.md)
 - [P4 data and extraction backlog](../../docs/work/2026-06-03-w1-r0-build-os-baseline/04-data-and-extraction.md)
 - [PRD 14 deterministic toolkit deployment revision](../../docs/prd/14-revise-deterministic-toolkit-deployment.md)

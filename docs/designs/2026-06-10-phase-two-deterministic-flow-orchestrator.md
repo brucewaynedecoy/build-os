@@ -123,6 +123,6 @@ The orchestrator should not claim complete automation where Build OS still needs
 ## Intended Follow-On
 
 - Route: `change-plan`
-- Next Prompt: [designs-to-plan-change.prompt.md](../assets/prompts/designs-to-plan-change.prompt.md)
+- Next Prompt: [designs-to-plan-change.prompt.md](make-docs://system/prompt/designs-to-plan-change.prompt.md)
 - Why: This is an additive automation capability built on the active Build OS toolkit and flow architecture. It should become the planned deterministic successor to the first-phase prompt packs after those contracts are stable.
 - Coordinate Handoff: unresolved; planner must resolve before writing. Treat this as downstream of the prompt-pack design and the baseline P8 stage automation intent. Do not plan `buildos-flow` before the phase-one prompt-pack contract is implemented or explicitly accepted as stable.

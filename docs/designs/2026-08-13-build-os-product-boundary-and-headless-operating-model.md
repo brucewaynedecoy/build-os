@@ -518,6 +518,6 @@ Every phase now incurs an explicit reconciliation cost before planning and imple
 ## Intended Follow-On
 
 - **Route:** change-plan
-- **Next Prompt:** [Designs to Change Plan](../assets/prompts/designs-to-plan-change.prompt.md)
+- **Next Prompt:** [Designs to Change Plan](make-docs://system/prompt/designs-to-plan-change.prompt.md)
 - **Why:** the accepted next step must reconcile this design into the architecture authority, the Make Docs import strategy, PRD 18, the W1 R5 plan and backlog, the complete initial core, CLI, and MCP capability map, and the risk register before any implementation begins.
 - **Coordinate Handoff:** W1 R4 is the completed implementation baseline and W1 R5 is the current unexecuted CLI and distribution plan under revision; the successor coordinate is intentionally unresolved, and the planner must decide whether to revise W1 R5 or establish a distinct program coordinate before authoring downstream plans.

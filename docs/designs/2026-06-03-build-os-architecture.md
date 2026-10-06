@@ -190,7 +190,7 @@ slash commands.
 ## Intended Follow-On
 
 - Route: `baseline-plan`
-- Next Prompt: [designs-to-plan.prompt.md](../assets/prompts/designs-to-plan.prompt.md)
+- Next Prompt: [designs-to-plan.prompt.md](make-docs://system/prompt/designs-to-plan.prompt.md)
 - Why: This is a greenfield architecture with no active PRD namespace; it should feed a fresh
   baseline planning flow that sequences building the system — remaining contracts, converters,
   the `system/` scaffold, and the hook/slash-command stage-movers.

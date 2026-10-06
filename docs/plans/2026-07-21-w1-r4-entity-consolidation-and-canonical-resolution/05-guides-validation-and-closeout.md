@@ -8,8 +8,8 @@ Reconcile maintainer and operator documentation around the implemented behavior,
 
 - Reconciled PRD 17 and affected active baseline docs
 - P2 through P4 implemented commands, diagnostics, fixtures, and migration evidence
-- Existing `docs/guides/developer/` and `docs/guides/user/` coverage discovered under the guide contract
-- [Pre-upgrade audit prompt](../../assets/prompts/pre-upgrade-entity-consolidation-audit.prompt.md)
+- Existing `docs/assets/maintainer/` and `docs/assets/user/` coverage discovered under the guide contract
+- [Pre-upgrade audit prompt](../../../.make-docs/system/prompts/pre-upgrade-entity-consolidation-audit.prompt.md)
 - Repository validation and history-record contracts
 
 ## Workstreams

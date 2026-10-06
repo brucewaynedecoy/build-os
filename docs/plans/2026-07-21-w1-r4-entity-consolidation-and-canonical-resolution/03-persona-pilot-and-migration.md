@@ -7,7 +7,7 @@ Prove the generic contract against the high-volume persona use case and establis
 ## Source Inputs
 
 - P2 staged source-built `buildos` binary and passing CLI, graph, and index tests
-- [Pre-upgrade entity consolidation audit prompt](../../assets/prompts/pre-upgrade-entity-consolidation-audit.prompt.md)
+- [Pre-upgrade entity consolidation audit prompt](../../../.make-docs/system/prompts/pre-upgrade-entity-consolidation-audit.prompt.md)
 - Reviewed, non-mutating persona inventory and proposed mapping manifest
 - Representative persona, extraction, and reference fixtures
 - Operator-supplied installed-binary, wrapper, adopter-root, snapshot, and rollback locations

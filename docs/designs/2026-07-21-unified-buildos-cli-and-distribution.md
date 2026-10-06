@@ -111,6 +111,6 @@ W1 R4 remains source-build-only and must not imply that existing installed binar
 ## Intended Follow-On
 
 - Route: `change-plan`
-- Next Prompt: [designs-to-plan-change.prompt.md](../assets/prompts/designs-to-plan-change.prompt.md)
+- Next Prompt: [designs-to-plan-change.prompt.md](make-docs://system/prompt/designs-to-plan-change.prompt.md)
 - Why: The decision revises the active toolkit deployment standard, creates a new PRD change contract, migrates existing command domains, and adds a scoped distribution backlog.
 - Coordinate Handoff: W1 R2 established the separate toolkit deployment standard; W1 R5 is the next unused revision of that wave and supersedes the public multi-binary direction without rewriting W1 R2 history.

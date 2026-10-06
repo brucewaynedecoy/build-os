@@ -41,7 +41,7 @@ The current baseline treats scoped vocabulary as fixed field values. `docs/prd/0
 
 ## Output Contract
 
-This plan follows [planning-workflow.md](../../assets/references/planning-workflow.md), [output-contract.md](../../assets/references/output-contract.md), and [wave-model.md](../../assets/references/wave-model.md).
+This plan follows [planning-workflow.md](make-docs://system/reference/planning-workflow.md), [output-contract.md](make-docs://system/contract/output-contract.md), and [wave-model.md](make-docs://system/reference/wave-model.md).
 
 Execution of this plan should produce:
 

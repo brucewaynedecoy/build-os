@@ -84,7 +84,7 @@ The make-docs strategy stays in a design record, not a local asset migration. ma
 | --- | --- | --- | --- | --- |
 | Coordinator | PRD reconciliation, naming, integration, validation | Cross-doc integration and final review | Source design and current PRD set | W1 R2 plan/work lineage, final diff review, validation report. |
 | Worker A | PRD revision and baseline annotations | `docs/prd/` | Source design and existing W1 R0/W1 R1 PRDs | PRD 14, PRD index entry, baseline change notes, R-003. |
-| Worker B | Developer guide and standard design | `docs/guides/developer/`, `docs/designs/` | Guide and design contracts | Toolkit CLI guide and deployment-standard design. |
+| Worker B | Developer guide and standard design | `docs/assets/maintainer/`, `docs/designs/` | Guide and design contracts | Toolkit CLI guide and deployment-standard design. |
 | Worker C | make-docs handoff | `docs/designs/` | make-docs boundary and future installer direction | Upstream maintainer handoff design with no local asset migration. |
 | Worker D | Toolkit scaffold and README routing | `toolkits/`, `README.md` | PRD 14 naming and scope | `toolkits/` routers, scaffold-only `buildos-intake`, root README update. |
 | Worker E | Review and validation | Validation commands and diff checks | Workers A-D complete | Boundary scan, link check, config/path validation, index refresh. |

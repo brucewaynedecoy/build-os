@@ -47,7 +47,7 @@ Code anchors:
 
 - `docs/prd/16-revise-toolkit-ownership-boundaries.md`
 - `docs/work/2026-06-03-w1-r0-build-os-baseline/06-discovery-runs-qualification.md`
-- `docs/assets/history/2026-06-05-w1-r0-p6-discovery-runs-qualification.md`
+- `.make-docs/archive/history/2026-06-05-w1-r0-p6-discovery-runs-qualification.md`
 - `toolkits/buildos-discovery/`
 - `system/.os/scripts/buildos-discovery`
 
@@ -65,19 +65,19 @@ Code anchors:
 
 **To close**: The reusable user-guide coverage prompt is updated, W1 R0 P1-P6 user-guide remediation creates or updates the missing draft user guides, and the affected history records clearly mark their earlier `none` decisions as superseded by the remediation outcome.
 
-**Resolution**: W1 R0 user-guide remediation created the draft `docs/guides/user/` suite, recorded a P1-P6 coverage matrix, added reciprocal developer-guide links, and marked the earlier P1-P6 user-guide `none` history outcomes as superseded by `docs/assets/history/2026-06-05-w1-r0-user-guide-remediation.md`.
+**Resolution**: W1 R0 user-guide remediation created the draft `docs/assets/user/` suite, recorded a P1-P6 coverage matrix, added reciprocal developer-guide links, and marked the earlier P1-P6 user-guide `none` history outcomes as superseded by `.make-docs/archive/history/2026-06-05-w1-r0-user-guide-remediation.md`.
 
 Code anchors:
 
 - `README.md`
-- `docs/guides/AGENTS.md`
+- `docs/assets/AGENTS.md`
 - `docs/assets/references/guide-contract.md`
-- `docs/assets/history/2026-06-04-w1-r0-p1-operating-layer-contracts.md`
-- `docs/assets/history/2026-06-04-w1-r0-p2-spaces-boundary-shipping.md`
-- `docs/assets/history/2026-06-04-w1-r0-p3-intake-conversion.md`
-- `docs/assets/history/2026-06-04-w1-r0-p4-data-layer-extraction.md`
-- `docs/assets/history/2026-06-04-w1-r0-p5-playbooks.md`
-- `docs/assets/history/2026-06-05-w1-r0-p6-discovery-runs-qualification.md`
+- `.make-docs/archive/history/2026-06-04-w1-r0-p1-operating-layer-contracts.md`
+- `.make-docs/archive/history/2026-06-04-w1-r0-p2-spaces-boundary-shipping.md`
+- `.make-docs/archive/history/2026-06-04-w1-r0-p3-intake-conversion.md`
+- `.make-docs/archive/history/2026-06-04-w1-r0-p4-data-layer-extraction.md`
+- `.make-docs/archive/history/2026-06-04-w1-r0-p5-playbooks.md`
+- `.make-docs/archive/history/2026-06-05-w1-r0-p6-discovery-runs-qualification.md`
 
 ## Open Questions
 

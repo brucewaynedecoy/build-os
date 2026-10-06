@@ -45,5 +45,5 @@ git diff --check
 Then confirm:
 
 - Targeted relative-link check reports no missing links in touched docs.
-- No prohibited paths changed except the allowed `docs/assets/history/` closeout breadcrumb.
+- No prohibited paths changed except the allowed `.make-docs/archive/history/` closeout breadcrumb.
 - jdocmunch and jcodemunch indexes are refreshed.

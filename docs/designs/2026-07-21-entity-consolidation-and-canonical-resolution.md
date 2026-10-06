@@ -49,7 +49,7 @@ or a copied `system/` scaffold to overwrite an installed data root implicitly.
 Cleanup can begin before the implementation is available,
 but only as a read-only inventory and decision exercise.
 The reusable
-[pre-upgrade entity consolidation audit prompt](../assets/prompts/pre-upgrade-entity-consolidation-audit.prompt.md)
+[pre-upgrade entity consolidation audit prompt](../../.make-docs/system/prompts/pre-upgrade-entity-consolidation-audit.prompt.md)
 should identify likely winners and losers,
 capture evidence and ambiguity,
 and produce a proposed mapping for review.
@@ -579,7 +579,7 @@ and design as separately installed binaries until W1 R5 migration and package di
 ## Intended Follow-On
 
 - Route: `change-plan`
-- Next Prompt: [designs-to-plan-change.prompt.md](../assets/prompts/designs-to-plan-change.prompt.md)
+- Next Prompt: [designs-to-plan-change.prompt.md](make-docs://system/prompt/designs-to-plan-change.prompt.md)
 - Why: This design adds entity lifecycle,
   deterministic toolkit,
   extraction,

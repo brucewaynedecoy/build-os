@@ -20,7 +20,7 @@ The pre-upgrade prompt may prepare evidence and proposed mappings, but it remain
 
 ### Tasks
 
-- [x] t1: Run the [pre-upgrade audit prompt](../../assets/prompts/pre-upgrade-entity-consolidation-audit.prompt.md) against an approved read-only or sanitized dataset to inventory personas, inbound references, evidence, and likely duplicate groups.
+- [x] t1: Run the [pre-upgrade audit prompt](../../../.make-docs/system/prompts/pre-upgrade-entity-consolidation-audit.prompt.md) against an approved read-only or sanitized dataset to inventory personas, inbound references, evidence, and likely duplicate groups.
 - [x] t2: Produce a proposed mapping manifest with winners, losers, redirect kinds, reasons, evidence references, confidence, ambiguity flags, source checksums, and no canonical mutations.
 - [x] t3: Review each proposed mapping with the configured decision owner and separate approved mappings from unresolved or ambiguous groups.
 - [x] t4: Create sanitized persona fixtures for one-hop and multi-hop redirects, a winner later superseded, an identical replay, a conflicting remap, ambiguous aliases, repeated extraction, and provenance preservation.

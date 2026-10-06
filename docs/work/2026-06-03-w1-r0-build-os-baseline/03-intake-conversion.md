@@ -93,7 +93,7 @@ The PDF decision is now locked: no Poppler bundle, no `pdftotext` requirement, n
 - [x] t23: Add Go tests for command-adjacent library behavior: path derivation, hashing, frontmatter emission, conversion, and index rebuild behavior.
 - [x] t24: Add small local fixtures for CSV, DOCX, references index, and PDF failure behavior.
 - [x] t25: Run `go test ./...` and `go build ./...` from `toolkits/buildos-intake/`.
-- [x] t26: Update `docs/guides/developer/buildos-toolkit-cli-development.md` with concrete `buildos-intake` examples and approved dependency boundaries.
+- [x] t26: Update `docs/assets/maintainer/buildos-toolkit-cli-development.md` with concrete `buildos-intake` examples and approved dependency boundaries.
 - [x] t27: Update PRD/design notes as needed to record no-`pdftotext`, minimal-PDF, and manual fallback decisions.
 - [x] t28: Record W1 R0 P3 closeout history after implementation validation.
 - [x] t29: Run final repository validation: config validator, make-docs path hygiene, touched-doc link check, and `git diff --check`.
