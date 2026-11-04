@@ -36,7 +36,10 @@ type IndexResult struct {
 }
 
 type ReferenceIndex struct {
-	Version    int              `json:"version"`
+	Version int `json:"version"`
+	// NextID is the number the next new reference receives (REF-<NextID>).
+	// It only grows, so the number of a removed reference is never reused.
+	NextID     int              `json:"next_id"`
 	References []ReferenceEntry `json:"references"`
 }
 

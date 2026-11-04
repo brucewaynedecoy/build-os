@@ -14,6 +14,14 @@ buildos-intake index playbooks [--repo-root .] [--playbooks-root system/playbook
 
 Use the wrapper at `system/.os/scripts/buildos-intake` when operating through the Build OS script surface.
 
+`buildos-intake index references` keeps reference IDs stable across rebuilds. Records and extractions cite `REF-NNN` IDs, so a rebuild must not renumber them:
+
+- It reads the existing output file first. Each converted twin that is still present keeps the ID it had, matched by its `converted` path.
+- New twins get the next free number, in `converted` path order. Removed twins are dropped, and their numbers are never given out again.
+- `next_id` in the file records the next number to give out. An older file without `next_id` continues from its highest existing ID.
+- Entries are written in ID order.
+- If the existing file is not valid JSON, or gives one ID to two twins, the command stops with an error and does not overwrite the file. Fix or move the file first. Deleting `references.json` and rebuilding numbers every twin again from `REF-001`.
+
 `buildos-intake index playbooks` writes `playbooks.json` with `playbooks` as the full catalog, including `draft`, `reviewed`, `active`, and `archived` entries, and `runnable_playbooks` as the active-only subset used by runnable procedure listings and enforceable guardrail listings.
 
 ## Conversion Behavior

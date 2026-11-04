@@ -1,6 +1,7 @@
 package intake
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -42,13 +43,27 @@ func BuildReferencesIndex(opts IndexOptions) (IndexResult, error) {
 	}); err != nil {
 		return IndexResult{}, err
 	}
+	previous, err := loadPreviousReferences(outputPath)
+	if err != nil {
+		return IndexResult{}, err
+	}
+	// Sort by converted path so new references get numbers in a stable order.
 	sort.Slice(entries, func(i, j int) bool {
 		return entries[i].Converted < entries[j].Converted
 	})
+	highest := previous.highest
 	for i := range entries {
-		entries[i].ID = fmt.Sprintf("REF-%03d", i+1)
+		if id, ok := previous.ids[entries[i].Converted]; ok {
+			entries[i].ID = id
+			continue
+		}
+		highest++
+		entries[i].ID = fmt.Sprintf("REF-%03d", highest)
 	}
-	index := ReferenceIndex{Version: 1, References: entries}
+	sort.SliceStable(entries, func(i, j int) bool {
+		return referenceIDLess(entries[i], entries[j])
+	})
+	index := ReferenceIndex{Version: 1, NextID: highest + 1, References: entries}
 	data, err := json.MarshalIndent(index, "", "  ")
 	if err != nil {
 		return IndexResult{}, err
@@ -61,6 +76,93 @@ func BuildReferencesIndex(opts IndexOptions) (IndexResult, error) {
 		return IndexResult{}, err
 	}
 	return IndexResult{OutputPath: outputPath, Count: len(entries)}, nil
+}
+
+// previousReferences is what a rebuild keeps from the index it replaces.
+type previousReferences struct {
+	// ids maps a converted path to the REF ID it had before.
+	ids map[string]string
+	// highest is the largest REF number ever given out, including numbers of
+	// references that were removed since.
+	highest int
+}
+
+// loadPreviousReferences reads the existing references index, if there is
+// one, so that a rebuild keeps the IDs that records and extractions cite.
+// A missing or empty file means there is nothing to keep. A file that cannot
+// be read as an index is an error: rewriting it would renumber every entry.
+func loadPreviousReferences(outputPath string) (previousReferences, error) {
+	previous := previousReferences{ids: map[string]string{}}
+	data, err := os.ReadFile(outputPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return previous, nil
+		}
+		return previousReferences{}, err
+	}
+	if len(bytes.TrimSpace(data)) == 0 {
+		return previous, nil
+	}
+	var index ReferenceIndex
+	if err := json.Unmarshal(data, &index); err != nil {
+		return previousReferences{}, fmt.Errorf("read existing references index %s: %w (fix or move the file before rebuilding so reference IDs are not lost)", outputPath, err)
+	}
+	if index.NextID > 1 {
+		previous.highest = index.NextID - 1
+	}
+	convertedByID := map[string]string{}
+	for _, entry := range index.References {
+		if n, ok := refNumber(entry.ID); ok && n > previous.highest {
+			previous.highest = n
+		}
+		if entry.ID == "" || entry.Converted == "" {
+			continue
+		}
+		if other, dup := convertedByID[entry.ID]; dup {
+			return previousReferences{}, fmt.Errorf("existing references index %s gives %s to both %s and %s; fix it before rebuilding", outputPath, entry.ID, other, entry.Converted)
+		}
+		if other, dup := previous.ids[entry.Converted]; dup {
+			return previousReferences{}, fmt.Errorf("existing references index %s lists %s twice (%s and %s); fix it before rebuilding", outputPath, entry.Converted, other, entry.ID)
+		}
+		convertedByID[entry.ID] = entry.Converted
+		previous.ids[entry.Converted] = entry.ID
+	}
+	return previous, nil
+}
+
+// refNumber returns N for an ID of the form REF-N.
+func refNumber(id string) (int, bool) {
+	digits, ok := strings.CutPrefix(id, "REF-")
+	if !ok || digits == "" {
+		return 0, false
+	}
+	for _, r := range digits {
+		if r < '0' || r > '9' {
+			return 0, false
+		}
+	}
+	n, err := strconv.Atoi(digits)
+	if err != nil || n <= 0 {
+		return 0, false
+	}
+	return n, true
+}
+
+// referenceIDLess orders entries by REF number, so the file reads in the
+// order the references were added.
+func referenceIDLess(a, b ReferenceEntry) bool {
+	an, aok := refNumber(a.ID)
+	bn, bok := refNumber(b.ID)
+	if aok != bok {
+		return aok
+	}
+	if aok && an != bn {
+		return an < bn
+	}
+	if a.ID != b.ID {
+		return a.ID < b.ID
+	}
+	return a.Converted < b.Converted
 }
 
 func referenceEntry(repoRoot, path string) (ReferenceEntry, bool, error) {
