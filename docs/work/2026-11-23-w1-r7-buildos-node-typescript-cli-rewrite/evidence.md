@@ -5045,3 +5045,22 @@ Also changed: PRD 06 (steps 3 and 5) and PRD 20 (the Node.js check and the `dev`
 
 CI run 45763347158 on `4f8d9a7`: ubuntu and macOS passed; Windows failed in one test, "never uses a buildos.cmd from the current folder that is not on PATH". The product was correct and the test was out of date. Since finding 1 of this pass, the local lookup walks up from the current folder, so the verified package above the test's current folder (`outer/node_modules/@brucewaynedecoy/buildos`) now runs as a local install, and `npx` does not run. The test now asserts that: the package entry runs, the shim file never runs, and `npx` never runs. No product file changed. The next CI run is the proof on Windows.
 
+## Repository Cutover and Version 0.1.0 (2026-11-26)
+
+The owner answered the two last questions on 2026-11-26, each with option A: the `0.2.0` commands keep their new behavior where a Python script result was wrong or lost data, and the sole-maintainer route stays.
+
+The owner and the orchestrator did steps 1 to 16 of the owner checklist in `toolkits/buildos/SECURITY.md` on 2026-11-26.
+
+| Step | Result |
+| --- | --- |
+| 1 to 3 | The old repository secret is deleted. The earlier repository has the name `build-os-archive` and is private. The local clone and its worktrees name the archive. |
+| 4 to 6 | The new repository `brucewaynedecoy/build-os` was created private and empty. The owner pushed one commit, `085927e`, as `main` only. The remote had one commit, one branch, and no tag. The real-list deny-list check of that tree: 2391 files checked, 0 matches, 0 home folder paths. |
+| 7 | The owner made the repository public. |
+| 8 to 11 | With the owner's approval, the orchestrator created the rulesets `main` and `release tags` through the GitHub API and turned on release immutability. Read back: `deletion`, `non_fast_forward`, `pull_request` (1 approval, code-owner review), `required_status_checks` with the six checks; the Repository admin bypass is "for pull requests only" on `main` and "always" on `release tags`; immutable releases `enabled: true`. |
+| 12, 13, 15 | The orchestrator created the environments `buildos-deny-list` (branch `main`, tag `v*`) and `buildos-npm-stage` (tag `v*`, the owner as required reviewer, administrators cannot bypass, self-review allowed for the sole-maintainer route), and turned on private vulnerability reporting. |
+| 14 | The owner added the environment secret `BUILDOS_DENY_LIST_ENV`. The repository has no repository secret. |
+| 16 | The remote again had one commit, one branch `main`, and no tag. |
+
+CI on the first commit: `buildos-ci` run 45877409126 passed on the three operating systems. `buildos-deny-list` run 45877409073 failed closed on its first attempt, which started before the environment had its deployment rules; its second attempt, after step 14, passed the real-list scan with 0 matches.
+
+This change sets the package version to `0.1.0` in `package.json` and `package-lock.json`. Nothing is published. Step 17 (npm) is open.
