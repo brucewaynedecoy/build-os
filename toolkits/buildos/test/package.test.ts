@@ -4,15 +4,20 @@
 //   `system/` package content with its list (`dist/system.json`), and the
 //   license, security, notices, and README files. No `system/docs/`, no
 //   `system/.make-docs/`, no Go file, no test, fixture, or golden.
-// - From an installed tarball: the four command names exist and no others;
-//   each legacy name writes its one notice line and keeps stdout and the exit
-//   code (on Windows through npm's `.cmd` shims); `buildos init` works.
+// - From an installed tarball: the four command names and the package-name
+//   bin `build-os` exist and no others; `build-os` runs exactly as
+//   `buildos`; each legacy name writes its one notice line and keeps stdout
+//   and the exit code (on Windows through npm's `.cmd` shims); `buildos
+//   init` works.
 // - The legacy entry files (owner decision 2026-11-24): each one passes its
 //   own name to the bundle, so the name never depends on the path it was
 //   started under; `node <dist>/<name>.js args`, the npm Windows shim form,
 //   works for each name.
 // - `npx -y --package=<tarball> buildos init --skip-make-docs` and the same
-//   `init` with no TTY, in empty folders, with no other install step.
+//   `init` with no TTY, in empty folders, with no other install step; and
+//   `npx -y build-os@file:<tarball> version`, the form of
+//   `npx -y build-os@<version>`: npx chooses the bin named after the package
+//   (owner decision of 2026-11-26).
 //
 // npm runs offline here: the package has no runtime dependencies.
 
@@ -135,12 +140,12 @@ describe("npm pack (t11)", () => {
 describe("installed tarball (t5, A39, A40)", () => {
   const binDir = () => join(prefix, "node_modules", ".bin");
 
-  it("A40: exposes buildos and the three legacy names, and no buildos-entities or buildos-lifecycle", () => {
+  it("A40: exposes buildos, the package-name bin build-os, and the three legacy names, and no buildos-entities or buildos-lifecycle", () => {
     const names = readdirSync(binDir()).map((n) => n.replace(/\.(?:cmd|ps1)$/i, ""));
-    assert.deepEqual([...new Set(names)].sort(), ["buildos", "buildos-design", "buildos-discovery", "buildos-intake"]);
-    const manifest = JSON.parse(readFileSync(join(prefix, "node_modules", "@brucewaynedecoy", "buildos", "package.json"), "utf8")) as { bin: Record<string, string> };
+    assert.deepEqual([...new Set(names)].sort(), ["build-os", "buildos", "buildos-design", "buildos-discovery", "buildos-intake"]);
+    const manifest = JSON.parse(readFileSync(join(prefix, "node_modules", "build-os", "package.json"), "utf8")) as { bin: Record<string, string> };
     // Each legacy name has its own entry file (owner decision 2026-11-24).
-    assert.deepEqual(manifest.bin, { buildos: "dist/buildos.js", "buildos-intake": "dist/buildos-intake.js", "buildos-discovery": "dist/buildos-discovery.js", "buildos-design": "dist/buildos-design.js" });
+    assert.deepEqual(manifest.bin, { buildos: "dist/buildos.js", "build-os": "dist/buildos.js", "buildos-intake": "dist/buildos-intake.js", "buildos-discovery": "dist/buildos-discovery.js", "buildos-design": "dist/buildos-design.js" });
   });
 
   /** Runs an installed command name: the `.bin` link on macOS and Linux, npm's `.cmd` shim through `cmd.exe` on Windows. */
@@ -149,6 +154,21 @@ describe("installed tarball (t5, A39, A40)", () => {
     const line = [`"${join(binDir(), `${name}.cmd`)}"`, ...args].join(" ");
     return spawnSync(join(process.env["SystemRoot"] ?? "C:\\Windows", "System32", "cmd.exe"), ["/d", "/s", "/c", `"${line}"`], { encoding: "utf8", windowsVerbatimArguments: true });
   }
+
+  // Owner decision of 2026-11-26: the package is build-os, and npx needs a bin
+  // with the package name. build-os is the same file as buildos: no notice
+  // line, no domain added, the same stdout, stderr, and exit code.
+  it("build-os runs exactly as buildos: no notice line and no domain added", () => {
+    for (const args of [["--help"], ["version", "--json"], ["intake", "--help"], ["nope"]]) {
+      const named = bin("build-os", args);
+      const modern = bin("buildos", args);
+      assert.equal(named.status, modern.status, args.join(" "));
+      assert.equal(named.stdout, modern.stdout, args.join(" "));
+      assert.equal(named.stderr, modern.stderr, args.join(" "));
+      assert.doesNotMatch(named.stderr, /goes away/);
+    }
+    assert.equal(JSON.parse(bin("build-os", ["version", "--json"]).stdout).version, FIXTURE_VERSION);
+  });
 
   for (const [name, domain] of LEGACY) {
     it(`A39: ${name} writes one notice line, then the ${domain} output, with the same stdout and exit code`, () => {
@@ -168,7 +188,7 @@ describe("installed tarball (t5, A39, A40)", () => {
   it("buildos init --skip-make-docs works from the installed package", () => {
     const dir = join(scratch, "installed-init");
     mkdirSync(dir);
-    const entry = join(prefix, "node_modules", "@brucewaynedecoy", "buildos", "dist", "buildos.js");
+    const entry = join(prefix, "node_modules", "build-os", "dist", "buildos.js");
     const result = spawnSync(process.execPath, [entry, "init", "--skip-make-docs"], { cwd: dir, encoding: "utf8", env: { ...process.env, PWD: dir } });
     assert.equal(result.status, 0, shape(result.stderr));
     assert.ok(existsSync(join(dir, ".os", "manifest.json")));
@@ -241,6 +261,28 @@ describe("npx from the tarball (t25, A51)", () => {
     assert.ok(existsSync(join(dir, ".os", "manifest.json")));
   });
 
+  // npx -y build-os@<version> needs a bin named after the package, since the
+  // package has several bins (without it npx stops with "could not determine
+  // executable to run"). The build-os@file:<tarball> spec takes the same path
+  // through npx with no registry.
+  it("npx -y build-os@file:<tarball> version runs buildos at the package version, with no notice line", () => {
+    const dir = join(scratch, "npx-package-name");
+    mkdirSync(dir);
+    const result = spawnSync(process.execPath, [npxCli, "-y", "--bin-links=true", `build-os@file:${tarball}`, "version", "--json"], {
+      cwd: dir,
+      encoding: "utf8",
+      env: { ...process.env, PATH: dirname(process.execPath) + delimiter + (windows ? join(process.env["SystemRoot"] ?? "C:\\Windows", "System32") : "/usr/bin:/bin"), PWD: dir, npm_config_cache: join(scratch, "npx-name-cache"), npm_config_offline: "true", npm_config_update_notifier: "false" },
+      maxBuffer: 64 * 1024 * 1024,
+      timeout: 120_000,
+    });
+    assert.equal(result.status, 0, shape(result.stderr));
+    const envelope = JSON.parse(result.stdout) as { command: string; version: string };
+    assertSame(envelope.command, "version");
+    assertSame(envelope.version, FIXTURE_VERSION);
+    assert.doesNotMatch(result.stderr, /goes away/);
+    assert.deepEqual(readdirSync(dir), []);
+  });
+
   it("npx -y --package=<tarball> buildos init with no TTY stops with exit 10 and changes nothing", () => {
     const dir = join(scratch, "npx-no-tty");
     mkdirSync(dir);
@@ -284,10 +326,13 @@ describe("project wrappers with real npm installs (pin-first review rounds 1 and
     mkdirSync(dir, { recursive: true });
     const script = join(dir, "planted.cjs");
     writeFileSync(script, `require("fs").writeFileSync(${JSON.stringify(marker)}, "ran");\nprocess.stdout.write("PLANTED\\n");\n`);
-    if (windows) writeFileSync(join(dir, "buildos.cmd"), `@"${process.execPath}" "${script}" %*\r\n`);
-    else {
-      writeFileSync(join(dir, "buildos"), `#!/bin/sh\nexec "${process.execPath}" "${script}" "$@"\n`);
-      chmodSync(join(dir, "buildos"), 0o755);
+    // Both names: npx -y build-os@<version> starts the bin named after the package (build-os) by name.
+    for (const name of ["buildos", "build-os"]) {
+      if (windows) writeFileSync(join(dir, `${name}.cmd`), `@"${process.execPath}" "${script}" %*\r\n`);
+      else {
+        writeFileSync(join(dir, name), `#!/bin/sh\nexec "${process.execPath}" "${script}" "$@"\n`);
+        chmodSync(join(dir, name), 0o755);
+      }
     }
   }
 
@@ -355,15 +400,15 @@ describe("project wrappers with real npm installs (pin-first review rounds 1 and
    */
   function linked(pkg: string, prefixDir: string): string {
     if (windows) {
-      mkdirSync(join(prefixDir, "node_modules", "@brucewaynedecoy"), { recursive: true });
-      symlinkSync(pkg, join(prefixDir, "node_modules", "@brucewaynedecoy", "buildos"), "junction");
-      writeFileSync(join(prefixDir, "buildos.cmd"), `@"${process.execPath}" "%~dp0\\node_modules\\@brucewaynedecoy\\buildos\\dist\\buildos.js" %*\r\n`);
+      mkdirSync(join(prefixDir, "node_modules"), { recursive: true });
+      symlinkSync(pkg, join(prefixDir, "node_modules", "build-os"), "junction");
+      writeFileSync(join(prefixDir, "buildos.cmd"), `@"${process.execPath}" "%~dp0\\node_modules\\build-os\\dist\\buildos.js" %*\r\n`);
       return prefixDir;
     }
-    mkdirSync(join(prefixDir, "lib", "node_modules", "@brucewaynedecoy"), { recursive: true });
+    mkdirSync(join(prefixDir, "lib", "node_modules"), { recursive: true });
     mkdirSync(join(prefixDir, "bin"), { recursive: true });
-    symlinkSync(pkg, join(prefixDir, "lib", "node_modules", "@brucewaynedecoy", "buildos"), "dir");
-    symlinkSync(join(prefixDir, "lib", "node_modules", "@brucewaynedecoy", "buildos", "dist", "buildos.js"), join(prefixDir, "bin", "buildos"));
+    symlinkSync(pkg, join(prefixDir, "lib", "node_modules", "build-os"), "dir");
+    symlinkSync(join(prefixDir, "lib", "node_modules", "build-os", "dist", "buildos.js"), join(prefixDir, "bin", "buildos"));
     return join(prefixDir, "bin");
   }
 
@@ -374,7 +419,7 @@ describe("project wrappers with real npm installs (pin-first review rounds 1 and
     assertSame(result.stdout, "", shape(explain));
     assertSame(
       String(result.stderr).replace(/\r\n/g, "\n"),
-      `BuildOS stopped: this project needs BuildOS ${required}, but BuildOS ${started} started. Nothing ran.\nFix the BuildOS install so that version ${required} runs, then run the project wrapper (.os/scripts/buildos) again. Or set buildos_version in .os/manifest.json to the version that you want to use.${required === "dev" ? " For a development build: in the project folder, replace the local install with the built development package (npm install <path to toolkits/buildos>). Or remove the local install (npm uninstall @brucewaynedecoy/buildos), so that the linked build on PATH runs." : ""}\n`,
+      `BuildOS stopped: this project needs BuildOS ${required}, but BuildOS ${started} started. Nothing ran.\nFix the BuildOS install so that version ${required} runs, then run the project wrapper (.os/scripts/buildos) again. Or set buildos_version in .os/manifest.json to the version that you want to use.${required === "dev" ? " For a development build: in the project folder, replace the local install with the built development package (npm install <path to toolkits/buildos>). Or remove the local install (npm uninstall build-os), so that the linked build on PATH runs." : ""}\n`,
       shape(explain),
     );
   }
@@ -388,7 +433,7 @@ describe("project wrappers with real npm installs (pin-first review rounds 1 and
     planted(join(scratch, "wrapper-local-planted"), marker);
     const path = [join(scratch, "wrapper-local-planted"), tools("wrapper-local-tools", true)].join(delimiter);
     // The hazard: real npx with the same PATH starts the planted program.
-    const alone = spawnSync(process.execPath, [npxCli, "-y", `@brucewaynedecoy/buildos@${FIXTURE_VERSION}`, "version"], { cwd: dir, env: env(windows ? `${path}${delimiter}${system}` : path), encoding: "utf8", timeout: 120_000 });
+    const alone = spawnSync(process.execPath, [npxCli, "-y", `build-os@${FIXTURE_VERSION}`, "version"], { cwd: dir, env: env(windows ? `${path}${delimiter}${system}` : path), encoding: "utf8", timeout: 120_000 });
     // Shown on macOS and Linux; on Windows npm starts the command through cmd.exe, which this check does not cover.
     if (!windows) assert.equal(alone.stdout.trim(), "PLANTED", shape(`npx alone: ${alone.stdout}${alone.stderr}`));
     rmSync(marker, { force: true });
@@ -525,7 +570,7 @@ describe("project wrappers with real npm in an npm workspace (pin-first final ch
     const manifest = JSON.parse(readFileSync(join(stage, "package.json"), "utf8")) as Record<string, unknown>;
     worker = new Worker(REGISTRY_WORKER, {
       eval: true,
-      workerData: { tarball, name: "@brucewaynedecoy/buildos", manifest, integrity: `sha512-${createHash("sha512").update(bytes).digest("base64")}`, shasum: createHash("sha1").update(bytes).digest("hex") },
+      workerData: { tarball, name: "build-os", manifest, integrity: `sha512-${createHash("sha512").update(bytes).digest("base64")}`, shasum: createHash("sha1").update(bytes).digest("hex") },
     });
     registry = await new Promise<string>((done, fail) => {
       worker.once("message", (url: string) => done(url));
@@ -600,24 +645,27 @@ describe("project wrappers with real npm in an npm workspace (pin-first final ch
   });
 
   // Finding 1: npm hoisted a --no-bin-links install to the workspace root. npx alone finds the package and starts
-  // "buildos" by name from PATH (a planted program); the wrapper finds it in the folder above and runs its bin file.
+  // its bin by name from PATH (a planted program; "build-os" since the package name of 2026-11-26); the wrapper
+  // finds it in the folder above and runs its bin file.
   it("finding 1: runs a --no-bin-links install that npm hoisted to the workspace root, never a buildos on PATH", () => {
     const root = join(scratch, "hoisted-ws");
     const member = workspace(root);
     const dir = project(member);
     const installed = npm(["install", "--no-bin-links", "--ignore-scripts", "--no-save", "--workspace", "app", tarball], root);
     assert.equal(installed.status, 0, shape(installed.stderr));
-    assert.ok(existsSync(join(root, "node_modules", "@brucewaynedecoy", "buildos", "package.json")), "npm hoisted the package to the workspace root");
-    assert.equal(existsSync(join(member, "node_modules", "@brucewaynedecoy")), false, "no install in the member folder");
+    assert.ok(existsSync(join(root, "node_modules", "build-os", "package.json")), "npm hoisted the package to the workspace root");
+    assert.equal(existsSync(join(member, "node_modules", "build-os")), false, "no install in the member folder");
     const planted = join(scratch, "hoisted-planted");
     mkdirSync(planted);
     const marker = join(scratch, "hoisted-planted.txt");
     const script = join(planted, "planted.cjs");
     writeFileSync(script, `require("fs").writeFileSync(${JSON.stringify(marker)}, "ran");\nprocess.stdout.write("PLANTED\\n");\n`);
-    if (windows) writeFileSync(join(planted, "buildos.cmd"), `@"${process.execPath}" "${script}" %*\r\n`);
-    else {
-      writeFileSync(join(planted, "buildos"), `#!/bin/sh\nexec "${process.execPath}" "${script}" "$@"\n`);
-      chmodSync(join(planted, "buildos"), 0o755);
+    for (const name of ["buildos", "build-os"]) {
+      if (windows) writeFileSync(join(planted, `${name}.cmd`), `@"${process.execPath}" "${script}" %*\r\n`);
+      else {
+        writeFileSync(join(planted, name), `#!/bin/sh\nexec "${process.execPath}" "${script}" "$@"\n`);
+        chmodSync(join(planted, name), 0o755);
+      }
     }
     const result = wrapper(dir, dir, [planted, tools(join(scratch, "hoisted-tools"))].join(delimiter), ["version", "--json"]);
     assert.equal(result.status, 0, shape(explain(result)));

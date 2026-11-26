@@ -1,6 +1,6 @@
 set shell := ["bash", "-uc"]
 
-# BuildOS is one npm package, @brucewaynedecoy/buildos, in toolkits/buildos/
+# BuildOS is one npm package, build-os, in toolkits/buildos/
 # (Node.js 24 or newer). W1 R7 P8 replaced the Go recipes with npm ones of the
 # same names. Every install runs with install scripts off (PRD 20 Supply Chain).
 
@@ -66,7 +66,7 @@ check-toolkits:
 
 # Removes the globally installed BuildOS package: npm removes buildos and the three legacy names with it.
 uninstall-toolkits:
-    npm uninstall --global @brucewaynedecoy/buildos
+    npm uninstall --global build-os
 
 # Release dry run: every release gate, never staging (scripts/release-dry-run.ts; --plant <gate>).
 release-dry-run *args: buildos-deps

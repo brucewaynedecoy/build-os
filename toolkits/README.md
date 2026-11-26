@@ -1,8 +1,8 @@
 # Build OS Toolkits
 
-`toolkits/` holds the source of the first-party deterministic BuildOS CLI: the npm package `@brucewaynedecoy/buildos` in [`buildos/`](./buildos/). It gives one `buildos` command with `buildos <domain>` subcommands, one help, version, root, diagnostic, and distribution surface.
+`toolkits/` holds the source of the first-party deterministic BuildOS CLI: the npm package `build-os` in [`buildos/`](./buildos/). It gives one `buildos` command with `buildos <domain>` subcommands, one help, version, root, diagnostic, and distribution surface.
 
-`system/.os/scripts/` remains the operational wrapper, command router, compatibility, and command documentation surface. Its wrappers find BuildOS on `PATH`, or run `npx -y @brucewaynedecoy/buildos@<version>` with the version pinned in `.os/manifest.json`.
+`system/.os/scripts/` remains the operational wrapper, command router, compatibility, and command documentation surface. Its wrappers find BuildOS on `PATH`, or run `npx -y build-os@<version>` with the version pinned in `.os/manifest.json`.
 
 ## Standards
 

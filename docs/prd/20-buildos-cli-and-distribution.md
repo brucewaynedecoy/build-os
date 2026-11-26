@@ -58,11 +58,11 @@ BuildOS requires Node.js 24 or newer. The package declares `"engines": { "node":
 
 BuildOS is written in TypeScript with `strict` on, compiled with `tsc`, and shipped as ESM. Tests run with Node's built-in test runner (`node:test`). esbuild builds the published bundle. Arguments are parsed by a small built-in parser that follows Go's `flag` package rules, so existing commands and flag spellings keep working. No CLI framework or outside parsing package is used.
 
-The package source lives at `toolkits/buildos/`. It is one npm package named `@brucewaynedecoy/buildos`, licensed Apache-2.0. A `LICENSE` file sits at the repository root and in the package.
+The package source lives at `toolkits/buildos/`. It is one npm package named `build-os`, an unscoped name published under the npm account `brucewaynedecoy`, licensed Apache-2.0. The command it installs is `buildos`. A `LICENSE` file sits at the repository root and in the package.
 
 BuildOS supports macOS, Linux, and Windows, each on x64 and arm64 where Node 24 supports them. CI runs on all three operating systems.
 
-npm is the only distribution channel. An agent runs BuildOS with `npx -y @brucewaynedecoy/buildos@<version>` and needs no install step. BuildOS ships no Homebrew formula and no per-OS archive.
+npm is the only distribution channel. An agent runs BuildOS with `npx -y build-os@<version>` and needs no install step. A person can install it with `npm install build-os` in a project or `npm install -g build-os` for the whole machine. BuildOS ships no Homebrew formula and no per-OS archive.
 
 The published package has no runtime `dependencies`. All runtime code is in the bundle. See [Supply Chain](#supply-chain).
 
@@ -194,7 +194,7 @@ Code anchors:
 
 ## Legacy Command Names
 
-The package `bin` map lists `buildos`, `buildos-intake`, `buildos-discovery`, and `buildos-design`. `buildos` points to the bundle, `dist/buildos.js`. Each legacy name points to its own small entry file (`dist/buildos-intake.js`, `dist/buildos-discovery.js`, `dist/buildos-design.js`). An entry file passes its legacy name to the same bundle explicitly, then runs it. BuildOS never takes the command name from the path it was started under, so each legacy name works the same way on macOS, Linux, and Windows, including through npm's Windows `.cmd` and `.ps1` shims. The entry files ship in the package and go away with the legacy names.
+The package `bin` map lists `buildos`, `build-os`, `buildos-intake`, `buildos-discovery`, and `buildos-design`. `buildos` points to the bundle, `dist/buildos.js`. `build-os` points to the same file and runs exactly as `buildos`: no notice line and no domain added. It exists because `npx -y build-os@<version>` runs the `bin` named after the package when a package has more than one. `build-os` is not a legacy name and does not go away in `0.3.0`. Each legacy name points to its own small entry file (`dist/buildos-intake.js`, `dist/buildos-discovery.js`, `dist/buildos-design.js`). An entry file passes its legacy name to the same bundle explicitly, then runs it. BuildOS never takes the command name from the path it was started under, so each legacy name works the same way on macOS, Linux, and Windows, including through npm's Windows `.cmd` and `.ps1` shims. The entry files ship in the package and go away with the legacy names.
 
 When BuildOS starts under a legacy name, it maps the legacy arguments to the matching `buildos <domain>` command. It keeps the legacy output and exit behavior. It writes one line to stderr that says the name is going away and names the new command to use.
 
@@ -353,7 +353,7 @@ Rule 5 has one closed exception. Exactly one package, `esbuild` at version `0.28
 
 No other package may declare an install script. To add a package to this exception, or to change the esbuild version, the owner must make a new decision, and this PRD must record it. Agents may not extend the exception. The CI dependency guard fails when any other package declares a `preinstall`, `install`, or `postinstall` script, when the esbuild version differs from the allowed version, when the exception holds more than one entry, or when `.npmrc` does not set `ignore-scripts=true`. Each release checks again whether the exception is still needed.
 
-esbuild bundles all runtime code, including outside packages, into the published files. The published package has no runtime `dependencies`. `npm install` and `npx` fetch only `@brucewaynedecoy/buildos`. They never resolve new third-party versions on a user's machine. A fixed upstream package reaches users only through a rebuilt and republished BuildOS release.
+esbuild bundles all runtime code, including outside packages, into the published files. The published package has no runtime `dependencies`. `npm install` and `npx` fetch only `build-os`. They never resolve new third-party versions on a user's machine. A fixed upstream package reaches users only through a rebuilt and republished BuildOS release.
 
 A third-party license notice file ships with the package.
 
@@ -454,6 +454,14 @@ These observable outcomes are current requirements of this subsystem. The standa
 The adopter does not need to know about npm, `npx`, `PATH`, Node versions, bundling, wrapper choice, Make Docs setup flags, or where each chat app keeps skills.
 
 ## Requirement History
+
+### 2026-11-26 — W1 R7 P8 owner decision (package name)
+
+- Affected requirement or section: `## Runtime and Package` (the package name and the `npx` command), `## Legacy Command Names` (the `bin` map), `## Supply Chain` (the fetched package)
+- Previous contract: The package was named `@brucewaynedecoy/buildos`. An agent ran `npx -y @brucewaynedecoy/buildos@<version>`. The `bin` map listed `buildos` and the three legacy names.
+- Replacement contract: The package is named `build-os` (unscoped, npm account `brucewaynedecoy`). An agent runs `npx -y build-os@<version>`, and a person can run `npm install build-os` or `npm install -g build-os`. The `bin` map also lists `build-os`, which points to `dist/buildos.js` and runs exactly as `buildos`. The command name stays `buildos`.
+- Rationale: The owner decided on 2026-11-26 that `npm install build-os` and `npm install -g build-os` must work. Nothing was published under the earlier name. npx needs a `bin` named after the package when a package has several `bin` entries (orchestrator decision of 2026-11-26), and without it npm stops with "could not determine executable to run".
+- Source: [W1 R7 P8 Release 0.1.0](../work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/08-release-0-1-0.md) and [Package Name `build-os`](../work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#package-name-build-os-2026-11-26)
 
 ### 2026-11-25 — W1 R7 P8 pin-first final check
 

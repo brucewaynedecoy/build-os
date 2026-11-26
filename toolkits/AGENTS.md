@@ -1,6 +1,6 @@
 # Toolkits Router
 
-`toolkits/` holds the source of the first-party deterministic BuildOS CLI: one npm package, `@brucewaynedecoy/buildos`, in `toolkits/buildos/`.
+`toolkits/` holds the source of the first-party deterministic BuildOS CLI: one npm package, `build-os`, in `toolkits/buildos/`.
 
 ## Routing
 

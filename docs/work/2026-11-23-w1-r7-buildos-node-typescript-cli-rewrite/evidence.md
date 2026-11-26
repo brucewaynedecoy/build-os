@@ -5064,3 +5064,54 @@ The owner and the orchestrator did steps 1 to 16 of the owner checklist in `tool
 CI on the first commit: `buildos-ci` run 45877409126 passed on the three operating systems. `buildos-deny-list` run 45877409073 failed closed on its first attempt, which started before the environment had its deployment rules; its second attempt, after step 14, passed the real-list scan with 0 matches.
 
 This change sets the package version to `0.1.0` in `package.json` and `package-lock.json`. Nothing is published. Step 17 (npm) is open.
+
+## Package Name `build-os` (2026-11-26)
+
+Owner decision of 2026-11-26: the npm package is published as the unscoped name `build-os` under the npm account `brucewaynedecoy`, not as `@brucewaynedecoy/buildos`. `npm install build-os` and `npm install -g build-os` must work. Checked on 2026-11-26: `build-os`, `buildos`, and `@brucewaynedecoy/buildos` did not exist on npm. Nothing was published under the earlier name, so no published version changes. The register entry is `Q-017` in [PRD 03](../../prd/03-open-questions-and-risk-register.md).
+
+Orchestrator decisions of the same day:
+
+1. The command name stays `buildos`, and the three legacy names stay as they are. No command behavior changes.
+2. One more `bin` entry, `build-os`, points to `dist/buildos.js`, the same file as `buildos`. npx runs the `bin` named after the package when a package has several, so `npx -y build-os@<version> <command>` needs it. `dist/buildos.js` never reads the name it was started under (`src/cli/invocation.ts`; only the legacy entry files pass a name), so `build-os` runs as `buildos` on macOS, Linux, and Windows (npm's `.cmd` and `.ps1` shims run `node <path>/dist/buildos.js`): no notice line and no domain added. `build-os` is not a legacy name and does not go away in `0.3.0`.
+3. The tarball is `build-os-<version>.tgz`, the name that `npm pack` gives; `scripts/release-ledger.ts` `tarballName` derives it from the package name. The SBOM file stays `buildos-<version>.cdx.json`: no script derives it from the package name. The SBOM component is `build-os` with the purl `pkg:npm/build-os@<version>` (npm's SBOM sets the purl).
+4. `--access public` stays in every documented `npm stage publish` command and in the workflow's `stage` job. It is the default for an unscoped package and does no harm.
+
+What changed:
+
+- `toolkits/buildos/package.json` and `package-lock.json`: the name `build-os` (both places in the lockfile); the `bin` `build-os`. `repository` points to `https://github.com/brucewaynedecoy/build-os` (the package has no `homepage` or `bugs` field; none was added).
+- Source: the `npx` command that `init` prints (`src/cli/commands/init.ts`, `src/core/init/init.ts`), the `dev` recovery message (`src/cli/required-version.ts`).
+- Wrappers (`system/.os/scripts/`): `pinned-version.cjs` accepts only a package whose `package.json` name is `build-os`; the local lookup looks in `node_modules/build-os` (one path segment shorter than the scoped folder) in the project folder and each folder above it, then in npm's local project folder and each folder above it; on Windows the package is `node_modules\build-os` next to a `buildos.cmd` shim, or in the `node_modules` folder of a `.bin` folder. The rule that the bin file is not inside a `node_modules` folder below the package is relative to the package folder and is unchanged. The `npx` call is `npx -y --prefix <current folder> --workspaces=false build-os@<version>`. The wrapper still never starts a program to learn its version, and a package with any other name, the earlier scoped name too, never counts.
+- Release scripts and workflows: `PACKAGE_NAME` in `scripts/release-ledger.ts` (the identity, ledger, SBOM, stage, GitHub, and placeholder checks read it), the tarball paths in `.github/workflows/buildos-release.yml`, the installed-package path in `.github/workflows/buildos-ci.yml`. `.github/CODEOWNERS` names no package and did not change. No gate, the esbuild install-script rule, or the wrapper threat model was weakened; the threat model now also names a hostile `build-os` on `PATH`, the name that npx starts.
+- Tests: every fixture path and name; `test/package.test.ts` checks the five `bin` names, that the installed `build-os` gives the same stdout, stderr, and exit code as `buildos` for `--help`, `version --json`, `intake --help`, and an unknown command, and that `npx -y build-os@file:<tarball> version --json` runs the package version with no notice; the planted programs answer to both `buildos` and `build-os`; `test/wrappers.test.ts` checks that a package named `@brucewaynedecoy/buildos` (or `buildos`, `Build-OS`, `build-os-cli`, `@build-os/build-os`) never counts and that a package in `node_modules/@brucewaynedecoy/buildos` is not looked at.
+- Documents: the root `README.md`, `AGENTS.md`, `USE_CASES_TESTING.md`, `justfile`, `toolkits/README.md`, `toolkits/AGENTS.md`, `toolkits/buildos/README.md`, `RELEASE_NOTES.md`, `SECURITY.md`, `THIRD_PARTY_NOTICES.md`, `toolkits/buildos/AGENTS.md` (First Publication: placeholder tarball `build-os-0.0.0-reserved.0.tgz`, `npm stage list build-os`, `npm trust github build-os ...`, `npm view build-os ...`, `npm dist-tag ... build-os ...`, `npm deprecate build-os@...`), `system/.os/scripts/AGENTS.md`, the guide chapters 01, 03, 04, and 19 and the rebuilt `guide/BuildOS-Guide.html`, seven pages under `docs/assets/`, PRDs 01, 02, 03, 04, 05, 06, and 20 (with Requirement History entries in PRD 06 and PRD 20), and the maintainer commands of t1 and t22 in [08 Release 0.1.0](08-release-0-1-0.md). Dated records (the archive, plans, designs, the W1 R8 work folder, and the earlier sections of this file) did not change.
+
+Verification on macOS (Node.js 26.13.1, npm 11.20.0), in `toolkits/buildos/` unless named:
+
+| Check | Result |
+| --- | --- |
+| `npm ci --ignore-scripts` | passed, 0 vulnerabilities |
+| `npm run typecheck` | passed |
+| `npm run build` | passed |
+| `npm test` (outside the sandbox: the real-npm registry cases need a local port) | 2504 tests: 2491 passed, 0 failed, 13 skipped (the Windows-only and other conditional cases) |
+| `npm run check:deps` | `dependency policy: ok` |
+| `node --test test/deny-list.test.ts`, `node scripts/pack-for-scan.ts`, `node scripts/release-gate.ts deny-list --invented-list --tarball <pack>/build-os-0.1.0.tgz` (as the `invented` CI job runs them) | 46 of 46 passed; the gate passed, 0 matches, 173 of 173 package files read |
+| `node scripts/release-dry-run.ts --allow-dirty` | every gate before `osv` passed (identity, digest, version, tests, installed, eval, audit); `osv` failed because `osv-scanner` is not installed on this machine. With `--osv-results` set to a hand-made empty result and `--osv-exit 0` (no real OSV scan), `deny-list`, `sbom` (metadata component `build-os` 0.1.0, purl `pkg:npm/build-os@0.1.0`), and `provenance` (a dry-run warning) passed. CI runs the real OSV scan. |
+| `node scripts/reserved-placeholder.ts --out <empty folder>` | `build-os-0.0.0-reserved.0.tgz` with exactly `package.json` (name `build-os`), `README.md`, and `LICENSE` |
+| npx with the real npm, offline, against a packed tarball | `npx -y build-os@file:<tarball> version --json`, `npx -y --package=<tarball> build-os version`, and `npx -y build-os@0.1.0 version --json` with a local install ran BuildOS; the same tarball without the `build-os` bin stopped with `npm error could not determine executable to run` |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | passed, no diagnostics |
+| `make-docs project paths validate --target-root .` (repository root) | valid, 0 findings |
+| `git diff --check` | clean |
+
+Not verified here: Windows and Linux (CI covers them after the push). The tests that depend on the system are the `.cmd` shim runs of `build-os` and the legacy names in `test/package.test.ts`, the Windows candidate lookup (`windowsCandidateEntry`) in `test/wrappers.test.ts`, and the planted-program cases, which use `.cmd` files on Windows.
+
+### Review of the Package Name Change (2026-11-26)
+
+The reviewer (one round) found no code blocker and five findings. The orchestrator fixed them in a second commit.
+
+| Finding | Disposition |
+| --- | --- |
+| 1 (blocker for the install text) The unscoped name `build-os` is free on npm while the public README names `npx -y build-os@0.1.0` | Accepted. The owner reserves the name with the placeholder (First Publication steps 1 to 3) before this change merges. `toolkits/buildos/AGENTS.md` now says to do steps 1 to 3 as early as possible. |
+| 2 (major) Four current guides called the npm package `buildos` | Fixed: they name the package `build-os` and the command `buildos`. |
+| 3 (minor) The wrapper took a string `bin` as the `buildos` command; npm links a string `bin` only under the package name | Fixed: `pinned-version.cjs` needs an object `bin` with a `buildos` entry. The test now expects a refusal for a string `bin`. |
+| 4 (minor) The root `bin` map of `package-lock.json` listed only `buildos` | Fixed: it lists the five commands of `package.json`. |
+| 5 (minor) `npm view build-os dist-tags versions` can print nothing when only the `reserved` tag exists | Fixed: the step uses `npm view build-os@reserved dist-tags versions --json`. |

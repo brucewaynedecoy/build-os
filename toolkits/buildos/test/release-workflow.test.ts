@@ -280,7 +280,7 @@ describe("P8-R2-03: scripts/pack-for-scan.ts, the deny-list workflow's pack step
       const r = spawnSync(process.execPath, [join(packageRoot, "scripts", "pack-for-scan.ts"), "--out", out, "--skip-build"], { cwd: packageRoot, encoding: "utf8", env: { ...process.env, GITHUB_OUTPUT: outputFile } });
       assert.equal(r.status, 0, `${r.stdout}${r.stderr}`);
       const version = (JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8")) as { version: string }).version;
-      const tarball = join(out, `brucewaynedecoy-buildos-${version}.tgz`);
+      const tarball = join(out, `build-os-${version}.tgz`);
       assert.equal(r.stdout, `tarball=${tarball}\n`);
       assert.equal(readFileSync(outputFile, "utf8"), `tarball=${tarball}\n`);
       assert.ok(readFileSync(tarball).length > 1000);

@@ -23,7 +23,7 @@ Code anchors:
 - Playbooks: typed Markdown instruments that guide humans and agents, with a review-to-activate lifecycle.
 - Discovery & qualification: run playbooks, record immutable runs, and qualify findings with deterministic, repeatable tests.
 - Planning/engineering hand-off: promote qualified findings into the make-docs design → plan → PRD → work pipeline.
-- One `buildos` command: every deterministic operation runs through one CLI from the npm package `@brucewaynedecoy/buildos`. An agent can run it with `npx` and no install step. `buildos init` sets up or adopts a project and offers optional Make Docs companion setup. [20 BuildOS CLI and Distribution](./20-buildos-cli-and-distribution.md) owns the command, package, and setup contract.
+- One `buildos` command: every deterministic operation runs through one CLI from the npm package `build-os`. An agent can run it with `npx` and no install step. `buildos init` sets up or adopts a project and offers optional Make Docs companion setup. [20 BuildOS CLI and Distribution](./20-buildos-cli-and-distribution.md) owns the command, package, and setup contract.
 
 Code anchors:
 

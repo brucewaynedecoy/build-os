@@ -249,7 +249,7 @@ const NOT_CHECKED: ReadonlySet<SharedSkipReason> = new Set(["unreadable", "too_l
 
 /** How the CLI spells a `buildos init` command in the output. */
 export interface CommandStyle {
-  /** `buildos`, or the `npx -y @brucewaynedecoy/buildos@<version>` form. */
+  /** `buildos`, or the `npx -y build-os@<version>` form. */
   program: string[];
   platform: string;
   json: boolean;

@@ -40,7 +40,7 @@ Define the canonical vocabulary used across the Build OS PRD set so humans and c
 | Golden output | The written files, stdout, stderr, JSON output, and exit codes captured from the Go tools for a fixed fixture set. Each ported command must match it. | `20-buildos-cli-and-distribution.md` |
 | Skills router | `.os/skills/AGENTS.md`, the file that tells an agent how to install a packaged skill into its own app's skill location when a user or workflow needs it. | `06-operating-layer-and-routing.md` |
 | Wrapper resolution | The order in which a `.os/scripts/` wrapper finds the CLI, always at the version pinned in `.os/manifest.json` (pin first): an npm install of exactly that version (in the project's `node_modules` folder, or the first `buildos` on `PATH`), then pinned `npx`, then one plain message that names what to install. | `06-operating-layer-and-routing.md` |
-| Bundled package | The published `@brucewaynedecoy/buildos` package. All runtime code, including outside packages, is bundled into its files, so it has no runtime dependencies. | `20-buildos-cli-and-distribution.md` |
+| Bundled package | The published `build-os` package. All runtime code, including outside packages, is bundled into its files, so it has no runtime dependencies. | `20-buildos-cli-and-distribution.md` |
 
 ### Change Notes
 

@@ -131,7 +131,7 @@ jobs:
             echo "RUNNER_TEMP=$RUNNER_TEMP"
             ls -la "$RUNNER_TEMP" || true
             ls -la "$RUNNER_TEMP/installed/node_modules/.bin" || true
-            ls -la "$RUNNER_TEMP/installed/node_modules/@brucewaynedecoy/buildos" || true
+            ls -la "$RUNNER_TEMP/installed/node_modules/build-os" || true
             # Node lists npm's logs: a glob after a Windows path matches nothing in Git Bash.
             node -e 'const fs=require("fs"),p=require("path");const d=p.join(process.argv[1],"_logs");for(const f of fs.existsSync(d)?fs.readdirSync(d):[]){console.log("--- "+f);console.log(fs.readFileSync(p.join(d,f),"utf8"))}' "$(npm config get cache)" || true
             echo "::endgroup::"

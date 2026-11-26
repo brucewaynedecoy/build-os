@@ -20,7 +20,7 @@ const base = () => ({
   specVersion: "1.5",
   serialNumber: "urn:uuid:3e671687-395b-41f5-a30f-a58921a69b79",
   version: 1,
-  metadata: { timestamp: "2026-11-24T00:00:00Z", component: { type: "application", name: "@brucewaynedecoy/buildos", version: "0.1.0" } },
+  metadata: { timestamp: "2026-11-24T00:00:00Z", component: { type: "application", name: "build-os", version: "0.1.0" } },
   components: [{ type: "library", name: "a", version: "1.0.0", licenses: [{ license: { id: "MIT" } }] }],
 });
 type Doc = ReturnType<typeof base> & Record<string, unknown>;

@@ -124,7 +124,7 @@ describe("guide worked examples (P7S-R2-05)", () => {
 // with the real output of the same command in a new project: every line of
 // the block must be a line of the real output, in order (a block may be a
 // shortened excerpt). A shown folder path is written `<project folder>`, and
-// a shown `npx -y @brucewaynedecoy/buildos@<version>` command is what a
+// a shown `npx -y build-os@<version>` command is what a
 // source build prints as `buildos`.
 
 interface OutputBlock {
@@ -220,7 +220,7 @@ describe("guide output examples (W1 R7 P8 t8; P8-D-01: each system against its o
       const display = shellPlatform === "win32" ? '"<project folder>"' : "<project folder>";
       if (quoted !== project) assert.ok(block.platform !== "posix" || readFileSync(join(GUIDE, block.chapter), "utf8").includes("the commands show it in single quotes"), "the guide says that a path with a space is quoted");
       const actual = (quoted === project ? output : output.split(quoted).join(display)).split(project).join("<project folder>");
-      const expected = shown.replace(/npx -y @brucewaynedecoy\/buildos@[0-9][^ ]* /g, "buildos ");
+      const expected = shown.replace(/npx -y build-os@[0-9][^ ]* /g, "buildos ");
       assert.ok(linesInOrder(expected, actual), `the guide block matches the real output (${shape(actual)})`);
     });
   }

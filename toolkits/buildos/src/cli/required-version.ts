@@ -83,7 +83,7 @@ export function refusalMessage(required: string, actual: string): string {
  * on PATH.
  */
 const DEV_RECOVERY =
-  " For a development build: in the project folder, replace the local install with the built development package (npm install <path to toolkits/buildos>). Or remove the local install (npm uninstall @brucewaynedecoy/buildos), so that the linked build on PATH runs.";
+  " For a development build: in the project folder, replace the local install with the built development package (npm install <path to toolkits/buildos>). Or remove the local install (npm uninstall build-os), so that the linked build on PATH runs.";
 
 /** The two fixes, without a line feed. For a `dev` pin, also the development-build recovery. */
 export function refusalCorrection(required: string): string {

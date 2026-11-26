@@ -36,7 +36,7 @@
 //      run's job summary.
 //   3. Download that artifact and inspect the tarball:
 //        tar -tzvf <tarball>                     (every file, mode, and size)
-//        npm diff --diff=@brucewaynedecoy/buildos@<previous> --diff=<tarball>
+//        npm diff --diff=build-os@<previous> --diff=<tarball>
 //                                                (against the previous release;
 //                                                 skip for the first release)
 //        npm install --offline --ignore-scripts --no-save --prefix <scratch> <tarball>

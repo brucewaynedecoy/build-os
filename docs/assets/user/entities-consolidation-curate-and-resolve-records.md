@@ -34,7 +34,7 @@ Operational paths in this guide start at the initialized project root. It contai
 
 Use this guide when your Build OS data contains several records that describe the same persona or another entity and you want to choose one winner without deleting the others.
 
-Build OS is designed to keep the losing records as history. The `buildos entities` commands validate the complete graph, preview or apply a reviewed redirect, resolve historical IDs, and check or rebuild the derived index. They ship in the `@brucewaynedecoy/buildos` npm package (Node.js 24 or newer) and run through the project wrapper `.os/scripts/buildos entities ...`. Rehearse every consolidation on a copied Build OS root first: a successful copy does not authorize changing live data.
+Build OS is designed to keep the losing records as history. The `buildos entities` commands validate the complete graph, preview or apply a reviewed redirect, resolve historical IDs, and check or rebuild the derived index. They ship in the `build-os` npm package (Node.js 24 or newer) and run through the project wrapper `.os/scripts/buildos entities ...`. Rehearse every consolidation on a copied Build OS root first: a successful copy does not authorize changing live data.
 
 The command is `buildos entities`; there is no separate `buildos-entities` program. `consolidate` and `rebuild-index` write only with `--apply`.
 
@@ -44,7 +44,7 @@ The command is `buildos entities`; there is no separate `buildos-entities` progr
 
 Identify these locations before running a command:
 
-1. The exact BuildOS version you will use, written below as `<buildos>`: `npx -y @brucewaynedecoy/buildos@<version>`, or the project wrapper `.os/scripts/buildos` of a project that pins that version.
+1. The exact BuildOS version you will use, written below as `<buildos>`: `npx -y build-os@<version>`, or the project wrapper `.os/scripts/buildos` of a project that pins that version.
 2. The BuildOS version the live project pins in `.os/manifest.json`, if it is a different one.
 3. Where the review packet will record the version: run `<buildos> version` and keep its output.
 4. The live adopter-owned Build OS root containing `.os/data/` and `.os/indexes/`.
@@ -117,7 +117,7 @@ Command output reports the requested ID, canonical ID, and complete chain so you
 
 This is a copied-root rehearsal, not a live-data migration.
 
-Set the paths explicitly. `<buildos>` is the BuildOS command at the exact version you chose, for example `npx -y @brucewaynedecoy/buildos@0.1.0`. `<live-root>` is the adopter-owned Build OS root that contains `.os/data/` and `.os/indexes/`. `<snapshot-root>` and `<copied-root>` must be new, separate paths on storage with enough free space.
+Set the paths explicitly. `<buildos>` is the BuildOS command at the exact version you chose, for example `npx -y build-os@0.1.0`. `<live-root>` is the adopter-owned Build OS root that contains `.os/data/` and `.os/indexes/`. `<snapshot-root>` and `<copied-root>` must be new, separate paths on storage with enough free space.
 
 1. Confirm the live root before copying it:
 
@@ -291,7 +291,7 @@ No. The rehearsal changes only the copy. Changing live data is a separate operat
 
 **How do I get the command?**
 
-It is part of the `@brucewaynedecoy/buildos` npm package. In a project, run `.os/scripts/buildos entities ...`; for a copied root, `npx -y @brucewaynedecoy/buildos@<version> entities ... --root <copied-root>` works without an install. See [Upgrade an Existing BuildOS Project](upgrade-an-existing-buildos-project.md) to move a Go-era project to the package.
+It is part of the `build-os` npm package. In a project, run `.os/scripts/buildos entities ...`; for a copied root, `npx -y build-os@<version> entities ... --root <copied-root>` works without an install. See [Upgrade an Existing BuildOS Project](upgrade-an-existing-buildos-project.md) to move a Go-era project to the package.
 
 ## Related Resources
 

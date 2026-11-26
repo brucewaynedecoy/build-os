@@ -32,7 +32,7 @@ function tarball(files: Record<string, string>): Buffer {
   return Buffer.from(tarGz(Object.fromEntries(Object.entries(files).map(([name, text]) => [`package/${name}`, text]))));
 }
 
-const goodPkg = { name: "@brucewaynedecoy/buildos", version: "9.8.7", repository: { type: "git", url: REPO_URL }, scripts: { build: "node scripts/build.ts", test: "node --test" } };
+const goodPkg = { name: "build-os", version: "9.8.7", repository: { type: "git", url: REPO_URL }, scripts: { build: "node scripts/build.ts", test: "node --test" } };
 
 function git(cwd: string, args: string[]): string {
   const r = spawnSync("git", args, { cwd, encoding: "utf8" });
@@ -41,7 +41,7 @@ function git(cwd: string, args: string[]): string {
 }
 
 function entry(digest: string, kind = "reviewed") {
-  return { kind, version: "9.8.7", tag: "v9.8.7", tarball_name: "brucewaynedecoy-buildos-9.8.7.tgz", tarball_sha256: digest, source_commit: "a".repeat(40), node_version: "v24.22.3", npm_version: "11.19.1", runner_image: "ubuntu-24.04", reviewed_by: "fixture reviewer", reviewed_on: "2026-11-24", review_evidence: "fixture, not a release" };
+  return { kind, version: "9.8.7", tag: "v9.8.7", tarball_name: "build-os-9.8.7.tgz", tarball_sha256: digest, source_commit: "a".repeat(40), node_version: "v24.22.3", npm_version: "11.19.1", runner_image: "ubuntu-24.04", reviewed_by: "fixture reviewer", reviewed_on: "2026-11-24", review_evidence: "fixture, not a release" };
 }
 
 describe("privileged release entry points run with no node_modules (P8-R1-04, P8-R2-01)", () => {
@@ -65,7 +65,7 @@ describe("privileged release entry points run with no node_modules (P8-R1-04, P8
     cpSync(join(packageRoot, "scripts", "schemas"), join(pkg, "scripts", "schemas"), { recursive: true });
     const bytes = tarball({ "package.json": `${JSON.stringify(goodPkg)}\n`, "README.md": "an ordinary file\n" });
     mkdirSync(join(dir, "out"));
-    tgz = join(dir, "out", "brucewaynedecoy-buildos-9.8.7.tgz");
+    tgz = join(dir, "out", "build-os-9.8.7.tgz");
     writeFileSync(tgz, bytes);
     digest = sha256(new Uint8Array(bytes));
     // A scratch repository whose commits hold the ledger in different git modes.
@@ -124,7 +124,7 @@ describe("privileged release entry points run with no node_modules (P8-R1-04, P8
     assert.equal(r.status, 0, `${r.stdout}${r.stderr}`);
     assert.match(r.stdout, /release stage check digest: pass/);
     assert.match(r.stdout, new RegExp(`ledger read from git at ${commits.good}`));
-    assert.equal(readFileSync(out, "utf8"), `tarball_sha256=${digest}\ndist_tag=latest\ntarball_name=brucewaynedecoy-buildos-9.8.7.tgz\nsource_commit=${"a".repeat(40)}\n`);
+    assert.equal(readFileSync(out, "utf8"), `tarball_sha256=${digest}\ndist_tag=latest\ntarball_name=build-os-9.8.7.tgz\nsource_commit=${"a".repeat(40)}\n`);
   });
 
   it("P8-R2-08: refuses the ledger as a symbolic link or an executable at the commit, and a self entry", () => {
@@ -166,7 +166,7 @@ describe("privileged release entry points run with no node_modules (P8-R1-04, P8
 
   function writeTo(name: string, bytes: Uint8Array | Buffer): string {
     mkdirSync(join(dir, name), { recursive: true });
-    const file = join(dir, name, "brucewaynedecoy-buildos-9.8.7.tgz");
+    const file = join(dir, name, "build-os-9.8.7.tgz");
     writeFileSync(file, bytes);
     return file;
   }
@@ -312,7 +312,7 @@ describe("privileged release entry points run with no node_modules (P8-R1-04, P8
   });
 
   function sbomFor(over: { sha?: string; revision?: string; version?: string; extra?: string } = {}): string {
-    return JSON.stringify({ bomFormat: "CycloneDX", specVersion: "1.5", version: 1, metadata: { component: { type: "library", name: "@brucewaynedecoy/buildos", version: over.version ?? "9.8.7", hashes: [{ alg: "SHA-256", content: over.sha ?? digest }], properties: [{ name: "buildos:source_revision", value: over.revision ?? "a".repeat(40) }] } }, ...(over.extra === undefined ? {} : { components: [{ type: "library", name: over.extra }] }) });
+    return JSON.stringify({ bomFormat: "CycloneDX", specVersion: "1.5", version: 1, metadata: { component: { type: "library", name: "build-os", version: over.version ?? "9.8.7", hashes: [{ alg: "SHA-256", content: over.sha ?? digest }], properties: [{ name: "buildos:source_revision", value: over.revision ?? "a".repeat(40) }] } }, ...(over.extra === undefined ? {} : { components: [{ type: "library", name: over.extra }] }) });
   }
 
   it("P8-R2-05: the SBOM must record the verified tarball digest and the reviewed source commit", () => {
@@ -349,7 +349,7 @@ describe("privileged release entry points run with no node_modules (P8-R1-04, P8
     const input = { releaseId: "42", repo, commit: commits.good, tag: "v9.8.7", tarball: tgz, sbom: sbomFile };
     const r = await attach(ctx(fakeFetch(route, log)), input);
     assert.deepEqual(r.problems, []);
-    assert.deepEqual(uploaded.map((u) => u.name).sort(), ["brucewaynedecoy-buildos-9.8.7.tgz", "buildos-9.8.7.cdx.json"]);
+    assert.deepEqual(uploaded.map((u) => u.name).sort(), ["build-os-9.8.7.tgz", "buildos-9.8.7.cdx.json"]);
     for (const call of log) assert.match(call.url, /^https:\/\/(api|uploads)\.github\.com\//);
     // A wrong SBOM, a non-draft, a release that already has assets, and the ledger as a link stop it before any upload.
     writeFileSync(sbomFile, sbomFor({ sha: "0".repeat(64) }));
@@ -370,7 +370,7 @@ describe("privileged release entry points run with no node_modules (P8-R1-04, P8
     const sbomBytes = new TextEncoder().encode(sbomText);
     const verifySbom = join(dir, "verify-sbom.cdx.json");
     writeFileSync(verifySbom, sbomText);
-    const tarAsset = { id: 9, name: "brucewaynedecoy-buildos-9.8.7.tgz", size: bytes.length, digest: `sha256:${sha256(bytes)}`, state: "uploaded" };
+    const tarAsset = { id: 9, name: "build-os-9.8.7.tgz", size: bytes.length, digest: `sha256:${sha256(bytes)}`, state: "uploaded" };
     const sbomAsset = (b: Uint8Array = sbomBytes) => ({ id: 10, name: "buildos-9.8.7.cdx.json", size: b.length, digest: `sha256:${sha256(b)}`, state: "uploaded" });
     type Form = "redirect" | "direct";
     const route = (rel: Record<string, unknown>, served: { 9?: Uint8Array; 10?: Uint8Array } = {}, form: Form = "redirect"): Route => (url): ReturnType<Route> => {
@@ -403,12 +403,12 @@ describe("privileged release entry points run with no node_modules (P8-R1-04, P8
 
     // The asset set (P8-F-02): one tarball only (the old success case), a missing SBOM, an extra asset, a repeated tarball.
     assert.match(await problems(route(published([tarAsset]))), /0 assets named buildos-9\.8\.7\.cdx\.json/);
-    assert.match(await problems(route(published([{ ...sbomAsset() }]))), /0 assets named brucewaynedecoy-buildos-9\.8\.7\.tgz/);
+    assert.match(await problems(route(published([{ ...sbomAsset() }]))), /0 assets named build-os-9\.8\.7\.tgz/);
     assert.match(await problems(route(published([tarAsset, sbomAsset(), { id: 11, name: "notes.txt", size: 1, digest: `sha256:${"0".repeat(64)}`, state: "uploaded" }]))), /not part of a BuildOS release: notes\.txt/);
-    assert.match(await problems(route(published([tarAsset, tarAsset, sbomAsset()]))), /2 assets named brucewaynedecoy-buildos-9\.8\.7\.tgz/);
+    assert.match(await problems(route(published([tarAsset, tarAsset, sbomAsset()]))), /2 assets named build-os-9\.8\.7\.tgz/);
     assert.match(await problems(route(published([tarAsset, { ...sbomAsset(), state: "open" }]))), /not fully uploaded/);
     // GitHub's digest is required (P8-F-03): absent, the check fails closed, for either response form.
-    assert.match(await problems(route(published([{ ...tarAsset, digest: null }, sbomAsset()]))), /no SHA-256 digest for asset brucewaynedecoy/);
+    assert.match(await problems(route(published([{ ...tarAsset, digest: null }, sbomAsset()]))), /no SHA-256 digest for asset build-os-9\.8\.7\.tgz /);
     assert.match(await problems(route(published([{ ...tarAsset, digest: null }, sbomAsset()]), {}, "direct")), /no SHA-256 digest/);
     // Changed bytes on the storage host or in a direct body.
     const changed = new Uint8Array(bytes);
@@ -430,7 +430,7 @@ describe("privileged release entry points run with no node_modules (P8-R1-04, P8
     assert.match(await problems(route(published([tarAsset, sbomAsset()])), { expectSha256: "f".repeat(64) }), /is not the f{64} an earlier job checked/);
     assert.match(await problems(route(published([tarAsset, sbomAsset()])), { commit: commits.symlink }), /not a regular file/);
     // A failed download of either form.
-    assert.match(await problems((url) => (url === `${API}/releases/42` ? { status: 200, body: release(published([tarAsset, sbomAsset()])) } : { status: 403 })), /download of brucewaynedecoy-buildos-9\.8\.7\.tgz failed \(HTTP 403\)/);
+    assert.match(await problems((url) => (url === `${API}/releases/42` ? { status: 200, body: release(published([tarAsset, sbomAsset()])) } : { status: 403 })), /download of build-os-9\.8\.7\.tgz failed \(HTTP 403\)/);
     assert.match(await problems((url) => (url === `${API}/releases/42` ? { status: 200, body: release(published([tarAsset, sbomAsset()])) } : url.startsWith(API) ? { status: 302, headers: { location: "http://objects.example.invalid/x" } } : { status: 200 })), /did not redirect to an https address/);
   });
 

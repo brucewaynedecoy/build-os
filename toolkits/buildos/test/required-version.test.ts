@@ -24,7 +24,7 @@ const DEV = { version: "dev", sourceRevision: "unknown" };
 const RELEASE = { version: "0.1.0", sourceRevision: "f".repeat(40) };
 /** Pin-first final check, finding 7: a dev pin also names the development-build recovery. */
 const DEV_RECOVERY =
-  " For a development build: in the project folder, replace the local install with the built development package (npm install <path to toolkits/buildos>). Or remove the local install (npm uninstall @brucewaynedecoy/buildos), so that the linked build on PATH runs.";
+  " For a development build: in the project folder, replace the local install with the built development package (npm install <path to toolkits/buildos>). Or remove the local install (npm uninstall build-os), so that the linked build on PATH runs.";
 const MESSAGE = (required: string, started: string) =>
   `BuildOS stopped: this project needs BuildOS ${required}, but BuildOS ${started} started. Nothing ran.\nFix the BuildOS install so that version ${required} runs, then run the project wrapper (.os/scripts/buildos) again. Or set buildos_version in .os/manifest.json to the version that you want to use.${required === "dev" ? DEV_RECOVERY : ""}\n`;
 const NODE_MESSAGE = (found: string) =>
@@ -119,7 +119,7 @@ describe("versionRefusal", () => {
   it("finding 7 (final check): a dev pin names how to recover when a project-local install runs before a linked development build", () => {
     const stderr = versionRefusal("dev", RELEASE, ["version"])!.stderr;
     assert.ok(stderr.includes("replace the local install with the built development package"), stderr);
-    assert.ok(stderr.includes("Or remove the local install (npm uninstall @brucewaynedecoy/buildos), so that the linked build on PATH runs."), stderr);
+    assert.ok(stderr.includes("Or remove the local install (npm uninstall build-os), so that the linked build on PATH runs."), stderr);
     assert.doesNotMatch(versionRefusal("0.1.0", DEV, ["version"])!.stderr, /development build/);
   });
 

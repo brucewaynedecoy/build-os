@@ -1,5 +1,5 @@
 {
-  "name": "@brucewaynedecoy/buildos",
+  "name": "build-os",
   "version": "0.1.0",
   "description": "BuildOS deterministic project tooling CLI.",
   "license": "Apache-2.0",
@@ -14,6 +14,7 @@
   },
   "bin": {
     "buildos": "dist/buildos.js",
+    "build-os": "dist/buildos.js",
     "buildos-intake": "dist/buildos-intake.js",
     "buildos-discovery": "dist/buildos-discovery.js",
     "buildos-design": "dist/buildos-design.js"

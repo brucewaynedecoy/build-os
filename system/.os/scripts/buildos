@@ -3,7 +3,7 @@
 # pinned in .os/manifest.json. With Node.js 24 or newer, it runs an npm
 # install of that version (in the project's node_modules, or the first
 # `buildos` on PATH) with the same `node`, and it never starts a program to
-# learn its version; else `npx -y @brucewaynedecoy/buildos@VERSION`; else one
+# learn its version; else `npx -y build-os@VERSION`; else one
 # plain message. Every start sets BUILDOS_REQUIRE_VERSION, and BuildOS stops
 # itself when its own version is another one. See pinned-version.cjs.
 set -u

@@ -40,7 +40,7 @@ cd <demo-root>
 buildos init --make-docs
 ```
 
-To test a published release instead, skip the `just` steps and run `npx -y @brucewaynedecoy/buildos@<version> init --make-docs` in `<demo-root>`. Copy the initial source files into `<demo-root>/assets/_incoming/`. Then start the agent with its working directory set to `<demo-root>`.
+To test a published release instead, skip the `just` steps and run `npx -y build-os@<version> init --make-docs` in `<demo-root>`. Copy the initial source files into `<demo-root>/assets/_incoming/`. Then start the agent with its working directory set to `<demo-root>`.
 
 **Agent Prompt**
 
@@ -634,7 +634,7 @@ When testing is complete, optionally remove the globally installed `buildos` CLI
 just uninstall-toolkits
 ```
 
-This runs `npm uninstall --global @brucewaynedecoy/buildos`. npm removes the package and all four commands it installed: `buildos` and the legacy names `buildos-intake`, `buildos-discovery`, and `buildos-design`.
+This runs `npm uninstall --global build-os`. npm removes the package and all four commands it installed: `buildos` and the legacy names `buildos-intake`, `buildos-discovery`, and `buildos-design`.
 
 **Acceptance Criteria**
 
