@@ -30,7 +30,7 @@ Deferred obligations and Unassisted Goal Testing: `not-needed-now`. Guide covera
 | --- | --- |
 | [docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md](../../../docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md) | New section First Publication of 0.1.0. |
 | [docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/08-release-0-1-0.md](../../../docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/08-release-0-1-0.md) | t1 done; t19 to t21 performed, pending stage acceptance; release-order departure; Stage 4 dependency note; status line after the publication. |
-| [docs/prd/03-open-questions-and-risk-register.md](../../../docs/prd/03-open-questions-and-risk-register.md) | `R-003` links the missed release gate. |
+| [docs/prd/03-open-questions-and-risk-register.md](../../../docs/prd/03-open-questions-and-risk-register.md) | `R-003` links the missed release gate. Its issue, follow-up, and gate fields say what is true after the publication. |
 
 ### Maintainer
 

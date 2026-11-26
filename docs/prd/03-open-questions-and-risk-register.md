@@ -766,9 +766,9 @@ Code anchors:
 
 | Status | Decision | Follow-Up |
 | --- | --- | --- |
-| Open | npm is the only channel. The scope is npm packaging, trusted publishing, provenance, SBOM, scans, and rollback by version pin, as stated in [PRD 20](./20-buildos-cli-and-distribution.md#release). Archives, Homebrew, and signing keys are withdrawn. `buildos update` and `buildos uninstall` stay with W2. | Verify the release flow and rollback by version pin in W1 R7 work P8, before `0.1.0` |
+| Open | npm is the only channel. The scope is npm packaging, trusted publishing, provenance, SBOM, scans, and rollback by version pin, as stated in [PRD 20](./20-buildos-cli-and-distribution.md#release). Archives, Homebrew, and signing keys are withdrawn. `buildos update` and `buildos uninstall` stay with W2. | Verify the release flow and rollback by version pin in W1 R7 work P8. The deadline "before `0.1.0`" was missed: `0.1.0` was published on 2026-11-26 before the Stage 4 checks and the publication review. The owner decides what to do with the outstanding checks (t15 to t18, t22 to t24); that decision is open. |
 
-**Issue**: BuildOS ships as the npm package `build-os` (`Q-017`). The release flow, provenance, SBOM, scans, and rollback by version pin are specified but not yet built or proven. Project wrappers run the version pinned in `.os/manifest.json`, so rollback depends on that pin and on earlier versions staying installable. Since the owner decision of 2026-11-25 (`Q-015`, pin-first), the pin always decides: a global install is used only when it is an npm install of exactly the pinned version; otherwise the wrapper fetches the pinned version. So rollback is the manifest edit alone, on every machine.
+**Issue**: BuildOS ships as the npm package `build-os` (`Q-017`). The release flow, provenance, SBOM, and scans are built, and `0.1.0` was published through them on 2026-11-26. The checks on the staged package and rollback by version pin are not yet proven. Project wrappers run the version pinned in `.os/manifest.json`, so rollback depends on that pin and on earlier versions staying installable. Since the owner decision of 2026-11-25 (`Q-015`, pin-first), the pin always decides: a global install is used only when it is an npm install of exactly the pinned version; otherwise the wrapper fetches the pinned version. So rollback is the manifest edit alone, on every machine.
 
 **Why it matters**: One npm package reduces the release surface, but it does not prove package integrity, a safe first publish, or that a project can return to an earlier version after a bad release.
 
@@ -778,7 +778,7 @@ Code anchors:
 
 **Owner**: BuildOS release owner.
 
-**Phase/gate**: W1 R7 work P8, before `0.1.0`; the W2 design for update, uninstall, sync, and the other deferred installation-lifecycle items.
+**Phase/gate**: W1 R7 work P8, before `0.1.0` (this gate was missed on 2026-11-26; see the first-publication paragraph below); the W2 design for update, uninstall, sync, and the other deferred installation-lifecycle items.
 
 **Required evidence**: Staged-package smoke tests on three operating systems, provenance and digest checks, SBOM, scan results, rollback by version pin on a copied project, and maintainer approval of the publish.
 

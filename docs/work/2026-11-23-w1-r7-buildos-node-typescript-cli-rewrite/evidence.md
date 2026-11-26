@@ -5118,7 +5118,7 @@ The reviewer (one round) found no code blocker and five findings. The orchestrat
 
 ## First Publication of 0.1.0 (2026-11-26)
 
-`build-os@0.1.0` was published on npm on 2026-11-26. This is the record of step 9 of First Publication in `toolkits/buildos/AGENTS.md`, and of step 17 of the owner checklist in `toolkits/buildos/SECURITY.md`. The orchestrator checked the GitHub and npm facts on 2026-11-26; the implementer checked them again on the same day with read-only commands. The rows marked "owner-reported" were not checked by an agent. `npm view` shows only the current dist-tags and the publication times. Each statement that `npm view` cannot show now names its source.
+`build-os@0.1.0` was published on npm on 2026-11-26. This is the record of step 9 of First Publication in `toolkits/buildos/AGENTS.md`, and of step 17 of the owner checklist in `toolkits/buildos/SECURITY.md`. The orchestrator checked the GitHub and npm facts on 2026-11-26; the implementer checked them again on the same day with read-only commands. A statement marked "owner-reported" was not checked by an agent. A statement marked "verified" was checked by an agent. One row can hold both kinds. `npm view` shows the current state of the registry (the dist-tags, the versions, the publication times, and the file data of each version). It cannot show an earlier state. Each statement about an earlier state names its source.
 
 | Step | Result |
 | --- | --- |
