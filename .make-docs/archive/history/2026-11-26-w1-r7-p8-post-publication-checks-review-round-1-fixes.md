@@ -41,4 +41,4 @@ None this session.
 
 | Path | Description |
 | --- | --- |
-| [docs/assets/user/entities-consolidation-curate-and-resolve-records.md](../../../docs/assets/user/entities-consolidation-curate-and-resolve-records.md) | The printed recovery command runs with `<buildos>` in place of its bare `buildos`. |
+| [docs/assets/user/entities-consolidation-curate-and-resolve-records.md](../../../docs/assets/user/entities-consolidation-curate-and-resolve-records.md) | The printed recovery command always runs with `<buildos>` in place of its bare `buildos`, so it uses the selected version (CodeRabbit comment on `4afd19d`). |

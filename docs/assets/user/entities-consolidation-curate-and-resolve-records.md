@@ -172,7 +172,7 @@ Set the paths explicitly. `<buildos>` is the BuildOS command at the exact versio
    <buildos> entities rebuild-index --root <copied-root> --mode strict --check
    ```
 
-   If the check says the index is missing or stale, use the exact recovery command in the diagnostic. In BuildOS `0.1.0` that command starts with a bare `buildos`, which runs only when BuildOS is installed globally; otherwise run it with `<buildos>` in place of `buildos`. Its operation is equivalent to:
+   If the check says the index is missing or stale, use the exact recovery command in the diagnostic. In BuildOS `0.1.0` that command starts with a bare `buildos`; always run it with `<buildos>` in place of `buildos`, so the recovery uses the version you selected (a global install can be another version). Its operation is equivalent to:
 
    ```sh
    <buildos> entities rebuild-index --root <copied-root> --mode strict --apply
