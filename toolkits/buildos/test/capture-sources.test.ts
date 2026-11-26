@@ -64,6 +64,28 @@ function codeFiles(dir: string, out: string[] = []): string[] {
   return out;
 }
 
+/**
+ * The commit IDs that `text` names: a quoted ID (with an optional `:path`),
+ * and, in a workflow file, a bare ID on a line that runs git (for example
+ * `run: git show 38d1e08:package.json`).
+ */
+function commitIds(text: string, workflow: boolean): string[] {
+  const found: string[] = [];
+  const add = (id: string | undefined): void => {
+    // A commit ID is 7 to 12 characters (abbreviated) or 40 (full), with a letter and a digit.
+    if (id === undefined || (id.length > 12 && id.length !== 40) || !/[a-f]/.test(id) || !/[0-9]/.test(id)) return;
+    found.push(id);
+  };
+  for (const match of text.matchAll(/["'`]([0-9a-f]{7,40})(?::[^"'`\s]*)?["'`]/g)) add(match[1]);
+  if (workflow) {
+    for (const line of text.split("\n")) {
+      if (!/\bgit\s/.test(line)) continue;
+      for (const match of line.matchAll(/(?<![0-9A-Za-z_\/@-])([0-9a-f]{7,40})(?![0-9A-Za-z_])/g)) add(match[1]);
+    }
+  }
+  return [...new Set(found)];
+}
+
 describe("capture sources are public commits", () => {
   it("the skill-script capture revision is the documented first public commit", () => {
     assert.match(SCRIPT_REVISION, /^[0-9a-f]{40}$/, "a full SHA");
@@ -99,15 +121,20 @@ describe("capture sources are public commits", () => {
       if (name === "toolkits/buildos/test/capture-sources.test.ts") continue; // holds the list itself
       const text = readFileSync(file, "utf8");
       const allowed = PROVENANCE_ONLY[name] ?? [];
-      for (const match of text.matchAll(/["'`]([0-9a-f]{7,40})(?::[^"'`\s]*)?["'`]/g)) {
-        const id = match[1] ?? "";
-        // A commit ID is 7 to 12 characters (abbreviated) or 40 (full), with a letter and a digit.
-        if ((id.length > 12 && id.length !== 40) || !/[a-f]/.test(id) || !/[0-9]/.test(id)) continue;
+      for (const id of commitIds(text, /\.ya?ml$/.test(name))) {
         if (allowed.includes(id) || resolves(id)) continue;
         problems.push(`${name}: ${id} does not resolve in this repository`);
       }
       if (allowed.length > 0 && /(?:execFileSync|spawnSync|execSync|spawn)\(\s*["']git["']/.test(text)) problems.push(`${name}: holds provenance-only commits and runs git`);
     }
     assert.deepEqual(problems, []);
+  });
+
+  it("finds a quoted commit ID in code and a bare one in a workflow git command", () => {
+    assert.deepEqual(commitIds('git(["show", "38d1e08:package.json"])', false), ["38d1e08"]);
+    assert.deepEqual(commitIds("      - run: git show 38d1e08:package.json\n", true), ["38d1e08"]);
+    assert.deepEqual(commitIds("      - run: git diff 38d1e08..4c02048 --stat\n", true), ["38d1e08", "4c02048"]);
+    assert.deepEqual(commitIds("      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683\n", true), []);
+    assert.deepEqual(commitIds("      - run: git show 38d1e08:package.json\n", false), [], "a bare ID counts only in a workflow file");
   });
 });

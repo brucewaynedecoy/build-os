@@ -30,6 +30,8 @@ Framing: [W1 R7 backlog](../../../docs/work/2026-11-23-w1-r7-buildos-node-typesc
 
 Deferred obligations and Unassisted Goal Testing: `not-needed-now`; no `O-###` or `NUAT-###` applies.
 
+Review round 2 (same day): the commit-ID guard in `toolkits/buildos/test/capture-sources.test.ts` now also finds a bare commit ID in a workflow line that runs git, with a regression test; the A77 record says 65 parity tests for each system, not 68; the commit-body row names `b49a06d`.
+
 ## Documentation
 
 ### Project
