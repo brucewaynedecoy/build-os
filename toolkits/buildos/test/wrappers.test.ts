@@ -1238,14 +1238,14 @@ describe("the wrapper helper's installed-package and PATH rules", () => {
     assert.deepEqual(helper.splitWindowsPath(""), []);
   });
 
-  it("accepts only build-os at exactly the version, with a string or object bin", () => {
+  it("accepts only build-os at exactly the version, with an object bin that names buildos", () => {
     const dir = join(scratch, `pkg-${++counter}`);
     writePackage(dir, join(dir, "r.json"));
     assert.equal(helper.packageEntry(dir, "1.2.3"), realpathSync(join(dir, "dist", "buildos.js")));
     assert.equal(helper.packageEntry(dir, "1.2.4"), undefined);
     assert.equal(helper.packageEntry(dir, "1.2"), undefined);
     writeFileSync(join(dir, "package.json"), JSON.stringify({ name: PACKAGE, version: "1.2.3", bin: "dist/buildos.js" }));
-    assert.equal(helper.packageEntry(dir, "1.2.3"), realpathSync(join(dir, "dist", "buildos.js")));
+    assert.equal(helper.packageEntry(dir, "1.2.3"), undefined, "a string bin declares only the build-os command");
     writeFileSync(join(dir, "package.json"), JSON.stringify({ name: PACKAGE, version: "1.2.3", bin: { buildos: join(dir, "dist", "buildos.js") } }));
     assert.equal(helper.packageEntry(dir, "1.2.3"), undefined, "an absolute bin path");
     writeFileSync(join(dir, "package.json"), "[]");

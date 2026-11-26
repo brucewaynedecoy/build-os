@@ -23,7 +23,7 @@ persona: maintainer
 
 # Upgrade an Existing BuildOS Installation
 
-This guide is for maintainers and operators who move a team's machines and projects from the earlier Go tools to the `buildos` npm package, or from one package version to another. The adopter-side steps are in [Upgrade an Existing BuildOS Project](../user/upgrade-an-existing-buildos-project.md). The release rules are in [PRD 20 Release](../../prd/20-buildos-cli-and-distribution.md#release), and the checks a reviewer runs are in [`SECURITY.md`](../../../toolkits/buildos/SECURITY.md).
+This guide is for maintainers and operators who move a team's machines and projects from the earlier Go tools to the `build-os` npm package (its command is `buildos`), or from one package version to another. The adopter-side steps are in [Upgrade an Existing BuildOS Project](../user/upgrade-an-existing-buildos-project.md). The release rules are in [PRD 20 Release](../../prd/20-buildos-cli-and-distribution.md#release), and the checks a reviewer runs are in [`SECURITY.md`](../../../toolkits/buildos/SECURITY.md).
 
 ## What an installation is now
 

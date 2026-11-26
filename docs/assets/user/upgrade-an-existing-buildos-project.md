@@ -23,7 +23,7 @@ persona: user
 
 # Upgrade an Existing BuildOS Project
 
-Use this guide to move a project that the earlier Go tools set up onto the `buildos` npm package, and to change the BuildOS version of a project later. Paths start at the project root, the folder that holds `.os/`, `assets/`, `playbooks/`, and `workspace/`.
+Use this guide to move a project that the earlier Go tools set up onto the `build-os` npm package (its command is `buildos`), and to change the BuildOS version of a project later. Paths start at the project root, the folder that holds `.os/`, `assets/`, `playbooks/`, and `workspace/`.
 
 ## What changed
 

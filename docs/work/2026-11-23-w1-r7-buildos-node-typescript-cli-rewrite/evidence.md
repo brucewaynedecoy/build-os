@@ -5103,3 +5103,15 @@ Verification on macOS (Node.js 26.13.1, npm 11.20.0), in `toolkits/buildos/` unl
 | `git diff --check` | clean |
 
 Not verified here: Windows and Linux (CI covers them after the push). The tests that depend on the system are the `.cmd` shim runs of `build-os` and the legacy names in `test/package.test.ts`, the Windows candidate lookup (`windowsCandidateEntry`) in `test/wrappers.test.ts`, and the planted-program cases, which use `.cmd` files on Windows.
+
+### Review of the Package Name Change (2026-11-26)
+
+The reviewer (one round) found no code blocker and five findings. The orchestrator fixed them in a second commit.
+
+| Finding | Disposition |
+| --- | --- |
+| 1 (blocker for the install text) The unscoped name `build-os` is free on npm while the public README names `npx -y build-os@0.1.0` | Accepted. The owner reserves the name with the placeholder (First Publication steps 1 to 3) before this change merges. `toolkits/buildos/AGENTS.md` now says to do steps 1 to 3 as early as possible. |
+| 2 (major) Four current guides called the npm package `buildos` | Fixed: they name the package `build-os` and the command `buildos`. |
+| 3 (minor) The wrapper took a string `bin` as the `buildos` command; npm links a string `bin` only under the package name | Fixed: `pinned-version.cjs` needs an object `bin` with a `buildos` entry. The test now expects a refusal for a string `bin`. |
+| 4 (minor) The root `bin` map of `package-lock.json` listed only `buildos` | Fixed: it lists the five commands of `package.json`. |
+| 5 (minor) `npm view build-os dist-tags versions` can print nothing when only the `reserved` tag exists | Fixed: the step uses `npm view build-os@reserved dist-tags versions --json`. |

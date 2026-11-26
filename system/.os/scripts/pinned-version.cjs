@@ -264,11 +264,11 @@ function packageEntry(dir, version) {
   if (typeof manifest !== "object" || manifest === null || Array.isArray(manifest)) return undefined;
   if (manifest.name !== PACKAGE_NAME || typeof manifest.version !== "string") return undefined;
   if (version !== null && manifest.version !== version) return undefined;
-  // An object "bin" names the buildos bin file. A string "bin" is the one
-  // bin file of the package (npm links it under the package name, build-os),
-  // and it counts as the buildos bin file too.
+  // Only an object "bin" with a "buildos" entry names the buildos bin file.
+  // npm links a string "bin" under the package name (build-os) only, so a
+  // package with a string "bin" declares no buildos command and never counts.
   var bin = manifest.bin;
-  var relative = typeof bin === "string" ? bin : typeof bin === "object" && bin !== null && !Array.isArray(bin) && Object.prototype.hasOwnProperty.call(bin, "buildos") ? bin.buildos : undefined;
+  var relative = typeof bin === "object" && bin !== null && !Array.isArray(bin) && Object.prototype.hasOwnProperty.call(bin, "buildos") ? bin.buildos : undefined;
   if (typeof relative !== "string" || relative === "" || path.isAbsolute(relative) || path.win32.isAbsolute(relative)) return undefined;
   var root = realPath(dir);
   if (root === undefined) return undefined;

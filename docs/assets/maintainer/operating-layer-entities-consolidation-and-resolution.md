@@ -49,7 +49,7 @@ Keep these three locations separate:
 | Location | What it contains | Use |
 | --- | --- | --- |
 | Source checkout | Build OS source, contracts, plans, and the CLI package source | Read, build, and test without overwriting another installation. |
-| The BuildOS version in use | The `buildos` npm package version that the project pins in `.os/manifest.json` (the project wrapper always runs that version; a global install runs only when it is an npm install of exactly that version) | Record it with the project wrapper, from the project folder: `.os/scripts/buildos version` (on Windows, `.os\scripts\buildos.cmd version`). A bare `buildos version` can run another install. Use one exact version for a whole rehearsal. |
+| The BuildOS version in use | The `build-os` npm package version that the project pins in `.os/manifest.json` (the project wrapper always runs that version; a global install runs only when it is an npm install of exactly that version) | Record it with the project wrapper, from the project folder: `.os/scripts/buildos version` (on Windows, `.os\scripts\buildos.cmd version`). A bare `buildos version` can run another install. Use one exact version for a whole rehearsal. |
 | Adopter-owned data root | The team's real `system/.os/data/`, indexes, assets, and workspace | Keep live data read-only; rehearse reviewed writes against a recoverable copy. |
 
 Never copy the source checkout's entire `system/` tree over an installed or adopter-owned root. A source scaffold is not an upgrade package and may replace local configuration, data, evidence, or operating state.

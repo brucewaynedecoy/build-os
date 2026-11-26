@@ -34,7 +34,7 @@ Use this guide when you need to turn local source files into Build OS converted 
 
 `buildos-intake` is intentionally limited to intake and conversion. It does not extract requirements, qualify findings, or run discovery.
 
-Entity matching and canonical resolution remain outside `buildos-intake`. The `buildos` package provides the resolver and `buildos entities`, but intake conversion does not call them and no user-facing extraction writer is available yet. Pre-upgrade auditing remains proposal-only; reviewed consolidation is a separate copied-root-first workflow.
+Entity matching and canonical resolution remain outside `buildos-intake`. The `build-os` npm package provides the resolver and `buildos entities`, but intake conversion does not call them and no user-facing extraction writer is available yet. Pre-upgrade auditing remains proposal-only; reviewed consolidation is a separate copied-root-first workflow.
 
 Run conversion as `.os/scripts/buildos intake ...`. The `.os/scripts/buildos-intake` wrapper and the legacy name `buildos-intake` give the same result; the legacy name stops working in BuildOS `0.3.0`. W2 will add project update and backup workflows.
 
