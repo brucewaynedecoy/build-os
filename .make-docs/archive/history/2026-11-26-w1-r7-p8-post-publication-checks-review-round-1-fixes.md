@@ -28,7 +28,7 @@ Deferred obligations and Unassisted Goal Testing: `not-needed-now`. Guide covera
 
 | Path | Description |
 | --- | --- |
-| [docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md](../../../docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md) | The F-P8-11 defect section with the reproduction, the other printed bare commands, and the Go baseline; the corrected A71 comparison; the corrected `PERF-002` decision; the review round 1 dispositions and checks. |
+| [docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md](../../../docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md) | The F-P8-11 defect section with the reproduction, the other printed bare commands, and the Go baseline; the corrected A71 comparison; the corrected `PERF-002` decision; the review round 1 dispositions and checks. Review round 2 (same day): the legacy-name notices added to the list of printed bare commands, the reproduction without system folder paths, and the follow-ups F-P8-12 and F-P8-13. |
 | [docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/08-release-0-1-0.md](../../../docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/08-release-0-1-0.md) | t15, t23, A71, and the post-publication status line corrected. |
 | [docs/prd/03-open-questions-and-risk-register.md](../../../docs/prd/03-open-questions-and-risk-register.md) | `R-003` names the defect, F-P8-11, and the 5 differences. |
 | [.make-docs/archive/history/2026-11-26-w1-r7-p8-post-publication-checks.md](2026-11-26-w1-r7-p8-post-publication-checks.md) | Factual corrections in place: the defect and the count of differences. |
