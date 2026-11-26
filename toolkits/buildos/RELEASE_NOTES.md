@@ -2,8 +2,6 @@
 
 ## 0.1.0
 
-Status: draft. This version is not published yet. The maintainer removes this line when the release is approved and published.
-
 `0.1.0` is the first npm release of BuildOS. It replaces the earlier Go tools with one `buildos` command for Node.js 24 or newer, a one-command project setup, and the BuildOS skills in the package.
 
 ### What is new

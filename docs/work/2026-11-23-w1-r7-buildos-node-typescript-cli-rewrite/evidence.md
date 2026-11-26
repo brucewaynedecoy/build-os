@@ -5115,3 +5115,25 @@ The reviewer (one round) found no code blocker and five findings. The orchestrat
 | 3 (minor) The wrapper took a string `bin` as the `buildos` command; npm links a string `bin` only under the package name | Fixed: `pinned-version.cjs` needs an object `bin` with a `buildos` entry. The test now expects a refusal for a string `bin`. |
 | 4 (minor) The root `bin` map of `package-lock.json` listed only `buildos` | Fixed: it lists the five commands of `package.json`. |
 | 5 (minor) `npm view build-os dist-tags versions` can print nothing when only the `reserved` tag exists | Fixed: the step uses `npm view build-os@reserved dist-tags versions --json`. |
+
+## First Publication of 0.1.0 (2026-11-26)
+
+`build-os@0.1.0` was published on npm on 2026-11-26. This is the record of step 9 of First Publication in `toolkits/buildos/AGENTS.md`, and of step 17 of the owner checklist in `toolkits/buildos/SECURITY.md`. The orchestrator checked the GitHub and npm facts on 2026-11-26; the implementer checked them again on the same day with read-only commands. The rows marked "owner-reported" were not checked by an agent.
+
+| Step | Result |
+| --- | --- |
+| 1 to 3 (placeholder) | The owner staged and approved `build-os@0.0.0-reserved.0` with the dist-tag `reserved`. npm also made `0.0.0-stage`. Registry times: `0.0.0-stage` 2026-11-26T19:59:50.694Z, `0.0.0-reserved.0` 2026-11-26T20:04:29.586Z. SHA-256 of the registry tarball `build-os-0.0.0-reserved.0.tgz`: `aef54fc0a738fb3a2f192db799ea13fb31d8ef592f50545d8d1bdca64460523a` (3 files). The stage ID of the placeholder was not recorded. |
+| 3 (dist-tags before) | Before the release: `reserved` pointed to `0.0.0-reserved.0`, and `latest` pointed to `0.0.0-stage`. |
+| 4 | Owner-reported: the trusted publisher is GitHub Actions, owner `brucewaynedecoy`, repository `build-os`, workflow file `buildos-release.yml`, environment `buildos-npm-stage`, staged publishing only. |
+| 5 | Owner-reported: Publishing access is "Require two-factor authentication and disallow tokens". |
+| 6 (reviewed entry) | [PR 3](https://github.com/brucewaynedecoy/build-os/pull/3) added the `reviewed` entry for `0.1.0` to `toolkits/buildos/release-candidates.json` and changed no other file. Reviewer `brucewaynedecoy`, review date 2026-11-26. An independent review passed the entry before the merge. Its one should-fix was the commit type `chore` instead of `feat`; the type stayed `chore`, because that PR may change one file only and a `feat` needs a history record. PR 3 merged at 2026-11-26T20:37:04Z as `8e92605`. The entry's `source_commit` is `20f941a`; the tree of `8e92605` differs from it only in the ledger. |
+| 6 (runs) | `buildos-release` runs: the dry run [45888733182](https://github.com/brucewaynedecoy/build-os/actions/runs/45888733182) on `20f941a` (success), the prepare run [45892843313](https://github.com/brucewaynedecoy/build-os/actions/runs/45892843313) (workflow_dispatch from `main` on `8e92605`, success), and the release run [45894295344](https://github.com/brucewaynedecoy/build-os/actions/runs/45894295344) (event `release`, tag `v0.1.0`, success). |
+| 6 (GitHub Release) | The tag `v0.1.0` points to `8e92605`. The GitHub Release "BuildOS 0.1.0" was published at 2026-11-26T20:53:38Z with `immutable: true`. It holds exactly two assets: `build-os-0.1.0.tgz` (SHA-256 `54a8cd01f0165226927a74e5108dd37327323bd3db1905fdb6323c7373b21e8e`) and `buildos-0.1.0.cdx.json` (SHA-256 `11bd878191d2bc67db9f13229d7f073ba0bb33783c49deced38110c0efc7974d`). |
+| 6 (approvals) | Owner-reported: the owner approved the `buildos-npm-stage` job in GitHub and approved the npm stage with 2FA. The stage ID of `0.1.0` was not recorded. |
+| 6 (npm) | `build-os@0.1.0` was published at 2026-11-26T21:04:34.703Z with a provenance attestation (SLSA provenance v1; workflow `.github/workflows/buildos-release.yml`, ref `refs/tags/v0.1.0`, repository `brucewaynedecoy/build-os`). The registry tarball has 173 files and SHA-256 `54a8cd01f0165226927a74e5108dd37327323bd3db1905fdb6323c7373b21e8e`, equal to the reviewed entry. `dist.shasum` is `bf2435c51fc5693f9f32e164d1b59fb080fbd290`. |
+| 7 (dist-tags after) | Only `latest` exists, and it points to `0.1.0`. The `reserved` tag is removed. |
+| 8 | `0.0.0-reserved.0` and `0.0.0-stage` are deprecated with the message `Reserved name only. Install 0.1.0 or newer.` Neither is unpublished. |
+
+Smoke check from a clean npm cache: `npx -y build-os@0.1.0 version --json` printed version `0.1.0` and source revision `20f941a04494ce9c60301cee9e66fab33219a617`.
+
+Not done before the publication: Stage 4 (t15 to t18) and Stage 5 t22 to t24 of [08 Release 0.1.0](08-release-0-1-0.md). No publication review (t24) and no `PERF-002` result exist, so A74 and A75 are not met.
