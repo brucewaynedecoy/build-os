@@ -790,6 +790,8 @@ Code anchors:
 
 **Package name (2026-11-26)**: The owner chose the unscoped npm name `build-os` (`Q-017`). The first-publication steps, the placeholder, the trusted publisher, and every release check use that name. Nothing was published under the earlier name. See [Package Name `build-os`](../work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#package-name-build-os-2026-11-26).
 
+**W1 R7 P8 first publication (2026-11-26)**: `build-os@0.1.0` is published on npm with provenance, through the real prepare and release runs. The release gate was missed: the owner published `0.1.0` and approved the npm stage before the Stage 4 checks on the staged package (t15 to t18) and before `PERF-002` and the publication review (t22 to t24). The orchestrator's step list put the approval first. This was an orchestration mistake, not an owner decision to skip the checks. A74 and A75 are not met, and t25 stays open. Owner decision open. This item stays open. See the [release-order departure](../work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/08-release-0-1-0.md#closeout-notes) and [First Publication of 0.1.0](../work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#first-publication-of-010-2026-11-26).
+
 **Disposition**: Existing R-003 reconciles DI-013. W1 R7 narrowed it from an archive, Homebrew, and signing matrix to npm packaging and rollback by version pin.
 
 Code anchors:
