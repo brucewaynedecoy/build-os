@@ -1,4 +1,19 @@
 {
   "schema_version": 2,
-  "candidates": []
+  "candidates": [
+    {
+      "kind": "reviewed",
+      "version": "0.1.0",
+      "tag": "v0.1.0",
+      "tarball_name": "build-os-0.1.0.tgz",
+      "tarball_sha256": "54a8cd01f0165226927a74e5108dd37327323bd3db1905fdb6323c7373b21e8e",
+      "source_commit": "20f941a04494ce9c60301cee9e66fab33219a617",
+      "node_version": "v24.22.3",
+      "npm_version": "11.19.1",
+      "runner_image": "ubuntu-24.04",
+      "reviewed_by": "brucewaynedecoy",
+      "reviewed_on": "2026-11-26",
+      "review_evidence": "Release dry run 45888733182 (brucewaynedecoy/build-os, commit 20f941a) passed. The owner inspected the tarball from that run and accepted it as reviewed: 173 files, 5 bins, no dependencies, offline install and run, real deny-list scan with 0 matches."
+    }
+  ]
 }
