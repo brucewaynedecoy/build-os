@@ -102,7 +102,11 @@ function spellings(path: string): string[] {
     else if (f.startsWith("/var/") || f.startsWith("/tmp/")) forms.add(`/private${f}`);
   }
   for (const f of [...forms]) {
-    forms.add(JSON.stringify(f).slice(1, -1));
+    // JSON-escaped once, and twice: a Go-quoted path inside a JSON string
+    // (for example the entities remediation_command on Windows).
+    const once = JSON.stringify(f).slice(1, -1);
+    forms.add(once);
+    forms.add(JSON.stringify(once).slice(1, -1));
     if (WINDOWS) forms.add(f.replace(/\\/g, "/"));
   }
   return [...forms].filter((f) => f.length > 1).sort((a, b) => b.length - a.length);
