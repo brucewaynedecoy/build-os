@@ -301,11 +301,11 @@ Code anchors:
 
 | Status | Decision | Follow-Up |
 | --- | --- | --- |
-| Open | None yet | Decide whether `intake` gains the JSON envelope or PRD 20 scopes `--json`. |
+| Closed | `buildos intake convert`, `intake index references`, and `intake index playbooks` print the shared JSON envelope with `--json` from `0.2.0`. Parity exception PE-022 records the difference from the Go intake tool. [PRD 20 Output and Exit Contract](./20-buildos-cli-and-distribution.md#output-and-exit-contract) names every command that takes `--json`. | None. |
 
-**Issue**: [PRD 20 Output and Exit Contract](./20-buildos-cli-and-distribution.md#output-and-exit-contract) says that every command shares one output contract and that `--json` gives a stable automation form. `buildos intake convert`, `index references`, and `index playbooks` refuse `--json` (`flag provided but not defined: -json`, exit 1), as the earlier Go tool did, and help prints text with `--json` too (PE-001 and PE-002 keep the Go help text). The W1 R7 P4 evidence records the intake behavior as Go parity; no parity exception or PRD text records it as an approved difference.
+**Issue**: [PRD 20 Output and Exit Contract](./20-buildos-cli-and-distribution.md#output-and-exit-contract) says that every command shares one output contract and that `--json` gives a stable automation form. `buildos intake convert`, `index references`, and `index playbooks` refused `--json` (`flag provided but not defined: -json`, exit 1), as the earlier Go tool did, and help printed text with `--json` too (PE-001 and PE-002 keep the Go help text). The W1 R7 P4 evidence recorded the intake behavior as Go parity; no parity exception or PRD text recorded it as an approved difference.
 
-**Why it matters**: An agent that follows PRD 20 and adds `--json` to an intake command gets a usage error. The guide and the package README now say which commands print the envelope (W1 R7 P8 review round 2, P8-D-06), so no document promises more than the CLI does.
+**Why it matters**: An agent that follows PRD 20 and adds `--json` to an intake command got a usage error. The guide and the package README said which commands print the envelope (W1 R7 P8 review round 2, P8-D-06), so no document promised more than the CLI did.
 
 **Recommendation**: Add the shared JSON envelope to the intake commands in a later release (a parity exception with owner approval, since the Go tool had none), or state in PRD 20 that `intake` and help print text only.
 
@@ -313,11 +313,14 @@ Code anchors:
 
 **Owner**: BuildOS product owner.
 
-**Phase/gate**: Before `0.2.0`.
+**Phase/gate**: Before `0.2.0`. This condition of the gate is met.
+
+**Resolution**: Closed on 2026-11-25. The owner chose option A: `buildos intake` gains the shared `--json` envelope in `0.2.0`. W1 R7 P9 built it with the same envelope, field rules, flag-position rule, and exit codes as `discovery` and `design`: the commands `intake.convert`, `intake.index.references`, and `intake.index.playbooks`; `write_status` `planned` for a dry run, `applied` for a write, and `not_requested` for a failure that left nothing; a conversion warning as a `warning` diagnostic; nothing on stderr under the canonical name `buildos intake` (the legacy name `buildos-intake` adds its one notice line, PE-016); and the exit code of the human form. The intake JSON review rounds 1 and 2 of 2026-11-25 added: intake does not undo; the envelope names what stayed. A failed write removes nothing, with or without `--json` (as the Go tool). With `--json`, when the run's write operations created or changed something, the envelope reports `partially_applied`, names each such path once in `result.left_in_place` (reason `created` or `changed`), and exits `10`; when they changed nothing, it reports `not_requested` with the text form's exit code (1, or 3 for a refusal). `root` is intake's cleaned project root, and result paths are relative to it with `/`. The text form without `--json` is unchanged, and the Go parity goldens pass. Help keeps the Go text. Parity exception PE-022 in `toolkits/buildos/test/golden/parity-exceptions.json` records the difference, and `toolkits/buildos/test/intake-json.test.ts` pins it. PRD 20 Output and Exit Contract, the guide, and the package README name the intake commands. Evidence: [P9 Owner Decisions 2026-11-25](../work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#p9-owner-decisions-2026-11-25).
 
 Code anchors:
 
 - `toolkits/buildos/src/cli/commands/intake.ts`
+- `toolkits/buildos/src/cli/commands/go-tool.ts`
 - `docs/prd/20-buildos-cli-and-distribution.md`
 
 ## Open Questions

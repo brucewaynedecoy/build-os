@@ -153,7 +153,7 @@ write status: not_requested
 }
 ```
 
-`.os/scripts/buildos help` lists every domain, and `.os/scripts/buildos help <domain>` explains one. Help always prints text. When an agent needs a stable, machine-readable result, add `--json` to `version`, `validate`, `init`, or an `entities`, `discovery`, or `design` command: they print one JSON result. The `intake` commands have no `--json` form yet; they print text and refuse the flag.
+`.os/scripts/buildos help` lists every domain, and `.os/scripts/buildos help <domain>` explains one. These help forms always print text, also with `--json` after them. For an `intake`, `discovery`, or `design` command, `--help` after the subcommand (for example `intake convert --help`) lists its flags as an error (exit code `1`). The order of the flags is important. `intake convert --json --help` prints a JSON error result. `intake convert --help --json` prints the text error, because the command stops reading its flags at `--help`. When an agent needs a stable, machine-readable result, add `--json` to `version`, `validate`, `init`, or an `entities`, `intake`, `discovery`, or `design` command: they print one JSON result. The `intake` commands print it from BuildOS `0.2.0`; `0.1.0` refuses the flag there.
 
 > **Note.** Some help text shows default paths that start with `system/`, such as `--assets-root system/assets`. That is the layout of the BuildOS source code. In your project, BuildOS uses your project's own folders (`assets/`, `.os/`) without the `system/` part.
 

@@ -67,7 +67,7 @@ The package has no dependencies, so nothing else is fetched.
 | `buildos version` | Print the package version and source revision |
 | `buildos help [<domain>]` | Print help |
 
-Add `--json` to `version`, `validate`, `init`, or an `entities`, `discovery`, or `design` command for the stable automation envelope. Help prints text, and `intake` has no `--json` form yet. Most writing commands take `--dry-run`. Exit code `0` means success.
+Add `--json` to `version`, `validate`, `init`, or an `entities`, `intake`, `discovery`, or `design` command for the stable automation envelope. The `intake` commands print it from `0.2.0`; `0.1.0` refuses the flag there. `buildos help <domain>` and `buildos <domain> --help` print text, also with `--json`. For an `intake`, `discovery`, or `design` command, `--help` after the subcommand lists its flags as a usage error (exit `1`). With `--json` before `--help` (`intake convert --json --help`), that is a `usage_error` envelope; with `--json` after it (`intake convert --help --json`), the text form prints, because the flags stop at `--help`. Most writing commands take `--dry-run`. Exit code `0` means success.
 
 ## Legacy command names
 
