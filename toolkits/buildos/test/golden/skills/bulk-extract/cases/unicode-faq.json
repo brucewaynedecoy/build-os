@@ -1,0 +1,93 @@
+{
+  "case": "unicode-faq",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "start",
+        "REF-004"
+      ],
+      "exit": 0,
+      "stdout": "Created: <root>/extractions/REF-004-patron-faq.json\n",
+      "stderr": "",
+      "files": {
+        "extractions/REF-004-patron-faq.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/patron-faq.txt\",\n  \"source_sha256\": \"4f92dd9dfbbc7613eb84b60b4f04d30f096f22c5bd2f82c863e076ab67350a81\",\n  \"reviewed_by\": \"\",\n  \"reviewed_at\": \"\",\n  \"source_check\": {\n    \"result\": \"unverified\",\n    \"notes\": \"\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-004\",\n      \"converted\": \"assets/patron-faq/patron-faq.md\",\n      \"outcome\": \"pending\",\n      \"note\": \"\"\n    }\n  ],\n  \"candidates\": [],\n  \"unresolved\": [],\n  \"applied\": {},\n  \"extraction_ids\": [],\n  \"publication_review\": null\n}\n"
+        }
+      }
+    },
+    {
+      "step": 2,
+      "args": [
+        "check",
+        "REF-004"
+      ],
+      "exit": 0,
+      "stdout": "REF-004: ready-to-stage (<root>/extractions/REF-004-patron-faq.json)\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 3,
+      "args": [
+        "stage",
+        "REF-004"
+      ],
+      "exit": 0,
+      "stdout": "Staged 1 candidates; review: extractions/REF-004-patron-faq.json\n",
+      "stderr": "",
+      "files": {
+        "extractions/REF-004-patron-faq.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/patron-faq.txt\",\n  \"source_sha256\": \"4f92dd9dfbbc7613eb84b60b4f04d30f096f22c5bd2f82c863e076ab67350a81\",\n  \"reviewed_by\": \"Circulation Analyst\",\n  \"reviewed_at\": \"2026-01-12\",\n  \"source_check\": {\n    \"result\": \"matched\",\n    \"notes\": \"Compared the converted text with the original policy.\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-004\",\n      \"converted\": \"assets/patron-faq/patron-faq.md\",\n      \"outcome\": \"reviewed\",\n      \"note\": \"\"\n    }\n  ],\n  \"candidates\": [\n    {\n      \"key\": \"cafe-corner\",\n      \"type\": \"requirement\"\n    }\n  ],\n  \"unresolved\": [],\n  \"applied\": {},\n  \"extraction_ids\": [],\n  \"publication_review\": null,\n  \"staged_at\": \"2026-01-15T12:00:00Z\"\n}\n"
+        },
+        "extractions/staging/requirements.jsonl": {
+          "text": "{\"type\": \"requirement\", \"title\": \"Café corner 書 📚\", \"status\": \"draft\", \"summary\": \"Patrons read in the café corner — quietly.\", \"source_anchor\": \"assets/patron-faq/patron-faq.md#L3\", \"doc_anchor\": null, \"source_refs\": [\"assets/patron-faq/patron-faq.md#L4\"], \"related\": [], \"created_at\": null, \"updated_at\": null, \"statement\": \"The system shall allow two renewals per loan (faq).\", \"rationale\": \"The lending policy allows two renewals.\", \"acceptance_refs\": [], \"_stage\": {\"key\": \"cafe-corner\", \"action\": \"minted\", \"review_state\": \"pending\", \"ref_id\": \"REF-004\", \"authored_by\": \"Circulation Analyst\"}}\n"
+        }
+      }
+    },
+    {
+      "step": 4,
+      "args": [
+        "decide",
+        "REF-004",
+        "--reviewer",
+        "Bibliotécaire"
+      ],
+      "exit": 0,
+      "stdout": "Recorded 1 Stage 2 decisions for REF-004\n",
+      "stderr": "",
+      "files": {
+        "extractions/REF-004-patron-faq.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/patron-faq.txt\",\n  \"source_sha256\": \"4f92dd9dfbbc7613eb84b60b4f04d30f096f22c5bd2f82c863e076ab67350a81\",\n  \"reviewed_by\": \"Circulation Analyst\",\n  \"reviewed_at\": \"2026-01-12\",\n  \"source_check\": {\n    \"result\": \"matched\",\n    \"notes\": \"Compared the converted text with the original policy.\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-004\",\n      \"converted\": \"assets/patron-faq/patron-faq.md\",\n      \"outcome\": \"reviewed\",\n      \"note\": \"\"\n    }\n  ],\n  \"candidates\": [\n    {\n      \"key\": \"cafe-corner\",\n      \"type\": \"requirement\"\n    }\n  ],\n  \"unresolved\": [],\n  \"applied\": {},\n  \"extraction_ids\": [],\n  \"publication_review\": {\n    \"reviewed_by\": \"Bibliotécaire\",\n    \"reviewed_at\": \"2026-01-15T12:00:00Z\"\n  },\n  \"staged_at\": \"2026-01-15T12:00:00Z\"\n}\n"
+        },
+        "extractions/staging/requirements.jsonl": {
+          "text": "{\"type\": \"requirement\", \"title\": \"Café corner 書 📚\", \"status\": \"draft\", \"summary\": \"Patrons read in the café corner — quietly.\", \"source_anchor\": \"assets/patron-faq/patron-faq.md#L3\", \"doc_anchor\": null, \"source_refs\": [\"assets/patron-faq/patron-faq.md#L4\"], \"related\": [], \"created_at\": null, \"updated_at\": null, \"statement\": \"The system shall allow two renewals per loan (faq).\", \"rationale\": \"The lending policy allows two renewals.\", \"acceptance_refs\": [], \"_stage\": {\"key\": \"cafe-corner\", \"action\": \"minted\", \"review_state\": \"approved\", \"ref_id\": \"REF-004\", \"authored_by\": \"Circulation Analyst\", \"reviewed_by\": \"Bibliotécaire\", \"reviewed_at\": \"2026-01-15T12:00:00Z\"}}\n"
+        }
+      }
+    },
+    {
+      "step": 5,
+      "args": [
+        "publish",
+        "REF-004"
+      ],
+      "exit": 0,
+      "stdout": "Published 1 candidates as EXT-001.\n",
+      "stderr": "",
+      "files": {
+        ".os/data/extractions.jsonl": {
+          "text": "{\"id\": \"EXT-001\", \"type\": \"extraction\", \"title\": \"REF-004 source extraction\", \"status\": \"draft\", \"summary\": \"Reviewed source-backed rows from REF-004.\", \"source_anchor\": \"assets/patron-faq/patron-faq.md#L3\", \"doc_anchor\": null, \"source_refs\": [\"assets/patron-faq/patron-faq.md#L3\", \"assets/patron-faq/patron-faq.md#L4\"], \"related\": [], \"created_at\": \"2026-01-15T12:00:00Z\", \"updated_at\": \"2026-01-15T12:00:00Z\", \"outcome_contract\": \"extraction-outcomes-v1\", \"minted\": [\"REQ-002\"], \"updated\": [], \"referenced\": [], \"extracted_by\": \"Circulation Analyst\", \"extracted_at\": \"2026-01-15T12:00:00Z\"}\n"
+        },
+        ".os/data/requirements.jsonl": {
+          "text": "{\"id\":\"REQ-001\",\"type\":\"requirement\",\"title\":\"Borrow limit\",\"status\":\"draft\",\"summary\":\"A patron can borrow up to five books.\",\"source_anchor\":\"assets/lending-policy/lending-policy.md#L3\",\"doc_anchor\":null,\"source_refs\":[\"assets/lending-policy/lending-policy.md#L3\"],\"related\":[],\"created_at\":\"2026-01-10T08:00:00Z\",\"updated_at\":\"2026-01-10T08:00:00Z\",\"statement\":\"The system shall limit a patron to five loans at once.\",\"rationale\":\"The lending policy sets the limit.\",\"acceptance_refs\":[],\"shelf_note\":\"Keep this custom field\"}\n{\"type\": \"requirement\", \"title\": \"Café corner 書 📚\", \"status\": \"draft\", \"summary\": \"Patrons read in the café corner — quietly.\", \"source_anchor\": \"assets/patron-faq/patron-faq.md#L3\", \"doc_anchor\": null, \"source_refs\": [\"assets/patron-faq/patron-faq.md#L4\"], \"related\": [], \"created_at\": \"2026-01-15T12:00:00Z\", \"updated_at\": \"2026-01-15T12:00:00Z\", \"statement\": \"The system shall allow two renewals per loan (faq).\", \"rationale\": \"The lending policy allows two renewals.\", \"acceptance_refs\": [], \"id\": \"REQ-002\"}\n"
+        },
+        "extractions/REF-004-patron-faq.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/patron-faq.txt\",\n  \"source_sha256\": \"4f92dd9dfbbc7613eb84b60b4f04d30f096f22c5bd2f82c863e076ab67350a81\",\n  \"reviewed_by\": \"Circulation Analyst\",\n  \"reviewed_at\": \"2026-01-12\",\n  \"source_check\": {\n    \"result\": \"matched\",\n    \"notes\": \"Compared the converted text with the original policy.\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-004\",\n      \"converted\": \"assets/patron-faq/patron-faq.md\",\n      \"outcome\": \"reviewed\",\n      \"note\": \"\"\n    }\n  ],\n  \"candidates\": [\n    {\n      \"key\": \"cafe-corner\",\n      \"type\": \"requirement\"\n    }\n  ],\n  \"unresolved\": [],\n  \"applied\": {\n    \"cafe-corner\": {\n      \"id\": \"REQ-002\",\n      \"action\": \"minted\",\n      \"candidate_sha256\": \"5ab36b435e23d1a322b63feb61ce1ca526c82c898ad54b51a968986166d4f86c\",\n      \"authored_by\": \"Circulation Analyst\",\n      \"reviewed_by\": \"Bibliotécaire\",\n      \"reviewed_at\": \"2026-01-15T12:00:00Z\"\n    }\n  },\n  \"extraction_ids\": [\n    \"EXT-001\"\n  ],\n  \"publication_review\": {\n    \"reviewed_by\": \"Bibliotécaire\",\n    \"reviewed_at\": \"2026-01-15T12:00:00Z\"\n  },\n  \"staged_at\": \"2026-01-15T12:00:00Z\"\n}\n"
+        },
+        "extractions/staging/requirements.jsonl": {
+          "text": ""
+        }
+      }
+    }
+  ]
+}

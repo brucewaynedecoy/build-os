@@ -1,0 +1,60 @@
+{
+  "case": "csv-anchors",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "start",
+        "REF-002"
+      ],
+      "exit": 0,
+      "stdout": "Created: <root>/extractions/REF-002-branch-hours.json\n",
+      "stderr": "",
+      "files": {
+        "extractions/REF-002-branch-hours.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/branch-hours.xlsx\",\n  \"source_sha256\": \"5012e28076527cc8ac35746a15a8db6953ff27f5bd198ced7f30088d48872eca\",\n  \"reviewed_by\": \"\",\n  \"reviewed_at\": \"\",\n  \"source_check\": {\n    \"result\": \"unverified\",\n    \"notes\": \"\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-002\",\n      \"converted\": \"assets/branch-hours/main-branch.csv\",\n      \"outcome\": \"pending\",\n      \"note\": \"\"\n    },\n    {\n      \"id\": \"REF-003\",\n      \"converted\": \"assets/branch-hours/east-branch.csv\",\n      \"outcome\": \"pending\",\n      \"note\": \"\"\n    }\n  ],\n  \"candidates\": [],\n  \"unresolved\": [],\n  \"applied\": {},\n  \"extraction_ids\": [],\n  \"publication_review\": null\n}\n"
+        }
+      }
+    },
+    {
+      "step": 2,
+      "args": [
+        "check",
+        "REF-002"
+      ],
+      "exit": 1,
+      "stdout": "REF-002: needs-repair (<root>/extractions/REF-002-branch-hours.json)\n- Candidate past-end source_anchor #row-9 is outside assets/branch-hours/main-branch.csv (4 lines or rows)\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 4,
+      "args": [
+        "check",
+        "REF-002"
+      ],
+      "exit": 0,
+      "stdout": "REF-002: ready-to-stage (<root>/extractions/REF-002-branch-hours.json)\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 5,
+      "args": [
+        "stage",
+        "REF-002"
+      ],
+      "exit": 0,
+      "stdout": "Staged 1 candidates; review: extractions/REF-002-branch-hours.json\n",
+      "stderr": "",
+      "files": {
+        "extractions/REF-002-branch-hours.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/branch-hours.xlsx\",\n  \"source_sha256\": \"5012e28076527cc8ac35746a15a8db6953ff27f5bd198ced7f30088d48872eca\",\n  \"reviewed_by\": \"Circulation Analyst\",\n  \"reviewed_at\": \"2026-01-12\",\n  \"source_check\": {\n    \"result\": \"matched\",\n    \"notes\": \"Compared the converted text with the original policy.\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-002\",\n      \"converted\": \"assets/branch-hours/main-branch.csv\",\n      \"outcome\": \"reviewed\",\n      \"note\": \"\"\n    },\n    {\n      \"id\": \"REF-003\",\n      \"converted\": \"assets/branch-hours/east-branch.csv\",\n      \"outcome\": \"reviewed\",\n      \"note\": \"\"\n    }\n  ],\n  \"candidates\": [\n    {\n      \"key\": \"late-night\",\n      \"type\": \"requirement\"\n    }\n  ],\n  \"unresolved\": [],\n  \"applied\": {},\n  \"extraction_ids\": [],\n  \"publication_review\": null,\n  \"staged_at\": \"2026-01-15T12:00:00Z\"\n}\n"
+        },
+        "extractions/staging/requirements.jsonl": {
+          "text": "{\"type\": \"requirement\", \"title\": \"Late night hours\", \"status\": \"draft\", \"summary\": \"A patron can renew a loan (csv).\", \"source_anchor\": \"assets/branch-hours/main-branch.csv#row-4\", \"doc_anchor\": null, \"source_refs\": [\"assets/branch-hours/main-branch.csv#row-4\", \"assets/branch-hours/east-branch.csv#row-3\"], \"related\": [], \"created_at\": null, \"updated_at\": null, \"statement\": \"The system shall allow two renewals per loan (csv).\", \"rationale\": \"The lending policy allows two renewals.\", \"acceptance_refs\": [], \"_stage\": {\"key\": \"late-night\", \"action\": \"minted\", \"review_state\": \"pending\", \"ref_id\": \"REF-002\", \"authored_by\": \"Circulation Analyst\"}}\n"
+        }
+      }
+    }
+  ]
+}

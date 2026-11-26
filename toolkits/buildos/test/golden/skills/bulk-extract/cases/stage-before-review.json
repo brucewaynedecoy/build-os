@@ -1,0 +1,55 @@
+{
+  "case": "stage-before-review",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "start",
+        "REF-001"
+      ],
+      "exit": 0,
+      "stdout": "Created: <root>/extractions/REF-001-lending-policy.json\n",
+      "stderr": "",
+      "files": {
+        "extractions/REF-001-lending-policy.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/lending-policy.txt\",\n  \"source_sha256\": \"f4a773f1a04b5197f80d47b609701dd1907d18d03c0a9442e4ff090f85f64ab0\",\n  \"reviewed_by\": \"\",\n  \"reviewed_at\": \"\",\n  \"source_check\": {\n    \"result\": \"unverified\",\n    \"notes\": \"\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-001\",\n      \"converted\": \"assets/lending-policy/lending-policy.md\",\n      \"outcome\": \"pending\",\n      \"note\": \"\"\n    }\n  ],\n  \"candidates\": [],\n  \"unresolved\": [],\n  \"applied\": {},\n  \"extraction_ids\": [],\n  \"publication_review\": null\n}\n"
+        }
+      }
+    },
+    {
+      "step": 1,
+      "args": [
+        "stage",
+        "REF-001"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: Finish the named, dated source review before staging\n",
+      "files": {}
+    },
+    {
+      "step": 2,
+      "args": [
+        "publish",
+        "REF-001"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: Stage 1 needs a named, dated source review and staged rows\n",
+      "files": {}
+    },
+    {
+      "step": 3,
+      "args": [
+        "decide",
+        "REF-001",
+        "--reviewer",
+        "Branch Supervisor"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: Stage 1 is not finished\n",
+      "files": {}
+    }
+  ]
+}

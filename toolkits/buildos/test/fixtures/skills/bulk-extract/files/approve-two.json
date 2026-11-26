@@ -1,0 +1,11 @@
+[
+  {
+    "key": "renewals",
+    "review_state": "approved"
+  },
+  {
+    "key": "holds-desk",
+    "review_state": "approved",
+    "review_note": "Matches the policy."
+  }
+]

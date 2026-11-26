@@ -1,0 +1,15 @@
+{
+  "case": "index-errors-absolute",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "status"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: Invalid repo-relative path: '/srv/library/a.txt'\n",
+      "files": {}
+    }
+  ]
+}

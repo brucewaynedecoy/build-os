@@ -1,0 +1,65 @@
+{
+  "case": "adapter-rules",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "validate",
+        "--input",
+        "csv/d365-rules.csv",
+        "--adapter",
+        "dynamics-365-ce",
+        "--publisher-prefix",
+        "ex_"
+      ],
+      "exit": 1,
+      "stdout": "{\n  \"operation\": \"validate\",\n  \"input\": \"<root>/csv/d365-rules.csv\",\n  \"valid\": false,\n  \"profile\": \"target17-new\",\n  \"rowCount\": 7,\n  \"counts\": {\n    \"Epic\": 1,\n    \"Feature\": 1,\n    \"Product Backlog Item\": 5\n  },\n  \"errors\": [\n    \"Row 3 uses the default publisher prefix 'new_'.\",\n    \"Row 3 contains Markdown emphasis or Pandoc span syntax. Azure renders it as noise.\",\n    \"Row 4 title 'Fine table' must match '{Feature} ({CFG|DEV|INT|DATA|SEC}) - {Description}'.\",\n    \"Row 4 must have at least two Acceptance Criteria items; found 1.\",\n    \"Row 5 logical name 'ex_fines' does not match schema name 'ex_Fine' in lowercase.\",\n    \"Row 5 schema name 'lib_Bad' must start with 'ex_' and use letters and digits.\",\n    \"Row 5 logical name 'Ex_Upper' must start with 'ex_' and use lowercase letters and digits.\",\n    \"Row 6 is a DEV item but TECHNICAL DETAILS names no component. Add a schema name, logical name, or named existing component.\",\n    \"Row 7 TECHNICAL DETAILS must begin with 'Publisher Prefix: ex_'.\",\n    \"Row 7 is a INT item but TECHNICAL DETAILS names no component. Add a schema name, logical name, or named existing component.\",\n    \"Row 7 must have at least two Acceptance Criteria items; found 1.\",\n    \"Row 8 declares publisher prefix 'lib_' but the export uses 'ex_'.\"\n  ],\n  \"warnings\": [\n    \"Run an Azure Boards import preview because this compatibility profile retains blank ID, State, and Assigned To columns.\",\n    \"Row 2 is a Epic whose title carries a work type code. Only Product Backlog Item titles use one.\",\n    \"Row 4 has no Acceptance Criteria item covering deployment, environment, or solution.\",\n    \"Row 5 creates columns but states no 'Requirement:' value for them.\",\n    \"Row 6 conditional 'if the book is late then charge' should use capitals: IF, ELSE IF, ELSE.\",\n    \"Row 6 uses a lowercase condition outcome. Use TRUE, FALSE, NULL, or UNDEFINED.\",\n    \"Row 6 is a DEV item with no 'Execution: Synchronous' or 'Execution: Asynchronous' line.\",\n    \"Row 7 has no Acceptance Criteria item covering deployment, environment, or solution.\",\n    \"Row 8 has no Acceptance Criteria item covering deployment, environment, or solution.\"\n  ],\n  \"adapter\": \"dynamics-365-ce\",\n  \"adapter_params\": {\n    \"publisher_prefix\": \"ex_\"\n  }\n}\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 1,
+      "args": [
+        "validate",
+        "--input",
+        "csv/d365-wrong-prefix.csv",
+        "--adapter",
+        "dynamics-365-ce"
+      ],
+      "exit": 1,
+      "stdout": "{\n  \"operation\": \"validate\",\n  \"input\": \"<root>/csv/d365-wrong-prefix.csv\",\n  \"valid\": false,\n  \"profile\": \"target17-new\",\n  \"rowCount\": 7,\n  \"counts\": {\n    \"Epic\": 1,\n    \"Feature\": 3,\n    \"Product Backlog Item\": 3\n  },\n  \"errors\": [\n    \"Row 4 schema name 'ex_LendingFineTypes' must start with 'lib_' and use letters and digits.\",\n    \"Row 4 logical name 'ex_lendingfinetypes' must start with 'lib_' and use lowercase letters and digits.\",\n    \"Row 4 schema name 'ex_LendingFlatFineFrequency' must start with 'lib_' and use letters and digits.\",\n    \"Row 4 logical name 'ex_lendingflatfinefrequency' must start with 'lib_' and use lowercase letters and digits.\"\n  ],\n  \"warnings\": [\n    \"Run an Azure Boards import preview because this compatibility profile retains blank ID, State, and Assigned To columns.\"\n  ],\n  \"adapter\": \"dynamics-365-ce\",\n  \"adapter_params\": {\n    \"publisher_prefix\": \"lib_\"\n  }\n}\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 2,
+      "args": [
+        "validate",
+        "--input",
+        "csv/d365-two-prefixes.csv",
+        "--adapter",
+        "dynamics-365-ce"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "CSV declares more than one publisher prefix: lib_, ex_. One export uses one prefix.\n",
+      "files": {}
+    },
+    {
+      "step": 3,
+      "args": [
+        "validate",
+        "--input",
+        "csv/d365-no-pbi.csv",
+        "--adapter",
+        "dynamics-365-ce",
+        "--publisher-prefix",
+        "ex_"
+      ],
+      "exit": 1,
+      "stdout": "{\n  \"operation\": \"validate\",\n  \"input\": \"<root>/csv/d365-no-pbi.csv\",\n  \"valid\": false,\n  \"profile\": \"target17-new\",\n  \"rowCount\": 2,\n  \"counts\": {\n    \"Epic\": 1,\n    \"Feature\": 1\n  },\n  \"errors\": [\n    \"Adapter 'dynamics-365-ce' requires at least one Product Backlog Item row.\"\n  ],\n  \"warnings\": [\n    \"Run an Azure Boards import preview because this compatibility profile retains blank ID, State, and Assigned To columns.\"\n  ],\n  \"adapter\": \"dynamics-365-ce\",\n  \"adapter_params\": {\n    \"publisher_prefix\": \"ex_\"\n  }\n}\n",
+      "stderr": "",
+      "files": {}
+    }
+  ]
+}

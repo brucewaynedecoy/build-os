@@ -1,0 +1,193 @@
+{
+  "case": "full-flow",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "start",
+        "REF-001"
+      ],
+      "exit": 0,
+      "stdout": "Created: <root>/extractions/REF-001-lending-policy.json\n",
+      "stderr": "",
+      "files": {
+        "extractions/REF-001-lending-policy.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/lending-policy.txt\",\n  \"source_sha256\": \"f4a773f1a04b5197f80d47b609701dd1907d18d03c0a9442e4ff090f85f64ab0\",\n  \"reviewed_by\": \"\",\n  \"reviewed_at\": \"\",\n  \"source_check\": {\n    \"result\": \"unverified\",\n    \"notes\": \"\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-001\",\n      \"converted\": \"assets/lending-policy/lending-policy.md\",\n      \"outcome\": \"pending\",\n      \"note\": \"\"\n    }\n  ],\n  \"candidates\": [],\n  \"unresolved\": [],\n  \"applied\": {},\n  \"extraction_ids\": [],\n  \"publication_review\": null\n}\n"
+        }
+      }
+    },
+    {
+      "step": 2,
+      "args": [
+        "check",
+        "REF-001"
+      ],
+      "exit": 0,
+      "stdout": "REF-001: ready-to-stage (<root>/extractions/REF-001-lending-policy.json)\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 3,
+      "args": [
+        "stage",
+        "REF-001"
+      ],
+      "exit": 0,
+      "stdout": "Staged 2 candidates; review: extractions/REF-001-lending-policy.json\n",
+      "stderr": "",
+      "files": {
+        "extractions/REF-001-lending-policy.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/lending-policy.txt\",\n  \"source_sha256\": \"f4a773f1a04b5197f80d47b609701dd1907d18d03c0a9442e4ff090f85f64ab0\",\n  \"reviewed_by\": \"Circulation Analyst\",\n  \"reviewed_at\": \"2026-01-12\",\n  \"source_check\": {\n    \"result\": \"matched\",\n    \"notes\": \"Compared the converted text with the original policy.\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-001\",\n      \"converted\": \"assets/lending-policy/lending-policy.md\",\n      \"outcome\": \"reviewed\",\n      \"note\": \"\"\n    }\n  ],\n  \"candidates\": [\n    {\n      \"key\": \"renewals\",\n      \"type\": \"requirement\"\n    },\n    {\n      \"key\": \"holds-desk\",\n      \"type\": \"capability\"\n    }\n  ],\n  \"unresolved\": [],\n  \"applied\": {},\n  \"extraction_ids\": [],\n  \"publication_review\": null,\n  \"staged_at\": \"2026-01-15T12:00:00Z\"\n}\n"
+        },
+        "extractions/staging/capabilities.jsonl": {
+          "text": "{\"type\": \"capability\", \"title\": \"Holds shelf\", \"status\": \"draft\", \"summary\": \"Staff keep holds on a shelf for seven days.\", \"source_anchor\": \"assets/lending-policy/lending-policy.md#L5\", \"doc_anchor\": null, \"source_refs\": [\"assets/lending-policy/lending-policy.md#L5\", \"REQ-001\"], \"related\": [], \"created_at\": null, \"updated_at\": null, \"description\": \"A hold waits seven days on the holds shelf.\", \"supports\": [], \"limits\": [\"Seven days only\"], \"_stage\": {\"key\": \"holds-desk\", \"action\": \"minted\", \"review_state\": \"pending\", \"ref_id\": \"REF-001\", \"authored_by\": \"Circulation Analyst\"}}\n"
+        },
+        "extractions/staging/requirements.jsonl": {
+          "text": "{\"type\": \"requirement\", \"title\": \"Renewal rule a\", \"status\": \"draft\", \"summary\": \"A patron can renew a loan (a).\", \"source_anchor\": \"assets/lending-policy/lending-policy.md#L3\", \"doc_anchor\": null, \"source_refs\": [\"assets/lending-policy/lending-policy.md#L3\"], \"related\": [], \"created_at\": null, \"updated_at\": null, \"statement\": \"The system shall allow two renewals per loan (a).\", \"rationale\": \"The lending policy allows two renewals.\", \"acceptance_refs\": [], \"_stage\": {\"key\": \"renewals\", \"action\": \"minted\", \"review_state\": \"pending\", \"ref_id\": \"REF-001\", \"authored_by\": \"Circulation Analyst\"}}\n"
+        }
+      }
+    },
+    {
+      "step": 4,
+      "args": [
+        "show",
+        "REF-001"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"key\": \"REF-001\",\n  \"source\": \"assets/_intake/lending-policy.txt\",\n  \"references\": [\n    {\n      \"id\": \"REF-001\",\n      \"converted\": \"assets/lending-policy/lending-policy.md\"\n    }\n  ],\n  \"review\": \"extractions/REF-001-lending-policy.json\",\n  \"candidates\": [\n    {\n      \"key\": \"renewals\",\n      \"type\": \"requirement\",\n      \"location\": \"extractions/staging/requirements.jsonl\",\n      \"stage\": {\n        \"key\": \"renewals\",\n        \"action\": \"minted\",\n        \"review_state\": \"pending\",\n        \"ref_id\": \"REF-001\",\n        \"authored_by\": \"Circulation Analyst\"\n      },\n      \"applied\": null\n    },\n    {\n      \"key\": \"holds-desk\",\n      \"type\": \"capability\",\n      \"location\": \"extractions/staging/capabilities.jsonl\",\n      \"stage\": {\n        \"key\": \"holds-desk\",\n        \"action\": \"minted\",\n        \"review_state\": \"pending\",\n        \"ref_id\": \"REF-001\",\n        \"authored_by\": \"Circulation Analyst\"\n      },\n      \"applied\": null\n    }\n  ]\n}\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 5,
+      "args": [
+        "next",
+        "--stage",
+        "review"
+      ],
+      "exit": 0,
+      "stdout": "REF-001\tstaged\t1 twins\tassets/_intake/lending-policy.txt\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 6,
+      "args": [
+        "check",
+        "REF-001"
+      ],
+      "exit": 0,
+      "stdout": "REF-001: staged (<root>/extractions/REF-001-lending-policy.json)\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 7,
+      "args": [
+        "decide",
+        "REF-001",
+        "--reviewer",
+        "Branch Supervisor"
+      ],
+      "exit": 0,
+      "stdout": "Recorded 2 Stage 2 decisions for REF-001\n",
+      "stderr": "",
+      "files": {
+        "extractions/REF-001-lending-policy.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/lending-policy.txt\",\n  \"source_sha256\": \"f4a773f1a04b5197f80d47b609701dd1907d18d03c0a9442e4ff090f85f64ab0\",\n  \"reviewed_by\": \"Circulation Analyst\",\n  \"reviewed_at\": \"2026-01-12\",\n  \"source_check\": {\n    \"result\": \"matched\",\n    \"notes\": \"Compared the converted text with the original policy.\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-001\",\n      \"converted\": \"assets/lending-policy/lending-policy.md\",\n      \"outcome\": \"reviewed\",\n      \"note\": \"\"\n    }\n  ],\n  \"candidates\": [\n    {\n      \"key\": \"renewals\",\n      \"type\": \"requirement\"\n    },\n    {\n      \"key\": \"holds-desk\",\n      \"type\": \"capability\"\n    }\n  ],\n  \"unresolved\": [],\n  \"applied\": {},\n  \"extraction_ids\": [],\n  \"publication_review\": {\n    \"reviewed_by\": \"Branch Supervisor\",\n    \"reviewed_at\": \"2026-01-15T12:00:00Z\"\n  },\n  \"staged_at\": \"2026-01-15T12:00:00Z\"\n}\n"
+        },
+        "extractions/staging/capabilities.jsonl": {
+          "text": "{\"type\": \"capability\", \"title\": \"Holds shelf\", \"status\": \"draft\", \"summary\": \"Staff keep holds on a shelf for seven days.\", \"source_anchor\": \"assets/lending-policy/lending-policy.md#L5\", \"doc_anchor\": null, \"source_refs\": [\"assets/lending-policy/lending-policy.md#L5\", \"REQ-001\"], \"related\": [], \"created_at\": null, \"updated_at\": null, \"description\": \"A hold waits seven days on the holds shelf.\", \"supports\": [], \"limits\": [\"Seven days only\"], \"_stage\": {\"key\": \"holds-desk\", \"action\": \"minted\", \"review_state\": \"approved\", \"ref_id\": \"REF-001\", \"authored_by\": \"Circulation Analyst\", \"reviewed_by\": \"Branch Supervisor\", \"reviewed_at\": \"2026-01-15T12:00:00Z\", \"review_note\": \"Matches the policy.\"}}\n"
+        },
+        "extractions/staging/requirements.jsonl": {
+          "text": "{\"type\": \"requirement\", \"title\": \"Renewal rule a\", \"status\": \"draft\", \"summary\": \"A patron can renew a loan (a).\", \"source_anchor\": \"assets/lending-policy/lending-policy.md#L3\", \"doc_anchor\": null, \"source_refs\": [\"assets/lending-policy/lending-policy.md#L3\"], \"related\": [], \"created_at\": null, \"updated_at\": null, \"statement\": \"The system shall allow two renewals per loan (a).\", \"rationale\": \"The lending policy allows two renewals.\", \"acceptance_refs\": [], \"_stage\": {\"key\": \"renewals\", \"action\": \"minted\", \"review_state\": \"approved\", \"ref_id\": \"REF-001\", \"authored_by\": \"Circulation Analyst\", \"reviewed_by\": \"Branch Supervisor\", \"reviewed_at\": \"2026-01-15T12:00:00Z\"}}\n"
+        }
+      }
+    },
+    {
+      "step": 8,
+      "args": [
+        "check",
+        "REF-001"
+      ],
+      "exit": 0,
+      "stdout": "REF-001: reviewed (<root>/extractions/REF-001-lending-policy.json)\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 9,
+      "args": [
+        "publish",
+        "REF-001"
+      ],
+      "exit": 0,
+      "stdout": "Published 2 candidates as EXT-001.\n",
+      "stderr": "",
+      "files": {
+        ".os/data/capabilities.jsonl": {
+          "text": "{\"id\":\"CAP-001\",\"type\":\"capability\",\"title\":\"Circulation desk\",\"status\":\"draft\",\"summary\":\"Staff check books out and in.\",\"source_anchor\":\"assets/lending-policy/lending-policy.md#L3\",\"doc_anchor\":null,\"source_refs\":[],\"related\":[],\"created_at\":\"2026-01-10T08:00:00Z\",\"updated_at\":\"2026-01-10T08:00:00Z\",\"description\":\"Check out and check in at the desk.\",\"supports\":[],\"limits\":[]}\n{\"type\": \"capability\", \"title\": \"Holds shelf\", \"status\": \"draft\", \"summary\": \"Staff keep holds on a shelf for seven days.\", \"source_anchor\": \"assets/lending-policy/lending-policy.md#L5\", \"doc_anchor\": null, \"source_refs\": [\"assets/lending-policy/lending-policy.md#L5\", \"REQ-001\"], \"related\": [], \"created_at\": \"2026-01-15T12:00:00Z\", \"updated_at\": \"2026-01-15T12:00:00Z\", \"description\": \"A hold waits seven days on the holds shelf.\", \"supports\": [], \"limits\": [\"Seven days only\"], \"id\": \"CAP-002\"}\n"
+        },
+        ".os/data/extractions.jsonl": {
+          "text": "{\"id\": \"EXT-001\", \"type\": \"extraction\", \"title\": \"REF-001 source extraction\", \"status\": \"draft\", \"summary\": \"Reviewed source-backed rows from REF-001.\", \"source_anchor\": \"assets/lending-policy/lending-policy.md#L3\", \"doc_anchor\": null, \"source_refs\": [\"assets/lending-policy/lending-policy.md#L3\", \"assets/lending-policy/lending-policy.md#L5\", \"REQ-001\"], \"related\": [], \"created_at\": \"2026-01-15T12:00:00Z\", \"updated_at\": \"2026-01-15T12:00:00Z\", \"outcome_contract\": \"extraction-outcomes-v1\", \"minted\": [\"REQ-002\", \"CAP-002\"], \"updated\": [], \"referenced\": [], \"extracted_by\": \"Circulation Analyst\", \"extracted_at\": \"2026-01-15T12:00:00Z\"}\n"
+        },
+        ".os/data/requirements.jsonl": {
+          "text": "{\"id\":\"REQ-001\",\"type\":\"requirement\",\"title\":\"Borrow limit\",\"status\":\"draft\",\"summary\":\"A patron can borrow up to five books.\",\"source_anchor\":\"assets/lending-policy/lending-policy.md#L3\",\"doc_anchor\":null,\"source_refs\":[\"assets/lending-policy/lending-policy.md#L3\"],\"related\":[],\"created_at\":\"2026-01-10T08:00:00Z\",\"updated_at\":\"2026-01-10T08:00:00Z\",\"statement\":\"The system shall limit a patron to five loans at once.\",\"rationale\":\"The lending policy sets the limit.\",\"acceptance_refs\":[],\"shelf_note\":\"Keep this custom field\"}\n{\"type\": \"requirement\", \"title\": \"Renewal rule a\", \"status\": \"draft\", \"summary\": \"A patron can renew a loan (a).\", \"source_anchor\": \"assets/lending-policy/lending-policy.md#L3\", \"doc_anchor\": null, \"source_refs\": [\"assets/lending-policy/lending-policy.md#L3\"], \"related\": [], \"created_at\": \"2026-01-15T12:00:00Z\", \"updated_at\": \"2026-01-15T12:00:00Z\", \"statement\": \"The system shall allow two renewals per loan (a).\", \"rationale\": \"The lending policy allows two renewals.\", \"acceptance_refs\": [], \"id\": \"REQ-002\"}\n"
+        },
+        "extractions/REF-001-lending-policy.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/lending-policy.txt\",\n  \"source_sha256\": \"f4a773f1a04b5197f80d47b609701dd1907d18d03c0a9442e4ff090f85f64ab0\",\n  \"reviewed_by\": \"Circulation Analyst\",\n  \"reviewed_at\": \"2026-01-12\",\n  \"source_check\": {\n    \"result\": \"matched\",\n    \"notes\": \"Compared the converted text with the original policy.\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-001\",\n      \"converted\": \"assets/lending-policy/lending-policy.md\",\n      \"outcome\": \"reviewed\",\n      \"note\": \"\"\n    }\n  ],\n  \"candidates\": [\n    {\n      \"key\": \"renewals\",\n      \"type\": \"requirement\"\n    },\n    {\n      \"key\": \"holds-desk\",\n      \"type\": \"capability\"\n    }\n  ],\n  \"unresolved\": [],\n  \"applied\": {\n    \"renewals\": {\n      \"id\": \"REQ-002\",\n      \"action\": \"minted\",\n      \"candidate_sha256\": \"fd09a119733b8bd840a28eec7ca7218e5093d2884f2619dd03cfafd0b9f7cc07\",\n      \"authored_by\": \"Circulation Analyst\",\n      \"reviewed_by\": \"Branch Supervisor\",\n      \"reviewed_at\": \"2026-01-15T12:00:00Z\"\n    },\n    \"holds-desk\": {\n      \"id\": \"CAP-002\",\n      \"action\": \"minted\",\n      \"candidate_sha256\": \"5b3a49b983f3f8037cd28bf952122f7d65beef2a47f8f15e283f29554736d61d\",\n      \"authored_by\": \"Circulation Analyst\",\n      \"reviewed_by\": \"Branch Supervisor\",\n      \"reviewed_at\": \"2026-01-15T12:00:00Z\"\n    }\n  },\n  \"extraction_ids\": [\n    \"EXT-001\"\n  ],\n  \"publication_review\": {\n    \"reviewed_by\": \"Branch Supervisor\",\n    \"reviewed_at\": \"2026-01-15T12:00:00Z\"\n  },\n  \"staged_at\": \"2026-01-15T12:00:00Z\"\n}\n"
+        },
+        "extractions/staging/capabilities.jsonl": {
+          "text": ""
+        },
+        "extractions/staging/requirements.jsonl": {
+          "text": ""
+        }
+      }
+    },
+    {
+      "step": 10,
+      "args": [
+        "status"
+      ],
+      "exit": 0,
+      "stdout": "5 sources; 6 converted records\nProgress comes from root review files and tagged staged rows; check REF-ID verifies links.\ncomplete: 1\nready-to-stage: 0\nstaged: 0\nreviewed: 0\nheld: 0\npublishing: 0\nin-progress: 0\nblocked: 0\nneeds-repair: 0\npending: 4\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 11,
+      "args": [
+        "check",
+        "REF-001"
+      ],
+      "exit": 0,
+      "stdout": "REF-001: complete (<root>/extractions/REF-001-lending-policy.json)\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 12,
+      "args": [
+        "show",
+        "REF-001"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"key\": \"REF-001\",\n  \"source\": \"assets/_intake/lending-policy.txt\",\n  \"references\": [\n    {\n      \"id\": \"REF-001\",\n      \"converted\": \"assets/lending-policy/lending-policy.md\"\n    }\n  ],\n  \"review\": \"extractions/REF-001-lending-policy.json\",\n  \"candidates\": [\n    {\n      \"key\": \"renewals\",\n      \"type\": \"requirement\",\n      \"location\": \"published\",\n      \"stage\": null,\n      \"applied\": {\n        \"id\": \"REQ-002\",\n        \"action\": \"minted\",\n        \"candidate_sha256\": \"fd09a119733b8bd840a28eec7ca7218e5093d2884f2619dd03cfafd0b9f7cc07\",\n        \"authored_by\": \"Circulation Analyst\",\n        \"reviewed_by\": \"Branch Supervisor\",\n        \"reviewed_at\": \"2026-01-15T12:00:00Z\"\n      }\n    },\n    {\n      \"key\": \"holds-desk\",\n      \"type\": \"capability\",\n      \"location\": \"published\",\n      \"stage\": null,\n      \"applied\": {\n        \"id\": \"CAP-002\",\n        \"action\": \"minted\",\n        \"candidate_sha256\": \"5b3a49b983f3f8037cd28bf952122f7d65beef2a47f8f15e283f29554736d61d\",\n        \"authored_by\": \"Circulation Analyst\",\n        \"reviewed_by\": \"Branch Supervisor\",\n        \"reviewed_at\": \"2026-01-15T12:00:00Z\"\n      }\n    }\n  ]\n}\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 13,
+      "args": [
+        "publish",
+        "REF-001"
+      ],
+      "exit": 0,
+      "stdout": "Review complete; no rows to publish\n",
+      "stderr": "",
+      "files": {}
+    }
+  ]
+}

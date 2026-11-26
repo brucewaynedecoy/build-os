@@ -1,0 +1,982 @@
+[
+  {
+    "baseline_capability_id": "CIRC-ZZZ-00",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-00. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-01",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-01. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-02",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-02. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-03",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-03. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-04",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-04. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-05",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-05. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-06",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-06. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-07",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-07. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-08",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-08. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-09",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-09. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-10",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-10. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-11",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-11. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-12",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-12. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-13",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-13. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-14",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-14. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-15",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-15. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-16",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-16. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-17",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-17. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-18",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-18. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-19",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-19. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-20",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-20. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-21",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-21. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-22",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-22. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-23",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-23. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-24",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-24. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-25",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-25. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-26",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-26. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-27",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-27. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-28",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-28. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-29",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-29. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-30",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-30. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-31",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-31. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-32",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-32. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-33",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-33. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-34",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-34. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-35",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-35. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-36",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-36. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-37",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-37. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-38",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-38. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-39",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-39. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-40",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-40. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-41",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-41. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-42",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-42. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-43",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-43. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-44",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-44. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-45",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-45. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-46",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-46. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-47",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-47. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-48",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-48. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-49",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-49. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-50",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-50. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-51",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-51. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-52",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-52. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-53",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-53. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-54",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-54. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-55",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-55. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-56",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-56. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-57",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-57. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-58",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-58. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-59",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-59. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-60",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-60. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-61",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-61. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-62",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-62. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-63",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-63. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-64",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-64. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-65",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-65. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-66",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-66. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-67",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-67. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-68",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-68. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-ZZZ-69",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-ZZZ-69. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  }
+]

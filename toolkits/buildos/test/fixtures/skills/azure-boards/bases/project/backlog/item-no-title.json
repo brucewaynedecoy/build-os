@@ -1,0 +1,22 @@
+{
+  "items": [
+    {
+      "work_item_type": "Epic",
+      "level": 1,
+      "title": "   ",
+      "summary": "Patrons place \"holds\" on books — café edition.",
+      "source_trace": {
+        "work_directory": "docs/work/2026-01-12-w1-r1-holds",
+        "index_file": "docs/work/2026-01-12-w1-r1-holds/00-index.md",
+        "task_ids": [
+          "t1",
+          "t2"
+        ],
+        "labels": [
+          "Holds"
+        ]
+      },
+      "tags": "Holds; Notices;Holds"
+    }
+  ]
+}

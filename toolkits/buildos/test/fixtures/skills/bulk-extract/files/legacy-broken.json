@@ -1,0 +1,48 @@
+{
+  "source": "assets/_intake/fines.txt",
+  "source_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "source_check": {
+    "result": "partial",
+    "notes": "",
+    "repairs": "none"
+  },
+  "references": [
+    {
+      "id": "REF-005",
+      "converted": "assets/fines/fines.md",
+      "outcome": "no-new-rows"
+    }
+  ],
+  "candidates": [
+    {
+      "key": "old",
+      "type": "requirement",
+      "row": {
+        "type": "requirement",
+        "status": "active",
+        "id": "REQ-009",
+        "title": "",
+        "summary": "x",
+        "source_anchor": "assets/fines/fines.md#L9",
+        "source_refs": "x",
+        "related": []
+      }
+    },
+    {
+      "key": "old",
+      "type": "requirement",
+      "row": {}
+    },
+    {
+      "key": "kind",
+      "type": "book",
+      "row": {}
+    }
+  ],
+  "unresolved": "none",
+  "applied": [],
+  "extraction_ids": [
+    "EXT-1",
+    7
+  ]
+}

@@ -1,0 +1,11 @@
+[
+  {
+    "key": "renewals",
+    "review_state": "held",
+    "review_note": "Check the renewal count."
+  },
+  {
+    "key": "hold-time",
+    "review_state": "pending"
+  }
+]

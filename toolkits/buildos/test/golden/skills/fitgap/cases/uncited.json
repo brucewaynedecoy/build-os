@@ -1,0 +1,54 @@
+{
+  "case": "uncited",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "uncited",
+        "--frame",
+        "analysis/frame.json",
+        "--rows",
+        "analysis/scored/*.json",
+        "--out",
+        "analysis/uncited.json"
+      ],
+      "exit": 0,
+      "stdout": "  LIB-RPT-01     RPT   ga                 Lending reports\n  LIB-RPT-02     RPT   roadmap            Dashboards\nuncited: 2 of 8 target capabilities have no mark citing them\n",
+      "stderr": "",
+      "files": {
+        "analysis/uncited.json": {
+          "text": "[\n {\n  \"id\": \"LIB-RPT-01\",\n  \"name\": \"Lending reports\",\n  \"layer_code\": \"RPT\",\n  \"status\": \"ga\",\n  \"summary\": \"Lending reports in the candidate platform.\"\n },\n {\n  \"id\": \"LIB-RPT-02\",\n  \"name\": \"Dashboards\",\n  \"layer_code\": \"RPT\",\n  \"status\": \"roadmap\",\n  \"summary\": \"Dashboards in the candidate platform.\"\n }\n]"
+        }
+      }
+    },
+    {
+      "step": 1,
+      "args": [
+        "uncited",
+        "--frame",
+        "analysis/frame.json",
+        "--rows",
+        "analysis/scored/pkg-01.json"
+      ],
+      "exit": 0,
+      "stdout": "  LIB-PAT-01     PAT   ga                 Patron accounts\n  LIB-PAT-02     PAT   preview            Notice centre\n  LIB-CAT-01     CAT   ga                 Discovery search 🔎\n  LIB-RPT-01     RPT   ga                 Lending reports\n  LIB-RPT-02     RPT   roadmap            Dashboards\nuncited: 5 of 8 target capabilities have no mark citing them\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 2,
+      "args": [
+        "uncited",
+        "--frame",
+        "analysis/frame.json",
+        "--rows",
+        "analysis/nothing/*.json",
+        "analysis/scored/pkg-0[2-9].json"
+      ],
+      "exit": 0,
+      "stdout": "  LIB-COR-01     CORE  ga                 Circulation desk\n  LIB-COR-02     CORE  ga                 Self check-in kiosk\n  LIB-COR-03     CORE  ga                 Renewal rules\n  LIB-RPT-01     RPT   ga                 Lending reports\n  LIB-RPT-02     RPT   roadmap            Dashboards\nuncited: 5 of 8 target capabilities have no mark citing them\n",
+      "stderr": "",
+      "files": {}
+    }
+  ]
+}

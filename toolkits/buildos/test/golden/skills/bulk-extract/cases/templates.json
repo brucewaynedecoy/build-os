@@ -1,0 +1,82 @@
+{
+  "case": "templates",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "template",
+        "requirement"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"candidate\": {\n    \"key\": \"\",\n    \"type\": \"requirement\",\n    \"action\": \"minted\",\n    \"review_state\": \"pending\",\n    \"row\": {\n      \"type\": \"requirement\",\n      \"title\": \"\",\n      \"status\": \"draft\",\n      \"summary\": \"\",\n      \"source_anchor\": \"\",\n      \"doc_anchor\": null,\n      \"source_refs\": [],\n      \"related\": [],\n      \"created_at\": null,\n      \"updated_at\": null,\n      \"statement\": \"\",\n      \"rationale\": \"\",\n      \"acceptance_refs\": []\n    }\n  },\n  \"field_meanings\": {\n    \"statement\": \"text\",\n    \"rationale\": \"text\",\n    \"acceptance_refs\": \"references\"\n  },\n  \"common_field_meanings\": {\n    \"key\": \"Local candidate key; unique within this review\",\n    \"action\": \"minted=new row, referenced=reuse without change, updated=correct saved row\",\n    \"review_state\": \"pending in extraction; approved or held only in separate review\",\n    \"row.status\": \"BuildOS lifecycle: draft, active, superseded, archived; not review state\",\n    \"row.title\": \"Nonempty text\",\n    \"row.summary\": \"Nonempty text\",\n    \"row.source_anchor\": \"This source's converted assets/path#Lnumber or #row-number\",\n    \"row.source_refs\": \"List of supporting path#anchor values or entity IDs\",\n    \"row.related\": \"List of entity IDs\",\n    \"row.doc_anchor\": \"Null for a draft, docs/path.md#anchor otherwise\",\n    \"row.created_at\": \"ISO 8601 date or datetime, or null\",\n    \"row.updated_at\": \"ISO 8601 date or datetime, or null\",\n    \"unresolved\": \"Open questions belong in the review's unresolved list, not a row reference field\"\n  }\n}\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 1,
+      "args": [
+        "template",
+        "capability"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"candidate\": {\n    \"key\": \"\",\n    \"type\": \"capability\",\n    \"action\": \"minted\",\n    \"review_state\": \"pending\",\n    \"row\": {\n      \"type\": \"capability\",\n      \"title\": \"\",\n      \"status\": \"draft\",\n      \"summary\": \"\",\n      \"source_anchor\": \"\",\n      \"doc_anchor\": null,\n      \"source_refs\": [],\n      \"related\": [],\n      \"created_at\": null,\n      \"updated_at\": null,\n      \"description\": \"\",\n      \"supports\": [],\n      \"limits\": []\n    }\n  },\n  \"field_meanings\": {\n    \"description\": \"text\",\n    \"supports\": \"references\",\n    \"limits\": \"text list\"\n  },\n  \"common_field_meanings\": {\n    \"key\": \"Local candidate key; unique within this review\",\n    \"action\": \"minted=new row, referenced=reuse without change, updated=correct saved row\",\n    \"review_state\": \"pending in extraction; approved or held only in separate review\",\n    \"row.status\": \"BuildOS lifecycle: draft, active, superseded, archived; not review state\",\n    \"row.title\": \"Nonempty text\",\n    \"row.summary\": \"Nonempty text\",\n    \"row.source_anchor\": \"This source's converted assets/path#Lnumber or #row-number\",\n    \"row.source_refs\": \"List of supporting path#anchor values or entity IDs\",\n    \"row.related\": \"List of entity IDs\",\n    \"row.doc_anchor\": \"Null for a draft, docs/path.md#anchor otherwise\",\n    \"row.created_at\": \"ISO 8601 date or datetime, or null\",\n    \"row.updated_at\": \"ISO 8601 date or datetime, or null\",\n    \"unresolved\": \"Open questions belong in the review's unresolved list, not a row reference field\"\n  }\n}\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 2,
+      "args": [
+        "template",
+        "persona"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"candidate\": {\n    \"key\": \"\",\n    \"type\": \"persona\",\n    \"action\": \"minted\",\n    \"review_state\": \"pending\",\n    \"row\": {\n      \"type\": \"persona\",\n      \"title\": \"\",\n      \"status\": \"draft\",\n      \"summary\": \"\",\n      \"source_anchor\": \"\",\n      \"doc_anchor\": null,\n      \"source_refs\": [],\n      \"related\": [],\n      \"created_at\": null,\n      \"updated_at\": null,\n      \"description\": \"\",\n      \"goals\": [],\n      \"needs\": []\n    }\n  },\n  \"field_meanings\": {\n    \"description\": \"text\",\n    \"goals\": \"text list\",\n    \"needs\": \"text list\"\n  },\n  \"common_field_meanings\": {\n    \"key\": \"Local candidate key; unique within this review\",\n    \"action\": \"minted=new row, referenced=reuse without change, updated=correct saved row\",\n    \"review_state\": \"pending in extraction; approved or held only in separate review\",\n    \"row.status\": \"BuildOS lifecycle: draft, active, superseded, archived; not review state\",\n    \"row.title\": \"Nonempty text\",\n    \"row.summary\": \"Nonempty text\",\n    \"row.source_anchor\": \"This source's converted assets/path#Lnumber or #row-number\",\n    \"row.source_refs\": \"List of supporting path#anchor values or entity IDs\",\n    \"row.related\": \"List of entity IDs\",\n    \"row.doc_anchor\": \"Null for a draft, docs/path.md#anchor otherwise\",\n    \"row.created_at\": \"ISO 8601 date or datetime, or null\",\n    \"row.updated_at\": \"ISO 8601 date or datetime, or null\",\n    \"unresolved\": \"Open questions belong in the review's unresolved list, not a row reference field\"\n  }\n}\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 3,
+      "args": [
+        "template",
+        "test-case"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"candidate\": {\n    \"key\": \"\",\n    \"type\": \"test-case\",\n    \"action\": \"minted\",\n    \"review_state\": \"pending\",\n    \"row\": {\n      \"type\": \"test-case\",\n      \"title\": \"\",\n      \"status\": \"draft\",\n      \"summary\": \"\",\n      \"source_anchor\": \"\",\n      \"doc_anchor\": null,\n      \"source_refs\": [],\n      \"related\": [],\n      \"created_at\": null,\n      \"updated_at\": null,\n      \"verifies\": [],\n      \"preconditions\": [],\n      \"steps\": [],\n      \"expected\": \"\"\n    }\n  },\n  \"field_meanings\": {\n    \"verifies\": \"IDs\",\n    \"preconditions\": \"text list\",\n    \"steps\": \"text list\",\n    \"expected\": \"text\"\n  },\n  \"common_field_meanings\": {\n    \"key\": \"Local candidate key; unique within this review\",\n    \"action\": \"minted=new row, referenced=reuse without change, updated=correct saved row\",\n    \"review_state\": \"pending in extraction; approved or held only in separate review\",\n    \"row.status\": \"BuildOS lifecycle: draft, active, superseded, archived; not review state\",\n    \"row.title\": \"Nonempty text\",\n    \"row.summary\": \"Nonempty text\",\n    \"row.source_anchor\": \"This source's converted assets/path#Lnumber or #row-number\",\n    \"row.source_refs\": \"List of supporting path#anchor values or entity IDs\",\n    \"row.related\": \"List of entity IDs\",\n    \"row.doc_anchor\": \"Null for a draft, docs/path.md#anchor otherwise\",\n    \"row.created_at\": \"ISO 8601 date or datetime, or null\",\n    \"row.updated_at\": \"ISO 8601 date or datetime, or null\",\n    \"unresolved\": \"Open questions belong in the review's unresolved list, not a row reference field\"\n  }\n}\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 4,
+      "args": [
+        "template",
+        "result"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"candidate\": {\n    \"key\": \"\",\n    \"type\": \"result\",\n    \"action\": \"minted\",\n    \"review_state\": \"pending\",\n    \"row\": {\n      \"type\": \"result\",\n      \"title\": \"\",\n      \"status\": \"draft\",\n      \"summary\": \"\",\n      \"source_anchor\": \"\",\n      \"doc_anchor\": null,\n      \"source_refs\": [],\n      \"related\": [],\n      \"created_at\": null,\n      \"updated_at\": null,\n      \"target_id\": \"\",\n      \"outcome\": \"inconclusive\",\n      \"evidence_refs\": []\n    }\n  },\n  \"field_meanings\": {\n    \"target_id\": \"ID\",\n    \"outcome\": \"pass|fail|blocked|inconclusive\",\n    \"evidence_refs\": \"references\"\n  },\n  \"common_field_meanings\": {\n    \"key\": \"Local candidate key; unique within this review\",\n    \"action\": \"minted=new row, referenced=reuse without change, updated=correct saved row\",\n    \"review_state\": \"pending in extraction; approved or held only in separate review\",\n    \"row.status\": \"BuildOS lifecycle: draft, active, superseded, archived; not review state\",\n    \"row.title\": \"Nonempty text\",\n    \"row.summary\": \"Nonempty text\",\n    \"row.source_anchor\": \"This source's converted assets/path#Lnumber or #row-number\",\n    \"row.source_refs\": \"List of supporting path#anchor values or entity IDs\",\n    \"row.related\": \"List of entity IDs\",\n    \"row.doc_anchor\": \"Null for a draft, docs/path.md#anchor otherwise\",\n    \"row.created_at\": \"ISO 8601 date or datetime, or null\",\n    \"row.updated_at\": \"ISO 8601 date or datetime, or null\",\n    \"unresolved\": \"Open questions belong in the review's unresolved list, not a row reference field\"\n  }\n}\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 5,
+      "args": [
+        "template",
+        "run"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"candidate\": {\n    \"key\": \"\",\n    \"type\": \"run\",\n    \"action\": \"minted\",\n    \"review_state\": \"pending\",\n    \"row\": {\n      \"type\": \"run\",\n      \"title\": \"\",\n      \"status\": \"draft\",\n      \"summary\": \"\",\n      \"source_anchor\": \"\",\n      \"doc_anchor\": null,\n      \"source_refs\": [],\n      \"related\": [],\n      \"created_at\": null,\n      \"updated_at\": null,\n      \"playbook_id\": null,\n      \"started_at\": \"\",\n      \"ended_at\": null,\n      \"inputs\": {},\n      \"outputs\": {}\n    }\n  },\n  \"field_meanings\": {\n    \"playbook_id\": \"PB ID or null\",\n    \"started_at\": \"ISO date\",\n    \"ended_at\": \"ISO date or null\",\n    \"inputs\": \"object\",\n    \"outputs\": \"object or list\"\n  },\n  \"common_field_meanings\": {\n    \"key\": \"Local candidate key; unique within this review\",\n    \"action\": \"minted=new row, referenced=reuse without change, updated=correct saved row\",\n    \"review_state\": \"pending in extraction; approved or held only in separate review\",\n    \"row.status\": \"BuildOS lifecycle: draft, active, superseded, archived; not review state\",\n    \"row.title\": \"Nonempty text\",\n    \"row.summary\": \"Nonempty text\",\n    \"row.source_anchor\": \"This source's converted assets/path#Lnumber or #row-number\",\n    \"row.source_refs\": \"List of supporting path#anchor values or entity IDs\",\n    \"row.related\": \"List of entity IDs\",\n    \"row.doc_anchor\": \"Null for a draft, docs/path.md#anchor otherwise\",\n    \"row.created_at\": \"ISO 8601 date or datetime, or null\",\n    \"row.updated_at\": \"ISO 8601 date or datetime, or null\",\n    \"unresolved\": \"Open questions belong in the review's unresolved list, not a row reference field\"\n  }\n}\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 6,
+      "args": [
+        "template",
+        "finding"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"candidate\": {\n    \"key\": \"\",\n    \"type\": \"finding\",\n    \"action\": \"minted\",\n    \"review_state\": \"pending\",\n    \"row\": {\n      \"type\": \"finding\",\n      \"title\": \"\",\n      \"status\": \"draft\",\n      \"summary\": \"\",\n      \"source_anchor\": \"\",\n      \"doc_anchor\": null,\n      \"source_refs\": [],\n      \"related\": [],\n      \"created_at\": null,\n      \"updated_at\": null,\n      \"observed\": \"\",\n      \"basis_refs\": [],\n      \"confidence\": \"medium\",\n      \"implications\": []\n    }\n  },\n  \"field_meanings\": {\n    \"observed\": \"text\",\n    \"basis_refs\": \"references\",\n    \"confidence\": \"low|medium|high\",\n    \"implications\": \"related IDs or narrative references\"\n  },\n  \"common_field_meanings\": {\n    \"key\": \"Local candidate key; unique within this review\",\n    \"action\": \"minted=new row, referenced=reuse without change, updated=correct saved row\",\n    \"review_state\": \"pending in extraction; approved or held only in separate review\",\n    \"row.status\": \"BuildOS lifecycle: draft, active, superseded, archived; not review state\",\n    \"row.title\": \"Nonempty text\",\n    \"row.summary\": \"Nonempty text\",\n    \"row.source_anchor\": \"This source's converted assets/path#Lnumber or #row-number\",\n    \"row.source_refs\": \"List of supporting path#anchor values or entity IDs\",\n    \"row.related\": \"List of entity IDs\",\n    \"row.doc_anchor\": \"Null for a draft, docs/path.md#anchor otherwise\",\n    \"row.created_at\": \"ISO 8601 date or datetime, or null\",\n    \"row.updated_at\": \"ISO 8601 date or datetime, or null\",\n    \"unresolved\": \"Open questions belong in the review's unresolved list, not a row reference field\"\n  }\n}\n",
+      "stderr": "",
+      "files": {}
+    }
+  ]
+}

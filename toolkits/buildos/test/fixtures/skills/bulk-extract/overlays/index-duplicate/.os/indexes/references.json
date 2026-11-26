@@ -1,0 +1,16 @@
+{
+  "references": [
+    {
+      "id": "REF-001",
+      "source": "assets/_intake/lending-policy.txt",
+      "converted": "assets/lending-policy/lending-policy.md",
+      "sha256": "f4a773f1a04b5197f80d47b609701dd1907d18d03c0a9442e4ff090f85f64ab0"
+    },
+    {
+      "id": "REF-001",
+      "source": "assets/_intake/lending-policy.txt",
+      "converted": "assets/lending-policy/lending-policy.md",
+      "sha256": "f4a773f1a04b5197f80d47b609701dd1907d18d03c0a9442e4ff090f85f64ab0"
+    }
+  ]
+}

@@ -1,0 +1,158 @@
+{
+  "case": "blocked-and-no-rows",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "start",
+        "REF-005"
+      ],
+      "exit": 0,
+      "stdout": "Created: <root>/extractions/REF-005-fines.json\n",
+      "stderr": "",
+      "files": {
+        "extractions/REF-005-fines.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/fines.txt\",\n  \"source_sha256\": \"ba54dcdbe6995bc8d7244324efb4c39afaa931690d096b63ffc7a7eb891f4860\",\n  \"reviewed_by\": \"\",\n  \"reviewed_at\": \"\",\n  \"source_check\": {\n    \"result\": \"unverified\",\n    \"notes\": \"\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-005\",\n      \"converted\": \"assets/fines/fines.md\",\n      \"outcome\": \"pending\",\n      \"note\": \"\"\n    }\n  ],\n  \"candidates\": [],\n  \"unresolved\": [],\n  \"applied\": {},\n  \"extraction_ids\": [],\n  \"publication_review\": null\n}\n"
+        }
+      }
+    },
+    {
+      "step": 2,
+      "args": [
+        "check",
+        "REF-005"
+      ],
+      "exit": 0,
+      "stdout": "REF-005: ready-to-stage (<root>/extractions/REF-005-fines.json)\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 3,
+      "args": [
+        "stage",
+        "REF-005"
+      ],
+      "exit": 0,
+      "stdout": "Staged 0 candidates; review: extractions/REF-005-fines.json\n",
+      "stderr": "",
+      "files": {
+        "extractions/REF-005-fines.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/fines.txt\",\n  \"source_sha256\": \"ba54dcdbe6995bc8d7244324efb4c39afaa931690d096b63ffc7a7eb891f4860\",\n  \"reviewed_by\": \"Circulation Analyst\",\n  \"reviewed_at\": \"2026-01-12\",\n  \"source_check\": {\n    \"result\": \"matched\",\n    \"notes\": \"Compared the converted text with the original policy.\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-005\",\n      \"converted\": \"assets/fines/fines.md\",\n      \"outcome\": \"blocked\",\n      \"note\": \"The lost-book price list is missing.\"\n    }\n  ],\n  \"candidates\": [],\n  \"unresolved\": [\n    \"Which price list applies to lost books?\",\n    \"Do fines stop at a cap?\"\n  ],\n  \"applied\": {},\n  \"extraction_ids\": [],\n  \"publication_review\": null,\n  \"staged_at\": \"2026-01-15T12:00:00Z\"\n}\n"
+        }
+      }
+    },
+    {
+      "step": 4,
+      "args": [
+        "check",
+        "REF-005"
+      ],
+      "exit": 0,
+      "stdout": "REF-005: blocked (<root>/extractions/REF-005-fines.json)\n- Which price list applies to lost books?\n- Do fines stop at a cap?\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 5,
+      "args": [
+        "start",
+        "REF-006"
+      ],
+      "exit": 0,
+      "stdout": "Created: <root>/extractions/REF-006-holds-notes.json\n",
+      "stderr": "",
+      "files": {
+        "extractions/REF-006-holds-notes.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/holds-notes.txt\",\n  \"source_sha256\": \"a196b9c16d0143c9dff908089aa605fcf2ad149bef70108c2c5e4091819733f8\",\n  \"reviewed_by\": \"\",\n  \"reviewed_at\": \"\",\n  \"source_check\": {\n    \"result\": \"unverified\",\n    \"notes\": \"\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-006\",\n      \"converted\": \"assets/holds-notes/holds-notes.md\",\n      \"outcome\": \"pending\",\n      \"note\": \"\"\n    }\n  ],\n  \"candidates\": [],\n  \"unresolved\": [],\n  \"applied\": {},\n  \"extraction_ids\": [],\n  \"publication_review\": null\n}\n"
+        }
+      }
+    },
+    {
+      "step": 7,
+      "args": [
+        "check",
+        "REF-006"
+      ],
+      "exit": 0,
+      "stdout": "REF-006: ready-to-stage (<root>/extractions/REF-006-holds-notes.json)\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 8,
+      "args": [
+        "stage",
+        "REF-006"
+      ],
+      "exit": 0,
+      "stdout": "Staged 0 candidates; review: extractions/REF-006-holds-notes.json\n",
+      "stderr": "",
+      "files": {
+        "extractions/REF-006-holds-notes.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/holds-notes.txt\",\n  \"source_sha256\": \"a196b9c16d0143c9dff908089aa605fcf2ad149bef70108c2c5e4091819733f8\",\n  \"reviewed_by\": \"Circulation Analyst\",\n  \"reviewed_at\": \"2026-01-12\",\n  \"source_check\": {\n    \"result\": \"matched\",\n    \"notes\": \"Compared the converted text with the original policy.\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-006\",\n      \"converted\": \"assets/holds-notes/holds-notes.md\",\n      \"outcome\": \"no-new-rows\",\n      \"note\": \"The notes repeat REQ-001.\"\n    }\n  ],\n  \"candidates\": [],\n  \"unresolved\": [],\n  \"applied\": {},\n  \"extraction_ids\": [],\n  \"publication_review\": null,\n  \"staged_at\": \"2026-01-15T12:00:00Z\"\n}\n"
+        }
+      }
+    },
+    {
+      "step": 9,
+      "args": [
+        "check",
+        "REF-006"
+      ],
+      "exit": 0,
+      "stdout": "REF-006: staged (<root>/extractions/REF-006-holds-notes.json)\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 10,
+      "args": [
+        "decide",
+        "REF-006",
+        "--reviewer",
+        "Branch Supervisor"
+      ],
+      "exit": 0,
+      "stdout": "Recorded 0 Stage 2 decisions for REF-006\n",
+      "stderr": "",
+      "files": {
+        "extractions/REF-006-holds-notes.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/holds-notes.txt\",\n  \"source_sha256\": \"a196b9c16d0143c9dff908089aa605fcf2ad149bef70108c2c5e4091819733f8\",\n  \"reviewed_by\": \"Circulation Analyst\",\n  \"reviewed_at\": \"2026-01-12\",\n  \"source_check\": {\n    \"result\": \"matched\",\n    \"notes\": \"Compared the converted text with the original policy.\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-006\",\n      \"converted\": \"assets/holds-notes/holds-notes.md\",\n      \"outcome\": \"no-new-rows\",\n      \"note\": \"The notes repeat REQ-001.\"\n    }\n  ],\n  \"candidates\": [],\n  \"unresolved\": [],\n  \"applied\": {},\n  \"extraction_ids\": [],\n  \"publication_review\": {\n    \"reviewed_by\": \"Branch Supervisor\",\n    \"reviewed_at\": \"2026-01-15T12:00:00Z\"\n  },\n  \"staged_at\": \"2026-01-15T12:00:00Z\"\n}\n"
+        }
+      }
+    },
+    {
+      "step": 11,
+      "args": [
+        "publish",
+        "REF-006"
+      ],
+      "exit": 0,
+      "stdout": "Review complete; no rows to publish\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 12,
+      "args": [
+        "check",
+        "REF-006"
+      ],
+      "exit": 0,
+      "stdout": "REF-006: complete (<root>/extractions/REF-006-holds-notes.json)\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 13,
+      "args": [
+        "status"
+      ],
+      "exit": 0,
+      "stdout": "5 sources; 6 converted records\nProgress comes from root review files and tagged staged rows; check REF-ID verifies links.\ncomplete: 1\nready-to-stage: 0\nstaged: 0\nreviewed: 0\nheld: 0\npublishing: 0\nin-progress: 0\nblocked: 1\nneeds-repair: 0\npending: 3\n",
+      "stderr": "",
+      "files": {}
+    }
+  ]
+}

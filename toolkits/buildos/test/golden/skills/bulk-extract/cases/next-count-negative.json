@@ -1,0 +1,17 @@
+{
+  "case": "next-count-negative",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "next",
+        "--count",
+        "-2"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: --count must be positive\n",
+      "files": {}
+    }
+  ]
+}

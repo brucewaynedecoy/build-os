@@ -1,0 +1,302 @@
+{
+  "$comment": "Deliberate differences between the three BuildOS commands of W1 R7 P9 and the skill scripts they replace (buildos extract bulk: work.py; buildos fitgap: fitgap.py; buildos export azure-boards: azure_boards_csv.mjs). test/skill-script-parity.test.ts fails on any difference a golden step shows that no entry here allows, and on an entry whose steps no longer differ. `steps` names the golden steps (script/case#step) that show the difference; an entry with no steps is held by its own test (`tests`). `changes_result` says whether a realistic project gets a different result; an entry that does carries `owner_recommendation` where review round 1 asked for the owner's view. Evidence: docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#p9-skill-script-commands",
+  "divergences": [
+    {
+      "id": "SD-01",
+      "summary": "Exit codes follow PRD 20. The scripts exited 1 or 2 for every failure: work.py 2 for an error and 1 for `check` on a review that is not ready, fitgap.py 1 (a stop, a failed check, or a traceback) and 2 (argparse), azure_boards_csv.mjs 1. BuildOS exits 2 for usage, 3 for an input it cannot read or parse (or a path outside the project), 4 for a failed check (also `check` on a review that is not ready), 5 for a failed write, 10 when a failed write could not be undone. Human stdout and stderr are the script's.",
+      "authority": "PRD 20 Output and Exit Contract; the same choice as VD-01 for buildos validate",
+      "changes_result": "only the exit code of a failure: pass and fail stay the same",
+      "exit_rules": [
+        {
+          "script": "bulk-extract",
+          "script_exit": 1,
+          "buildos_exit": 4,
+          "when": "check: the review is pending, in progress, publishing, or needs repair"
+        },
+        {
+          "script": "bulk-extract",
+          "script_exit": 2,
+          "buildos_exit": 2,
+          "when": "argparse usage, or --count below 1",
+          "stderr": "^(usage: |Error: --count must be positive)"
+        },
+        {
+          "script": "bulk-extract",
+          "script_exit": 2,
+          "buildos_exit": 3,
+          "when": "a file is missing, not JSON, or has the wrong shape",
+          "stderr": "^Error: (\\[Errno |Expecting |Invalid (staged )?JSONL in |Missing or duplicate ID in |Missing _stage block in |Wrong row type in |Reference index has no references list|Invalid reference record: |Duplicate reference ID: |Inconsistent source hashes: |Invalid repo-relative path: |Path leaves repo: )"
+        },
+        {
+          "script": "bulk-extract",
+          "script_exit": 2,
+          "buildos_exit": 4,
+          "when": "any other refusal of the helper (a rule of the review flow)"
+        },
+        {
+          "script": "fitgap",
+          "script_exit": 1,
+          "buildos_exit": 3,
+          "when": "a traceback: a file is missing or not JSON (the script crashed)",
+          "stderr": "^(FileNotFoundError|json\\.decoder\\.JSONDecodeError|IsADirectoryError|KeyError|TypeError|AttributeError|ValueError)"
+        },
+        {
+          "script": "fitgap",
+          "script_exit": 1,
+          "buildos_exit": 4,
+          "when": "a stop (`fitgap: ...`) or a failed check (`FAIL` lines)"
+        },
+        {
+          "script": "fitgap",
+          "script_exit": 2,
+          "buildos_exit": 2,
+          "when": "argparse usage"
+        },
+        {
+          "script": "azure-boards",
+          "script_exit": 1,
+          "buildos_exit": 2,
+          "when": "an argument error",
+          "stderr": "^(Unexpected argument|Missing value for|Missing required option|Unknown profile|Unknown command|Unknown adapter|--adapter-params must)"
+        },
+        {
+          "script": "azure-boards",
+          "script_exit": 1,
+          "buildos_exit": 3,
+          "when": "the input cannot be read or is not JSON",
+          "stderr": "^(ENOENT|EISDIR|EACCES|Unexpected token|Unexpected end|Expected |Unterminated|Bad control|Cannot read properties)"
+        },
+        {
+          "script": "azure-boards",
+          "script_exit": 1,
+          "buildos_exit": 4,
+          "when": "an invalid manifest, adapter parameters, or CSV"
+        }
+      ]
+    },
+    {
+      "id": "SD-02",
+      "summary": "Usage and help text name buildos. The scripts printed argparse usage (`usage: work.py ...`, `usage: fitgap.py ...`) or the script's own usage (`node azure_boards_csv.mjs ...`, also after `Unknown command`); BuildOS prints the shared usage error (stderr, exit 2) and its own help (stdout, exit 0). `--help` and `-h` work at every level, before any required-option check (`buildos fitgap workbook --help`, `buildos extract bulk next --help`, `buildos export azure-boards emit --help`; review round 1, P9-R1-15). extract bulk and fitgap: options may follow positionals as with argparse, and `--name=value` works; argparse's abbreviated option names (`--auth` for `--author`) do not. export azure-boards keeps its original's grammar: each option and its value are separate tokens (`--input x.csv`, not `--input=x.csv`). A whole number (`--count`, `--max-requirements`) is ASCII digits with an optional sign and surrounding white space: Python's int() also took other Unicode digits (`٢`) and underscores (`1_0`), which BuildOS refuses (exit 2); a skill passes ASCII digits.",
+      "authority": "PRD 20 Output and Exit Contract (help and usage are shared and assigned centrally)",
+      "changes_result": "no: only the text of a usage error or help",
+      "steps": [
+        "bulk-extract/usage-errors#0-7",
+        "fitgap/arguments#0-6",
+        "azure-boards/help#0-3",
+        "azure-boards/arguments#0"
+      ]
+    },
+    {
+      "id": "SD-03",
+      "summary": "fitgap: where the script crashed with a traceback (a missing file, a file that is not JSON, a value of the wrong type), BuildOS prints one plain line, `fitgap: <what>`, and exits 3. Each crash step's exact BuildOS stderr is pinned in `allowed`.",
+      "authority": "PRD 20 (no stack trace; plain messages for non-technical users)",
+      "changes_result": "no: the script stopped there too",
+      "steps": [
+        "fitgap/frame-stops#8-11",
+        "fitgap/workbook-mismatch#4"
+      ],
+      "allowed": {
+        "fitgap/frame-stops#8": "fitgap: [Errno 2] No such file or directory: '<root>/deliver/CIRC/missing-model.json'\n",
+        "fitgap/frame-stops#9": "fitgap: <root>/deliver/LIB/broken-model.json is not valid JSON: Expecting value: line 2 column 1 (char 38)\n",
+        "fitgap/frame-stops#10": "fitgap: analysis/frame-not-json.json is not valid JSON: Expecting property name enclosed in double quotes: line 2 column 1 (char 15)\n",
+        "fitgap/frame-stops#11": "fitgap: [Errno 2] No such file or directory: 'analysis/missing-frame.json'\n",
+        "fitgap/workbook-mismatch#4": "fitgap: [Errno 2] No such file or directory: 'deliver/fit-gap/missing.json'\n"
+      }
+    },
+    {
+      "id": "SD-04",
+      "summary": "Contained reads: a file the user names and a file a frame or a manifest names must be inside the project folder (--root), with or without --allow-outside-root; fitgap.py and azure_boards_csv.mjs read any path. A path outside is refused (exit 3) with a plain message; a link that leads out of the project is refused too, and a link inside it is read only when it leads to a regular file inside the project. bulk extract: work.py's file_at already refused an index path that is absolute or that leaves the project (after links), so BuildOS keeps the script's result there (`Invalid repo-relative path`, `Path leaves repo`); the change is only that the review, staged, and data files at their fixed paths are read through the same checked reader.",
+      "authority": "PRD 20 Output and Exit Contract (a read of project data stays inside the project); the standing rule of W1 R7 P9",
+      "changes_result": "yes, for a fitgap or export azure-boards run that reads a file outside the project folder: move the file into the project; no change for bulk extract",
+      "owner_decision": "Accepted by the owner on 2026-11-25 (option A of P9 owner question 2): fitgap and export azure-boards read only files inside the project, with or without --allow-outside-root. No code change. docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#p9-owner-decisions-2026-11-25",
+      "tests": [
+        "test/skill-script-hostile.test.ts: reads outside the root"
+      ]
+    },
+    {
+      "id": "SD-05",
+      "summary": "Contained, checked, atomic writes: every output lands inside the project folder unless --allow-outside-root is given (fitgap and export azure-boards; bulk extract writes only its fixed project paths). Every destination is checked before the first change: inside the root (or allowed), its folder can take a new entry, no folder at a file's name, and the size against the bound its reader uses. Review round 1 (P9-R1-04, P9-R1-06, P9-R1-10, P9-R1-11): fitgap and export azure-boards never read a destination to write it (the one destination read is the ownership check of SD-20): a new file is written whole under a private name in its folder, an entry already at the destination is moved aside by a same-folder rename to a private backup name, then the new file is renamed into place; a link at the written file itself is replaced, never followed. A failed step puts each backup back by rename (a link keeps its identity) and removes each new file only while it is still the one BuildOS wrote; after success the backups are removed. `fitgap packages` lists the destination folder itself, also an authorized one outside the project, and removes, as steps of the same plan, only the `pkg-*.json` files it can tell are its own earlier output (SD-20; review round 1 removed every `pkg-*.json`, as the script did); a file it did not write at a name the run writes stops the run before any change (review round 3, P9-F-01), so no file BuildOS keeps is then written over. bulk extract plans every write of a command, checks them all, then makes them in the script's order, each atomic; a failure undoes the changes in reverse (the earlier bytes, permission bits, or link put back) and stops at the first step it cannot undo, so what stays is what a crash there would leave (for publish, the intent in the review, which the next publish resumes). `write_status` is `applied` only when a file changed, `not_requested` when nothing changed (also after a complete undo, exit 5), and `partially_applied` with the remaining paths and exit 10 when the undo was incomplete. The scripts wrote anywhere, in place, one file after another, and left a partial state after a failure. Review round 2: a write that took effect before a later part of it failed (the folder flush after the rename) is journaled and undone too; bulk extract's undo stops at the first file it cannot put back for sure (an earlier file put back whose save is not certain is `unsure`), so publish keeps its intent while a data file of the publication is not surely back, and a retry writes each row once (P9-R2-01). A regular file that fitgap or export azure-boards replaces keeps its permission bits, and a read-only destination stops the command before the first change (exit 5), as the scripts' writes in place did (P9-R2-06). Every leftover is reported with its exact path in human output and in the JSON result and diagnostics: a failed undo or a temporary file that could not be removed is exit 10 and `partially_applied` (`result.not_restored`, as buildos init reports them); a backup that could not be deleted after a complete write is a warning with exit 0 (`result.left_behind`) (P9-R2-07). Review round 3 (P9-F-08): with --allow-outside-root, a destination inside the project as spelled whose folder resolves outside it through a folder link is written as if its outside path had been named (the scripts wrote through the link); without the switch it is refused with the message that names the switch. A link at the written file itself is still replaced, never followed (PE-012), and every content read stays inside the project.",
+      "authority": "PRD 20 Output and Exit Contract",
+      "changes_result": "yes, for an output outside the project folder: pass --allow-outside-root",
+      "tests": [
+        "test/skill-script-hostile.test.ts: writes outside the root",
+        "test/skill-script-hostile.test.ts: a failed write leaves no files",
+        "test/skill-script-review.test.ts: P9-R1-04 and P9-R1-06, P9-R1-10, P9-R1-11",
+        "test/skill-script-review-2.test.ts: P9-R2-01, P9-R2-06, P9-R2-07",
+        "test/skill-script-review-3.test.ts: P9-F-01, P9-F-08"
+      ]
+    },
+    {
+      "id": "SD-06",
+      "summary": "Bounded reads and writes: every file read is bounded (128 MiB for JSON, JSONL, CSV, and the index; 512 MiB for a source file the helper hashes or a converted file it counts), and standard input to 128 MiB; a larger file or standard input is not read (exit 3; review round 1, P9-R1-16: an oversized standard input was exit 2). A file BuildOS writes and reads back later (a review, a staged file, a data file, a merged JSON, a package, a CSV) may not be larger than that bound (exit 4, nothing written; P9-R1-11: for bulk extract every review and intent too, before the first change). Every JSON input of the three commands nests at most 512 levels: the fit-gap and bulk-extract files (the script crashed near 1,000 with a RecursionError), and the Azure Boards manifest and --adapter-params (P9-R1-16; the original parsed any depth).",
+      "authority": "PRD 20 Output and Exit Contract (every read has a size bound); SECURITY.md Read Safety",
+      "changes_result": "only past a limit",
+      "tests": [
+        "test/skill-script-hostile.test.ts: size limits",
+        "test/skill-script-review.test.ts: P9-R1-11, P9-R1-16"
+      ]
+    },
+    {
+      "id": "SD-07",
+      "summary": "Printed paths and the root: the root is the folder as given, absolute and folded, never resolved through links (PRD 20); work.py printed Path.resolve(). A relative project path in a message or a JSON report (`extractions/REF-001-...json`, `deliver/fit-gap/...json`) uses / on every system; the scripts used the system separator, so on Windows they printed \\. An absolute path keeps the system's form.",
+      "authority": "PRD 20 Output and Exit Contract (one root model)",
+      "changes_result": "no: only the spelling of a printed path (through a link, or on Windows)"
+    },
+    {
+      "id": "SD-08",
+      "summary": "bulk extract: the key order of an extraction row's outcome lists (minted, updated, referenced) and the order of the outcome-list messages are fixed. work.py iterated a Python set, so the order changed with each run's string hash seed. BuildOS uses the order PYTHONHASHSEED=0 gives, which the goldens were captured with.",
+      "authority": "PRD 20 Compatibility (the same input gives the same bytes)",
+      "changes_result": "no: the same keys and values; only their order was random"
+    },
+    {
+      "id": "SD-09",
+      "summary": "bulk extract: the lock. work.py locked extractions/staging/ and .os/data/ with flock (Windows: msvcrt.locking on a file in the temporary folder), which the system releases when a process ends, and a second command waited. Node has no file lock, so BuildOS creates an exclusive lock file in extractions/staging/ for the length of the command; a second command stops at once with the script's message. A command that crashed (or was killed) leaves the lock file behind, and that also stops a single user's next command: the message says so, names when the lock was taken, by which process on which host (the lock file records them), and how to check that the process is gone (macOS and Linux: ps -p <pid>; Windows: tasklist /FI \"PID eq <pid>\") before deleting the file. BuildOS does not clear a lock by itself: a process ID can be reused (quickly on Windows), and a lock in a shared folder can belong to another host or container, so no check is reliable on all three systems. Review round 2 (P9-R2-08): only an entry already at the lock's name is another command's lock (exit 4, the message above); any other failure to create the lock file is a write error at its path (exit 5). A lock file that cannot be removed when the command ends is named with its path, exit 10 and `partially_applied`, also when the command's own writes completed, because it would stop the next command.",
+      "authority": "Node built-ins only (PRD 20 Supply Chain)",
+      "changes_result": "yes, after a crash: the next command stops until the user deletes the lock file (the message says how); and when two commands run at the same time, the second stops instead of waiting",
+      "tests": [
+        "test/skill-script-hostile.test.ts: lock",
+        "test/skill-script-review.test.ts: P9-R1-22 (the lock record)",
+        "test/skill-script-review-2.test.ts: P9-R2-08"
+      ]
+    },
+    {
+      "id": "SD-10",
+      "summary": "bulk extract: text is read as UTF-8 on every system. work.py's read_text() used the locale encoding (on Windows with Python 3.14, not UTF-8). A failed command removes the empty folders it made (work.py could leave an empty extractions/staging/).",
+      "authority": "PRD 13 (JSON and JSONL are UTF-8); PRD 20 (a failed command leaves no files behind)",
+      "changes_result": "yes, on Windows: a review or data file with non-ASCII text now reads as it does elsewhere"
+    },
+    {
+      "id": "SD-11",
+      "summary": "Malformed values that crashed a script with a Python TypeError, KeyError, or AttributeError (for example a list where an ID belongs) give one plain line naming the Python error kind (fitgap: exit 3; bulk extract: `Error: <text>`, exit 3). work.py caught some of these and printed Python's own TypeError text; BuildOS prints the same text for the common ones and its own for the rest. fitgap merge: two marks with no requirement ID (the script crashed sorting None values) are a check failure instead: `requirements marked twice: None` among the problems, exit 4.",
+      "authority": "PRD 20 (no stack trace)",
+      "changes_result": "no: the script failed too (for the two marks with no ID, BuildOS lists the problem instead of crashing)",
+      "tests": [
+        "test/skill-script-hostile.test.ts: malformed values"
+      ]
+    },
+    {
+      "id": "SD-12",
+      "summary": "fitgap workbook: the .xlsx is written by BuildOS's own Office Open XML writer, so the archive bytes differ from openpyxl's; the content is compared (parity exception PE-021, approved by the owner on 2026-11-25). The file is written only when every check passes: the script kept a workbook that failed its own check (exit 1). The document properties hold the title, the creator fit-gap-analysis, the application BuildOS, and a fixed time (2000-01-01T00:00:00Z); openpyxl wrote the current time.",
+      "authority": "PRD 20 (a failed command leaves no files behind; the same input gives the same bytes)",
+      "changes_result": "no: the content is the same",
+      "tests": [
+        "test/skill-script-parity.test.ts: workbook content",
+        "test/fitgap-xlsx.test.ts"
+      ]
+    },
+    {
+      "id": "SD-13",
+      "summary": "fitgap: the skill palette is read from the project, .os/skills/fit-gap-analysis/config/owner-colors.json (where buildos init puts it), not from beside the script. A project without that file gets plain owners, also where the script still had its own palette beside it (for example a skill copied into an agent app's skill folder, or a project whose palette file was removed). Patterns in --rows, --only, and --todos are expanded inside the project folder only (review round 1, P9-R1-02: from the literal folder of the pattern, however it is spelled; a pattern outside the project is exit 3, never an empty match). A path the user types follows the shared layout rule (P9-R1-13): in an initialized project with no `system` entry at its root, a leading `system/` is dropped; where the project owns a `system` entry, it names that entry. Review round 2: an absolute path the user types (a pattern, an input, or an output) that spells the project folder another way (letter case on a case-insensitive volume, /var for /private/var, a link to the project folder) is inside the project when one of its existing folders is the project folder itself by device and inode, as Python's glob and open found it (P9-R2-10); patterns follow Python's fnmatch exactly: `?` is one code point, `[` sets with `!` negation and a leading `]`, a reversed range matches nothing (P9-R2-12).",
+      "authority": "PRD 20 Packaged Skills (owner colors from the frame or the skill's palette; the code holds none)",
+      "changes_result": "yes, for a project without the palette file: owners are plain where the script colored them from its own palette (owner colors in the frame still apply)",
+      "tests": [
+        "test/skill-script-parity.test.ts: workbook-no-palette",
+        "test/skill-script-review.test.ts: P9-R1-02, P9-R1-13",
+        "test/skill-script-review-2.test.ts: P9-R2-10, P9-R2-12"
+      ]
+    },
+    {
+      "id": "SD-14",
+      "summary": "export azure-boards: a profile name is looked up as an own name only, so `--profile constructor` is `Unknown profile` (the script crashed with a TypeError on Object.prototype names).",
+      "authority": "PRD 20 (no stack trace)",
+      "changes_result": "no",
+      "tests": [
+        "test/skill-script-hostile.test.ts: prototype names"
+      ]
+    },
+    {
+      "id": "SD-15",
+      "summary": "fitgap uncited: a mark's target_capability_ids goes through split_list, as merge reads it, so a ' | '-separated string cites each ID it names. The script iterated such a string by character, so the IDs it named were not cited and were listed as uncited (review round 1, P9-R1-07).",
+      "authority": "fitgap.py merge (split_list); the skill's references/formats.md (a list or a '|'-separated string)",
+      "changes_result": "yes, for scored rows that give target IDs as a string: fewer uncited capabilities (for example 0 instead of 3), so the target-only pass gets the right list",
+      "owner_recommendation": "Keep the fix: merge already reads these strings as IDs, and the script's uncited list then disagreed with merge's own check ('target-only rows for capabilities that marks already cite').",
+      "tests": [
+        "test/skill-script-review.test.ts: P9-R1-07"
+      ]
+    },
+    {
+      "id": "SD-16",
+      "summary": "bulk extract: every canonical row a publication would write passes buildos validate's row checks (checkEntityLines, with the same config index from .os/config/instance.yaml): scoped IDs (systems, environments, owners), sentinels, anchors, times, ID format, status, and shape. check (state needs-repair, exit 4), stage, decide, and publish refuse a candidate that would fail; publish checks again with the config as it is then, so an owner retired after staging stops it (exit 4, nothing written). The script published such rows, and buildos validate then failed with unknown_id (review round 1, P9-R1-01). Review round 2: a pending publication that publish resumes is checked again with the config as it is then; a row that would fail stops it (exit 4) and the intent stays, with how to go on (restore the config entry and publish again, or, when no data file holds a row of it yet, delete the review's `publication` entry by hand: BuildOS has no withdraw command) (P9-R2-04). A decision that only withdraws approval (pending or held) is accepted also when a row no longer passes, so a reviewer can reset it and fix the row with replace-row; an approval still needs a row that passes (P9-R2-05, as the script accepted it). The config is read with buildos validate's own reader (strict UTF-8, its bound and link rule), so a config validate cannot read stops the command with validate's finding (P9-R2-11; the script read it with replacement characters and published). Review round 3: the config index is built with validate's own findings budget, so it is the same index validate builds; a config with many findings that do not concern owners no longer cuts the owner index short (P9-F-05). A config that validate cannot read stops decide before any change, also a decision that only withdraws approval; a readable config that retired an owner still lets the withdrawal through (P9-F-06). On resume, withdrawal by hand is offered only when every data file of the publication is exactly as it was before the publication started (its recorded before-hash); when any file holds rows of it or changed since, the message says to restore the config and finish, and never to delete the intent, because a new publication would give the same rows new IDs (P9-F-02, SD-22).",
+      "authority": "PRD 20 (the rows extract bulk writes pass buildos validate); PRD 08 Contracts and Data; PRD 13 Scoped vocabulary",
+      "changes_result": "yes, for a candidate that names a system, environment, or owner the config does not define (or another validate failure): it is refused at check, stage, and publish instead of being published; and a publication left pending when the config changed is refused on resume until the config defines the IDs again (the script finished it); a config with bytes that are not UTF-8 stops check, stage, decide, and publish",
+      "owner_recommendation": "Keep: a published row that fails buildos validate breaks the next validate run for the whole project, and the fix is to add the ID to the config or correct the row before publishing.",
+      "tests": [
+        "test/skill-script-review.test.ts: P9-R1-01",
+        "test/skill-script-review-2.test.ts: P9-R2-04, P9-R2-05, P9-R2-11",
+        "test/skill-script-review-3.test.ts: P9-F-02, P9-F-05, P9-F-06"
+      ]
+    },
+    {
+      "id": "SD-17",
+      "summary": "fitgap workbook: every sheet name is checked before anything is built: no \\ / ? * [ ] :, no apostrophe at the start or end, 1 to 31 characters, and no two names equal when case is ignored. A model code that breaks a rule stops the command with a message naming the code (exit 4, no file). openpyxl stopped on a forbidden character with a traceback; it only warned about a name over 31 characters and renamed a name that differed only by case (so links went to the wrong sheet), and Excel cannot open or misreads those workbooks. An apostrophe inside a code is valid, and every link to that sheet doubles it, as Excel spells it (openpyxl wrote a broken link) (review round 1, P9-R1-03).",
+      "authority": "PRD 20 (a failed command leaves no broken file); Excel's sheet-name rules",
+      "changes_result": "yes, for a model code longer than 18 characters, a code with an apostrophe at an end, or a baseline and target code that differ only by case: a stop instead of a workbook Excel cannot open",
+      "owner_recommendation": "Keep: the script's workbook was unusable in those cases; the stop names the code to shorten or change in the frame.",
+      "tests": [
+        "test/skill-script-review.test.ts: P9-R1-03"
+      ]
+    },
+    {
+      "id": "SD-18",
+      "summary": "fitgap workbook: the merged file must come from the models the frame names now. The script compared the baseline code and the two capability counts; BuildOS also compares the target code, both requirement counts the merged file records, the baseline capability IDs of its rows (each once, in any order: the workbook joins rows to capabilities by ID; review round 2, P9-R2-09, after round 1 compared them in model order), each mark's requirement under its own capability, and every target capability ID it cites or lists as target-only (the merged file records no content fingerprint). A mismatch stops with the script's message and what differs (exit 4, no file). The script built a workbook that showed the earlier target's analysis under the new target's headings (review round 1, P9-R1-08). Review round 3 (P9-F-03): each row's score-driving model field is compared by capability ID with the model as it is now. merge takes one field from a model into the score, the baseline capability's maturity (the maturity factor of the priority and the decision and live_loss reasons); the marks, objectives, and scoring factors come from the scored rows and the frame. A row whose baseline_maturity differs stops the workbook (exit 4, no file) with the first five capabilities named and 'Run merge again.' The script built the workbook with the stale priority on the Fit-Gap sheet beside the new maturity on the capability sheet.",
+      "authority": "PRD 20 (results the user can trust); fitgap.py's own mismatch rule",
+      "changes_result": "yes, for a merged file made for another target (or other capabilities) with the same capability counts, and for a model whose capability maturity changed after the merge: a stop instead of a misleading workbook",
+      "owner_recommendation": "Keep: run merge again after changing a model; the message says so.",
+      "tests": [
+        "test/skill-script-review.test.ts: P9-R1-08",
+        "test/skill-script-review-2.test.ts: P9-R2-09",
+        "test/skill-script-review-3.test.ts: P9-F-03"
+      ]
+    },
+    {
+      "id": "SD-19",
+      "summary": "fitgap workbook text: cell text that is exactly an Excel error token (#N/A, #NULL!, #DIV/0!, #VALUE!, #REF!, #NAME?, #NUM!) stays text; openpyxl wrote an error-typed cell. The content comparison (PE-021) counts an error cell and a text cell with the same token as the same value. Entered text that looks like Office Open XML's own escape (_xHHHH_) is written with its _ as _x005F_, so Excel shows it as typed (openpyxl wrote it as it was, and Excel showed the character with that code). A control character, noncharacter, or lone surrogate in the document title is dropped, as openpyxl drops control characters from cells (openpyxl crashed on one in the title; BuildOS had exit 1). The shared-strings count is the number of string cells, not the number of strings (review round 1, P9-R1-20, P9-R1-21). Review round 2 (P9-R2-13): one XML-safe rule for every part. Free text (cells, shared strings, the document title) loses each character XML 1.0 cannot hold: the control characters openpyxl dropped, silently as the script did, and U+FFFE, U+FFFF, or a lone surrogate, which openpyxl wrote into a part that then did not parse (BuildOS: exit 1 at its read-back), with a notice on stderr that counts them. A model code that would put such a character into a sheet name, a link, or a column heading stops the workbook before it is built (exit 4, the character named). The writer stops on any such character that reached it (an internal error).",
+      "authority": "ECMA-376 Part 1 (ST_Xstring escapes, sharedStrings count); PRD 20 (no stack trace)",
+      "changes_result": "only for such text: evidence text '#N/A' is shown as text, '_x000D_' as typed, U+FFFE and U+FFFF are dropped (the script wrote a workbook Excel must repair), and a code with a control character is refused",
+      "tests": [
+        "test/skill-script-review.test.ts: P9-R1-20 and P9-R1-21",
+        "test/xlsx-compare.test.ts: error token",
+        "test/skill-script-review-2.test.ts: P9-R2-13"
+      ]
+    },
+    {
+      "id": "SD-20",
+      "summary": "fitgap packages: before it writes the new packages, BuildOS deletes only the `pkg-*.json` files in the packages folder that it can tell are its own earlier output: a numbered name as the generator writes it (pkg-01.json to pkg-99.json, then pkg-100.json and up), a regular file (BuildOS never leaves a link at a package name), UTF-8 JSON, and a non-empty list of package items with exactly the fields packages writes, in its order (each requirement too). Every other `pkg-*.json` (a user's pkg-review-notes.json, a hand-edited file, a link) is kept, and stderr names it with the reason (JSON: result.kept). The check reads each numbered candidate once, bounded (128 MiB), with no link followed, through the destination's own port (inside the project, or the authorized outside folder). The script deleted every `pkg-*.json` there, also the user's own files (review round 2, P9-R2-02). Review round 3 (P9-F-01): before any change, BuildOS knows every package name the run writes; when a file it did not write (by the same rule, for example a generated package with a grader's notes added, or a link) is at one of those names, the run stops (exit 4, write_status not_requested, nothing changed) and names each such file with its reason and what to do: move or rename the file, or choose another --out folder. A kept file is therefore never one the same run writes over (round 2 named such a file as kept and then replaced it, as the script deleted it).",
+      "authority": "PRD 20 (a command changes only what it owns); SECURITY.md Contained Writes",
+      "changes_result": "yes, for a packages folder that holds a `pkg-*.json` file BuildOS did not write: the file stays (and is named) where the script deleted it; an agent that reads packages/*.json afterwards then also sees that file; and when such a file has a name the run writes (pkg-01.json for a one-package run), the run stops with nothing changed, where the script deleted the file and wrote its package",
+      "owner_recommendation": "Keep: deleting or overwriting a user's file to make room for generated ones loses data; the notice and the stop name the file so the person can move or rename it, or pick another output folder.",
+      "steps": [
+        "fitgap/packages#1-2"
+      ],
+      "allowed": {
+        "fitgap/packages#1": "fitgap: kept work/packages/pkg-09.json: its items do not have the fields BuildOS writes. BuildOS deletes only the package files it wrote; delete or rename this file if it is stale.\n",
+        "fitgap/packages#2": "fitgap: kept work/packages/pkg-09.json: its items do not have the fields BuildOS writes. BuildOS deletes only the package files it wrote; delete or rename this file if it is stale.\n"
+      },
+      "tests": [
+        "test/skill-script-review-2.test.ts: P9-R2-02",
+        "test/skill-script-parity.test.ts: fitgap packages (pinned stderr)",
+        "test/skill-script-review-3.test.ts: P9-F-01"
+      ]
+    },
+    {
+      "id": "SD-21",
+      "summary": "fitgap: a requirement ID used more than once within one capability of either model is refused when the model loads, by every command that loads it (frame, packages, merge, and workbook load both models; uncited loads the target), naming the model role, the capability, and the ID (exit 4, nothing written). The script did not check: merge marks each requirement by ID, so a second requirement with distinct text and a copied ID was silently dropped from scoring (two requirements, 100% fit), and workbook then said to merge again, which gave the same result. A requirement ID is scoped to its capability, as in the script (the marks check, the scoring, and the workbook join marks to requirements within one capability, and target-requirements.csv carries the capability ID with each requirement), so the same ID under two different capabilities stays valid. Duplicate capability IDs stay refused, as the script refused them (review round 3, P9-F-04).",
+      "authority": "PRD 20 (results the user can trust); fitgap.py's own scoring rule (one mark per requirement of a capability)",
+      "changes_result": "yes, for a model with a requirement ID repeated within one capability: a stop that names it instead of a score that silently leaves one requirement out",
+      "owner_recommendation": "Keep: the script's score was wrong without a sign; the fix is to give the copied requirement its own ID in the model.",
+      "tests": [
+        "test/skill-script-review-3.test.ts: P9-F-04"
+      ]
+    },
+    {
+      "id": "SD-22",
+      "summary": "extract bulk publish, resuming a pending publication: each data file is placed by its recorded whole-file hashes first (before: apply it; after: already applied). A file that matches neither (someone added an unrelated row, for example) is read row by row and each row the publication writes is looked up by the ID the intent gave it: an appended row is there when exactly one row has its ID and equals the recorded row, and absent when no row has its ID; an updated row is there when its one row equals the recorded update, and absent when that row's hash is still the base hash its staged candidate recorded. All there: the file is already applied; none there: the publication's operations are applied once to the file as it is now (an unrelated row stays); anything else (a mix, an ID twice, a row with the ID that is neither, a line that is not JSON) is a conflict: the command stops before any write (exit 10, needs operator review, write_status not_requested, the intent kept) and names each file and its row IDs, says that the file changed since the publication started and that BuildOS cannot tell whether the rows are in it, and gives steps that cannot write a row twice: put each listed ID right by hand (one copy of the publication's row, or none), then publish again, which adds only rows whose ID is not there; never delete the intent. The script stopped on any changed file ('changed during publication', exit 2) and kept the intent, and after a config change (SD-16) round 2 offered withdrawal when no file matched its after-hash, so following it minted the same row again under a new ID (review round 3, P9-F-02).",
+      "authority": "PRD 20 (a write is applied once; exit 10 needs operator review); PRD 08 Contracts and Data",
+      "changes_result": "yes, for a pending publication whose data file gained an unrelated row: BuildOS finishes it with each row once where the script stopped; a file it cannot place stops it with exit 10 (the script: exit 2) and steps that never duplicate a row",
+      "owner_recommendation": "Keep: an unrelated row should not block recovery, and a file BuildOS cannot place needs a person, never a step that can publish a row twice.",
+      "tests": [
+        "test/skill-script-review-3.test.ts: P9-F-02"
+      ]
+    }
+  ]
+}

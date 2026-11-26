@@ -1,0 +1,18 @@
+{
+  "type": "requirement",
+  "title": "Renewal rule d",
+  "status": "draft",
+  "summary": "A patron can renew a loan (d).",
+  "source_anchor": "assets/lending-policy/lending-policy.md#L3",
+  "doc_anchor": null,
+  "source_refs": [
+    "assets/lending-policy/lending-policy.md#L3"
+  ],
+  "related": [],
+  "created_at": null,
+  "updated_at": null,
+  "statement": "The system shall allow two renewals per loan (d).",
+  "rationale": "The lending policy allows two renewals.",
+  "acceptance_refs": [],
+  "_stage": {}
+}

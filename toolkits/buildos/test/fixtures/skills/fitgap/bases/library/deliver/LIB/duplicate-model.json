@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "code": "LIB",
+    "name": "Candidate Library Platform"
+  },
+  "layers": [
+    {
+      "id": "L1",
+      "code": "CORE",
+      "name": "Circulation"
+    },
+    {
+      "id": "L2",
+      "code": "PAT",
+      "name": "Patrons"
+    },
+    {
+      "id": "L3",
+      "code": "CAT",
+      "name": "Catalogue"
+    },
+    {
+      "id": "L5",
+      "code": "RPT",
+      "name": "Reporting"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "LIB-COR-01",
+      "parent_id": null,
+      "name": "Circulation desk",
+      "layer_id": "L1",
+      "doc_ref": null,
+      "type": "feature",
+      "status": "ga",
+      "maturity": "available",
+      "summary": "Circulation desk in the candidate platform.",
+      "requirements": [
+        {
+          "id": "LIB-COR-01-R01",
+          "kind": "function",
+          "status": "ga",
+          "maturity": "available",
+          "text": "Circulation desk, part 1.",
+          "option_values": null
+        },
+        {
+          "id": "LIB-COR-01-R02",
+          "kind": "function",
+          "status": "ga",
+          "maturity": "available",
+          "text": "Circulation desk, part 2.",
+          "option_values": [
+            "a",
+            "b"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "LIB-COR-01",
+      "parent_id": null,
+      "name": "Circulation desk",
+      "layer_id": "L1",
+      "doc_ref": null,
+      "type": "feature",
+      "status": "ga",
+      "maturity": "available",
+      "summary": "Circulation desk in the candidate platform.",
+      "requirements": [
+        {
+          "id": "LIB-COR-01-R01",
+          "kind": "function",
+          "status": "ga",
+          "maturity": "available",
+          "text": "Circulation desk, part 1.",
+          "option_values": null
+        },
+        {
+          "id": "LIB-COR-01-R02",
+          "kind": "function",
+          "status": "ga",
+          "maturity": "available",
+          "text": "Circulation desk, part 2.",
+          "option_values": [
+            "a",
+            "b"
+          ]
+        }
+      ]
+    }
+  ]
+}

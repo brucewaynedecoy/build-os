@@ -1,0 +1,155 @@
+{
+  "case": "adapter-params-errors",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "validate",
+        "--input",
+        "backlog/d365-golden.csv",
+        "--adapter",
+        "dynamics-365-ce",
+        "--adapter-params",
+        "{prefix}"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "--adapter-params must be valid JSON: Expected property name or '}' in JSON at position 1 (line 1 column 2)\n",
+      "files": {}
+    },
+    {
+      "step": 1,
+      "args": [
+        "validate",
+        "--input",
+        "backlog/d365-golden.csv",
+        "--adapter",
+        "dynamics-365-ce",
+        "--adapter-params",
+        "[1]"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "--adapter-params must be a JSON object.\n",
+      "files": {}
+    },
+    {
+      "step": 2,
+      "args": [
+        "validate",
+        "--input",
+        "backlog/d365-golden.csv",
+        "--adapter",
+        "dynamics-365-ce",
+        "--publisher-prefix",
+        "new_"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Adapter 'dynamics-365-ce' rejects the default publisher prefix 'new_'.\n",
+      "files": {}
+    },
+    {
+      "step": 3,
+      "args": [
+        "validate",
+        "--input",
+        "backlog/d365-golden.csv",
+        "--adapter",
+        "salesforce"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Unknown adapter 'salesforce'. Registered adapters: dynamics-365-ce.\n",
+      "files": {}
+    },
+    {
+      "step": 4,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/d365-no-prefix.json",
+        "--output",
+        "export/x.csv"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Adapter 'dynamics-365-ce' requires adapter_params.publisher_prefix. Ask the user for the organization's Dataverse publisher prefix. Never use 'new_'.\n",
+      "files": {}
+    },
+    {
+      "step": 5,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/d365-new-prefix.json",
+        "--output",
+        "export/x.csv"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Adapter 'dynamics-365-ce' rejects the default publisher prefix 'new_'.\n",
+      "files": {}
+    },
+    {
+      "step": 6,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/d365-bad-prefix.json",
+        "--output",
+        "export/x.csv"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Publisher prefix '9x' is invalid. Use letters and digits starting with a letter, followed by a trailing underscore, for example 'ex_'.\n",
+      "files": {}
+    },
+    {
+      "step": 7,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/d365-long-prefix.json",
+        "--output",
+        "export/long.csv"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Generated CSV failed validation:\nRow 4 declares publisher prefix 'ex_' but the export uses 'libraryx_'.\nRow 4 schema name 'ex_LendingFineTypes' must start with 'libraryx_' and use letters and digits.\nRow 4 logical name 'ex_lendingfinetypes' must start with 'libraryx_' and use lowercase letters and digits.\nRow 4 schema name 'ex_LendingFlatFineFrequency' must start with 'libraryx_' and use letters and digits.\nRow 4 logical name 'ex_lendingflatfinefrequency' must start with 'libraryx_' and use lowercase letters and digits.\nRow 6 declares publisher prefix 'ex_' but the export uses 'libraryx_'.\nRow 8 declares publisher prefix 'ex_' but the export uses 'libraryx_'.\n",
+      "files": {}
+    },
+    {
+      "step": 8,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/unknown-adapter.json",
+        "--output",
+        "export/x.csv"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Unknown adapter 'salesforce'. Registered adapters: dynamics-365-ce.\n",
+      "files": {}
+    },
+    {
+      "step": 9,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/holds.json",
+        "--output",
+        "export/x.csv",
+        "--adapter",
+        "dynamics-365-ce",
+        "--publisher-prefix",
+        "ex_"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Generated CSV failed validation:\nRow 4 title 'Keep a hold seven days' must match '{Feature} ({CFG|DEV|INT|DATA|SEC}) - {Description}'.\nRow 4 TECHNICAL DETAILS must begin with 'Publisher Prefix: ex_'.\n",
+      "files": {}
+    }
+  ]
+}

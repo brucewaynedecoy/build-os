@@ -1,0 +1,15 @@
+{
+  "case": "adapters",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "adapters"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"operation\": \"adapters\",\n  \"adapters\": [\n    {\n      \"id\": \"dynamics-365-ce\",\n      \"label\": \"Dynamics 365 CE\",\n      \"required_params\": [\n        \"publisher_prefix\"\n      ]\n    }\n  ]\n}\n",
+      "stderr": "",
+      "files": {}
+    }
+  ]
+}

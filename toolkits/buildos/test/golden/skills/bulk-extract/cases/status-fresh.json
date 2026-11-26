@@ -1,0 +1,49 @@
+{
+  "case": "status-fresh",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "status"
+      ],
+      "exit": 0,
+      "stdout": "5 sources; 6 converted records\nProgress comes from root review files and tagged staged rows; check REF-ID verifies links.\ncomplete: 0\nready-to-stage: 0\nstaged: 0\nreviewed: 0\nheld: 0\npublishing: 0\nin-progress: 0\nblocked: 0\nneeds-repair: 0\npending: 5\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 1,
+      "args": [
+        "next"
+      ],
+      "exit": 0,
+      "stdout": "REF-001\tpending\t1 twins\tassets/_intake/lending-policy.txt\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 2,
+      "args": [
+        "next",
+        "--count",
+        "3"
+      ],
+      "exit": 0,
+      "stdout": "REF-001\tpending\t1 twins\tassets/_intake/lending-policy.txt\nREF-002\tpending\t2 twins\tassets/_intake/branch-hours.xlsx\nREF-004\tpending\t1 twins\tassets/_intake/patron-faq.txt\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 3,
+      "args": [
+        "next",
+        "--stage",
+        "review"
+      ],
+      "exit": 0,
+      "stdout": "",
+      "stderr": "",
+      "files": {}
+    }
+  ]
+}

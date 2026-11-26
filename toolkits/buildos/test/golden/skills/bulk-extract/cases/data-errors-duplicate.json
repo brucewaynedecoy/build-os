@@ -1,0 +1,16 @@
+{
+  "case": "data-errors-duplicate",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "check",
+        "REF-001"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: Missing or duplicate ID in <root>/.os/data/capabilities.jsonl:2: 'CAP-001'\n",
+      "files": {}
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "source": "assets/_intake/fines.txt",
+  "source_sha256": "ba54dcdbe6995bc8d7244324efb4c39afaa931690d096b63ffc7a7eb891f4860",
+  "reviewed_by": "Circulation Analyst",
+  "reviewed_at": "2026-01-02",
+  "publication_review": {
+    "reviewed_by": "Circulation Analyst",
+    "reviewed_at": "2026-01-03"
+  },
+  "source_check": {
+    "result": "matched",
+    "notes": "Checked.",
+    "repairs": []
+  },
+  "references": [
+    {
+      "id": "REF-005",
+      "converted": "assets/fines/fines.md",
+      "outcome": "reviewed"
+    }
+  ],
+  "candidates": [
+    {
+      "key": "fine-rate",
+      "type": "requirement",
+      "action": "minted",
+      "review_state": "approved",
+      "row": {
+        "type": "requirement",
+        "title": "Renewal rule f",
+        "status": "draft",
+        "summary": "A patron can renew a loan (f).",
+        "source_anchor": "assets/fines/fines.md#L3",
+        "doc_anchor": null,
+        "source_refs": [
+          "assets/fines/fines.md#L3"
+        ],
+        "related": [],
+        "created_at": null,
+        "updated_at": null,
+        "statement": "The system shall allow two renewals per loan (f).",
+        "rationale": "The lending policy allows two renewals.",
+        "acceptance_refs": []
+      }
+    }
+  ],
+  "unresolved": [],
+  "applied": {
+    "fine-rate": {
+      "id": "REQ-001",
+      "action": "minted",
+      "candidate_sha256": "0"
+    }
+  },
+  "extraction_ids": []
+}

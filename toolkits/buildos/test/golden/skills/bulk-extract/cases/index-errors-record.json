@@ -1,0 +1,15 @@
+{
+  "case": "index-errors-record",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "status"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: Invalid reference record: {'id': 'REF-1A', 'source': 'assets/a.txt', 'converted': 'assets/a.md', 'sha256': '0000000000000000000000000000000000000000000000000000000000000000'}\n",
+      "files": {}
+    }
+  ]
+}

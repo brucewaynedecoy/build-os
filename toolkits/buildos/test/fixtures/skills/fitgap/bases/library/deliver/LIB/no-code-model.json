@@ -1,0 +1,210 @@
+{
+  "meta": {
+    "name": "Nameless"
+  },
+  "layers": [
+    {
+      "id": "L1",
+      "code": "CORE",
+      "name": "Circulation"
+    },
+    {
+      "id": "L2",
+      "code": "PAT",
+      "name": "Patrons"
+    },
+    {
+      "id": "L3",
+      "code": "CAT",
+      "name": "Catalogue"
+    },
+    {
+      "id": "L5",
+      "code": "RPT",
+      "name": "Reporting"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "LIB-COR-01",
+      "parent_id": null,
+      "name": "Circulation desk",
+      "layer_id": "L1",
+      "doc_ref": null,
+      "type": "feature",
+      "status": "ga",
+      "maturity": "available",
+      "summary": "Circulation desk in the candidate platform.",
+      "requirements": [
+        {
+          "id": "LIB-COR-01-R01",
+          "kind": "function",
+          "status": "ga",
+          "maturity": "available",
+          "text": "Circulation desk, part 1.",
+          "option_values": null
+        },
+        {
+          "id": "LIB-COR-01-R02",
+          "kind": "function",
+          "status": "ga",
+          "maturity": "available",
+          "text": "Circulation desk, part 2.",
+          "option_values": [
+            "a",
+            "b"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "LIB-COR-02",
+      "parent_id": null,
+      "name": "Self check-in kiosk",
+      "layer_id": "L1",
+      "doc_ref": null,
+      "type": "feature",
+      "status": "ga",
+      "maturity": "available",
+      "summary": "Self check-in kiosk in the candidate platform.",
+      "requirements": [
+        {
+          "id": "LIB-COR-02-R01",
+          "kind": "function",
+          "status": "ga",
+          "maturity": "available",
+          "text": "Self check-in kiosk, part 1.",
+          "option_values": null
+        }
+      ]
+    },
+    {
+      "id": "LIB-COR-03",
+      "parent_id": null,
+      "name": "Renewal rules",
+      "layer_id": "L1",
+      "doc_ref": null,
+      "type": "feature",
+      "status": "ga",
+      "maturity": "available",
+      "summary": "Renewal rules in the candidate platform.",
+      "requirements": [
+        {
+          "id": "LIB-COR-03-R01",
+          "kind": "function",
+          "status": "ga",
+          "maturity": "available",
+          "text": "Renewal rules, part 1.",
+          "option_values": null
+        }
+      ]
+    },
+    {
+      "id": "LIB-PAT-01",
+      "parent_id": null,
+      "name": "Patron accounts",
+      "layer_id": "L2",
+      "doc_ref": null,
+      "type": "feature",
+      "status": "ga",
+      "maturity": "available",
+      "summary": "Patron accounts in the candidate platform.",
+      "requirements": [
+        {
+          "id": "LIB-PAT-01-R01",
+          "kind": "function",
+          "status": "ga",
+          "maturity": "available",
+          "text": "Patron accounts, part 1.",
+          "option_values": null
+        },
+        {
+          "id": "LIB-PAT-01-R02",
+          "kind": "function",
+          "status": "ga",
+          "maturity": "available",
+          "text": "Patron accounts, part 2.",
+          "option_values": [
+            "a",
+            "b"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "LIB-PAT-02",
+      "parent_id": null,
+      "name": "Notice centre",
+      "layer_id": "L2",
+      "doc_ref": null,
+      "type": "feature",
+      "status": "preview",
+      "maturity": "planned",
+      "summary": "Notice centre in the candidate platform.",
+      "requirements": [
+        {
+          "id": "LIB-PAT-02-R01",
+          "kind": "function",
+          "status": "preview",
+          "maturity": "planned",
+          "text": "Notice centre, part 1.",
+          "option_values": null
+        }
+      ]
+    },
+    {
+      "id": "LIB-CAT-01",
+      "parent_id": null,
+      "name": "Discovery search 🔎",
+      "layer_id": "L3",
+      "doc_ref": null,
+      "type": "feature",
+      "status": "ga",
+      "maturity": "available",
+      "summary": "Discovery search 🔎 in the candidate platform.",
+      "requirements": [
+        {
+          "id": "LIB-CAT-01-R01",
+          "kind": "function",
+          "status": "ga",
+          "maturity": "available",
+          "text": "Discovery search 🔎, part 1.",
+          "option_values": null
+        }
+      ]
+    },
+    {
+      "id": "LIB-RPT-01",
+      "parent_id": null,
+      "name": "Lending reports",
+      "layer_id": "L5",
+      "doc_ref": null,
+      "type": "feature",
+      "status": "ga",
+      "maturity": "available",
+      "summary": "Lending reports in the candidate platform.",
+      "requirements": [
+        {
+          "id": "LIB-RPT-01-R01",
+          "kind": "function",
+          "status": "ga",
+          "maturity": "available",
+          "text": "Lending reports, part 1.",
+          "option_values": null
+        }
+      ]
+    },
+    {
+      "id": "LIB-RPT-02",
+      "parent_id": null,
+      "name": "Dashboards",
+      "layer_id": "L5",
+      "doc_ref": null,
+      "type": "feature",
+      "status": "roadmap",
+      "maturity": "deferred",
+      "summary": "Dashboards in the candidate platform.",
+      "requirements": []
+    }
+  ]
+}

@@ -193,7 +193,7 @@ describe("golden manifest", () => {
     const ids = new Set(manifest.cases.map((c) => c.id));
     for (const e of exceptions.exceptions) {
       assert.match(e.id, /^PE-\d{3}$/);
-      assert.ok(e.reason.length > 0 && e.owner_decision.includes("evidence.md#owner-decisions"), `${e.id} needs a reason and an owner decision link`);
+      assert.ok(e.reason.length > 0 && /evidence\.md#(p9-)?owner-decisions/.test(e.owner_decision), `${e.id} needs a reason and an owner decision link`);
       for (const c of e.cases ?? []) {
         assert.ok(ids.has(c.case), `${e.id} names unknown case ${c.case}`);
         assert.ok(e.platform !== undefined && (e.rule ?? "").length > 0 && (e.class ?? "").length > 0, `${e.id} needs a class, a platform, and a rule`);

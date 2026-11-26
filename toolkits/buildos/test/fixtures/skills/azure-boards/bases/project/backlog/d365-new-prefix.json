@@ -1,0 +1,348 @@
+{
+  "profile": "target17-new",
+  "adapter": "dynamics-365-ce",
+  "adapter_params": {
+    "publisher_prefix": "new_"
+  },
+  "defaults": {},
+  "items": [
+    {
+      "work_item_type": "Epic",
+      "level": 1,
+      "title": "Lending Fine",
+      "summary": "Synthetic Dynamics 365 CE backlog used to test the dynamics-365-ce adapter. Not a real project backlog.",
+      "source_trace": {
+        "work_directory": "docs/work/example-backlog",
+        "index_file": "docs/work/example-backlog/00-index.md",
+        "labels": [
+          "Synthetic"
+        ]
+      }
+    },
+    {
+      "work_item_type": "Feature",
+      "level": 2,
+      "title": "Fine reference data",
+      "summary": "Configure the fine reference components.",
+      "source_trace": {
+        "work_directory": "docs/work/example-backlog",
+        "phase_file": "docs/work/example-backlog/01-configuration.md",
+        "labels": [
+          "Phase 1"
+        ]
+      }
+    },
+    {
+      "work_item_type": "Product Backlog Item",
+      "level": 3,
+      "title": "Fine (CFG) - Create Global Choices",
+      "description": {
+        "use_case": [
+          "Lending administrators need standard fine classifications so that every lending policy is set up the same way.",
+          "Lending administrators need to enable or disable automatic validation of fine rules per lending policy.",
+          "The fine calculation logic needs fixed reference values so that it can branch on the selected type."
+        ],
+        "outcomes": [
+          "Create the fine global choices in the Lending solution in Example Development.",
+          "Deploy the Lending solution to the target example environments for testing.",
+          "Deploy the Lending solution to Example Customization for customization."
+        ],
+        "technical_details": [
+          "Publisher Prefix: ex_",
+          {
+            "text": "t1: Example Development -> Lending -> Global Choices:",
+            "children": [
+              {
+                "text": "Create global choices:",
+                "children": [
+                  {
+                    "text": "Lending Fine Types:",
+                    "children": [
+                      "Schema: ex_LendingFineTypes",
+                      "Logical Name: ex_lendingfinetypes",
+                      "Description: Classifies how a lending policy charges fines.",
+                      {
+                        "text": "Choices:",
+                        "children": [
+                          "Flat",
+                          "Daily",
+                          "Capped"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "text": "Lending Flat Fine Frequency:",
+                    "children": [
+                      "Schema: ex_LendingFlatFineFrequency",
+                      "Logical Name: ex_lendingflatfinefrequency",
+                      "Description: Sets how often a flat fine run occurs.",
+                      {
+                        "text": "Choices:",
+                        "children": [
+                          "Monthly",
+                          "Weekly"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "text": "t2: Deploy the Lending solution.",
+            "children": [
+              "Target environments: Example Test, Example Production.",
+              "Target environment for customization: Example Customization.",
+              "Dependency: t1."
+            ]
+          }
+        ]
+      },
+      "acceptance_criteria": [
+        "The global choice Lending Fine Types will exist in the Lending solution in Example Development with the choices Flat, Daily, and Capped.",
+        "The global choice Lending Flat Fine Frequency will exist in the Lending solution in Example Development with the choices Monthly and Weekly.",
+        "The Lending solution will be deployed to the target example environments for testing.",
+        "The Lending solution will be deployed to the Example Customization environment for customization."
+      ],
+      "source_trace": {
+        "work_directory": "docs/work/example-backlog",
+        "phase_file": "docs/work/example-backlog/01-configuration.md",
+        "stage": "Stage 1 - Fine reference data",
+        "task_ids": [
+          "t1",
+          "t2"
+        ],
+        "labels": [
+          "Phase 1",
+          "CFG"
+        ]
+      }
+    },
+    {
+      "work_item_type": "Feature",
+      "level": 2,
+      "title": "Fine calculation",
+      "summary": "Build the fine calculation logic.",
+      "source_trace": {
+        "work_directory": "docs/work/example-backlog",
+        "phase_file": "docs/work/example-backlog/02-development.md",
+        "labels": [
+          "Phase 2"
+        ]
+      }
+    },
+    {
+      "work_item_type": "Product Backlog Item",
+      "level": 3,
+      "title": "Fine (DEV) - Plugin: Do fine calculation by type",
+      "description": {
+        "use_case": [
+          "The lending business needs fines calculated automatically when a fine line is created, so that no administrator computes values by hand.",
+          "Each fine type needs its own calculation method, so that flat and daily lending policies produce correct values.",
+          "The Book Copy record needs its fine balance kept current, because lending policies and reporting read that value."
+        ],
+        "outcomes": [
+          "Create a plug-in that runs when a Lending Fine Line is created.",
+          "Select the calculation method from the lending policy configuration.",
+          "Update the Book Copy record and the triggering fine line with the calculated values."
+        ],
+        "technical_details": [
+          "Publisher Prefix: ex_",
+          {
+            "text": "t3: Create a plug-in:",
+            "children": [
+              "Entity: Lending Fine Line",
+              "Message: Create",
+              "Stage: Post Operation",
+              "Execution: Synchronous",
+              "Columns: ex_lendingfinelog, ex_bookcopy, ex_loan",
+              {
+                "text": "Logic:",
+                "children": [
+                  {
+                    "text": "Retrieve from the Lending Policy (ex_lendingfinelog > ex_lendingpolicy):",
+                    "children": [
+                      "\"Fine Type\" (ex_finetype)",
+                      "\"Flat Fine Sub-Type\" (ex_flatfinesubtype)",
+                      "\"Daily Fine Sub-Type\" (ex_dailyfinesubtype)",
+                      "\"Fine Cap\" (ex_finecap)"
+                    ]
+                  },
+                  {
+                    "text": "Retrieve from the Book Copy record:",
+                    "children": [
+                      "\"Replacement Value\" (ex_replacementvalue)",
+                      "\"Fine Balance\" (ex_finebalance)"
+                    ]
+                  },
+                  {
+                    "text": "IF \"Fine Type\" == \"Flat\":",
+                    "children": [
+                      "Call helper function CalculateFineByFlatRate."
+                    ]
+                  },
+                  {
+                    "text": "ELSE IF \"Daily Fine Sub-Type\" == \"Overdue Days\":",
+                    "children": [
+                      "Call helper function CalculateFineByDaysOverdue."
+                    ]
+                  },
+                  {
+                    "text": "ELSE:",
+                    "children": [
+                      "Write no value and exit without error."
+                    ]
+                  },
+                  {
+                    "text": "IF \"Fine Cap\" contains data AND the calculated value is above \"Fine Cap\":",
+                    "children": [
+                      "Set the calculated value to \"Fine Cap\"."
+                    ]
+                  },
+                  {
+                    "text": "Write the results:",
+                    "children": [
+                      "Update the Book Copy column \"Fine Balance\" (ex_finebalance).",
+                      "Update the triggering Lending Fine Line with the calculated amount."
+                    ]
+                  }
+                ]
+              },
+              "Dependency: t1 and the helper library in t4."
+            ]
+          }
+        ]
+      },
+      "acceptance_criteria": [
+        "A plug-in will exist that is registered on the Create message of the Lending Fine Line table in the Post Operation stage, running synchronously.",
+        "When the lending policy Fine Type is Flat, the plug-in will call CalculateFineByFlatRate.",
+        "When the lending policy Daily Fine Sub-Type is Overdue Days, the plug-in will call CalculateFineByDaysOverdue.",
+        "When neither branch matches, the plug-in will exit without writing a value and without raising an error.",
+        "When the lending policy \"Fine Cap\" is 10.00, a calculated fine of 12.50 will be saved as 10.00 and a calculated fine of 7.50 will be saved as 7.50; when \"Fine Cap\" is empty, the calculated fine will be saved unchanged.",
+        "The plug-in will update the \"Fine Balance\" (ex_finebalance) value on the Book Copy record.",
+        "The plug-in will update the calculated amount on the Lending Fine Line that triggered it.",
+        "The plug-in assembly will be deployed to the Lending solution in Example Development."
+      ],
+      "source_trace": {
+        "work_directory": "docs/work/example-backlog",
+        "phase_file": "docs/work/example-backlog/02-development.md",
+        "stage": "Stage 2 - Fine calculation",
+        "task_ids": [
+          "t3"
+        ],
+        "labels": [
+          "Phase 2",
+          "DEV"
+        ]
+      }
+    },
+    {
+      "work_item_type": "Feature",
+      "level": 2,
+      "title": "Scheduled fine run",
+      "summary": "Automate the scheduled fine run.",
+      "source_trace": {
+        "work_directory": "docs/work/example-backlog",
+        "phase_file": "docs/work/example-backlog/03-integration.md",
+        "labels": [
+          "Phase 3"
+        ]
+      }
+    },
+    {
+      "work_item_type": "Product Backlog Item",
+      "level": 3,
+      "title": "Fine (INT) - Power Automate: Scheduled fine calculation",
+      "description": {
+        "use_case": [
+          "Branch librarians need fines calculated on a schedule, so that flat-fine lending policies are processed without manual work.",
+          "Each branch needs the run to follow its own configured scheduling preference.",
+          "The fine custom action needs a caller, because nothing else triggers a flat-type run."
+        ],
+        "outcomes": [
+          "Create a scheduled Power Automate flow in the Lending solution.",
+          "Read the branch scheduling configuration from the Lending Settings record.",
+          "Call the fine custom action with the eligible lending policies."
+        ],
+        "technical_details": [
+          "Publisher Prefix: ex_",
+          {
+            "text": "t5: Create a Power Automate Flow:",
+            "children": [
+              "Flow: Scheduled Lending Fine Calculation",
+              "Solution: Lending",
+              "Trigger: Schedule, daily at 4:00 AM library local time",
+              "Connections: Dataverse, service principal",
+              {
+                "text": "Actions:",
+                "children": [
+                  {
+                    "text": "Retrieve columns from the Lending Settings record:",
+                    "children": [
+                      "\"Lending Fine Schedule Strategy\" (ex_lendingfineschedulestrategy)",
+                      "\"Lending Fine Day of Week\" (ex_lendingfinedayofweek)",
+                      "\"Lending Fine Day\" (ex_lendingfineday)",
+                      "\"Lending Fine Week\" (ex_lendingfineweek)"
+                    ]
+                  },
+                  {
+                    "text": "IF \"Lending Fine Schedule Strategy\" == \"First of month\":",
+                    "children": [
+                      "IF today is not the first day of the month, escape the flow."
+                    ]
+                  },
+                  {
+                    "text": "ELSE IF \"Lending Fine Schedule Strategy\" == \"Day of month\":",
+                    "children": [
+                      "IF today does not match \"Lending Fine Day\", escape the flow."
+                    ]
+                  },
+                  {
+                    "text": "ELSE:",
+                    "children": [
+                      "Escape the flow, because no other strategy is defined."
+                    ]
+                  },
+                  {
+                    "text": "Retrieve multiple Lending Policy records:",
+                    "children": [
+                      "Filter: ex_finetype == \"Flat\" AND ex_finerulesvalidated == TRUE"
+                    ]
+                  },
+                  "Call custom action ex_GenerateLendingFineLogs with the retrieved lending policy identifiers."
+                ]
+              },
+              "On failure, record the run outcome on the Lending Settings record and notify the circulation desk mailbox.",
+              "Re-running on the same day creates no duplicate fine log.",
+              "Dependency: the custom API in t6."
+            ]
+          }
+        ]
+      },
+      "acceptance_criteria": [
+        "A Power Automate flow will exist in the Lending solution with a schedule trigger that runs daily at 4:00 AM library local time.",
+        "The flow will read the four scheduling columns from the Lending Settings record on every run.",
+        "When the schedule strategy is First of month and today is not the first day, the flow will escape without calling the custom action.",
+        "When the schedule strategy is Day of month and today does not match the configured day, the flow will escape without calling the custom action.",
+        "When the schedule conditions are met, the flow will retrieve every Lending Policy where Fine Type is Flat and fine rules are validated.",
+        "The flow will pass the retrieved lending policy identifiers to ex_GenerateLendingFineLogs.",
+        "A second run on the same day will create no duplicate fine log.",
+        "A failed run will notify the circulation desk mailbox."
+      ],
+      "source_trace": {
+        "work_directory": "docs/work/example-backlog",
+        "phase_file": "docs/work/example-backlog/03-integration.md",
+        "stage": "Stage 3 - Scheduled fine run",
+        "task_ids": [
+          "t5"
+        ],
+        "labels": [
+          "Phase 3",
+          "INT"
+        ]
+      }
+    }
+  ]
+}

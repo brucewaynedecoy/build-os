@@ -1,0 +1,2 @@
+# Fixture bytes stay as they are on every OS (CRLF, byte order marks).
+* -text whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab,cr-at-eol

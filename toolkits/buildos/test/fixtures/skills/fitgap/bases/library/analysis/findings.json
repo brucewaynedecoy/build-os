@@ -1,0 +1,28 @@
+{
+  "headline": [
+    "7 of 9 circulation capabilities carry over.",
+    "The holds queue is a live loss (fit 0).",
+    "Notices wait for the next release.",
+    "  "
+  ],
+  "layers": [
+    {
+      "layer_code": "CORE",
+      "text": "Desk work carries over except holds."
+    },
+    {
+      "layer_code": "PAT",
+      "text": "Patron self-service waits for notices."
+    },
+    {
+      "layer_code": "CAT",
+      "text": "Search is better in the candidate."
+    }
+  ],
+  "opportunities": [
+    "Lending reports replace a spreadsheet."
+  ],
+  "open_questions": [
+    "When is the notice centre generally available (LIB-PAT-02)?"
+  ]
+}

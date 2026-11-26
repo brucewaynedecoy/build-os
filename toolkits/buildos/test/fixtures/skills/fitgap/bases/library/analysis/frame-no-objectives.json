@@ -1,0 +1,36 @@
+{
+  "title": "Current Circulation System to Candidate Library Platform",
+  "mode": "replacement",
+  "baseline": {
+    "model": "../deliver/CIRC/circ-capability-model.json"
+  },
+  "target": {
+    "model": "../deliver/LIB/lib-capability-model.json"
+  },
+  "objectives": [],
+  "tracks": [
+    {
+      "id": "T1",
+      "name": "Go-live",
+      "order": 1,
+      "timing": "Spring",
+      "description": "What the desk needs on day one."
+    },
+    {
+      "id": "T2",
+      "name": "After go-live",
+      "order": 2,
+      "description": "Improvements once the desk runs."
+    }
+  ],
+  "owners": [
+    "Library Staff",
+    "Platform Vendor",
+    "Volunteer Team"
+  ],
+  "owner_roles": {
+    "Library Staff": "Runs the circulation desk and decides policy.",
+    "Platform Vendor": "Configures and builds the platform."
+  },
+  "scoring": {}
+}

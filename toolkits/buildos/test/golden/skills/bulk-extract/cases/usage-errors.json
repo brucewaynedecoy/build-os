@@ -1,0 +1,91 @@
+{
+  "case": "usage-errors",
+  "steps": [
+    {
+      "step": 0,
+      "args": [],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "usage: work.py [-h] [--repo-root REPO_ROOT]\n               {status,next,show,start,check,stage,publish,template,stage-update,replace-row,decide} ...\nwork.py: error: the following arguments are required: command\n",
+      "files": {}
+    },
+    {
+      "step": 1,
+      "args": [
+        "bogus"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "usage: work.py [-h] [--repo-root REPO_ROOT]\n               {status,next,show,start,check,stage,publish,template,stage-update,replace-row,decide} ...\nwork.py: error: argument command: invalid choice: 'bogus' (choose from 'status', 'next', 'show', 'start', 'check', 'stage', 'publish', 'template', 'stage-update', 'replace-row', 'decide')\n",
+      "files": {}
+    },
+    {
+      "step": 2,
+      "args": [
+        "show"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "usage: work.py show [-h] ref_id\nwork.py show: error: the following arguments are required: ref_id\n",
+      "files": {}
+    },
+    {
+      "step": 3,
+      "args": [
+        "template",
+        "book"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "usage: work.py template [-h]\n                        {requirement,capability,persona,test-case,result,run,finding}\nwork.py template: error: argument type: invalid choice: 'book' (choose from 'requirement', 'capability', 'persona', 'test-case', 'result', 'run', 'finding')\n",
+      "files": {}
+    },
+    {
+      "step": 4,
+      "args": [
+        "next",
+        "--stage",
+        "later"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "usage: work.py next [-h] [--count COUNT] [--stage {extract,review}]\nwork.py next: error: argument --stage: invalid choice: 'later' (choose from 'extract', 'review')\n",
+      "files": {}
+    },
+    {
+      "step": 5,
+      "args": [
+        "stage-update",
+        "REF-001",
+        "REQ-001"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "usage: work.py stage-update [-h] --key KEY ref_id row_id\nwork.py stage-update: error: the following arguments are required: --key\n",
+      "files": {}
+    },
+    {
+      "step": 6,
+      "args": [
+        "decide",
+        "REF-001"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "usage: work.py decide [-h] --reviewer REVIEWER ref_id\nwork.py decide: error: the following arguments are required: --reviewer\n",
+      "files": {}
+    },
+    {
+      "step": 7,
+      "args": [
+        "check",
+        "REF-001",
+        "extra"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "usage: work.py [-h] [--repo-root REPO_ROOT]\n               {status,next,show,start,check,stage,publish,template,stage-update,replace-row,decide} ...\nwork.py: error: unrecognized arguments: extra\n",
+      "files": {}
+    }
+  ]
+}

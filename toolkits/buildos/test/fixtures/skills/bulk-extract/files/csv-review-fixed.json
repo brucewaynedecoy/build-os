@@ -1,0 +1,56 @@
+{
+  "format_version": 2,
+  "source": "assets/_intake/branch-hours.xlsx",
+  "source_sha256": "5012e28076527cc8ac35746a15a8db6953ff27f5bd198ced7f30088d48872eca",
+  "reviewed_by": "Circulation Analyst",
+  "reviewed_at": "2026-01-12",
+  "source_check": {
+    "result": "matched",
+    "notes": "Compared the converted text with the original policy.",
+    "repairs": []
+  },
+  "references": [
+    {
+      "id": "REF-002",
+      "converted": "assets/branch-hours/main-branch.csv",
+      "outcome": "reviewed",
+      "note": ""
+    },
+    {
+      "id": "REF-003",
+      "converted": "assets/branch-hours/east-branch.csv",
+      "outcome": "reviewed",
+      "note": ""
+    }
+  ],
+  "candidates": [
+    {
+      "key": "late-night",
+      "type": "requirement",
+      "action": "minted",
+      "review_state": "pending",
+      "row": {
+        "type": "requirement",
+        "title": "Late night hours",
+        "status": "draft",
+        "summary": "A patron can renew a loan (csv).",
+        "source_anchor": "assets/branch-hours/main-branch.csv#row-4",
+        "doc_anchor": null,
+        "source_refs": [
+          "assets/branch-hours/main-branch.csv#row-4",
+          "assets/branch-hours/east-branch.csv#row-3"
+        ],
+        "related": [],
+        "created_at": null,
+        "updated_at": null,
+        "statement": "The system shall allow two renewals per loan (csv).",
+        "rationale": "The lending policy allows two renewals.",
+        "acceptance_refs": []
+      }
+    }
+  ],
+  "unresolved": [],
+  "applied": {},
+  "extraction_ids": [],
+  "publication_review": null
+}

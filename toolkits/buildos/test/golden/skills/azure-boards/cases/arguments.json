@@ -1,0 +1,133 @@
+{
+  "case": "arguments",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "bogus"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Unknown command 'bogus'.\nUsage:\n  node azure_boards_csv.mjs emit --input <manifest.json> --output <file.csv> [--profile target17-new|new|update]\n  node azure_boards_csv.mjs validate --input <file.csv> [--profile target17-new|new|update|auto] [--adapter <id>] [--adapter-params <json>] [--publisher-prefix <value>]\n  node azure_boards_csv.mjs template --output <file.csv> [--profile target17-new|new|update]\n  node azure_boards_csv.mjs adapters\n\nRegistered adapters: dynamics-365-ce\nOn emit, the adapter comes from the manifest keys 'adapter' and 'adapter_params'.\n",
+      "files": {}
+    },
+    {
+      "step": 1,
+      "args": [
+        "emit",
+        "input.json"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Unexpected argument: input.json\n",
+      "files": {}
+    },
+    {
+      "step": 2,
+      "args": [
+        "emit",
+        "--input"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Missing value for --input\n",
+      "files": {}
+    },
+    {
+      "step": 3,
+      "args": [
+        "emit",
+        "--input",
+        "--output"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Missing value for --input\n",
+      "files": {}
+    },
+    {
+      "step": 4,
+      "args": [
+        "emit",
+        "--output",
+        "export/x.csv"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Missing required option --input\n",
+      "files": {}
+    },
+    {
+      "step": 5,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/holds.json"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Missing required option --output\n",
+      "files": {}
+    },
+    {
+      "step": 6,
+      "args": [
+        "validate"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Missing required option --input\n",
+      "files": {}
+    },
+    {
+      "step": 7,
+      "args": [
+        "validate",
+        "--input",
+        "csv/good.csv",
+        "--profile",
+        "sideways"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Unknown profile 'sideways'. Use target17-new, new, or update.\n",
+      "files": {}
+    },
+    {
+      "step": 8,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/holds.json",
+        "--output",
+        "export/x.csv",
+        "--profile",
+        "sideways"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Unknown profile 'sideways'. Use target17-new, new, or update.\n",
+      "files": {}
+    },
+    {
+      "step": 9,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/holds.json",
+        "--output",
+        "export/x.csv",
+        "--unknown",
+        "kept"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"operation\": \"emit\",\n  \"output\": \"<root>/export/x.csv\",\n  \"valid\": true,\n  \"profile\": \"target17-new\",\n  \"rowCount\": 4,\n  \"counts\": {\n    \"Epic\": 1,\n    \"Feature\": 1,\n    \"Product Backlog Item\": 1,\n    \"Task\": 1\n  },\n  \"errors\": [],\n  \"warnings\": [\n    \"Run an Azure Boards import preview because this compatibility profile retains blank ID, State, and Assigned To columns.\"\n  ]\n}\n",
+      "stderr": "",
+      "files": {
+        "export/x.csv": {
+          "text": "﻿ID,Work Item Type,Title 1,Title 2,Title 3,Title 4,State,Effort,Iteration Path,Repro Steps,Description,Acceptance Criteria,Design Notes,Solution,Solution Type,Tags,Assigned To\r\n,Epic,Holds & Notices <Phase 1>,,,,,,Library\\Backlog,,<div>Patrons place &quot;holds&quot; on books — café edition.</div>,,\"<div><b>BUILD OS SOURCE</b></div><div><ul><li>Work directory: docs/work/2026-01-12-w1-r1-holds</li><li>Index file: docs/work/2026-01-12-w1-r1-holds/00-index.md</li><li>Task IDs: t1, t2</li><li>Labels: Holds</li></ul></div>\",,,Library; Holds; Notices,\r\n,Feature,,Hold shelf,,,,5,Library\\Sprint 1,,,,\"<div><b>BUILD OS SOURCE</b></div><div><ul><li>Work directory: docs/work/2026-01-12-w1-r1-holds</li><li>Index file: docs/work/2026-01-12-w1-r1-holds/00-index.md</li><li>Task IDs: t1, t2</li><li>Labels: Holds</li></ul></div>\",,,Library,\r\n,Product Backlog Item,,,Keep a hold seven days,,,,Library\\Backlog,,<div><div><b>USE CASE</b></div><div><ul><li>A patron wants a held book kept for them.</li></ul></div><div><br></div><div><b>DESCRIPTION</b></div><div><ul><li>Keep a hold for seven days.</li></ul></div><div><br></div><div><b>TECHNICAL DETAILS</b></div><div><ul><li>Store the hold expiry date.</li><li>Notify the patron.<ul><li>By e-mail</li><li>By text message</li></ul></li></ul></div></div>,<div><ul><li>A hold expires after seven days.</li><li>The patron gets a notice.</li></ul></div>,\"<div><b>BUILD OS SOURCE</b></div><div><ul><li>Work directory: docs/work/2026-01-12-w1-r1-holds</li><li>Index file: docs/work/2026-01-12-w1-r1-holds/00-index.md</li><li>Task IDs: t1, t2</li><li>Labels: Holds</li></ul></div>\",,,Library,\r\n,Task,,,,Write the expiry job,,,Library\\Backlog,,,,\"<div><b>BUILD OS SOURCE</b></div><div><ul><li>Phase file: docs/work/x/01-holds.md</li><li>Stage: Stage 1</li><li>Source PRD Docs: docs/prd/04-holds.md, docs/prd/05-notices.md</li></ul></div>\",,,Library,"
+        }
+      }
+    }
+  ]
+}

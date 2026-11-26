@@ -1,0 +1,15 @@
+{
+  "case": "index-errors-hash",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "status"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: Inconsistent source hashes: assets/_intake/branch-hours.xlsx\n",
+      "files": {}
+    }
+  ]
+}

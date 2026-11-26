@@ -1,0 +1,148 @@
+[
+  {
+    "baseline_capability_id": "CIRC-NOPE-01",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [],
+    "evidence": "Rows for CIRC-NOPE-01. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-COR-01",
+    "objective_ids": [
+      "OBJ-09"
+    ],
+    "confidence": "certain",
+    "effort": "huge",
+    "marks": [
+      {
+        "requirement_id": "CIRC-COR-01-R01",
+        "mark": "met",
+        "target_capability_ids": [
+          "LIB-COR-01"
+        ],
+        "note": ""
+      },
+      {
+        "requirement_id": "CIRC-COR-01-R02",
+        "mark": "met",
+        "target_capability_ids": "LIB-COR-01",
+        "note": ""
+      }
+    ],
+    "evidence": "Rows for CIRC-COR-01. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T9",
+    "owners": []
+  },
+  {
+    "baseline_capability_id": "CIRC-COR-01",
+    "objective_ids": "OBJ-01",
+    "confidence": "high",
+    "effort": "low",
+    "marks": [
+      {
+        "requirement_id": "CIRC-COR-01-R01",
+        "mark": "met",
+        "target_capability_ids": [
+          "LIB-COR-01"
+        ],
+        "note": ""
+      },
+      {
+        "requirement_id": "CIRC-COR-01-R02",
+        "mark": "met",
+        "target_capability_ids": "LIB-COR-01",
+        "note": ""
+      }
+    ],
+    "evidence": "Rows for CIRC-COR-01. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-COR-02",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [
+      {
+        "requirement_id": "CIRC-COR-02-R01",
+        "mark": "met",
+        "target_capability_ids": [],
+        "note": ""
+      },
+      {
+        "requirement_id": "CIRC-COR-02-R01",
+        "mark": "met",
+        "target_capability_ids": [
+          "LIB-XXX-01"
+        ],
+        "note": ""
+      },
+      {
+        "requirement_id": "CIRC-COR-02-R09",
+        "mark": "configured",
+        "target_capability_ids": [
+          "LIB-COR-01"
+        ],
+        "note": "short"
+      },
+      {
+        "requirement_id": "CIRC-COR-02-R01",
+        "mark": "kinda",
+        "target_capability_ids": [],
+        "note": ""
+      }
+    ],
+    "evidence": "Too short.",
+    "gap_detail": "",
+    "migration_note": " ",
+    "track": "T1",
+    "owners": [
+      "Stranger"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-COR-03",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [
+      {
+        "requirement_id": "CIRC-COR-03-R01",
+        "mark": "not_met",
+        "target_capability_ids": [
+          "LIB-COR-03"
+        ],
+        "note": "Nothing in the guide for renewals at all."
+      },
+      {
+        "requirement_id": "CIRC-COR-03-R02",
+        "mark": "descoped",
+        "target_capability_ids": [
+          "LIB-COR-03"
+        ],
+        "note": "Decided to drop the renewal block."
+      }
+    ],
+    "evidence": "Rows for CIRC-COR-03. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  }
+]

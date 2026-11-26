@@ -1,0 +1,149 @@
+{
+  "case": "frame-stops",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "frame",
+        "--frame",
+        "analysis/frame-unknown-scoring.json"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "fitgap: frame scoring: unknown key 'weights' (allowed: mark_points, objective_factor, maturity_factor)\n",
+      "files": {}
+    },
+    {
+      "step": 1,
+      "args": [
+        "frame",
+        "--frame",
+        "analysis/frame-no-target.json"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "fitgap: frame has no 'target' entry\n",
+      "files": {}
+    },
+    {
+      "step": 2,
+      "args": [
+        "frame",
+        "--frame",
+        "analysis/frame-csv-no-map.json"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "fitgap: baseline CIRC-CAT-02: status 'planned' has no maturity. Add it to baseline.maturity_map in the frame.\n",
+      "files": {}
+    },
+    {
+      "step": 3,
+      "args": [
+        "frame",
+        "--frame",
+        "analysis/frame-csv-incomplete.json"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "fitgap: baseline: give 'model', or all of capabilities_csv, requirements_csv, code, name\n",
+      "files": {}
+    },
+    {
+      "step": 4,
+      "args": [
+        "frame",
+        "--frame",
+        "analysis/frame-layer-unknown.json"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "fitgap: target LIB-COR-01: layer 'L9' is not in the layer list\n",
+      "files": {}
+    },
+    {
+      "step": 5,
+      "args": [
+        "frame",
+        "--frame",
+        "analysis/frame-duplicate-caps.json"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "fitgap: target: duplicate capability ids\n",
+      "files": {}
+    },
+    {
+      "step": 6,
+      "args": [
+        "frame",
+        "--frame",
+        "analysis/frame-bad-maturity.json"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "fitgap: target LIB-COR-01: maturity 'ripe' is not one of proven, available, partial, planned, deferred\n",
+      "files": {}
+    },
+    {
+      "step": 7,
+      "args": [
+        "frame",
+        "--frame",
+        "analysis/frame-no-code.json"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "fitgap: target: model meta has no code\n",
+      "files": {}
+    },
+    {
+      "step": 8,
+      "args": [
+        "frame",
+        "--frame",
+        "analysis/frame-missing-model.json"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "FileNotFoundError: [Errno 2] No such file or directory: '<root>/deliver/CIRC/missing-model.json'\n",
+      "files": {}
+    },
+    {
+      "step": 9,
+      "args": [
+        "frame",
+        "--frame",
+        "analysis/frame-bad-model.json"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "json.decoder.JSONDecodeError: Expecting value: line 2 column 1 (char 38)\n",
+      "files": {}
+    },
+    {
+      "step": 10,
+      "args": [
+        "frame",
+        "--frame",
+        "analysis/frame-not-json.json"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 2 column 1 (char 15)\n",
+      "files": {}
+    },
+    {
+      "step": 11,
+      "args": [
+        "frame",
+        "--frame",
+        "analysis/missing-frame.json"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "FileNotFoundError: [Errno 2] No such file or directory: 'analysis/missing-frame.json'\n",
+      "files": {}
+    }
+  ]
+}

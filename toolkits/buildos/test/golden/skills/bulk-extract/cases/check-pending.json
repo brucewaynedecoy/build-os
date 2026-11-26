@@ -1,0 +1,38 @@
+{
+  "case": "check-pending",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "check",
+        "REF-001"
+      ],
+      "exit": 1,
+      "stdout": "REF-001: pending (<root>/extractions/REF-001-lending-policy.json)\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 1,
+      "args": [
+        "check",
+        "REF-999"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: Unknown reference ID: REF-999\n",
+      "files": {}
+    },
+    {
+      "step": 2,
+      "args": [
+        "show",
+        "REF-999"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: Unknown reference ID: REF-999\n",
+      "files": {}
+    }
+  ]
+}

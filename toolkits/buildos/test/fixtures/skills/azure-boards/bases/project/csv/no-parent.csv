@@ -1,0 +1,5 @@
+﻿ID,Work Item Type,Title 1,Title 2,Title 3,Title 4,State,Effort,Iteration Path,Repro Steps,Description,Acceptance Criteria,Design Notes,Solution,Solution Type,Tags,Assigned To
+,Feature,,Renewal rules,,,,,,,,,<div><b>BUILD OS SOURCE</b></div><div><ul><li>Work directory: docs/work/renewals</li></ul></div>,,,,
+,Epic,Renewals,,,,,,,,,,<div><b>BUILD OS SOURCE</b></div><div><ul><li>Work directory: docs/work/renewals</li></ul></div>,,,,
+,Product Backlog Item,,,Orphan,,,,,,<div><div><b>USE CASE</b></div><div><ul><li>A patron renews a loan.</li></ul></div><div><br></div><div><b>DESCRIPTION</b></div><div><ul><li>Renew twice.</li></ul></div><div><br></div><div><b>TECHNICAL DETAILS</b></div><div><ul><li>Count renewals.</li></ul></div></div>,<div><ul><li>A third renewal is refused.</li></ul></div>,<div><b>BUILD OS SOURCE</b></div><div><ul><li>Work directory: docs/work/renewals</li></ul></div>,,,,
+,Task,,,,Lonely task,,,,,,,,,,,

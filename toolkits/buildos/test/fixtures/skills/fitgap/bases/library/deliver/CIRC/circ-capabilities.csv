@@ -1,0 +1,10 @@
+﻿capability_id,parent_id,name,layer_id,layer_code,layer_name,doc_ref,capability_type,status,maturity,summary
+CIRC-COR-01,,Check out books,L1,CORE,Circulation,D-01,process,built,proven,Check out books at the circulation desk.
+CIRC-COR-02,,Check in books,L1,CORE,Circulation,D-02,process,built,proven,Check in books at the circulation desk.
+CIRC-COR-03,,Renew loans,L1,CORE,Circulation,D-03,process,built,available,Renew loans at the circulation desk.
+CIRC-COR-04,,Holds queue,L1,CORE,Circulation,D-04,process,built,proven,Holds queue at the circulation desk.
+CIRC-PAT-01,,Register patrons,L2,PAT,Patrons,D-01,process,built,proven,Register patrons at the circulation desk.
+CIRC-PAT-02,,Patron notices,L2,PAT,Patrons,D-02,process,built,partial,Patron notices at the circulation desk.
+CIRC-PAT-03,,Patron fines — café desk,L2,PAT,Patrons,D-03,process,built,available,Patron fines at the circulation desk.
+CIRC-CAT-01,,Catalogue search,L3,CAT,Catalogue,D-01,process,built,available,Catalogue search at the circulation desk.
+CIRC-CAT-02,,Shelf labels,L3,CAT,Catalogue,D-02,process,planned,,Shelf labels at the circulation desk.

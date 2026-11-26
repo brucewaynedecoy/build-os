@@ -1,0 +1,168 @@
+{
+  "case": "merge-problems",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "merge",
+        "--frame",
+        "analysis/frame.json",
+        "--rows",
+        "analysis/bad/rows.json",
+        "--out",
+        "deliver/fit-gap"
+      ],
+      "exit": 1,
+      "stdout": "merge (scored rows): 25 problem(s)\n  FAIL  'CIRC-NOPE-01': not a baseline capability id\n  FAIL  CIRC-COR-01: confidence 'certain' must be one of high, medium, low\n  FAIL  CIRC-COR-01: effort 'huge' must be one of none, low, medium, high, unknown\n  FAIL  CIRC-COR-01: objective OBJ-09 is not in the frame\n  FAIL  CIRC-COR-01: track 'T9' is not a frame track (T1, T2)\n  FAIL  CIRC-COR-01: owners is empty (the first owner leads)\n  FAIL  CIRC-COR-01: scored more than once\n  FAIL  CIRC-COR-02: owner 'Stranger' is not in the frame owners (Library Staff, Platform Vendor, Volunteer Team)\n  FAIL  CIRC-COR-02: no mark for CIRC-COR-02-R02\n  FAIL  CIRC-COR-02: marks for requirements it does not have: CIRC-COR-02-R09\n  FAIL  CIRC-COR-02: requirements marked twice: CIRC-COR-02-R01\n  FAIL  CIRC-COR-02-R01: a met mark must cite at least one target capability\n  FAIL  CIRC-COR-02-R01: cites 'LIB-XXX-01', which is not a target capability id\n  FAIL  CIRC-COR-02-R09: a configured mark needs a note (what is configured, missing, coming, or where you looked)\n  FAIL  CIRC-COR-02-R01: mark 'kinda' must be one of met, configured, partly, unreleased, not_met, descoped\n  FAIL  CIRC-COR-02: evidence is missing or under 80 characters\n  FAIL  CIRC-COR-02: migration_note is empty\n  FAIL  CIRC-COR-03-R01: a not_met mark cites no target capabilities\n  FAIL  CIRC-COR-03-R02: a descoped mark cites no target capabilities\n  FAIL  CIRC-COR-04: not scored\n  FAIL  CIRC-PAT-01: not scored\n  FAIL  CIRC-PAT-02: not scored\n  FAIL  CIRC-PAT-03: not scored\n  FAIL  CIRC-CAT-01: not scored\n  FAIL  CIRC-CAT-02: not scored\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 1,
+      "args": [
+        "merge",
+        "--frame",
+        "analysis/frame.json",
+        "--rows",
+        "analysis/bad/many.json",
+        "--out",
+        "deliver/fit-gap"
+      ],
+      "exit": 1,
+      "stdout": "merge (scored rows): 79 problem(s)\n  FAIL  'CIRC-ZZZ-00': not a baseline capability id\n  FAIL  'CIRC-ZZZ-01': not a baseline capability id\n  FAIL  'CIRC-ZZZ-02': not a baseline capability id\n  FAIL  'CIRC-ZZZ-03': not a baseline capability id\n  FAIL  'CIRC-ZZZ-04': not a baseline capability id\n  FAIL  'CIRC-ZZZ-05': not a baseline capability id\n  FAIL  'CIRC-ZZZ-06': not a baseline capability id\n  FAIL  'CIRC-ZZZ-07': not a baseline capability id\n  FAIL  'CIRC-ZZZ-08': not a baseline capability id\n  FAIL  'CIRC-ZZZ-09': not a baseline capability id\n  FAIL  'CIRC-ZZZ-10': not a baseline capability id\n  FAIL  'CIRC-ZZZ-11': not a baseline capability id\n  FAIL  'CIRC-ZZZ-12': not a baseline capability id\n  FAIL  'CIRC-ZZZ-13': not a baseline capability id\n  FAIL  'CIRC-ZZZ-14': not a baseline capability id\n  FAIL  'CIRC-ZZZ-15': not a baseline capability id\n  FAIL  'CIRC-ZZZ-16': not a baseline capability id\n  FAIL  'CIRC-ZZZ-17': not a baseline capability id\n  FAIL  'CIRC-ZZZ-18': not a baseline capability id\n  FAIL  'CIRC-ZZZ-19': not a baseline capability id\n  FAIL  'CIRC-ZZZ-20': not a baseline capability id\n  FAIL  'CIRC-ZZZ-21': not a baseline capability id\n  FAIL  'CIRC-ZZZ-22': not a baseline capability id\n  FAIL  'CIRC-ZZZ-23': not a baseline capability id\n  FAIL  'CIRC-ZZZ-24': not a baseline capability id\n  FAIL  'CIRC-ZZZ-25': not a baseline capability id\n  FAIL  'CIRC-ZZZ-26': not a baseline capability id\n  FAIL  'CIRC-ZZZ-27': not a baseline capability id\n  FAIL  'CIRC-ZZZ-28': not a baseline capability id\n  FAIL  'CIRC-ZZZ-29': not a baseline capability id\n  FAIL  'CIRC-ZZZ-30': not a baseline capability id\n  FAIL  'CIRC-ZZZ-31': not a baseline capability id\n  FAIL  'CIRC-ZZZ-32': not a baseline capability id\n  FAIL  'CIRC-ZZZ-33': not a baseline capability id\n  FAIL  'CIRC-ZZZ-34': not a baseline capability id\n  FAIL  'CIRC-ZZZ-35': not a baseline capability id\n  FAIL  'CIRC-ZZZ-36': not a baseline capability id\n  FAIL  'CIRC-ZZZ-37': not a baseline capability id\n  FAIL  'CIRC-ZZZ-38': not a baseline capability id\n  FAIL  'CIRC-ZZZ-39': not a baseline capability id\n  FAIL  'CIRC-ZZZ-40': not a baseline capability id\n  FAIL  'CIRC-ZZZ-41': not a baseline capability id\n  FAIL  'CIRC-ZZZ-42': not a baseline capability id\n  FAIL  'CIRC-ZZZ-43': not a baseline capability id\n  FAIL  'CIRC-ZZZ-44': not a baseline capability id\n  FAIL  'CIRC-ZZZ-45': not a baseline capability id\n  FAIL  'CIRC-ZZZ-46': not a baseline capability id\n  FAIL  'CIRC-ZZZ-47': not a baseline capability id\n  FAIL  'CIRC-ZZZ-48': not a baseline capability id\n  FAIL  'CIRC-ZZZ-49': not a baseline capability id\n  FAIL  'CIRC-ZZZ-50': not a baseline capability id\n  FAIL  'CIRC-ZZZ-51': not a baseline capability id\n  FAIL  'CIRC-ZZZ-52': not a baseline capability id\n  FAIL  'CIRC-ZZZ-53': not a baseline capability id\n  FAIL  'CIRC-ZZZ-54': not a baseline capability id\n  FAIL  'CIRC-ZZZ-55': not a baseline capability id\n  FAIL  'CIRC-ZZZ-56': not a baseline capability id\n  FAIL  'CIRC-ZZZ-57': not a baseline capability id\n  FAIL  'CIRC-ZZZ-58': not a baseline capability id\n  FAIL  'CIRC-ZZZ-59': not a baseline capability id\n  … and 19 more\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 2,
+      "args": [
+        "merge",
+        "--frame",
+        "analysis/frame.json",
+        "--rows",
+        "analysis/bad/not-array.json",
+        "--out",
+        "deliver/fit-gap"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "fitgap: analysis/bad/not-array.json: scored rows file must hold a JSON array\n",
+      "files": {}
+    },
+    {
+      "step": 3,
+      "args": [
+        "merge",
+        "--frame",
+        "analysis/frame.json",
+        "--rows",
+        "analysis/bad/gap-detail.json",
+        "analysis/scored/pkg-02.json",
+        "--out",
+        "deliver/fit-gap",
+        "--draft"
+      ],
+      "exit": 1,
+      "stdout": "  note: target-only pass not done yet (2 uncited target capabilities)\nmerge: 1 problem(s)\n  FAIL  CIRC-COR-03: verdict partial needs gap_detail (what is missing, in baseline terms)\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 4,
+      "args": [
+        "merge",
+        "--frame",
+        "analysis/frame.json",
+        "--rows",
+        "analysis/scored/*.json",
+        "--only",
+        "analysis/bad/only.json",
+        "--findings",
+        "analysis/bad/findings.json",
+        "--todos",
+        "analysis/bad/todos.json",
+        "--out",
+        "deliver/fit-gap"
+      ],
+      "exit": 1,
+      "stdout": "merge: 25 problem(s)\n  FAIL  target-only 'LIB-NOPE': not a target capability id\n  FAIL  target-only LIB-RPT-01: listed twice\n  FAIL  target-only LIB-COR-01: objective OBJ-77 is not in the frame\n  FAIL  target-only LIB-COR-01: confidence 'sure' must be one of high, medium, low\n  FAIL  target-only LIB-COR-01: effort 'lots' must be one of none, low, medium, high, unknown\n  FAIL  target-only LIB-COR-01: evidence is missing or under 60 characters\n  FAIL  target-only LIB-COR-01: opportunity is empty\n  FAIL  target-only pass: no row for 1 uncited target capabilities: LIB-RPT-02. Run uncited to list them.\n  FAIL  target-only rows for capabilities that marks already cite: LIB-COR-01\n  FAIL  findings.headline needs 3 to 7 entries (has 1)\n  FAIL  findings.layers has no text for baseline layers: PAT, CAT\n  FAIL  findings.opportunities must be a list of strings\n  FAIL  findings.open_questions must be a list of strings\n  FAIL  to-do id TD-01 is used 2 times\n  FAIL  to-do id 'TD-1' must look like TD-01\n  FAIL  TD-1: title is empty\n  FAIL  TD-1: detail is missing or under 30 characters\n  FAIL  TD-1: owner 'Stranger' is not in the frame owners\n  FAIL  TD-1: support 'Nobody' is not in the frame owners\n  FAIL  TD-1: track 'T9' is not a frame track\n  FAIL  TD-1: type 'wish' must be one of decision, research, build, configure, vendor_question, test, data\n  FAIL  TD-1: capability_ids has unknown id CIRC-NOPE\n  FAIL  TD-1: objective_ids has unknown id OBJ-77\n  FAIL  TD-1: depends_on has unknown id TD-99\n  FAIL  to-do id '?' must look like TD-01\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 5,
+      "args": [
+        "merge",
+        "--frame",
+        "analysis/frame.json",
+        "--rows",
+        "analysis/scored/*.json",
+        "--out",
+        "deliver/fit-gap"
+      ],
+      "exit": 1,
+      "stdout": "merge: 3 problem(s)\n  FAIL  target-only pass: no row for 2 uncited target capabilities: LIB-RPT-01, LIB-RPT-02. Run uncited to list them.\n  FAIL  no findings file. Pass --findings, or --draft for a working build\n  FAIL  the frame has tracks and owners but no to-do list. Pass --todos, or --draft for a working build\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 6,
+      "args": [
+        "merge",
+        "--frame",
+        "analysis/frame-unconfirmed.json",
+        "--rows",
+        "analysis/scored/*.json",
+        "--only",
+        "analysis/only.json",
+        "--findings",
+        "analysis/findings.json",
+        "--out",
+        "deliver/fit-gap"
+      ],
+      "exit": 1,
+      "stdout": "merge: 2 problem(s)\n  FAIL  objectives_confirmed_by is empty in the frame. The person must confirm the objectives and weights before the final build (use --draft until then)\n  FAIL  the frame has tracks and owners but no to-do list. Pass --todos, or --draft for a working build\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 7,
+      "args": [
+        "merge",
+        "--frame",
+        "analysis/frame.json",
+        "--rows",
+        "analysis/scored/*.json",
+        "--only",
+        "analysis/only.json",
+        "--findings",
+        "analysis/findings.json",
+        "--out",
+        "deliver/fit-gap"
+      ],
+      "exit": 1,
+      "stdout": "merge: 1 problem(s)\n  FAIL  the frame has tracks and owners but no to-do list. Pass --todos, or --draft for a working build\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 8,
+      "args": [
+        "merge",
+        "--frame",
+        "analysis/frame.json",
+        "--rows",
+        "analysis/scored/pkg-01.json",
+        "--only",
+        "analysis/only.json",
+        "--out",
+        "deliver/fit-gap",
+        "--draft"
+      ],
+      "exit": 1,
+      "stdout": "merge (scored rows): 5 problem(s)\n  FAIL  CIRC-PAT-01: not scored\n  FAIL  CIRC-PAT-02: not scored\n  FAIL  CIRC-PAT-03: not scored\n  FAIL  CIRC-CAT-01: not scored\n  FAIL  CIRC-CAT-02: not scored\n",
+      "stderr": "",
+      "files": {}
+    }
+  ]
+}
