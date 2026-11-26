@@ -5138,3 +5138,23 @@ The reviewer (one round) found no code blocker and five findings. The orchestrat
 Smoke check from a clean npm cache: `npx -y build-os@0.1.0 version --json` printed version `0.1.0` and source revision `20f941a04494ce9c60301cee9e66fab33219a617`.
 
 Missed gate: the owner published `0.1.0` and approved the npm stage before t15 to t18 (the Stage 4 checks on the staged package) and t22 to t24 (`PERF-002` and the publication review) were done. The orchestrator's step list put the approval first. This was an orchestration mistake, not an owner decision to skip the checks. A74 and A75 are not met, and t25 stays open. Owner decision open. See [Release-order departure](08-release-0-1-0.md#closeout-notes) in [08 Release 0.1.0](08-release-0-1-0.md) and [`R-003`](../../prd/03-open-questions-and-risk-register.md#r-003-build-os-packaging-upgrade-rollback-and-removal-hardening).
+
+## Post-Publication Checks of 0.1.0 (2026-11-26)
+
+### Owner Decision 2026-11-26: Option 1
+
+Owner decision of 2026-11-26, recorded with this date as an owner decision: "Option 1: run them now on the published package." The outstanding checks of [08 Release 0.1.0](08-release-0-1-0.md) (t15 to t18 in Stage 4 and t22 to t24 in Stage 5) run on the published package `build-os@0.1.0`, whose bytes equal the staged and reviewed tarball (SHA-256 `54a8cd01f0165226927a74e5108dd37327323bd3db1905fdb6323c7373b21e8e`). This is a dated exception for `0.1.0` only. No acceptance criterion is re-worded or weakened. The order that A75 asks for ("publication happens only after a recorded maintainer approval" of the publication review) stays recorded as missed for `0.1.0`: a later review cannot meet it. A task closes only as the checkbox rule in [00-index.md](00-index.md) allows ("Mark a task done only when its stage acceptance criteria pass"), or by this explicit exception where this record says so plainly.
+
+Marks used below: "verified" means an agent ran the named command on 2026-11-26 and saw the result; "owner-reported" means the owner reported it and no agent checked it; "not done" means it did not happen. In captured output, temporary folders, the home folder, and the user name are replaced by `{TMP}`, `{PROJECT}`, `{HOME}`, and `{USER}`, and times by `{TIMESTAMP}`.
+
+### First-Run npx (PERF-002, P8)
+
+#### Execution Packet (t22)
+
+- Profile: [`## PERF-002 Profile`](08-release-0-1-0.md#perf-002-profile), version 1, written before any `PERF-002` measurement and committed before pass 1 (the commit that adds this packet).
+- Profile digest: `sha256:1637ae8a2d143b7e431ace19873c7982c41ffa108d28b6423af9a59495857990`, computed with `awk '/^## PERF-002 Profile$/{p=1} p{print} p&&/^\| Support Links /{exit}' 08-release-0-1-0.md | shasum -a 256` (the section from its heading to the end of the Lineage And Traceability table).
+- Package: the published `build-os@0.1.0`, not a staged-only package, under the owner decision above.
+- Instrument: `toolkits/buildos/scripts/measure-npx-first-run.ts`, SHA-256 `bce3485752f505def8887706c036c35bbd3230d06d7cdeffa76faca4965a92c6`, committed with the profile.
+- Machine: Apple M2 Pro, 10 cores, 16 GiB, macOS 27.2.1 on arm64; Node 24.22.3 and npm 11.19.1 (the official `node-v24.22.3-darwin-arm64.tar.gz`, SHA-256 checked against the nodejs.org `SHASUMS256.txt`, unpacked into a temporary folder for these checks; the machine's own Node is 26.13.1).
+- Command for each pass: `node scripts/measure-npx-first-run.ts --version 0.1.0 --tarball-sha256 54a8cd01f0165226927a74e5108dd37327323bd3db1905fdb6323c7373b21e8e --repetitions 10`, from `toolkits/buildos/`, outside the agent's network sandbox.
+- Target: none.
