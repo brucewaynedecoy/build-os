@@ -27,7 +27,7 @@ Use this guide to move a project that the earlier Go tools set up onto the `buil
 
 ## What changed
 
-The earlier BuildOS tools were separate Go programs (`buildos-intake`, `buildos-discovery`, `buildos-design`) that someone built or copied onto your machine, plus a Python validator, `.os/scripts/validate_config.py`. From `0.1.0`, BuildOS is one npm package, `@brucewaynedecoy/buildos`, with one command, `buildos`, for Node.js 24 or newer. Every command and flag of the Go tools keeps working with the same output. The differences you might notice are in the `0.1.0` release notes (`toolkits/buildos/RELEASE_NOTES.md` in the BuildOS repository).
+The earlier BuildOS tools were separate Go programs (`buildos-intake`, `buildos-discovery`, `buildos-design`) that someone built or copied onto your machine, plus a Python validator, `.os/scripts/validate_config.py`. From `0.1.0`, BuildOS is one npm package, `build-os`, with one command, `buildos`, for Node.js 24 or newer. Every command and flag of the Go tools keeps working with the same output. The differences you might notice are in the `0.1.0` release notes (`toolkits/buildos/RELEASE_NOTES.md` in the BuildOS repository).
 
 ## Before you begin
 
@@ -40,7 +40,7 @@ The earlier BuildOS tools were separate Go programs (`buildos-intake`, `buildos-
 In the project root, run:
 
 ```sh
-npx -y @brucewaynedecoy/buildos@0.1.0 init --dry-run
+npx -y build-os@0.1.0 init --dry-run
 ```
 
 The dry run shows what adoption would write and writes nothing. BuildOS adopts a folder that has an `.os/` folder, no `.os/manifest.json`, and the marks of a Go-era project (an `.os/data/` folder, or all of `.os/`, `assets/`, `docs/`, `playbooks/`, and `workspace/`). Any other `.os/` folder stops it with exit code `10` and a plain message.
@@ -48,7 +48,7 @@ The dry run shows what adoption would write and writes nothing. BuildOS adopts a
 Then run it for real:
 
 ```sh
-npx -y @brucewaynedecoy/buildos@0.1.0 init
+npx -y build-os@0.1.0 init
 ```
 
 When no one can answer in the terminal, it first stops with exit code `10` and asks whether to set up Make Docs; run the one command it prints for the answer. Adoption writes only these paths:

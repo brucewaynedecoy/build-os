@@ -7,7 +7,7 @@
 // program to learn its version. It reads package.json files only, to choose
 // a candidate:
 //
-// 1. The project's own npm install: node_modules/@brucewaynedecoy/buildos in
+// 1. The project's own npm install: node_modules/build-os in
 //    the project folder and each folder above it, then in the folder where
 //    npm looks for the local project (the first folder up from the current
 //    folder that holds a package.json file or a node_modules folder) and
@@ -16,17 +16,17 @@
 //    is an npm install: on macOS and Linux its real path (all links
 //    followed) is the "buildos" bin file of the nearest package.json above
 //    it; on Windows it is an npm .cmd shim, and the package is
-//    node_modules\@brucewaynedecoy\buildos next to it.
+//    node_modules\build-os next to it.
 //
 // A package counts only when its package.json (a regular file, read with a
-// size limit, strict JSON) has the name @brucewaynedecoy/buildos and exactly
+// size limit, strict JSON) has the name build-os and exactly
 // the pinned version (any version for a dev pin), and its "buildos" bin file
 // is a readable regular file inside the package and not inside a
 // node_modules folder below it. Then the wrapper runs that bin file with this
 // same Node.js (node ENTRY ARGS...), in the same working folder. Any other
 // layout (a pnpm, yarn, or Volta shim, a hand-made script, a file that cannot
 // be read) does not count, and the pinned version runs through
-// npx -y @brucewaynedecoy/buildos@VERSION. A dev pin has no published
+// npx -y build-os@VERSION. A dev pin has no published
 // version: with no package that counts, it stops (exit 3).
 //
 // The check that decides (review round 2): every start sets
@@ -46,7 +46,7 @@
 // Usage (sh wrapper, npx): node pinned-version.cjs --npx NPX VERSION ARGS...
 //   Starts NPX (the path the sh wrapper found) with
 //   -y --prefix <current folder> --workspaces=false
-//   @brucewaynedecoy/buildos@VERSION ARGS..., npm bin links on, the
+//   build-os@VERSION ARGS..., npm bin links on, the
 //   caller's bin-links settings saved in any case and spelling, and
 //   BUILDOS_REQUIRE_VERSION set, and exits with its exit code. The Windows
 //   wrapper starts npx the same way (pin-first final check, findings 2 and 5).
@@ -77,9 +77,9 @@ var NO_VERSION_MESSAGE = "BuildOS cannot find its version for this project in .o
 var DEV_MESSAGE =
   "This project was set up by a development build of BuildOS (buildos_version \"dev\" in .os/manifest.json). npm has no dev version to fetch. Do one of these, then try again:\n" +
   "- Use the matching development build: in its source folder (toolkits/buildos), run \"npm run build\" and \"npm link\", or install that build in this project with \"npm install <path to that folder>\".\n" +
-  "- Pin a published release: set buildos_version in .os/manifest.json to a published version, such as the one that \"npm view @brucewaynedecoy/buildos version\" shows.\n";
+  "- Pin a published release: set buildos_version in .os/manifest.json to a published version, such as the one that \"npm view build-os version\" shows.\n";
 
-var PACKAGE_NAME = "@brucewaynedecoy/buildos";
+var PACKAGE_NAME = "build-os";
 var PACKAGE_JSON_MAX_BYTES = 256 * 1024;
 /** How many bytes of a PATH candidate the wrapper check reads (finding 9). */
 var WRAPPER_HEAD_BYTES = 1024;
@@ -241,7 +241,7 @@ function isPlainPath(file) {
 }
 
 // The real path of the "buildos" bin file of the npm package in folder
-// `dir`, when that package is @brucewaynedecoy/buildos at exactly `version`
+// `dir`, when that package is build-os at exactly `version`
 // (any version when `version` is null: a dev pin, W1 R7 P8 pin-first review
 // round 2, finding 3); else undefined. package.json must be a regular file
 // (no link), at most PACKAGE_JSON_MAX_BYTES, valid UTF-8 with no byte order
@@ -264,7 +264,9 @@ function packageEntry(dir, version) {
   if (typeof manifest !== "object" || manifest === null || Array.isArray(manifest)) return undefined;
   if (manifest.name !== PACKAGE_NAME || typeof manifest.version !== "string") return undefined;
   if (version !== null && manifest.version !== version) return undefined;
-  // npm names a string "bin" after the package name without its scope: buildos.
+  // An object "bin" names the buildos bin file. A string "bin" is the one
+  // bin file of the package (npm links it under the package name, build-os),
+  // and it counts as the buildos bin file too.
   var bin = manifest.bin;
   var relative = typeof bin === "string" ? bin : typeof bin === "object" && bin !== null && !Array.isArray(bin) && Object.prototype.hasOwnProperty.call(bin, "buildos") ? bin.buildos : undefined;
   if (typeof relative !== "string" || relative === "" || path.isAbsolute(relative) || path.win32.isAbsolute(relative)) return undefined;
@@ -310,12 +312,13 @@ function isType(file, type) {
 }
 
 function packageFolder(base) {
-  return path.join(base, "node_modules", "@brucewaynedecoy", "buildos");
+  return path.join(base, "node_modules", "build-os");
 }
 
 // The bin file of a local npm install of the pinned package (W1 R7 P8
 // pin-first review round 1, finding 1: npx would take that install as found
-// and then start "buildos" by name from PATH when its bin link is missing).
+// and then start its bin, "build-os" since the package name of 2026-11-26,
+// by name from PATH when its bin link is missing).
 // As Node.js module resolution does, it looks in the node_modules folder of
 // the project folder and of each folder above it, then of npm's local
 // project folder and of each folder above it, and takes the first package
@@ -363,9 +366,9 @@ function posixCandidateEntry(candidate, version) {
 
 // Windows: the bin file when `candidate` (the first buildos on PATH) is an
 // npm .cmd shim of the pinned package: the package is
-// node_modules\@brucewaynedecoy\buildos next to the shim (a global install),
+// node_modules\build-os next to the shim (a global install),
 // or, for a shim in a node_modules\.bin folder (a local install),
-// @brucewaynedecoy\buildos in that node_modules folder. The shim itself
+// build-os in that node_modules folder. The shim itself
 // never runs.
 function windowsCandidateEntry(candidate, version) {
   if (!/\.cmd$/i.test(candidate)) return undefined;
@@ -373,7 +376,7 @@ function windowsCandidateEntry(candidate, version) {
   var entry = packageEntry(packageFolder(dir), version);
   if (entry !== undefined) return entry;
   var parent = path.dirname(dir);
-  if (path.basename(dir).toLowerCase() === ".bin" && path.basename(parent).toLowerCase() === "node_modules") return packageEntry(path.join(parent, "@brucewaynedecoy", "buildos"), version);
+  if (path.basename(dir).toLowerCase() === ".bin" && path.basename(parent).toLowerCase() === "node_modules") return packageEntry(path.join(parent, "build-os"), version);
   return undefined;
 }
 
@@ -748,6 +751,7 @@ module.exports = {
   escapeCmdArg: escapeCmdArg,
   splitWindowsPath: splitWindowsPath,
   packageEntry: packageEntry,
+  localEntry: localEntry,
   windowsCandidateEntry: windowsCandidateEntry,
   posixCandidateEntry: posixCandidateEntry,
   npmLocalPrefix: npmLocalPrefix,

@@ -12,7 +12,7 @@ BuildOS is a folder of plain-text rules, templates, and records that an agent us
 In the project folder, run:
 
 ```sh
-npx -y @brucewaynedecoy/buildos@0.1.0 init
+npx -y build-os@0.1.0 init
 ```
 
 `buildos init` asks one question: set up the optional Make Docs companion too? When there is no terminal to answer in (as with most agents), it stops with exit code `10`, changes nothing, and prints the question and the two exact commands, one for each answer. Run the one the user chose. `buildos init` adds its files next to the files that are there. In a new setup it does not replace a file: a clash stops it with exit code `10` and nothing written. It adds only its own marked section to `AGENTS.md`, `CLAUDE.md`, and `.gitignore`. `buildos init --dry-run` shows the plan and writes nothing. A project set up with the earlier Go tools is adopted: its data files stay byte for byte, and its Go-era wrapper and skill files are replaced. When a step fails, `buildos init` undoes its own writes and lists any path it could not put back (exit `10`); see [SECURITY.md](SECURITY.md), "Write Safety", for the limits.
@@ -28,25 +28,27 @@ On Windows, use `.os\scripts\buildos.cmd validate` in Command Prompt.
 ## Install globally
 
 ```sh
-npm install -g @brucewaynedecoy/buildos@0.1.0
+npm install -g build-os@0.1.0
 buildos version
 ```
 
-The pin always decides. A global install is used only when it is an npm install of exactly the pinned version; otherwise the wrapper fetches the pinned version. Acceptance goes by layout, not by tool: a package folder `node_modules/@brucewaynedecoy/buildos` with a matching `package.json` counts whatever tool made it (for example a local pnpm or Yarn link to such a folder). A shim script that only starts the package (as pnpm, Yarn, and Volta make for a global install) does not count, and the wrapper fetches the pinned version through `npx` instead. Any other `buildos` on `PATH` is not used. Every start sets `BUILDOS_REQUIRE_VERSION` to the pin, and BuildOS stops itself (exit code 3) when another version starts. To roll back, change only `buildos_version` in `.os/manifest.json`; you do not need to change or remove a global install.
+The npm package is named `build-os`, and the command is `buildos`. The package also installs a command named `build-os`: it is the same program as `buildos`, so that `npx -y build-os@<version> <command>` works.
+
+The pin always decides. A global install is used only when it is an npm install of exactly the pinned version; otherwise the wrapper fetches the pinned version. Acceptance goes by layout, not by tool: a package folder `node_modules/build-os` with a matching `package.json` counts whatever tool made it (for example a local pnpm or Yarn link to such a folder). A shim script that only starts the package (as pnpm, Yarn, and Volta make for a global install) does not count, and the wrapper fetches the pinned version through `npx` instead. Any other `buildos` on `PATH` is not used. Every start sets `BUILDOS_REQUIRE_VERSION` to the pin, and BuildOS stops itself (exit code 3) when another version starts. To roll back, change only `buildos_version` in `.os/manifest.json`; you do not need to change or remove a global install.
 
 ## Install without registry access
 
 On a machine with registry access, download the tarball and note its SHA-256:
 
 ```sh
-npm pack @brucewaynedecoy/buildos@0.1.0
-shasum -a 256 brucewaynedecoy-buildos-0.1.0.tgz
+npm pack build-os@0.1.0
+shasum -a 256 build-os-0.1.0.tgz
 ```
 
 Compare the value with the published digest (see [SECURITY.md](SECURITY.md), "How to Check a Release"). Copy the file to the other machine and install it from the file:
 
 ```sh
-npm install -g --offline ./brucewaynedecoy-buildos-0.1.0.tgz
+npm install -g --offline ./build-os-0.1.0.tgz
 ```
 
 The package has no dependencies, so nothing else is fetched.

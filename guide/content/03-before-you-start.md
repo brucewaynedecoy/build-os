@@ -139,7 +139,7 @@ If any of those fails, stop and fix the tool before you go further.
 
 ### How you get it
 
-BuildOS is one npm package, `@brucewaynedecoy/buildos`. You do not download, copy, or build anything by hand. In [Install and configure your instance](04-install-and-configure-your-instance.md), your agent runs one command in your project folder, `npx -y @brucewaynedecoy/buildos@0.1.0 init`, and BuildOS puts its files there.
+BuildOS is one npm package, `build-os`. You do not download, copy, or build anything by hand. In [Install and configure your instance](04-install-and-configure-your-instance.md), your agent runs one command in your project folder, `npx -y build-os@0.1.0 init`, and BuildOS puts its files there.
 
 ### Choose your project folder
 

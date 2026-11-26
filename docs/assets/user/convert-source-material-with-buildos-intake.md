@@ -102,7 +102,7 @@ Rebuild `.os/indexes/references.json` after converted twins change. Rebuild `.os
 
 ## Troubleshooting
 
-If the wrapper cannot run BuildOS, install Node.js 24 or newer. On a machine without registry access, also install the pinned version with npm (`npm install -g @brucewaynedecoy/buildos@<pinned version>`, or from its tarball). Then run the command again. The wrapper prints the same advice.
+If the wrapper cannot run BuildOS, install Node.js 24 or newer. On a machine without registry access, also install the pinned version with npm (`npm install -g build-os@<pinned version>`, or from its tarball). Then run the command again. The wrapper prints the same advice.
 
 If conversion refuses to overwrite an existing twin, rerun with `--force` only after reviewing the current output. Converted twins are source evidence for later work, so replacement should be deliberate.
 

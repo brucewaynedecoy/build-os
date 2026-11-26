@@ -250,7 +250,7 @@ function notWritableDiagnostic(folders: readonly { path: string; error: string }
 
 /** `buildos` for a source build; the exact `npx` form for a release, so the shown command works in an empty folder. */
 function commandProgram(version: string): string[] {
-  return isExactVersion(version) && version !== "0.0.0-dev" ? ["npx", "-y", `@brucewaynedecoy/buildos@${version}`] : ["buildos"];
+  return isExactVersion(version) && version !== "0.0.0-dev" ? ["npx", "-y", `build-os@${version}`] : ["buildos"];
 }
 
 function clashDiagnostic(prepared: PreparedInit, result: ClashResult): Diagnostic {

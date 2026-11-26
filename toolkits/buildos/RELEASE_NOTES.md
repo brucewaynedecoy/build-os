@@ -9,7 +9,7 @@ Status: draft. This version is not published yet. The maintainer removes this li
 ### What is new
 
 - One prerequisite: Node.js 24 or newer, on macOS, Linux, or Windows (x64 and arm64). No Go tools, no Homebrew, no archive download, no build step, and no Python for any BuildOS command.
-- One package, `@brucewaynedecoy/buildos`, on npm. An agent runs it with `npx -y @brucewaynedecoy/buildos@0.1.0 <command>`, with no install step. A global install (`npm install -g`) and an install from a downloaded tarball (no registry access) also work.
+- One package, `build-os`, on npm. An agent runs it with `npx -y build-os@0.1.0 <command>`, with no install step. A global install (`npm install -g`) and an install from a downloaded tarball (no registry access) also work.
 - One command, `buildos`, with the domains `entities`, `intake`, `discovery`, `design`, `init`, `validate`, `version`, and `help`. Every command and flag of the Go tools keeps working with the same output.
 - `buildos init` sets up a new project, or adopts a project that the Go tools set up, in one command. It asks one question first: set up the optional Make Docs companion too? With no terminal to answer in, it stops with exit code `10`, changes nothing, and gives the agent the question and the two exact commands. In a new setup it does not replace your files: a clash stops it with exit code `10` and nothing written. It adds only its own marked section to `AGENTS.md`, `CLAUDE.md`, and `.gitignore`. An adoption replaces the Go-era wrapper and skill files at the paths it writes. When a step fails, it undoes its own writes; a path it cannot put back is listed, and the run exits `10` with `write_status` `partially_applied`. It does not undo the Make Docs writes, and a crash in the middle of a run is not undone. An `.os/` folder without the marks of a Go-era project (an empty one too) stops it with exit code `10`.
 - `.os/manifest.json` pins the BuildOS version of each project. The project wrapper `.os/scripts/buildos` (`.os\scripts\buildos.cmd` on Windows) always runs that version (pin first). It uses an installed `buildos` only when it is an npm install of exactly that version: in the project's `node_modules` folder, or the first `buildos` on `PATH` (for example a global install). It reads only the package files, starts no program to check the version, and runs that package's bin file with the same `node`. Otherwise it fetches the pinned version through `npx`.
@@ -22,7 +22,7 @@ Status: draft. This version is not published yet. The maintainer removes this li
 ### Move a project from the Go tools
 
 1. Install Node.js 24 or newer.
-2. In the project folder, run `npx -y @brucewaynedecoy/buildos@0.1.0 init`. BuildOS sees the Go-era project (an `.os/` folder with no `.os/manifest.json`) and adopts it.
+2. In the project folder, run `npx -y build-os@0.1.0 init`. BuildOS sees the Go-era project (an `.os/` folder with no `.os/manifest.json`) and adopts it.
 3. Adoption writes only `.os/manifest.json`, the wrapper scripts in `.os/scripts/`, and the skills in `.os/skills/`. It changes no data file, run, finding, index, or config: they stay byte for byte. It does not change `AGENTS.md`, `CLAUDE.md`, or `.gitignore`.
 4. The old `.os/scripts/validate_config.py` stays where it is. `buildos init` says so in a note. No BuildOS command uses it, and you can delete it.
 5. Use `.os/scripts/buildos validate` where you used the Python script, and `.os/scripts/buildos <domain>` for every other command.
@@ -61,8 +61,8 @@ Note: the command name "buildos-intake" goes away in BuildOS 0.3.0. Use "buildos
 - Three skills still need Python 3 for their own tools until `0.2.0`: `buildos-bulk-extract`, `fit-gap-analysis` (its workbook step also needs `openpyxl`), and `capability-matrix`. No BuildOS command needs Python. `0.2.0` plans `buildos extract bulk`, `buildos fitgap`, and `buildos export azure-boards`.
 - When `buildos init` replaces a file (`AGENTS.md`, `CLAUDE.md`, `.gitignore`, or a Go-era wrapper), the new file keeps its permission bits but not extended access control lists (ACLs) or extended attributes. Set an ACL again after `buildos init` if you rely on one.
 - Windows: Command Prompt is the supported shell for the commands BuildOS shows; there is no PowerShell form. A `!` in a folder name breaks a shown command when delayed expansion is on (`cmd /v:on`). `buildos init` cannot check a folder's access rules before it writes on Windows; a denied write is found during the run and undone. A file system without hard links reports one link, so the hard link check cannot see a link there.
-- A global install is used only when it is an npm install of exactly the pinned version; otherwise the wrapper fetches the pinned version. Acceptance goes by layout, not by tool: a package folder `node_modules/@brucewaynedecoy/buildos` with a matching `package.json` counts whatever tool made it (for example a local pnpm or Yarn link to such a folder). A shim script that only starts the package (as pnpm, Yarn, and Volta make for a global install) does not count, and the wrapper fetches the pinned version through `npx` instead. Every start sets `BUILDOS_REQUIRE_VERSION` to the pin, and BuildOS stops itself with a plain message (exit code 3) when another version starts. The project scripts `.os/scripts/buildos-intake`, `buildos-discovery`, and `buildos-design` print the legacy-name notice once, first on stderr, and go away in `0.3.0`.
-- Windows: an argument with an odd number of double quotes (`"`) changes how Command Prompt reads the rest of the `.cmd` wrapper's command line. A later argument with `&`, `|`, `<`, `>`, or `^` is then read as a command character. Put such an argument last, or run `npx -y @brucewaynedecoy/buildos@<version>` directly.
+- A global install is used only when it is an npm install of exactly the pinned version; otherwise the wrapper fetches the pinned version. Acceptance goes by layout, not by tool: a package folder `node_modules/build-os` with a matching `package.json` counts whatever tool made it (for example a local pnpm or Yarn link to such a folder). A shim script that only starts the package (as pnpm, Yarn, and Volta make for a global install) does not count, and the wrapper fetches the pinned version through `npx` instead. Every start sets `BUILDOS_REQUIRE_VERSION` to the pin, and BuildOS stops itself with a plain message (exit code 3) when another version starts. The project scripts `.os/scripts/buildos-intake`, `buildos-discovery`, and `buildos-design` print the legacy-name notice once, first on stderr, and go away in `0.3.0`.
+- Windows: an argument with an odd number of double quotes (`"`) changes how Command Prompt reads the rest of the `.cmd` wrapper's command line. A later argument with `&`, `|`, `<`, `>`, or `^` is then read as a command character. Put such an argument last, or run `npx -y build-os@<version>` directly.
 - Start time: on the one machine measured (Apple M2 Pro, macOS), a short command such as `buildos version` takes about 68 ms: about 28 ms is Node.js itself and about 40 ms is loading the 3.3 MB bundle (the bundled PDF reader is 2.4 MB of it).
 - Not in this release: `buildos update`, `buildos uninstall`, project sync, OCR for scanned PDFs, and an MCP server.
 
@@ -71,10 +71,10 @@ Note: the command name "buildos-intake" goes away in BuildOS 0.3.0. Use "buildos
 See `SECURITY.md`, "How to Check a Release". In short:
 
 ```sh
-npm install --ignore-scripts @brucewaynedecoy/buildos@0.1.0
+npm install --ignore-scripts build-os@0.1.0
 npm audit signatures
-npm pack @brucewaynedecoy/buildos@0.1.0
-shasum -a 256 brucewaynedecoy-buildos-0.1.0.tgz
+npm pack build-os@0.1.0
+shasum -a 256 build-os-0.1.0.tgz
 ```
 
 Run the first two in an empty folder made with `npm init -y`. `npm audit signatures` must report a verified registry signature and a verified attestation (provenance). The SHA-256 must equal the reviewed digest for the tag `v0.1.0` in `toolkits/buildos/release-candidates.json` and in the SBOM `buildos-0.1.0.cdx.json` on the GitHub Release.

@@ -6,7 +6,7 @@ This subsystem defines the three-space separation, the make-docs plug-in boundar
 
 ## Installed Project Paths
 
-`system/` is the filesystem package source in the BuildOS checkout. BuildOS reaches adopters as the npm package `@brucewaynedecoy/buildos`, which carries the `system/` package content. `buildos init` places those contents directly at the adopter project root and writes `.os/manifest.json` with at least the BuildOS package version, the schema version, and the time of initialization. An initialized project contains `.os/`, `assets/`, `playbooks/`, and `workspace/`; it contains `docs/` and `.make-docs/` only when Make Docs is set up. It does not require a `system/` child.
+`system/` is the filesystem package source in the BuildOS checkout. BuildOS reaches adopters as the npm package `build-os`, which carries the `system/` package content. `buildos init` places those contents directly at the adopter project root and writes `.os/manifest.json` with at least the BuildOS package version, the schema version, and the time of initialization. An initialized project contains `.os/`, `assets/`, `playbooks/`, and `workspace/`; it contains `docs/` and `.make-docs/` only when Make Docs is set up. It does not require a `system/` child.
 
 Every `buildos` domain uses one rule to tell an initialized project from the BuildOS checkout. A root whose `.os/`, `assets/`, `docs/`, `playbooks/`, and `workspace/` are all folders is an initialized project (the rule of the earlier Go tools). Otherwise a root with an `.os/` folder is an initialized project, so a project set up without Make Docs counts as one. The one exception is a root that also has `system/.os/` and no `.os/manifest.json` file: it is read as a checkout, as the Go tools read it. A root with no `.os/` folder is read as a checkout, where the BuildOS content lives under `system/`. The rule serves the commands that take a repository root (`--repo-root` of `buildos intake`, `buildos discovery`, and `buildos design`) and `buildos init`. `buildos entities --root` and `buildos validate --root` do not apply it: each names the content root directly, the folder that holds `.os/` (`.os/data/` for entities), so in the checkout that is `system/` and in an initialized project it is the project root.
 
@@ -35,7 +35,7 @@ Code anchors:
 | Three spaces | Keep "building the system" (`docs/` in the checkout), "the system" (`system/`), and "outputs about the target" (the initialized project's `docs/`) un-confused |
 | Boundary guardrail (`PB-001`) | Forbid edits to the make-docs trees (`docs/` and `.make-docs/`); require crossings via their routers |
 | Co-owned router augmentation | Add the `.os/` pointer to `system/AGENTS.md` append-only |
-| Shipping model | The npm package `@brucewaynedecoy/buildos` is the shippable unit. It carries the `system/` package, which `buildos init` places at the project root, and no Make Docs content. Adopters own their data and gitignore choices |
+| Shipping model | The npm package `build-os` is the shippable unit. It carries the `system/` package, which `buildos init` places at the project root, and no Make Docs content. Adopters own their data and gitignore choices |
 | Make Docs companion setup | After BuildOS setup, `buildos init` offers to set up Make Docs. The user decides, and BuildOS runs Make Docs only through its public CLI |
 
 Code anchors:

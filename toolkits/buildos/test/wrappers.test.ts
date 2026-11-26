@@ -11,7 +11,7 @@
 //   `node <bin file> ...`, with the same node and working folder. Any other
 //   layout does not count;
 // - no such install, Node 24: the stub `npx` records
-//   `-y @brucewaynedecoy/buildos@<version from .os/manifest.json> ...`;
+//   `-y build-os@<version from .os/manifest.json> ...`;
 // - Node absent, and Node 22: the one plain message, no stack trace, exit 127;
 // - a legacy-name project script (Q-016, PE-016) writes the package's
 //   legacy-name notice line once, first on stderr, and changes nothing else.
@@ -44,7 +44,7 @@ const windows = process.platform === "win32";
 const MESSAGE = readFileSync(join(scriptsSource, "node-required.txt"), "utf8").trim();
 const NPX_MESSAGE = "BuildOS needs npx to fetch the BuildOS version this project uses. npx comes with Node.js: install Node.js 24 or newer from https://nodejs.org, then try again.";
 const LOOP_MESSAGE = "BuildOS stopped: its project wrappers kept calling each other. Remove the other BuildOS wrapper folders from PATH, then try again.";
-const PACKAGE = "@brucewaynedecoy/buildos";
+const PACKAGE = "build-os";
 const WRAPPERS = [
   { name: "buildos", domain: [] as string[] },
   { name: "buildos-intake", domain: ["intake"] },
@@ -62,6 +62,7 @@ const LEGACY_NOTICE = (JSON.parse(readFileSync(join(packageRoot, "test", "golden
 const helper = createRequire(import.meta.url)(join(scriptsSource, "pinned-version.cjs")) as {
   splitWindowsPath(value: string): string[];
   packageEntry(dir: string, version: string | null): string | undefined;
+  localEntry(projectRoot: string, version: string | null): string | undefined;
   isShWrapper(file: string): boolean;
   cmdLineTooLong(program: string, args: string[]): boolean;
   programEnvironment(version: string): Record<string, string>;
@@ -159,7 +160,7 @@ interface PackageOptions {
   code?: number;
 }
 
-/** An npm package folder `dir` for @brucewaynedecoy/buildos with a recording bin file. Returns the bin file. */
+/** An npm package folder `dir` for build-os with a recording bin file. Returns the bin file. */
 function writePackage(dir: string, record: string, options: PackageOptions = {}): string {
   const bin = options.bin ?? "dist/buildos.js";
   mkdirSync(join(dir, "dist"), { recursive: true });
@@ -174,21 +175,21 @@ function writePackage(dir: string, record: string, options: PackageOptions = {})
 /**
  * A global npm install of the package under `prefix`, laid out as npm lays
  * it out: on macOS and Linux `prefix/bin/buildos` is a link to the bin file
- * in `prefix/lib/node_modules/@brucewaynedecoy/buildos`; on Windows
+ * in `prefix/lib/node_modules/build-os`; on Windows
  * `prefix\buildos.cmd` is a shim (here a recorder to `<record>.shim` that
  * exits 99, so a test sees if it ever runs) next to
- * `prefix\node_modules\@brucewaynedecoy\buildos`. Returns the folder to put
+ * `prefix\node_modules\build-os`. Returns the folder to put
  * on PATH. With `binDir`, the link (or shim) goes there instead.
  */
 function npmGlobal(prefix: string, record: string, options: PackageOptions & { binDir?: string } = {}): string {
   if (windows) {
     const dir = options.binDir ?? prefix;
     mkdirSync(dir, { recursive: true });
-    writePackage(join(dir, "node_modules", "@brucewaynedecoy", "buildos"), record, options);
+    writePackage(join(dir, "node_modules", "build-os"), record, options);
     recorder(dir, "buildos", `${record}.shim`, 99);
     return dir;
   }
-  const entry = writePackage(join(prefix, "lib", "node_modules", "@brucewaynedecoy", "buildos"), record, options);
+  const entry = writePackage(join(prefix, "lib", "node_modules", "build-os"), record, options);
   const dir = options.binDir ?? join(prefix, "bin");
   mkdirSync(dir, { recursive: true });
   symlinkSync(entry, join(dir, "buildos"));
@@ -197,7 +198,7 @@ function npmGlobal(prefix: string, record: string, options: PackageOptions & { b
 
 /** A local npm install of the package in `base/node_modules`, with no bin link (as `npm install --no-bin-links` leaves it). */
 function npmLocal(base: string, record: string, options: PackageOptions = {}): void {
-  writePackage(join(base, "node_modules", "@brucewaynedecoy", "buildos"), record, options);
+  writePackage(join(base, "node_modules", "build-os"), record, options);
 }
 
 /** A hand-made `buildos` program in `dir` (not an npm install): it records any start to `<record>.handmade` and exits 98. */
@@ -383,7 +384,8 @@ describe(`project wrappers (${windows ? ".cmd" : "sh"})`, () => {
   }
 
   // W1 R7 P8 pin-first review round 1, finding 1: npx takes a local install of the pinned version as found and then starts
-  // "buildos" by name from PATH when the bin link is missing. The wrapper runs that local install itself.
+  // its bin by name from PATH ("build-os" since the package name of 2026-11-26) when the bin link is missing. The wrapper
+  // runs that local install itself.
   it("runs a local install of the pinned version in the project's node_modules (no bin link) and never a buildos on PATH", () => {
     const s = setup();
     npmLocal(s.project, s.record, { code: 6 });
@@ -552,7 +554,7 @@ describe(`project wrappers (${windows ? ".cmd" : "sh"})`, () => {
       work = join(s.base, "outer", "node_modules", ".bin");
       mkdirSync(work, { recursive: true });
       writeFileSync(join(work, "package.json"), "{}\n");
-      writePackage(join(s.base, "outer", "node_modules", "@brucewaynedecoy", "buildos"), s.record);
+      writePackage(join(s.base, "outer", "node_modules", "build-os"), s.record);
       recorder(work, "buildos", `${s.record}.shim`, 99);
     } else npmGlobal(join(s.base, "global"), s.record, { binDir: work });
     recorder(s.stubs, "npx", `${s.record}.npx`, 0);
@@ -705,7 +707,7 @@ describe(`project wrappers (${windows ? ".cmd" : "sh"})`, () => {
       [
         "a link to a file in the package that is not its buildos bin file",
         (s) => {
-          const entry = writePackage(join(s.base, "global", "lib", "node_modules", "@brucewaynedecoy", "buildos"), s.record);
+          const entry = writePackage(join(s.base, "global", "lib", "node_modules", "build-os"), s.record);
           const other = join(resolve(entry, ".."), "other.js");
           writeFileSync(other, binSource(s.record, 0));
           // Review round 2, finding 14: executable, so only the package check refuses it.
@@ -720,7 +722,7 @@ describe(`project wrappers (${windows ? ".cmd" : "sh"})`, () => {
         "a package whose bin file cannot be read",
         (s) => {
           const bin = npmGlobal(join(s.base, "global"), s.record);
-          chmodSync(join(s.base, "global", "lib", "node_modules", "@brucewaynedecoy", "buildos", "dist", "buildos.js"), 0o311);
+          chmodSync(join(s.base, "global", "lib", "node_modules", "build-os", "dist", "buildos.js"), 0o311);
           return bin;
         },
       ],
@@ -728,7 +730,7 @@ describe(`project wrappers (${windows ? ".cmd" : "sh"})`, () => {
         "a package.json that is a link",
         (s) => {
           const bin = npmGlobal(join(s.base, "global"), s.record);
-          const pkg = join(s.base, "global", "lib", "node_modules", "@brucewaynedecoy", "buildos");
+          const pkg = join(s.base, "global", "lib", "node_modules", "build-os");
           writeFileSync(join(s.base, "real-package.json"), readFileSync(join(pkg, "package.json")));
           rmSync(join(pkg, "package.json"));
           symlinkSync(join(s.base, "real-package.json"), join(pkg, "package.json"));
@@ -738,7 +740,7 @@ describe(`project wrappers (${windows ? ".cmd" : "sh"})`, () => {
       [
         "a shim script that starts the package (as pnpm, yarn, or Volta make)",
         (s) => {
-          const entry = writePackage(join(s.base, "store", "@brucewaynedecoy", "buildos"), s.record);
+          const entry = writePackage(join(s.base, "store", "build-os"), s.record);
           mkdirSync(join(s.base, "shims"));
           writeFileSync(join(s.base, "shims", "buildos"), `#!/bin/sh\nexec node "${entry}" "$@"\n`);
           chmodSync(join(s.base, "shims", "buildos"), 0o755);
@@ -751,7 +753,7 @@ describe(`project wrappers (${windows ? ".cmd" : "sh"})`, () => {
       "a buildos.exe next to the package (not an npm .cmd shim)",
       (s) => {
         const dir = join(s.base, "exe");
-        writePackage(join(dir, "node_modules", "@brucewaynedecoy", "buildos"), s.record);
+        writePackage(join(dir, "node_modules", "build-os"), s.record);
         writeFileSync(join(dir, "buildos.exe"), "not a program");
         return dir;
       },
@@ -1236,7 +1238,7 @@ describe("the wrapper helper's installed-package and PATH rules", () => {
     assert.deepEqual(helper.splitWindowsPath(""), []);
   });
 
-  it("accepts only @brucewaynedecoy/buildos at exactly the version, with a string or object bin", () => {
+  it("accepts only build-os at exactly the version, with a string or object bin", () => {
     const dir = join(scratch, `pkg-${++counter}`);
     writePackage(dir, join(dir, "r.json"));
     assert.equal(helper.packageEntry(dir, "1.2.3"), realpathSync(join(dir, "dist", "buildos.js")));
@@ -1250,12 +1252,30 @@ describe("the wrapper helper's installed-package and PATH rules", () => {
     assert.equal(helper.packageEntry(dir, "1.2.3"), undefined);
   });
 
+  // Owner decision of 2026-11-26: the package name is build-os. A package with
+  // the earlier scoped name, or any other name, never counts, in any layout.
+  it("refuses a package with the earlier scoped name @brucewaynedecoy/buildos, or another name, also in its old folder", () => {
+    const dir = join(scratch, `pkg-${++counter}`);
+    writePackage(dir, join(dir, "r.json"), { packageJson: JSON.stringify({ name: "@brucewaynedecoy/buildos", version: "1.2.3", bin: { buildos: "dist/buildos.js" } }) });
+    assert.equal(helper.packageEntry(dir, "1.2.3"), undefined, "the earlier scoped name");
+    assert.equal(helper.packageEntry(dir, null), undefined, "the earlier scoped name, dev pin");
+    for (const name of ["buildos", "Build-OS", "build-os-cli", "@build-os/build-os"]) {
+      writeFileSync(join(dir, "package.json"), JSON.stringify({ name, version: "1.2.3", bin: { buildos: "dist/buildos.js" } }));
+      assert.equal(helper.packageEntry(dir, "1.2.3"), undefined, name);
+    }
+    const project = join(scratch, `old-layout-${++counter}`);
+    writePackage(join(project, "node_modules", "@brucewaynedecoy", "buildos"), join(project, "r.json"));
+    assert.equal(helper.localEntry(project, "1.2.3"), undefined, "a package in node_modules/@brucewaynedecoy/buildos is not looked at");
+    writePackage(join(project, "node_modules", "build-os"), join(project, "r.json"));
+    assert.equal(helper.localEntry(project, "1.2.3"), realpathSync(join(project, "node_modules", "build-os", "dist", "buildos.js")));
+  });
+
   it("on Windows, takes a .cmd shim as an npm install only with the package next to it, or in the node_modules folder of a .bin folder", () => {
     const root = join(scratch, `shims-${++counter}`);
-    writePackage(join(root, "global", "node_modules", "@brucewaynedecoy", "buildos"), join(root, "r.json"));
-    writePackage(join(root, "local", "node_modules", "@brucewaynedecoy", "buildos"), join(root, "r.json"));
-    assert.equal(helper.windowsCandidateEntry(join(root, "global", "buildos.cmd"), "1.2.3"), realpathSync(join(root, "global", "node_modules", "@brucewaynedecoy", "buildos", "dist", "buildos.js")));
-    assert.equal(helper.windowsCandidateEntry(join(root, "local", "node_modules", ".bin", "buildos.cmd"), "1.2.3"), realpathSync(join(root, "local", "node_modules", "@brucewaynedecoy", "buildos", "dist", "buildos.js")));
+    writePackage(join(root, "global", "node_modules", "build-os"), join(root, "r.json"));
+    writePackage(join(root, "local", "node_modules", "build-os"), join(root, "r.json"));
+    assert.equal(helper.windowsCandidateEntry(join(root, "global", "buildos.cmd"), "1.2.3"), realpathSync(join(root, "global", "node_modules", "build-os", "dist", "buildos.js")));
+    assert.equal(helper.windowsCandidateEntry(join(root, "local", "node_modules", ".bin", "buildos.cmd"), "1.2.3"), realpathSync(join(root, "local", "node_modules", "build-os", "dist", "buildos.js")));
     assert.equal(helper.windowsCandidateEntry(join(root, "global", "buildos.exe"), "1.2.3"), undefined, "not a .cmd shim");
     assert.equal(helper.windowsCandidateEntry(join(root, "global", "buildos.cmd"), "9.9.9"), undefined, "another version");
     assert.equal(helper.windowsCandidateEntry(join(root, "other", "buildos.cmd"), "1.2.3"), undefined, "no package next to it");

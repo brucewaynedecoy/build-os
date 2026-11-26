@@ -64,7 +64,7 @@ describe("release dry run identity, before any build (P8-R1-08)", () => {
     return git(["rev-parse", "HEAD"]);
   };
   const ledger = (sourceCommit: string) =>
-    `${JSON.stringify({ schema_version: 2, candidates: [{ kind: "reviewed", version: "9.8.7", tag: "v9.8.7", tarball_name: "brucewaynedecoy-buildos-9.8.7.tgz", tarball_sha256: "0".repeat(64), source_commit: sourceCommit, node_version: "v24.22.3", npm_version: "11.19.1", runner_image: "ubuntu-24.04", reviewed_by: "fixture reviewer", reviewed_on: "2026-11-24", review_evidence: "fixture, not a release" }] }, null, 2)}\n`;
+    `${JSON.stringify({ schema_version: 2, candidates: [{ kind: "reviewed", version: "9.8.7", tag: "v9.8.7", tarball_name: "build-os-9.8.7.tgz", tarball_sha256: "0".repeat(64), source_commit: sourceCommit, node_version: "v24.22.3", npm_version: "11.19.1", runner_image: "ubuntu-24.04", reviewed_by: "fixture reviewer", reviewed_on: "2026-11-24", review_evidence: "fixture, not a release" }] }, null, 2)}\n`;
 
   before(() => {
     root = mkdtempSync(join(tmpdir(), "buildos-dry-identity-"));

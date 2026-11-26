@@ -61,7 +61,7 @@ function entry(overrides: Partial<ReleaseCandidate> = {}): ReleaseCandidate {
     kind: "reviewed",
     version: "9.8.7",
     tag: "v9.8.7",
-    tarball_name: "brucewaynedecoy-buildos-9.8.7.tgz",
+    tarball_name: "build-os-9.8.7.tgz",
     tarball_sha256: DIGEST,
     source_commit: SHA_A,
     node_version: RELEASE_NODE_VERSION,
@@ -104,7 +104,7 @@ describe("release candidates file (t3; P8-R1-03, P8-R1-06)", () => {
     const empty = JSON.parse(readFileSync(join(packageRoot, "test", "fixtures", "release", "empty-ledger.json"), "utf8")) as unknown;
     assert.deepEqual(candidatesFileProblems(empty, { committed: true }), []);
     assert.deepEqual((empty as { candidates: unknown[] }).candidates, []);
-    assert.deepEqual(candidatesFileProblems({ schema_version: 2, candidates: [entry({ version: "0.1.0", tag: "v0.1.0", tarball_name: "brucewaynedecoy-buildos-0.1.0.tgz" })] }, { committed: true }), []);
+    assert.deepEqual(candidatesFileProblems({ schema_version: 2, candidates: [entry({ version: "0.1.0", tag: "v0.1.0", tarball_name: "build-os-0.1.0.tgz" })] }, { committed: true }), []);
   });
 
   it("the committed ledger refuses a self entry; a ledger outside the repository may hold one for a dry run", () => {
@@ -159,7 +159,7 @@ describe("release candidates file (t3; P8-R1-03, P8-R1-06)", () => {
       runner_image: "ubuntu24",
     };
     const review = { by: "fixture reviewer", on: "2026-11-24", evidence: "fixture" };
-    const tarball = { sha256: DIGEST, name: "brucewaynedecoy-buildos-9.8.7.tgz", packageJson: { name: "@brucewaynedecoy/buildos", version: "9.8.7" } };
+    const tarball = { sha256: DIGEST, name: "build-os-9.8.7.tgz", packageJson: { name: "build-os", version: "9.8.7" } };
     assert.deepEqual(computeCandidate(build, review, tarball), entry({ review_evidence: "fixture" }));
     assert.equal(computeCandidate(build, review, tarball).kind, "reviewed");
     assert.throws(() => computeCandidate({ ...build, dirty: true, source_revision: `${SHA_A}-dirty` }, review, tarball), /not of a clean commit/);
@@ -167,7 +167,7 @@ describe("release candidates file (t3; P8-R1-03, P8-R1-06)", () => {
     assert.throws(() => computeCandidate({ ...build, npm_version: "11.20.0" }, review, tarball), /not the reference 11\.19\.1/);
     assert.throws(() => computeCandidate({ ...build, runner_image: "local" }, review, tarball), /not the reference ubuntu-24\.04/);
     assert.throws(() => computeCandidate(build, review, { ...tarball, sha256: "f".repeat(64) }), /inspected tarball SHA-256 f{64} is not the 0123/);
-    assert.throws(() => computeCandidate(build, review, { ...tarball, packageJson: { name: "@brucewaynedecoy/buildos", version: "9.8.6" } }), /holds @brucewaynedecoy\/buildos@9\.8\.6/);
+    assert.throws(() => computeCandidate(build, review, { ...tarball, packageJson: { name: "build-os", version: "9.8.6" } }), /holds build-os@9\.8\.6/);
   });
 
   it("a dry-run self entry is kind self and says it is not a review", () => {
@@ -561,7 +561,7 @@ describe("SBOM (t5)", () => {
 describe("reserved-name placeholder for the first publication (t1, owner decision A)", () => {
   it("is a prerelease with no code: no bin, no scripts, no dependencies, the real repository URL, and a dist-tag that is not latest", () => {
     const pkg = placeholderPackageJson();
-    assert.equal(pkg["name"], "@brucewaynedecoy/buildos");
+    assert.equal(pkg["name"], "build-os");
     assert.equal(pkg["version"], PLACEHOLDER_VERSION);
     assert.match(PLACEHOLDER_VERSION, /^0\.0\.0-reserved\.\d+$/);
     for (const key of ["bin", "scripts", "dependencies", "main", "exports"]) assert.equal(key in pkg, false, key);

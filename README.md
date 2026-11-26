@@ -11,7 +11,7 @@ You need Node.js 24 or newer. Nothing else: no build step, no Python, no manual 
 Set up a project. In the project folder, run:
 
 ```sh
-npx -y @brucewaynedecoy/buildos@0.1.0 init
+npx -y build-os@0.1.0 init
 ```
 
 `buildos init` asks one question first: set up the optional Make Docs companion too? When no one can answer in the terminal (as with most agents), it stops with exit code `10`, changes nothing, and prints the question and the two exact commands to run, one for each answer. Then it adds the BuildOS files next to the files that are already there. In a new setup it does not replace your files: when one of its files would replace one of yours, it stops with exit code `10` and changes nothing. In your `AGENTS.md`, `CLAUDE.md`, and `.gitignore` it adds only its own marked section. Adopting a project that the earlier Go tools set up replaces their wrapper and skill files; the [guide](guide/content/04-install-and-configure-your-instance.md) has the details and the limits of its undo.
@@ -39,7 +39,7 @@ Read next:
 This repository contains separate source packages and project records:
 
 - `docs/` is the build layer for this project. It records how Build OS itself is designed, planned, and implemented.
-- `toolkits/buildos/` is the source of the `buildos` CLI, the npm package `@brucewaynedecoy/buildos`.
+- `toolkits/buildos/` is the source of the `buildos` CLI, the npm package `build-os`.
 - `system/` is the filesystem package source. `buildos init` places its contents at an adopter's project root; it does not install a `system/` directory.
 - `system/.os/skills/` holds the first-party BuildOS skills. `buildos init` copies them to `.os/skills/` in a project, and the router `.os/skills/AGENTS.md` tells an agent how to install one into its own app. They are not necessarily used to work on this repository.
 - `system/` holds no Make Docs content. In an initialized project, Make Docs creates `docs/` and `.make-docs/` when the user sets it up.
@@ -79,7 +79,7 @@ Those pillars support three chained flows:
 | `system/.os/scripts/` | Wrappers that find and run the `buildos` CLI, including `buildos validate`. |
 | `system/playbooks/` | Typed playbooks and guardrails. |
 | `system/workspace/` | Home for run records, findings, datasets, and execution artifacts. |
-| `toolkits/buildos/` | The `buildos` CLI: the npm package `@brucewaynedecoy/buildos` (TypeScript, Node.js 24 or newer). |
+| `toolkits/buildos/` | The `buildos` CLI: the npm package `build-os` (TypeScript, Node.js 24 or newer). |
 | `guide/` | The user guide and its single-page HTML build. |
 | `docs/designs/` | Build-layer design records for Build OS itself. |
 | `docs/prd/` | Build-layer product requirements for Build OS itself. |

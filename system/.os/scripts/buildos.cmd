@@ -5,7 +5,7 @@ rem Node.js (pinned-version.cjs) looks for an npm install of exactly that
 rem version: in the project node_modules folder, or next to the first
 rem buildos.cmd npm shim on PATH (PATH order only). It never starts a
 rem program to learn its version. It runs the package bin file with the
-rem same node; else npx -y @brucewaynedecoy/buildos@VERSION; else one plain
+rem same node; else npx -y build-os@VERSION; else one plain
 rem message. Node.js starts the program itself, so no path comes back here
 rem as text. Every start sets BUILDOS_REQUIRE_VERSION, and BuildOS stops
 rem itself when its own version is another one.

@@ -288,7 +288,7 @@ jobs:
           node scripts/release-build.ts --out "$RUNNER_TEMP/release" --revision "$SOURCE_COMMIT"
           version="${TAG#v}"
           {
-            echo "TARBALL=$RUNNER_TEMP/release/brucewaynedecoy-buildos-$version.tgz"
+            echo "TARBALL=$RUNNER_TEMP/release/build-os-$version.tgz"
             echo "SBOM=$RUNNER_TEMP/release/buildos-$version.cdx.json"
             echo "SOURCE_COMMIT=$SOURCE_COMMIT"
           } >> "$GITHUB_ENV"
@@ -420,8 +420,8 @@ jobs:
 
       - name: The tarball is the reviewed one (ledger read from git at the release commit)
         run: |
-          echo "TARBALL=$RUNNER_TEMP/artifact/brucewaynedecoy-buildos-${TAG#v}.tgz" >> "$GITHUB_ENV"
-          node trusted/toolkits/buildos/scripts/release-stage-check.ts digest --repo trusted --commit "$SHA" --tag "$TAG" --tarball "$RUNNER_TEMP/artifact/brucewaynedecoy-buildos-${TAG#v}.tgz" --expect-sha256 "$TARBALL_SHA256"
+          echo "TARBALL=$RUNNER_TEMP/artifact/build-os-${TAG#v}.tgz" >> "$GITHUB_ENV"
+          node trusted/toolkits/buildos/scripts/release-stage-check.ts digest --repo trusted --commit "$SHA" --tag "$TAG" --tarball "$RUNNER_TEMP/artifact/build-os-${TAG#v}.tgz" --expect-sha256 "$TARBALL_SHA256"
 
       # The scanner prints redacted locations only (a file label and line,
       # never a term). A missing or empty list fails the check (fail closed).
@@ -486,7 +486,7 @@ jobs:
         env:
           RELEASE_ID: ${{ steps.draft.outputs.release_id }}
           GITHUB_TOKEN: ${{ github.token }}
-        run: node trusted/toolkits/buildos/scripts/release-github.ts attach --release-id "$RELEASE_ID" --repo trusted --commit "$SHA" --tag "$TAG" --tarball "$RUNNER_TEMP/artifact/brucewaynedecoy-buildos-${TAG#v}.tgz" --sbom "$RUNNER_TEMP/artifact/buildos-${TAG#v}.cdx.json"
+        run: node trusted/toolkits/buildos/scripts/release-github.ts attach --release-id "$RELEASE_ID" --repo trusted --commit "$SHA" --tag "$TAG" --tarball "$RUNNER_TEMP/artifact/build-os-${TAG#v}.tgz" --sbom "$RUNNER_TEMP/artifact/buildos-${TAG#v}.cdx.json"
 
   # Release only. A required reviewer of buildos-npm-stage approves this job
   # in GitHub before it starts and gets its OIDC token. Trusted code only; it

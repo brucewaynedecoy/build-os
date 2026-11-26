@@ -20,7 +20,7 @@ Most teams do this in documents, spreadsheets and chat threads. The information 
 
 BuildOS is a folder of plain text files you copy into your own project. It gives a team a fixed place to put things and a fixed set of rules for what each thing must look like, so that a person or an AI agent can work in it without being told the conventions.
 
-The folder that BuildOS puts in your project holds 163 files, and 95 of them are Markdown. The rest are 20 YAML files, 17 JSON files, 10 line-oriented JSON data files, four CSV examples, eight short command wrappers (one form for macOS and Linux and one for Windows), a small wrapper helper and its message file, five helper scripts that belong to skills, and two housekeeping files. It lives in git alongside your project. One npm package, `@brucewaynedecoy/buildos`, carries it and the `buildos` command.
+The folder that BuildOS puts in your project holds 163 files, and 95 of them are Markdown. The rest are 20 YAML files, 17 JSON files, 10 line-oriented JSON data files, four CSV examples, eight short command wrappers (one form for macOS and Linux and one for Windows), a small wrapper helper and its message file, five helper scripts that belong to skills, and two housekeeping files. It lives in git alongside your project. One npm package, `build-os`, carries it and the `buildos` command.
 
 This documentation uses three words constantly:
 

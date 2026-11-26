@@ -1,6 +1,6 @@
 # Third-Party Notices
 
-This file holds the license notice of every piece of third-party code in the npm package `@brucewaynedecoy/buildos`. It ships in the package next to `SECURITY.md`, which lists the same code with its version, reason, and scan status, and the CycloneDX SBOM of each release lists it as components with scope `required`.
+This file holds the license notice of every piece of third-party code in the npm package `build-os`. It ships in the package next to `SECURITY.md`, which lists the same code with its version, reason, and scan status, and the CycloneDX SBOM of each release lists it as components with scope `required`.
 
 All of the code below is inside one file, the bundle `dist/buildos.js`, which esbuild builds. The bundle also carries these notices as esbuild legal comments. It holds:
 

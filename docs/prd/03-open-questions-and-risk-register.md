@@ -688,6 +688,26 @@ Answer 4 was carried out in W1 R7 work P7 on 2026-11-24: the file is Make Docs c
 
 **Resolution**: Closed on 2026-11-25 by owner decision (option A). `.os/scripts/buildos-intake`, `buildos-discovery`, and `buildos-design`, and their `.cmd` forms, write the package's legacy-name notice line first on stderr, once, with the same words. Then they run `.os/scripts/buildos <domain>` with the arguments unchanged. Their stdout and exit code are those of the real command. They are removed in `0.3.0` together with the package legacy names. See [W1 R7 P8 owner decisions](../work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#owner-decisions-2026-11-25).
 
+### Q-017 npm package name
+
+| Status | Decision | Follow-Up |
+| --- | --- | --- |
+| Closed | The npm package is `build-os`, unscoped, under the npm account `brucewaynedecoy`. The command stays `buildos`, and the package also has a `bin` named `build-os` for `npx -y build-os@<version>`. [PRD 20 Runtime and Package](./20-buildos-cli-and-distribution.md#runtime-and-package) states the name. | The maintainer creates the package with the placeholder `build-os@0.0.0-reserved.0` (First Publication in `toolkits/buildos/AGENTS.md`). |
+
+**Question**: Should the package keep the scoped name `@brucewaynedecoy/buildos`, or use the unscoped name `build-os`?
+
+**Why it matters**: The name is what people type. With `build-os`, `npm install build-os` and `npm install -g build-os` work. A package name cannot change after it is published without a second package and a deprecation.
+
+**Recommendation**: `build-os`, before the first publish. On 2026-11-26, `build-os`, `buildos`, and `@brucewaynedecoy/buildos` did not exist on npm.
+
+**To close**: Closed by the owner decision of 2026-11-26. PRD 20 and PRD 06 state the name, and the package, wrappers, release scripts, workflows, tests, and documents use it.
+
+**Owner**: BuildOS product owner.
+
+**Phase/gate**: Before `0.1.0` ships.
+
+**Resolution**: Closed on 2026-11-26 by owner decision. The package is `build-os`. Orchestrator decisions of the same day: the command name stays `buildos` and the three legacy names stay; a `bin` named `build-os` points to `dist/buildos.js` and runs exactly as `buildos`, because npx runs the `bin` named after the package; the tarball is `build-os-<version>.tgz`, and the SBOM file stays `buildos-<version>.cdx.json`. A project wrapper refuses a package with any other name, the earlier scoped name too. See [Package Name `build-os`](../work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#package-name-build-os-2026-11-26).
+
 ## Rebuild Risks
 
 ### R-001 Make Docs companion public-contract dependency
@@ -748,7 +768,7 @@ Code anchors:
 | --- | --- | --- |
 | Open | npm is the only channel. The scope is npm packaging, trusted publishing, provenance, SBOM, scans, and rollback by version pin, as stated in [PRD 20](./20-buildos-cli-and-distribution.md#release). Archives, Homebrew, and signing keys are withdrawn. `buildos update` and `buildos uninstall` stay with W2. | Verify the release flow and rollback by version pin in W1 R7 work P8, before `0.1.0` |
 
-**Issue**: BuildOS ships as the npm package `@brucewaynedecoy/buildos`. The release flow, provenance, SBOM, scans, and rollback by version pin are specified but not yet built or proven. Project wrappers run the version pinned in `.os/manifest.json`, so rollback depends on that pin and on earlier versions staying installable. Since the owner decision of 2026-11-25 (`Q-015`, pin-first), the pin always decides: a global install is used only when it is an npm install of exactly the pinned version; otherwise the wrapper fetches the pinned version. So rollback is the manifest edit alone, on every machine.
+**Issue**: BuildOS ships as the npm package `build-os` (`Q-017`). The release flow, provenance, SBOM, scans, and rollback by version pin are specified but not yet built or proven. Project wrappers run the version pinned in `.os/manifest.json`, so rollback depends on that pin and on earlier versions staying installable. Since the owner decision of 2026-11-25 (`Q-015`, pin-first), the pin always decides: a global install is used only when it is an npm install of exactly the pinned version; otherwise the wrapper fetches the pinned version. So rollback is the manifest edit alone, on every machine.
 
 **Why it matters**: One npm package reduces the release surface, but it does not prove package integrity, a safe first publish, or that a project can return to an earlier version after a bad release.
 
@@ -767,6 +787,8 @@ Code anchors:
 **W1 R7 P8 review round 1 (2026-11-24)**: The owner answered the two P8 questions with "A, A". First publication: the maintainer stages and approves a reserved-name placeholder (`0.0.0-reserved.0`, built by `toolkits/buildos/scripts/reserved-placeholder.ts`, dist-tag `reserved`) by hand, then configures npm trusted publishing for staging only, then `0.1.0` goes through the full workflow with provenance; the steps are in `toolkits/buildos/AGENTS.md` (First Publication). Repository: the orchestrator prepares a git-history rewrite on a copy (removing the removed client text and the two deleted Go binaries from old commits), the owner reviews it, the owner force-pushes it, and the owner makes the repository public before the release. Every commit SHA then changes, so SHAs cited in docs (the frozen Go baseline commits in `toolkits/buildos/test/golden/CAPTURE.md`, CI run links to commits, history records) need a mapping note after the rewrite; the P8 evidence tracks that task. The review also hardened the release workflow's trust boundary (one resolved commit, no candidate code in a job with the real list or the OIDC permission, the real list in a protected environment) and added owner settings for branch, tag, release, and environment protection ([P8 Review Round 1](../work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#p8-review-round-1)).
 
 **W1 R7 P8 git history (2026-11-25)**: The owner replaced the history rewrite with an exact method, because after a force-push in place GitHub can still serve old commits by their hash. The current repository is renamed to `build-os-archive` and stays private for good, with the old history. A new repository `brucewaynedecoy/build-os` starts with one clean commit of the release tree, which the orchestrator prepares on a copy and the owner reviews before the first push. The deny-list check with the real list runs on that tree before the push. The new repository becomes public before the release, and every repository setting of the release checklist is made on it ([SECURITY.md](../../toolkits/buildos/SECURITY.md#owner-settings-for-releases), steps 1 to 16). No SHA mapping note is needed: commit hashes in the docs from before the public repository name commits that exist only in the private archive, and the docs say so in one sentence ([CAPTURE.md](../../toolkits/buildos/test/golden/CAPTURE.md#frozen-go-baseline)).
+
+**Package name (2026-11-26)**: The owner chose the unscoped npm name `build-os` (`Q-017`). The first-publication steps, the placeholder, the trusted publisher, and every release check use that name. Nothing was published under the earlier name. See [Package Name `build-os`](../work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#package-name-build-os-2026-11-26).
 
 **Disposition**: Existing R-003 reconciles DI-013. W1 R7 narrowed it from an archive, Homebrew, and signing matrix to npm packaging and rollback by version pin.
 

@@ -38,7 +38,7 @@ persona: maintainer
 
 Use this guide when maintaining or preparing Build OS support for duplicate or replaced entity records. The accepted contract keeps every losing record, marks it `superseded`, and gives it one reviewed redirect to an immediate successor. A shared resolver follows that chain to one current canonical record. Most current terminals use `active`; qualified findings and run lifecycle states retain their type-specific contracts.
 
-The `buildos entities` domain of the `@brucewaynedecoy/buildos` npm package (`toolkits/buildos/src/core/entities/`) implements the whole-graph resolver and validator, the deterministic entity-resolution index, and the reviewed consolidation writer. W1 R4 built it first in Go; W1 R7 ported it to TypeScript with byte-for-byte parity (the Go output is the frozen golden baseline), and W1 R7 P8 removed the Go code. Maintainers test it against fixtures or a recoverable copied root. A successful copy does not authorize changing a live adopter root or a historical reference.
+The `buildos entities` domain of the `build-os` npm package (`toolkits/buildos/src/core/entities/`) implements the whole-graph resolver and validator, the deterministic entity-resolution index, and the reviewed consolidation writer. W1 R4 built it first in Go; W1 R7 ported it to TypeScript with byte-for-byte parity (the Go output is the frozen golden baseline), and W1 R7 P8 removed the Go code. Maintainers test it against fixtures or a recoverable copied root. A successful copy does not authorize changing a live adopter root or a historical reference.
 
 The command is `buildos entities`. No public `buildos-entities` executable exists. `buildos discovery` and `buildos design` use the same resolver inside the one package. W2 project update and sync commands are later work inside the same executable.
 
@@ -74,7 +74,7 @@ The authority boundaries are:
 ## Copied-Root Workflow
 
 1. Identify the BuildOS version, the adopter-owned data root, a recoverable copied root, and a separate review folder. Stop if any two are ambiguous.
-2. Use one exact version for every command: `npx -y @brucewaynedecoy/buildos@<version>`, written `<buildos>` below. Record `<buildos> version` (a source build reports `dev` and `unknown`; use a released version for an adopter rehearsal).
+2. Use one exact version for every command: `npx -y build-os@<version>`, written `<buildos>` below. Record `<buildos> version` (a source build reports `dev` and `unknown`; use a released version for an adopter rehearsal).
 3. Run `entities validate` in `compat` mode against the copy. Compatibility warnings identify legacy `superseded` rows without redirects and exclude them from automatic resolution.
 4. Confirm every loser in the version 1 manifest belongs to the same canonical JSONL dataset, then run it through `entities consolidate` without `--apply`. Split a cross-dataset review into separately approved manifests. Inspect every planned change and diagnostic.
 5. Apply only to the copy with `--apply`, then require strict validation and a current index with `rebuild-index --check`.

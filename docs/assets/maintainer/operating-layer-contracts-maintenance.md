@@ -68,7 +68,7 @@ Read each command's current root flags before use. Source-checkout examples do n
 
 Use this guide when adding or changing Build OS operating-layer contracts, `.os` routers, active guardrails, scoped metadata, workspace run/finding artifacts, or system-owned data/index routing. The current operating layer is contract first: contracts define authority, shape, lifecycle, and link rules; guardrails define always-on safety rules; routers only tell contributors where to go next.
 
-The `buildos entities` domain of the `@brucewaynedecoy/buildos` npm package implements redirect-aware graph loading, terminal resolution, compatibility and strict validation, reviewed consolidation, and deterministic index rebuilding. Use it against fixtures or a recoverable copied root first; live-data migration is a separate operator approval.
+The `buildos entities` domain of the `build-os` npm package implements redirect-aware graph loading, terminal resolution, compatibility and strict validation, reviewed consolidation, and deterministic index rebuilding. Use it against fixtures or a recoverable copied root first; live-data migration is a separate operator approval.
 
 Coverage outcome: `developer`. The durable knowledge here is maintainer-facing because it describes source-of-truth boundaries, extension points, validation, shipping boundaries, and safe-change rules. User-facing operation of the shipped filesystem is covered by the companion user guides for getting started, configuration, validation, playbooks, discovery, and workspace artifacts.
 

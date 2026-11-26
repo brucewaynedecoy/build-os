@@ -33,7 +33,7 @@ persona: maintainer
 
 # BuildOS CLI Development
 
-This guide is for maintainers who change the `buildos` command. The command is one npm package, `@brucewaynedecoy/buildos`, in `toolkits/buildos/`: TypeScript with `strict` on, shipped as one ESM bundle that esbuild builds, for Node.js 24 or newer, with no runtime dependencies. [PRD 20 BuildOS CLI and Distribution](../../prd/20-buildos-cli-and-distribution.md) is the authority. The design is [BuildOS Node and TypeScript CLI Rewrite](../../designs/2026-11-23-buildos-node-typescript-cli-rewrite.md).
+This guide is for maintainers who change the `buildos` command. The command is one npm package, `build-os`, in `toolkits/buildos/`: TypeScript with `strict` on, shipped as one ESM bundle that esbuild builds, for Node.js 24 or newer, with no runtime dependencies. [PRD 20 BuildOS CLI and Distribution](../../prd/20-buildos-cli-and-distribution.md) is the authority. The design is [BuildOS Node and TypeScript CLI Rewrite](../../designs/2026-11-23-buildos-node-typescript-cli-rewrite.md).
 
 The earlier Go tools (`toolkits/buildos-intake/`, `toolkits/buildos-discovery/`, `toolkits/buildos-design/`, and the Go seed in `toolkits/buildos/`) were removed in W1 R7 P8. Their output is the frozen parity baseline in `toolkits/buildos/test/golden/`; [`CAPTURE.md`](../../../toolkits/buildos/test/golden/CAPTURE.md) names the Go source commit and how to recover the Go tools from git history.
 

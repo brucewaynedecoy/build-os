@@ -8,7 +8,7 @@ Explain how Build OS is shaped end to end: three spaces, three pillars, three ch
 
 Build OS is not a running service; it is a structured filesystem operated by humans and agents. Three spaces keep concerns separate: the build layer (`docs/` in the BuildOS checkout, how we build the system), the system itself (`system/`, which `buildos init` places at the project root), and the system's target docs (the initialized project's `docs/` tree, outputs about the target). Both `docs/` trees are make-docs plug-ins. BuildOS ships no target-docs content; Make Docs creates the project `docs/` tree when the user chooses companion setup, as [05 Spaces, Boundary & Shipping](./05-spaces-boundary-and-shipping.md#integrations) states.
 
-Deterministic operations run through one command-line program, `buildos`. It ships as the npm package `@brucewaynedecoy/buildos` and runs on Node.js 24 or newer. No server or MCP process runs.
+Deterministic operations run through one command-line program, `buildos`. It ships as the npm package `build-os` and runs on Node.js 24 or newer. No server or MCP process runs.
 
 Code anchors:
 
@@ -27,7 +27,7 @@ Code anchors:
 | `system/playbooks/` | Typed instruments by category |
 | `system/workspace/` | `datasets/` (user data), `runs/`, `findings/`, `scripts/` |
 | Project `docs/` | make-docs target-doc pipeline (designs → plans → prd → work). Make Docs creates it in an initialized project when the user chooses companion setup; the `system/` package does not carry it |
-| `toolkits/buildos/` | The one TypeScript package for the `buildos` CLI, published as `@brucewaynedecoy/buildos`. A transport-neutral core holds domain logic and returns typed results and errors; it never writes to stdout or exits the process. A thin CLI adapter parses arguments, calls the core, and formats output. Domains are packages inside this one package |
+| `toolkits/buildos/` | The one TypeScript package for the `buildos` CLI, published as `build-os`. A transport-neutral core holds domain logic and returns typed results and errors; it never writes to stdout or exits the process. A thin CLI adapter parses arguments, calls the core, and formats output. Domains are packages inside this one package |
 
 ### Domain ownership
 

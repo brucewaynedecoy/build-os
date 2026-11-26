@@ -23,7 +23,7 @@ import { duplicatePaths, readTar } from "./tar-reader.mjs";
 
 export const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const REPO_ROOT = resolve(PACKAGE_ROOT, "..", "..");
-export const PACKAGE_NAME = "@brucewaynedecoy/buildos";
+export const PACKAGE_NAME = "build-os";
 /** The ledger, as a path from the repository root. The only file that may differ between the reviewed commit and the tag commit. */
 export const CANDIDATES_REPO_PATH = "toolkits/buildos/release-candidates.json";
 export const CANDIDATES_FILE = join(PACKAGE_ROOT, "release-candidates.json");
