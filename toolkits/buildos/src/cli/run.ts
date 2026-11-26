@@ -14,6 +14,9 @@ import { currentBuildInfo } from "./build-info.ts";
 import { designDomain } from "./commands/design.ts";
 import { discoveryDomain } from "./commands/discovery.ts";
 import { entitiesDomain } from "./commands/entities.ts";
+import { exportDomain } from "./commands/export.ts";
+import { extractDomain } from "./commands/extract.ts";
+import { fitgapDomain } from "./commands/fitgap.ts";
 import { initDomain } from "./commands/init.ts";
 import { intakeDomain } from "./commands/intake.ts";
 import { validateDomain } from "./commands/validate.ts";
@@ -30,7 +33,18 @@ import { UsageError } from "./usage-error.ts";
 const HELP_FLAGS = new Set(["help", "--help", "-h"]);
 
 /** Domains shipped in the CLI. Later phases register more here. */
-export const BUILTIN_DOMAINS: readonly Domain[] = [entitiesDomain, intakeDomain, discoveryDomain, designDomain, initDomain, validateDomain, versionDomain];
+export const BUILTIN_DOMAINS: readonly Domain[] = [
+  entitiesDomain,
+  intakeDomain,
+  discoveryDomain,
+  designDomain,
+  initDomain,
+  validateDomain,
+  extractDomain,
+  fitgapDomain,
+  exportDomain,
+  versionDomain,
+];
 
 export interface RunOptions {
   /** Domains to register. Defaults to `BUILTIN_DOMAINS`. */
@@ -38,6 +52,8 @@ export interface RunOptions {
   buildInfo?: BuildInfo;
   /** Opens the core filesystem port. Defaults to the `node:fs` adapter. */
   openFs?: FsPortFactory;
+  /** The clock for written time stamps (W1 R7 P9). Defaults to the system clock. */
+  now?: () => Date;
 }
 
 /** Runs one BuildOS command and returns its exit code. Never throws. */
@@ -53,7 +69,7 @@ export async function run(argv: readonly string[], io: CliIo, options: RunOption
     return factory(root, cwd, options);
   };
   try {
-    return await dispatch(argv, io, buildInfo, domains, state, openFs);
+    return await dispatch(argv, io, buildInfo, domains, state, openFs, options.now);
   } catch (error) {
     return reportFailure(error, io, buildInfo, wantsJson(argv), state);
   }
@@ -72,6 +88,7 @@ async function dispatch(
   domains: readonly Domain[],
   state: DispatchState,
   openFs: FsPortFactory,
+  now?: () => Date,
 ): Promise<ExitCode> {
   const [first, ...rest] = argv;
   if (first === undefined || HELP_FLAGS.has(first)) {
@@ -94,6 +111,7 @@ async function dispatch(
       state.command = command;
     },
     openFs,
+    ...(now === undefined ? {} : { now }),
   };
   const outcome = await domain.run(rest, context);
   if (outcome.rendered !== undefined) {

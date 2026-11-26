@@ -55,8 +55,13 @@ export function parentOf(location: Location): Location {
  * Go `os.MkdirAll(dir, 0o755)` through the port, inside the root: stop at a
  * folder that exists, refuse a file in the way (`syscall.ENOTDIR`), else make
  * the parent and then this folder. Throws a `GoError` with Go's text.
+ *
+ * W1 R7 P9 intake JSON review round 2: each level is one non-recursive
+ * `mkdir`, so its success says that this call made that folder. `made` is
+ * told each folder at once, also when a later level then fails; a folder
+ * that was there (or that another process made first) is not told.
  */
-export function mkdirAll(fs: FsPort, dir: Location): void {
+export function mkdirAll(fs: FsPort, dir: Location, made?: (dir: Location) => void): void {
   let kind: "file" | "directory" | undefined;
   try {
     kind = fs.stat(dir.port)?.kind;
@@ -66,7 +71,7 @@ export function mkdirAll(fs: FsPort, dir: Location): void {
   }
   if (kind === "directory") return;
   if (kind === "file") throw new GoError(`mkdir ${dir.go}: ${goNotDirText()}`);
-  if (dir.port !== "." && dir.port !== "") mkdirAll(fs, parentOf(dir));
+  if (dir.port !== "." && dir.port !== "") mkdirAll(fs, parentOf(dir), made);
   try {
     // Go's MkdirAll(dir, 0o755): the umask applies to 0o755, not to 0o777.
     fs.mkdir(dir.port, { recursive: false, mode: 0o755 });
@@ -80,6 +85,7 @@ export function mkdirAll(fs: FsPort, dir: Location): void {
     }
     throw new GoError(goPathError("mkdir", dir.go, error.fs));
   }
+  made?.(dir);
 }
 
 /** Go's wrappers for each failed step of an atomic write. */

@@ -22,6 +22,12 @@ export interface CommandContext {
    * never loads `fs`; a domain passes this factory to core.
    */
   openFs: FsPortFactory;
+  /**
+   * W1 R7 P9: the clock for the time stamps a command writes (`buildos
+   * extract bulk`, `buildos fitgap merge`). Tests pass a fixed one. Default:
+   * the system clock.
+   */
+  now?: () => Date;
 }
 
 /**

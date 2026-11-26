@@ -132,8 +132,15 @@ export interface FsPort {
    * bound: at most one byte more than expected. A content read, contained.
    */
   matchesEntry(path: string, expected: ExpectedEntry): boolean;
-  /** Renames a file or folder. Both paths must be inside the root. */
-  rename(from: string, to: string): void;
+  /**
+   * Renames a file or folder. Both paths must be inside the root. With
+   * `entries` (W1 R7 P9 review round 1, P9-R1-04), no link at either last
+   * name is followed, as `os.Rename` acts on folder entries: a link at
+   * `from` moves as the link itself (so it may point anywhere, and keeps its
+   * identity), and a link at `to` is replaced. Only the two folders must be
+   * inside the root (or allowed by `allowOutsideRoot`).
+   */
+  rename(from: string, to: string, options?: { entries?: boolean }): void;
   /**
    * Creates a folder and any missing parents. An existing folder is fine.
    * With `recursive: false`, creates only this folder, and an existing entry
@@ -308,6 +315,13 @@ export interface NewFileOptions {
   mode?: number;
   /** Flush the file and its parent folder. Default: false. A failed step removes the new file either way. */
   sync?: boolean;
+  /**
+   * W1 R7 P9 review round 2 (P9-R2-06): with `mode`, give the new file
+   * exactly those permission bits (`fchmod` after the write, so the umask
+   * does not apply and the setuid and setgid bits stay). On Windows Node maps
+   * only the owner-write bit (the read-only attribute). Default: false.
+   */
+  exactMode?: boolean;
 }
 
 /** One folder entry, as Go's `fs.DirEntry` types it (from the entry, not its target). */
@@ -409,8 +423,17 @@ export interface InPlaceWritePort {
    * A failed step throws
    * `FsWriteFailure` with the step (`open`, `write`, or `close`) and the OS
    * error code; a failed check throws `PathRefusedError`.
+   *
+   * W1 R7 P9 intake JSON review round 2: the call says what it did at the
+   * name. It returns `created` (a new file) or `changed` (an existing file
+   * truncated and written, or a link at the name replaced). A thrown error
+   * carries the same answer (`inPlaceEffectOf`), also when the write or the
+   * close fails after the open: `untouched` when nothing at the name changed.
+   *
+   * W1 R7 P9 intake JSON final check: `options` (`InPlaceWriteOptions`)
+   * sets the overwrite policy and gets the identity of the opened file.
    */
-  writeFileInPlace(path: string, data: Uint8Array, mode: number): void;
+  writeFileInPlace(path: string, data: Uint8Array, mode: number, options?: InPlaceWriteOptions): InPlaceEffect;
   /**
    * The checks `writeFileInPlace` makes, without writing: the target text,
    * its folder's real path, and the entry at its name (a symlink to a
@@ -435,6 +458,64 @@ export interface InPlaceWritePort {
    * error the `mkdir` would get.
    */
   checkMkdir(path: string): void;
+}
+
+/** W1 R7 P9 intake JSON final check: the options of one `writeFileInPlace` call. */
+export interface InPlaceWriteOptions {
+  /**
+   * `false` (intake without `--force`, finding 1): the call never opens or
+   * truncates an entry that is at the name. When an entry is there at the
+   * check or when the `O_EXCL` create meets one (another program made it
+   * after the command's last existence check), the call throws
+   * `FsWriteFailure` (step `open`, `EEXIST`) and leaves that entry as it
+   * is. Default `true`: an existing file is written in place.
+   */
+  overwrite?: boolean;
+  /**
+   * Gets the identity of the file the call opened (device and inode, from
+   * the `fstat` right after the open; equal text means the same file), when
+   * the OS gives one. Finding 5: two spellings of one file on a
+   * case-insensitive volume are one entry of the intake record.
+   */
+  opened?: (identity: string) => void;
+}
+
+/**
+ * W1 R7 P9 intake JSON review round 2: what one `writeFileInPlace` call did
+ * at its name, from the call itself (no lookup before or after). `created`:
+ * the call made a new file there. `changed`: the call changed an entry that
+ * was there (it truncated or wrote an existing file, or removed a link to
+ * put a file in its place). `untouched`: the call changed nothing there
+ * (a refusal or a failed open before any change).
+ */
+export type InPlaceEffect = "created" | "changed" | "untouched";
+
+/**
+ * Adds what a failed `writeFileInPlace` did (`InPlaceEffect`) to its error,
+ * and returns the error. `linkRemoved` (final check, finding 3): the call
+ * removed a link at the name; the file the link pointed to is not changed.
+ */
+export function withInPlaceEffect(error: unknown, effect: InPlaceEffect, linkRemoved = false): unknown {
+  if (typeof error === "object" && error !== null) {
+    (error as { buildosInPlaceEffect?: InPlaceEffect }).buildosInPlaceEffect = effect;
+    if (linkRemoved) (error as { buildosInPlaceLinkRemoved?: boolean }).buildosInPlaceLinkRemoved = true;
+  }
+  return error;
+}
+
+/** True when a failed `writeFileInPlace` removed a link at the name (`withInPlaceEffect`). */
+export function inPlaceLinkRemovedOf(error: unknown): boolean {
+  return typeof error === "object" && error !== null && (error as { buildosInPlaceLinkRemoved?: boolean }).buildosInPlaceLinkRemoved === true;
+}
+
+/**
+ * What a failed `writeFileInPlace` did, from its error. A writer that does
+ * not say (an error without the answer) is taken as `changed`, so the
+ * report never hides a change.
+ */
+export function inPlaceEffectOf(error: unknown): InPlaceEffect {
+  const tagged = error as { buildosInPlaceEffect?: InPlaceEffect } | null;
+  return typeof tagged === "object" && tagged !== null && tagged.buildosInPlaceEffect !== undefined ? tagged.buildosInPlaceEffect : "changed";
 }
 
 /** Opens an in-place writer bound to `root`, as `FsPortFactory` does. */

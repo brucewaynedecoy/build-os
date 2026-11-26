@@ -131,7 +131,7 @@ import {
   type FsFailureDetail,
   type PathRefusalReason,
 } from "../core/shared/errors.ts";
-import type { AtomicWriteOptions, ExpectedEntry, FsDirEntry, FsEntryId, FsLimitedRead, FsPort, FsPortFactory, FsPortOptions, FsReadStream, FsStat, InPlaceWritePort, InPlaceWritePortFactory, WriteLeftovers } from "../core/shared/fs-port.ts";
+import { withInPlaceEffect, type AtomicWriteOptions, type ExpectedEntry, type FsDirEntry, type FsEntryId, type FsLimitedRead, type FsPort, type FsPortFactory, type FsPortOptions, type FsReadStream, type FsStat, type InPlaceEffect, type InPlaceWritePort, type InPlaceWritePortFactory, type InPlaceWriteOptions, type WriteLeftovers } from "../core/shared/fs-port.ts";
 import { rootAsGiven } from "../core/shared/root.ts";
 
 /** Path rules for a platform. Tests pass `win32` or `posix` to check both. */
@@ -159,6 +159,13 @@ export const writeRaceHooks: {
    * write made).
    */
   beforeStep?: (step: "sync-parent" | "unlink", target: string) => void;
+  /**
+   * W1 R7 P9 intake JSON final check (finding 6): runs right after the
+   * in-place writer's real close of a file it wrote (`close-in-place`). A
+   * test throws from here to make that close fail after a complete write;
+   * the descriptor is already closed.
+   */
+  afterStep?: (step: "close-in-place", target: string) => void;
 } = {};
 
 /**
@@ -1095,10 +1102,11 @@ function openNodeFs(root: string, cwd: string, options: FsPortOptions): { port: 
       }
       return committed;
     }),
-    rename: (from, to) =>
+    rename: (from, to, renameOptions = {}) =>
       guard("write", `rename ${String(from)} to ${String(to)}`, () => {
-        const source = entryOf(from);
-        const destination = entryOf(to);
+        const follows = renameOptions.entries !== true;
+        const source = entryOf(from, follows);
+        const destination = entryOf(to, follows);
         const folders = [folderId(source.dir), folderId(destination.dir)];
         writeRaceHooks.beforeOpen?.("rename", destination.entry);
         if (!folders.every(sameFolder)) throw refuse("outside-root", `the folder of ${String(from)} or ${String(to)} changed before the rename`);
@@ -1165,6 +1173,8 @@ function openNodeFs(root: string, cwd: string, options: FsPortOptions): { port: 
           } else {
             writeAll(fd, data);
           }
+          // W1 R7 P9 review round 2 (P9-R2-06): exactly these permission bits, whatever the umask, set after the write (a write clears setuid and setgid).
+          if (options.exactMode === true && options.mode !== undefined) fchmodSync(fd, options.mode);
           if (options.sync === true) fsyncSync(fd);
           // P4-P5 merge fix round: the file is complete only after its close
           // succeeds. A close error is a failed step: the new file is removed
@@ -1426,8 +1436,28 @@ function openNodeFs(root: string, cwd: string, options: FsPortOptions): { port: 
    * folder (device and inode) as checked, and the name must still be the
    * opened file. Only then is it truncated and written. A refused write
    * removes a file it created. `SECURITY.md` states the window that stays.
+   *
+   * W1 R7 P9 intake JSON review round 2: the call records what it did at
+   * the name as it does it (`InPlaceEffect`), returns it, and adds it to a
+   * thrown error, so a caller can report each change without a lookup.
    */
-  const writeInPlace = (target: string, data: Uint8Array, mode: number): void =>
+  const writeInPlace = (target: string, data: Uint8Array, mode: number, options: InPlaceWriteOptions = {}): InPlaceEffect => {
+    let effect: InPlaceEffect = "untouched";
+    let linkRemoved = false;
+    try {
+      guardedWriteInPlace(target, data, mode, options, (next) => (effect = next), () => effect, () => (linkRemoved = true));
+    } catch (error) {
+      throw withInPlaceEffect(error, effect, linkRemoved);
+    }
+    return effect;
+  };
+  /**
+   * W1 R7 P9 intake JSON final check (finding 1): the `EEXIST` failure of a
+   * write with `overwrite: false` that met an entry at the name. The entry
+   * is not opened and keeps its bytes.
+   */
+  const entryExists = (entry: string): Error => Object.assign(new Error(`EEXIST: file already exists, open '${entry}'`), { code: "EEXIST", syscall: "open", path: entry });
+  const guardedWriteInPlace = (target: string, data: Uint8Array, mode: number, options: InPlaceWriteOptions, record: (effect: InPlaceEffect) => void, current: () => InPlaceEffect, removedLink: () => void): void =>
     guard("write", `write ${String(target)}`, () => {
       const tag = <T>(step: AtomicWriteStep, action: () => T): T => {
         try {
@@ -1454,46 +1484,68 @@ function openNodeFs(root: string, cwd: string, options: FsPortOptions): { port: 
         const seen = { dev: stats.dev, ino: stats.ino };
         if (!sameFolder(folder) || !sameEntry(entry, seen, true)) throw refuse("outside-root", `${target} changed while it was opened`);
         tag("open", () => unlinkSync(entry));
+        record("changed");
+        removedLink();
         stats = undefined;
       }
+      // Final check, finding 1: without overwrite, an entry at the name is
+      // never opened, and an `O_EXCL` collision is not tried again as an
+      // overwrite.
+      const overwrite = options.overwrite !== false;
+      if (!overwrite && stats !== undefined) tag("open", () => { throw entryExists(entry); });
       const nofollow = constants.O_NOFOLLOW ?? 0;
       let fd: number | undefined;
       let created = false;
       // An existing file is opened as it is; a new one is created with
       // O_EXCL. A file that appears or goes away between the two is tried
-      // once more the other way.
+      // once more the other way (only with overwrite for a file that appears).
       for (let attempt = 0, exists = stats !== undefined; fd === undefined; attempt++, exists = !exists) {
         writeRaceHooks.beforeOpen?.("in-place", entry);
         try {
           fd = exists ? openSync(entry, constants.O_WRONLY | nofollow) : openSync(entry, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | nofollow, mode);
           created = !exists;
         } catch (error) {
-          const retry = attempt === 0 && errorCode(error) === (exists ? "ENOENT" : "EEXIST");
+          const retry = attempt === 0 && errorCode(error) === (exists ? "ENOENT" : "EEXIST") && (exists || overwrite);
           if (!retry) tag("open", () => { throw error; });
         }
       }
+      // A link this call removed makes the new file a change of the entry
+      // that was there; else a new file is `created`.
+      const beforeCreate = current();
+      if (created) record(beforeCreate === "changed" ? "changed" : "created");
       let closed = false;
       let opened: EntryKey | undefined;
       const createdIn = created ? parentId(inspected.dir) : undefined;
       try {
         const openedStats = fstatSync(fd, { bigint: true });
         opened = { dev: openedStats.dev, ino: openedStats.ino };
+        // Final check, finding 5: an inode of 0 is no identity.
+        if (openedStats.ino !== 0n) options.opened?.(`${openedStats.dev}:${openedStats.ino}`);
         if (!openedStats.isFile()) throw refuse("special-file", `${target} is not a regular file`);
         if (openedStats.nlink !== 1n) throw refuse("special-file", `${target} has ${openedStats.nlink} hard links; the port writes in place only to a file with one link`);
         if (!sameFolder(folder) || !sameEntry(entry, opened)) throw refuse("outside-root", `${target} changed while it was opened`);
         tag("open", () => ftruncateSync(fd, 0));
+        if (!created) record("changed");
         tag("write", () => {
           let offset = 0;
           while (offset < data.byteLength) offset += writeSync(fd, data, offset, data.byteLength - offset);
         });
         closed = true;
-        tag("close", () => closeSync(fd));
+        tag("close", () => {
+          closeSync(fd);
+          writeRaceHooks.afterStep?.("close-in-place", entry);
+        });
       } catch (error) {
         if (!closed) {
           closed = true;
           closeSync(fd);
         }
-        if (created && error instanceof PathRefusedError && removeOwn(entry, opened, createdIn) === "mismatch") throw leftInPlace(error, entry, "new file");
+        if (created && error instanceof PathRefusedError) {
+          const removed = removeOwn(entry, opened, createdIn);
+          // The file this call made is gone again: the name is as before the create.
+          if (removed === "done") record(beforeCreate);
+          if (removed === "mismatch") throw leftInPlace(error, entry, "new file");
+        }
         throw error;
       }
     });
