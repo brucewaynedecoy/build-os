@@ -766,9 +766,9 @@ Code anchors:
 
 | Status | Decision | Follow-Up |
 | --- | --- | --- |
-| Open | npm is the only channel. The scope is npm packaging, trusted publishing, provenance, SBOM, scans, and rollback by version pin, as stated in [PRD 20](./20-buildos-cli-and-distribution.md#release). Archives, Homebrew, and signing keys are withdrawn. `buildos update` and `buildos uninstall` stay with W2. | Verify the release flow and rollback by version pin in W1 R7 work P8, before `0.1.0` |
+| Open | npm is the only channel. The scope is npm packaging, trusted publishing, provenance, SBOM, scans, and rollback by version pin, as stated in [PRD 20](./20-buildos-cli-and-distribution.md#release). Archives, Homebrew, and signing keys are withdrawn. `buildos update` and `buildos uninstall` stay with W2. | Verify the release flow and rollback by version pin in W1 R7 work P8. The deadline "before `0.1.0`" was missed: `0.1.0` was published on 2026-11-26 before the Stage 4 checks and the publication review. The owner decides what to do with the outstanding checks (t15 to t18, t22 to t24); that decision is open. |
 
-**Issue**: BuildOS ships as the npm package `build-os` (`Q-017`). The release flow, provenance, SBOM, scans, and rollback by version pin are specified but not yet built or proven. Project wrappers run the version pinned in `.os/manifest.json`, so rollback depends on that pin and on earlier versions staying installable. Since the owner decision of 2026-11-25 (`Q-015`, pin-first), the pin always decides: a global install is used only when it is an npm install of exactly the pinned version; otherwise the wrapper fetches the pinned version. So rollback is the manifest edit alone, on every machine.
+**Issue**: BuildOS ships as the npm package `build-os` (`Q-017`). The release flow, provenance, SBOM, and scans are built, and `0.1.0` was published through them on 2026-11-26. The checks on the staged package and rollback by version pin are not yet proven. Project wrappers run the version pinned in `.os/manifest.json`, so rollback depends on that pin and on earlier versions staying installable. Since the owner decision of 2026-11-25 (`Q-015`, pin-first), the pin always decides: a global install is used only when it is an npm install of exactly the pinned version; otherwise the wrapper fetches the pinned version. So rollback is the manifest edit alone, on every machine.
 
 **Why it matters**: One npm package reduces the release surface, but it does not prove package integrity, a safe first publish, or that a project can return to an earlier version after a bad release.
 
@@ -778,7 +778,7 @@ Code anchors:
 
 **Owner**: BuildOS release owner.
 
-**Phase/gate**: W1 R7 work P8, before `0.1.0`; the W2 design for update, uninstall, sync, and the other deferred installation-lifecycle items.
+**Phase/gate**: W1 R7 work P8, before `0.1.0` (this gate was missed on 2026-11-26; see the first-publication paragraph below); the W2 design for update, uninstall, sync, and the other deferred installation-lifecycle items.
 
 **Required evidence**: Staged-package smoke tests on three operating systems, provenance and digest checks, SBOM, scan results, rollback by version pin on a copied project, and maintainer approval of the publish.
 
@@ -789,6 +789,8 @@ Code anchors:
 **W1 R7 P8 git history (2026-11-25)**: The owner replaced the history rewrite with an exact method, because after a force-push in place GitHub can still serve old commits by their hash. The current repository is renamed to `build-os-archive` and stays private for good, with the old history. A new repository `brucewaynedecoy/build-os` starts with one clean commit of the release tree, which the orchestrator prepares on a copy and the owner reviews before the first push. The deny-list check with the real list runs on that tree before the push. The new repository becomes public before the release, and every repository setting of the release checklist is made on it ([SECURITY.md](../../toolkits/buildos/SECURITY.md#owner-settings-for-releases), steps 1 to 16). No SHA mapping note is needed: commit hashes in the docs from before the public repository name commits that exist only in the private archive, and the docs say so in one sentence ([CAPTURE.md](../../toolkits/buildos/test/golden/CAPTURE.md#frozen-go-baseline)).
 
 **Package name (2026-11-26)**: The owner chose the unscoped npm name `build-os` (`Q-017`). The first-publication steps, the placeholder, the trusted publisher, and every release check use that name. Nothing was published under the earlier name. See [Package Name `build-os`](../work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#package-name-build-os-2026-11-26).
+
+**W1 R7 P8 first publication (2026-11-26)**: `build-os@0.1.0` is published on npm with provenance, through the real prepare and release runs. The release gate was missed: the owner published `0.1.0` and approved the npm stage before the Stage 4 checks on the staged package (t15 to t18) and before `PERF-002` and the publication review (t22 to t24). The orchestrator's step list put the approval first. This was an orchestration mistake, not an owner decision to skip the checks. A74 and A75 are not met, and t25 stays open. Owner decision open. This item stays open. See the [release-order departure](../work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/08-release-0-1-0.md#closeout-notes) and [First Publication of 0.1.0](../work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#first-publication-of-010-2026-11-26).
 
 **Disposition**: Existing R-003 reconciles DI-013. W1 R7 narrowed it from an archive, Homebrew, and signing matrix to npm packaging and rollback by version pin.
 
