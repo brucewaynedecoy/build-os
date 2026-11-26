@@ -1,6 +1,6 @@
 {
   "$comment": "Written by test/golden/skills/capture.ts (W1 R7 P9 t2; review round 1, P9-R1-17). What the three skill scripts did on each fixture case, captured on a maintainer machine. CI never runs Python. capture.ts --check compares every field except provenance.",
-  "script_revision": "38d1e08",
+  "script_revision": "085927e3c1324fc73fe57af9493ca0b01fcaed18",
   "scripts": {
     "system/.os/skills/buildos-bulk-extract/scripts/work.py": "1ab581af75c87ea2bfb020e6e8ffd7f8a823e2ee7a74891b024a95753bc9e1b5",
     "system/.os/skills/fit-gap-analysis/scripts/fitgap.py": "796aca12e995b272655d3591e3fa6a38a79f652b412a1154b6b0f281150888e6",

@@ -2,11 +2,15 @@
 // validate fixture case (W1 R7 P7 t13). A maintainer runs it; CI never does,
 // and no test needs Python.
 //
-//   node test/golden/validate/capture.ts [--check] [--script <path>] [--python <program>]
+//   node test/golden/validate/capture.ts --script <path> [--check] [--python <program>]
 //
-// The script was deleted from system/.os/scripts/ in W1 R7 P7 t16. By default
-// this reads it from git at SCRIPT_REVISION (`git show`), and checks its
-// SHA-256 against SCRIPT_SHA256. `--script` names a copy instead.
+// The script was deleted from system/.os/scripts/ in W1 R7 P7 t16, before the
+// public repository started, so no commit of this repository holds it.
+// `--script` names a copy of `system/.os/scripts/validate_config.py` at
+// SCRIPT_REVISION, a commit of the earlier history, which exists only in the
+// private archive repository brucewaynedecoy/build-os-archive
+// (test/golden/CAPTURE.md, Skill-Script and Validator Sources). The capture
+// checks the copy's SHA-256 against SCRIPT_SHA256 and refuses any other.
 //
 // For each case it builds the source layout of the case project (cases.ts
 // `materialize`, normalization N2) in a fresh temporary folder, runs
@@ -27,9 +31,9 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { GOLDENS, loadCases, materialize, PACKAGE_ROOT, pythonKeys, type PythonGolden } from "./cases.ts";
+import { GOLDENS, loadCases, materialize, pythonKeys, type PythonGolden } from "./cases.ts";
 
-/** The last commit that has `system/.os/scripts/validate_config.py`. */
+/** The last commit that has `system/.os/scripts/validate_config.py`: capture provenance only, never read from git (it is not in this repository). */
 export const SCRIPT_REVISION = "0560ba1";
 export const SCRIPT_SHA256: string = "20350b47ccde83df980e7b8b42b0c30262226ccd8b48809184afc72c6dbf905c";
 
@@ -45,7 +49,8 @@ let failures = 0;
 try {
   const scriptPath = join(work, "validate_config.py");
   const given = arg("--script");
-  const script = given !== undefined ? readFileSync(given) : execFileSync("git", ["show", `${SCRIPT_REVISION}:system/.os/scripts/validate_config.py`], { cwd: PACKAGE_ROOT, maxBuffer: 1 << 24 });
+  if (given === undefined) throw new Error(`--script <path> is required: a copy of system/.os/scripts/validate_config.py at ${SCRIPT_REVISION} (private archive), SHA-256 ${SCRIPT_SHA256}`);
+  const script = readFileSync(given);
   const scriptSha = createHash("sha256").update(script).digest("hex");
   if (scriptSha !== SCRIPT_SHA256) throw new Error(`the legacy script SHA-256 is ${scriptSha}, not ${SCRIPT_SHA256}`);
   writeFileSync(scriptPath, script);

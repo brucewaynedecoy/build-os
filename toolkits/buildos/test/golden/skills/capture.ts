@@ -6,7 +6,13 @@
 //       [--wheel <file>.whl=<sha256>]...
 //
 // The scripts leave system/.os/skills/ in W1 R7 P9 Stage 3. This reads each
-// from git at SCRIPT_REVISION (`git show`) and checks its SHA-256. Each case
+// script and the fit-gap palette from git at SCRIPT_REVISION (`git show`;
+// script-source.ts) and checks each SHA-256 against script-sha256.json.
+// SCRIPT_REVISION is the first commit of the public repository. The
+// committed goldens were captured from commit 38d1e08 of the earlier
+// history, which exists only in the private archive repository
+// brucewaynedecoy/build-os-archive; the files have the same SHA-256 at both
+// commits (test/golden/CAPTURE.md, Skill-Script and Validator Sources). Each case
 // runs in a fresh temporary project (scenario.ts). Python runs with `-P -s`
 // (no script folder, current folder, or user site on the module path),
 // PYTHONHASHSEED=0 (work.py writes the keys of a Python set; see
@@ -35,19 +41,8 @@ import { mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { compareWorkbooks, readXlsx, readXlsxFile } from "../../xlsx-compare.ts";
+import { PALETTE_PATH, SCRIPT_FILES, SCRIPT_REVISION } from "./script-source.ts";
 import { GOLDENS, PACKAGE_ROOT, SCRIPTS, goldenPath, loadCases, runCase, sha256, xlsxGoldenPath, type Runner, type ScriptName } from "./scenario.ts";
-
-/** The commit the scripts were captured from (W1 R7 P8 closeout, the base of W1 R7 P9). */
-export const SCRIPT_REVISION = "38d1e08";
-
-export const SCRIPT_FILES: Record<ScriptName, { path: string; sha256: string }[]> = {
-  "bulk-extract": [{ path: "system/.os/skills/buildos-bulk-extract/scripts/work.py", sha256: "" }],
-  fitgap: [{ path: "system/.os/skills/fit-gap-analysis/scripts/fitgap.py", sha256: "" }],
-  "azure-boards": [
-    { path: "system/.os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs", sha256: "" },
-    { path: "system/.os/skills/buildos-export-azure-boards/scripts/adapters/dynamics-365-ce.mjs", sha256: "" },
-  ],
-};
 
 export const FIXED_NOW = "2026-01-15T12:00:00Z";
 
@@ -123,7 +118,8 @@ try {
       scripts[file.path] = sum;
     }
   }
-  const palette = execFileSync("git", ["show", `${SCRIPT_REVISION}:system/.os/skills/fit-gap-analysis/config/owner-colors.json`], { cwd: PACKAGE_ROOT });
+  const palette = execFileSync("git", ["show", `${SCRIPT_REVISION}:${PALETTE_PATH}`], { cwd: PACKAGE_ROOT });
+  if (pinned[PALETTE_PATH] !== sha256(palette)) throw new Error(`${PALETTE_PATH} at ${SCRIPT_REVISION} has SHA-256 ${sha256(palette)}, not the pinned ${pinned[PALETTE_PATH] ?? "(none)"}`);
   const pythonVersion = execFileSync(python, ["-I", "--version"], { encoding: "utf8" }).trim();
   const openpyxl = spawnSync(python, ["-P", "-s", "-c", "import openpyxl, et_xmlfile; print(openpyxl.__version__, et_xmlfile.__version__)"], { encoding: "utf8", env });
   const nodeVersion = process.version;

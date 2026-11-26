@@ -1,7 +1,8 @@
 {
-  "$comment": "SHA-256 of each skill script at the capture revision (test/golden/skills/capture.ts SCRIPT_REVISION 38d1e08). The capture refuses a script with any other hash.",
+  "$comment": "SHA-256 of each skill script and of the fit-gap palette at the capture revision (test/golden/skills/script-source.ts SCRIPT_REVISION, the first commit of the public repository; the goldens were captured from the same bytes at commit 38d1e08 of the private archive, test/golden/CAPTURE.md). The capture refuses a file with any other hash.",
   "system/.os/skills/buildos-bulk-extract/scripts/work.py": "1ab581af75c87ea2bfb020e6e8ffd7f8a823e2ee7a74891b024a95753bc9e1b5",
   "system/.os/skills/fit-gap-analysis/scripts/fitgap.py": "796aca12e995b272655d3591e3fa6a38a79f652b412a1154b6b0f281150888e6",
   "system/.os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs": "e5f3b6160b8c4eaef54cfbe9587771834384425fee80685989a51499cc890318",
-  "system/.os/skills/buildos-export-azure-boards/scripts/adapters/dynamics-365-ce.mjs": "5f20eea06d5c3938cb52407aa9010a597d544ebb42935a6de1899245bf17f5d4"
+  "system/.os/skills/buildos-export-azure-boards/scripts/adapters/dynamics-365-ce.mjs": "5f20eea06d5c3938cb52407aa9010a597d544ebb42935a6de1899245bf17f5d4",
+  "system/.os/skills/fit-gap-analysis/config/owner-colors.json": "e462b389e6c5a183ea1b94c0a4dd57ad8caa70e64d7d5d805072d89f96e77833"
 }

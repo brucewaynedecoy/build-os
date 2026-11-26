@@ -6313,7 +6313,7 @@ Four files did not apply cleanly. Each was merged by content, with the archive's
 
 - Links: 15 added lines in 9 files named `#owner-decisions-2026-11-25` for the P9 decisions; they now name `#p9-owner-decisions-2026-11-25`. A 16th such line was one of the two repeated lines above and is gone.
 - `test/golden/compare.test.ts` accepts an owner decision link to `evidence.md#owner-decisions` or `evidence.md#p9-owner-decisions`, because PE-021 and PE-022 now link to the P9 section.
-- The P9 introduction says that the archive commit hashes and branch names in the P9 records name commits and branches of the private archive (13 commit hashes and the branches `rewrite/ts-cli-p9` to `rewrite/ts-cli-p9-owner4`).
+- The P9 introduction says that the archive commit hashes and branch names in the P9 records name commits and branches of the private archive (13 P9 commit IDs plus the earlier Go baseline commit `263f5ca`, and the branches `rewrite/ts-cli-p9` to `rewrite/ts-cli-p9-owner4`). Recount on 2026-11-26 (review round 1 on the public repository, finding 3): the moved text has 14 distinct commit IDs that do not resolve here, the 13 P9 IDs `38d1e08`, `3fe6f9c`, `4705e52`, `4c02048`, `4f4fb08`, `576d9ce`, `7df73a1`, `9f5aee9`, `befc751`, `dd20021`, `e07b993`, `e1f2154`, and `f364ee3`, and `263f5ca`. This move record also names `1240758`, the end of the moved range.
 - The P9 phase status names this move and the owner decisions of 2026-11-26.
 
 ### Check Results (Move)
@@ -6333,3 +6333,30 @@ From `toolkits/buildos/` unless noted. macOS arm64, Node 26.13.1; npm with a cac
 | Added lines against `6db975a`: absolute home paths, the machine user name, new `~/` paths, `file://`, email addresses | 0 of each |
 
 Not run here: Node 24, Linux, and Windows (the CI run of the pull request covers them), and `capture.ts --check` (it needs Python and openpyxl). No captured golden output changed in the move; in `test/golden/`, only the owner decision links of `parity-exceptions.json`, `proposed-exceptions.json`, and `skills/divergences.json`, and the matching checks in `self-test.test.ts` and `compare.test.ts`, changed.
+
+## P9 Review Round 1 on the Public Repository (2026-11-26)
+
+An independent review of pull request 6 (head `511436e`) gave FAIL with one blocker, one should-fix, and two notes. The orchestrator accepted all four. The fixes are new commits on `rewrite/p9-skill-commands`, on macOS arm64 with Node 26.13.1. Pull request 5 was not merged, so the base stays `6db975a`.
+
+| Finding | Resolution | Check |
+| --- | --- | --- |
+| 1 (blocker) the skill-script capture read the scripts from the private archive commit `38d1e08`, so `capture.ts --check` failed in a public clone | `test/golden/skills/script-source.ts` holds the capture revision: `085927e3c1324fc73fe57af9493ca0b01fcaed18`, the first commit of this repository. The four scripts and the fit-gap palette have the same SHA-256 there as at `38d1e08`; the palette is now pinned too (`script-sha256.json`). `capture-record.json` names the new revision; no golden changed. `38d1e08` stays as capture provenance in `test/golden/CAPTURE.md` (Skill-Script and Validator Sources) and the tool header. Two more run-time archive references: the validator capture (`test/golden/validate/capture.ts`) read `0560ba1`, which no public commit can replace, because the script was deleted before the public repository started; it now needs `--script <path>` and keeps the SHA-256 check. `test/wrappers.test.ts` read the Go-era wrapper from `7cfc0b7` and fell back to a shorter text in a public clone; it now holds the exact text with its SHA-256. | `test/capture-sources.test.ts`: the revision is a full SHA, equals the commit CAPTURE.md documents and the record names, resolves here as the root commit reachable from `HEAD`, and holds every pinned file with its hash; no code or workflow file names a commit-like literal that does not resolve here, except listed provenance-only literals in files that never run git. CI checks out the full history for it (`buildos-ci.yml`, `fetch-depth: 0`). With `38d1e08` put back as the revision, all three tests fail. |
+| 2 (should-fix) t4 to t8 ticked before A77 passes | Decided on the CI run of the fix commit; see the P9 phase status. | Pull request checks |
+| 3 (note) the archive note said 13 commit IDs | The note in [Changes After the Patch](#changes-after-the-patch) now says 13 P9 commit IDs plus the earlier Go baseline commit, and lists every ID. | Recount of the moved text |
+| 4 (note) the body of `511436e` paraphrased its history record | Not rewritten. The new commits copy the first `## Changes` paragraph of their history record. | Commit messages |
+
+### Check Results (Review Round 1 on the Public Repository)
+
+From `toolkits/buildos/` unless noted. macOS arm64, Node 26.13.1, Python 3.14.10.
+
+| Check | Result |
+| --- | --- |
+| `node test/golden/skills/capture.ts --check --script azure-boards` | exit 0, 11 cases |
+| `node test/golden/skills/capture.ts --check --script bulk-extract` | exit 0, 35 cases |
+| `node test/golden/skills/capture.ts --check --script fitgap --python <venv>/bin/python` | exit 0, 15 cases; openpyxl 3.1.5 and et_xmlfile 2.0.0 from the pinned wheel hashes, in a throwaway virtual environment under the temporary folder |
+| `node test/golden/skills/capture.ts --check --python <venv>/bin/python` (every script and `capture-record.json`) | exit 0 |
+| `node test/golden/validate/capture.ts --check --script <copy>` | exit 0, 85 cases; the copy is `validate_config.py` at `0560ba1`, read from the private archive, SHA-256 `20350b47…905c`; without `--script` the tool stops with exit 1 |
+| `npm ci --ignore-scripts`, `npm run typecheck`, `npm run build` | exit 0 |
+| `npm test` | exit 0; 2,735 tests, 2,722 pass, 0 fail, 13 skipped |
+| `make-docs project paths validate` (repository root) | valid, 0 failing findings |
+| `node scripts/check-deny-list.mjs --root ../.. --pack .` with the real list | 0 matches |
