@@ -1,0 +1,15 @@
+---
+source: "inputs/pdf/two-columns.pdf"
+sha256: "92b115af7044463c8712511aadf0ffa5a5a5ea75c916057adbb622d90d2c65e3"
+converter: "buildos-intake/0.1.0"
+timestamp: "{TIMESTAMP}"
+type: "text"
+status: "converted"
+---
+
+Left column starts here.
+Seed swaps happen in spring.
+Bring labeled envelopes.
+Right column starts here.
+Compost pickup is weekly.
+Bins go out by eight.

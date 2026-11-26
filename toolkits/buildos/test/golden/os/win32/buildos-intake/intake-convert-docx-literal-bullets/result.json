@@ -1,0 +1,28 @@
+{
+  "id": "intake-convert-docx-literal-bullets",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert",
+    "--source",
+    "inputs/volunteer-minutes.docx"
+  ],
+  "exit": 0,
+  "stdout_sha256": "7713e7157b5eaf41568f301af9fe059e4ecacf68d1baf1d060bfe022f3eaa378",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [
+    {
+      "path": "system/assets/volunteer-minutes",
+      "kind": "dir"
+    },
+    {
+      "path": "system/assets/volunteer-minutes/volunteer-minutes.md",
+      "kind": "file"
+    }
+  ],
+  "changed": [],
+  "removed": [],
+  "files": {
+    "system/assets/volunteer-minutes/volunteer-minutes.md": "3b326c73589f9ddd86c61c33e02fcaffd8d6ec230a865d42abba3689db8c228d"
+  }
+}

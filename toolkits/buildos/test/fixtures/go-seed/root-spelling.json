@@ -1,0 +1,427 @@
+{
+  "source": "Go 1.24.1. posixAbs: real filepath.Abs, run from cwd. windowsClean: filepath.Clean with Windows rules, copied from internal/filepathlite and run on macOS. windowsAbsolute: already-absolute UNC and drive paths with no device prefix, no trailing dot or space in a component, and no final `.` or `..` that reaches a UNC share (GetFullPathNameW drops the separator after the share there); GetFullPathNameW folds them as Clean does, so Go's Windows Abs equals the Clean result shown (Go 1.24.1). Astral cases (emoji, U+1D518 and similar) were added in the UTF-16 fix round.",
+  "goVersion": "go1.24.1",
+  "cwd": "/usr/share",
+  "posixAbs": [
+    {
+      "in": ".",
+      "out": "/usr/share"
+    },
+    {
+      "in": "..",
+      "out": "/usr"
+    },
+    {
+      "in": "../x/./y/..",
+      "out": "/usr/x"
+    },
+    {
+      "in": "a//b",
+      "out": "/usr/share/a/b"
+    },
+    {
+      "in": "/tmp/../tmp",
+      "out": "/tmp"
+    },
+    {
+      "in": "",
+      "out": "/usr/share"
+    },
+    {
+      "in": "./",
+      "out": "/usr/share"
+    },
+    {
+      "in": "a/",
+      "out": "/usr/share/a"
+    },
+    {
+      "in": "../../..",
+      "out": "/"
+    },
+    {
+      "in": "../../../../../../..",
+      "out": "/"
+    },
+    {
+      "in": "link/..",
+      "out": "/usr/share"
+    },
+    {
+      "in": "a/../..",
+      "out": "/usr"
+    },
+    {
+      "in": "a/./b/../../c",
+      "out": "/usr/share/c"
+    },
+    {
+      "in": "x/.",
+      "out": "/usr/share/x"
+    },
+    {
+      "in": ".../x",
+      "out": "/usr/share/.../x"
+    },
+    {
+      "in": "..x/y",
+      "out": "/usr/share/..x/y"
+    },
+    {
+      "in": "x..",
+      "out": "/usr/share/x.."
+    },
+    {
+      "in": "//x",
+      "out": "/x"
+    },
+    {
+      "in": "///",
+      "out": "/"
+    },
+    {
+      "in": "/",
+      "out": "/"
+    },
+    {
+      "in": "//",
+      "out": "/"
+    },
+    {
+      "in": "/a/b/../../..",
+      "out": "/"
+    },
+    {
+      "in": "/a//b/./c/",
+      "out": "/a/b/c"
+    },
+    {
+      "in": "./.os/../.",
+      "out": "/usr/share"
+    },
+    {
+      "in": "é/../ü//ñ",
+      "out": "/usr/share/ü/ñ"
+    },
+    {
+      "in": "📁/../x",
+      "out": "/usr/share/x"
+    },
+    {
+      "in": "a/📁/./../b",
+      "out": "/usr/share/a/b"
+    },
+    {
+      "in": "📁//😀/./..",
+      "out": "/usr/share/📁"
+    },
+    {
+      "in": "/📁/a/../b",
+      "out": "/📁/b"
+    },
+    {
+      "in": "𝔘/𝔫𝔦/../..",
+      "out": "/usr/share"
+    },
+    {
+      "in": "a/😀😀/../../📁",
+      "out": "/usr/share/📁"
+    },
+    {
+      "in": "./😀/.//../😀.",
+      "out": "/usr/share/😀."
+    },
+    {
+      "in": "/😀/../..",
+      "out": "/"
+    },
+    {
+      "in": "😀/..",
+      "out": "/usr/share"
+    },
+    {
+      "in": "😀..",
+      "out": "/usr/share/😀.."
+    },
+    {
+      "in": "..😀/x",
+      "out": "/usr/share/..😀/x"
+    },
+    {
+      "in": "/📁//😀///",
+      "out": "/📁/😀"
+    },
+    {
+      "in": "😀/../../📁/./x",
+      "out": "/usr/📁/x"
+    }
+  ],
+  "windowsClean": [
+    {
+      "in": "C:\\work\\..\\x",
+      "out": "C:\\x"
+    },
+    {
+      "in": "C:\\work\\.\\a\\\\b",
+      "out": "C:\\work\\a\\b"
+    },
+    {
+      "in": "C:\\",
+      "out": "C:\\"
+    },
+    {
+      "in": "C:",
+      "out": "C:."
+    },
+    {
+      "in": "C:\\..",
+      "out": "C:\\"
+    },
+    {
+      "in": "c:/a/b/",
+      "out": "c:\\a\\b"
+    },
+    {
+      "in": "c:x\\..\\..",
+      "out": "c:.."
+    },
+    {
+      "in": "C:\\a.\\b",
+      "out": "C:\\a.\\b"
+    },
+    {
+      "in": "\\\\server\\share",
+      "out": "\\\\server\\share"
+    },
+    {
+      "in": "\\\\server\\share\\",
+      "out": "\\\\server\\share\\"
+    },
+    {
+      "in": "\\\\server\\share\\a\\..\\..",
+      "out": "\\\\server\\share\\"
+    },
+    {
+      "in": "\\\\server",
+      "out": "\\\\server"
+    },
+    {
+      "in": "\\\\server\\",
+      "out": "\\\\server\\"
+    },
+    {
+      "in": "//server/share/x/",
+      "out": "\\\\server\\share\\x"
+    },
+    {
+      "in": "\\\\.\\C:\\a\\..",
+      "out": "\\\\.\\C:\\"
+    },
+    {
+      "in": "\\\\?\\C:\\a\\..\\b",
+      "out": "\\\\?\\C:\\b"
+    },
+    {
+      "in": "\\\\.\\UNC\\server\\share\\..\\x",
+      "out": "\\\\.\\UNC\\server\\share\\x"
+    },
+    {
+      "in": "\\\\.",
+      "out": "\\\\."
+    },
+    {
+      "in": "\\\\?\\",
+      "out": "\\\\?\\"
+    },
+    {
+      "in": "\\\\.\\",
+      "out": "\\\\.\\"
+    },
+    {
+      "in": "\\??\\c:\\x",
+      "out": "\\??\\c:\\x"
+    },
+    {
+      "in": "a/../c:",
+      "out": ".\\c:"
+    },
+    {
+      "in": "a/../c:/x",
+      "out": ".\\c:\\x"
+    },
+    {
+      "in": "\\a\\..\\??\\c:\\x",
+      "out": "\\.\\??\\c:\\x"
+    },
+    {
+      "in": "x",
+      "out": "x"
+    },
+    {
+      "in": "",
+      "out": "."
+    },
+    {
+      "in": "..\\..",
+      "out": "..\\.."
+    },
+    {
+      "in": ".\\",
+      "out": "."
+    },
+    {
+      "in": "\\",
+      "out": "\\"
+    },
+    {
+      "in": "/",
+      "out": "\\"
+    },
+    {
+      "in": "C:\\a\\b\\..\\..\\..",
+      "out": "C:\\"
+    },
+    {
+      "in": "D:\\abs\\..",
+      "out": "D:\\"
+    },
+    {
+      "in": "\\\\server\\share/x",
+      "out": "\\\\server\\share\\x"
+    },
+    {
+      "in": "C:\\work\\ü\\..\\é",
+      "out": "C:\\work\\é"
+    },
+    {
+      "in": "\\\\files\\📁\\a\\..\\reports",
+      "out": "\\\\files\\📁\\reports"
+    },
+    {
+      "in": "\\\\📁\\share\\a\\..\\b",
+      "out": "\\\\📁\\share\\b"
+    },
+    {
+      "in": "\\\\😀\\📁\\..\\..\\x",
+      "out": "\\\\😀\\📁\\x"
+    },
+    {
+      "in": "//📁/😀//a/./../b/",
+      "out": "\\\\📁\\😀\\b"
+    },
+    {
+      "in": "C:\\📁\\a\\..\\b",
+      "out": "C:\\📁\\b"
+    },
+    {
+      "in": "C:\\😀\\.\\\\𝔘\\..\\x",
+      "out": "C:\\😀\\x"
+    },
+    {
+      "in": "\\\\files\\📁",
+      "out": "\\\\files\\📁"
+    },
+    {
+      "in": "\\\\files\\📁\\",
+      "out": "\\\\files\\📁\\"
+    },
+    {
+      "in": "\\\\files\\📁\\..",
+      "out": "\\\\files\\📁\\"
+    },
+    {
+      "in": "\\\\files\\📁\\😀\\.\\..\\𝔫\\\\x",
+      "out": "\\\\files\\📁\\𝔫\\x"
+    },
+    {
+      "in": "c:/😀//📁/../../a",
+      "out": "c:\\a"
+    },
+    {
+      "in": "\\\\𝔘𝔫\\😀😀\\a\\😀\\..\\..\\b",
+      "out": "\\\\𝔘𝔫\\😀😀\\b"
+    },
+    {
+      "in": "\\\\.\\UNC\\📁\\😀\\..\\x",
+      "out": "\\\\.\\UNC\\📁\\😀\\x"
+    },
+    {
+      "in": "\\\\?\\📁\\a\\..\\b",
+      "out": "\\\\?\\📁\\b"
+    },
+    {
+      "in": "📁\\..\\..\\x",
+      "out": "..\\x"
+    },
+    {
+      "in": "a\\😀\\..\\..\\..",
+      "out": ".."
+    },
+    {
+      "in": "😀:\\x",
+      "out": "😀:\\x"
+    },
+    {
+      "in": "é:\\x",
+      "out": "é:\\x"
+    },
+    {
+      "in": "\\\\.\\📁\\a\\..",
+      "out": "\\\\.\\📁\\"
+    },
+    {
+      "in": "😀\\.\\\\a\\..",
+      "out": "😀"
+    },
+    {
+      "in": "\\😀\\..\\x",
+      "out": "\\x"
+    }
+  ],
+  "windowsAbsolute": [
+    {
+      "in": "\\\\files\\📁\\a\\..\\reports",
+      "out": "\\\\files\\📁\\reports"
+    },
+    {
+      "in": "\\\\📁\\share\\a\\..\\b",
+      "out": "\\\\📁\\share\\b"
+    },
+    {
+      "in": "\\\\😀\\📁\\..\\..\\x",
+      "out": "\\\\😀\\📁\\x"
+    },
+    {
+      "in": "//📁/😀//a/./../b/",
+      "out": "\\\\📁\\😀\\b"
+    },
+    {
+      "in": "C:\\📁\\a\\..\\b",
+      "out": "C:\\📁\\b"
+    },
+    {
+      "in": "C:\\😀\\.\\\\𝔘\\..\\x",
+      "out": "C:\\😀\\x"
+    },
+    {
+      "in": "\\\\files\\📁",
+      "out": "\\\\files\\📁"
+    },
+    {
+      "in": "\\\\files\\📁\\",
+      "out": "\\\\files\\📁\\"
+    },
+    {
+      "in": "\\\\files\\📁\\😀\\.\\..\\𝔫\\\\x",
+      "out": "\\\\files\\📁\\𝔫\\x"
+    },
+    {
+      "in": "c:/😀//📁/../../a",
+      "out": "c:\\a"
+    },
+    {
+      "in": "\\\\𝔘𝔫\\😀😀\\a\\😀\\..\\..\\b",
+      "out": "\\\\𝔘𝔫\\😀😀\\b"
+    }
+  ]
+}

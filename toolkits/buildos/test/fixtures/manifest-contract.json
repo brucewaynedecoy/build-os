@@ -1,0 +1,435 @@
+{
+  "description": "The manifest contract (PRD 20 Manifest Contract). Each case is .os/manifest.json bytes (text as UTF-8, or base64) and whether the contract accepts it. Both src/core/init/manifest.ts and system/.os/scripts/pinned-version.cjs are tested against this table.",
+  "cases": [
+    {
+      "name": "a release version",
+      "text": "{\n  \"schema_version\": 1,\n  \"buildos_version\": \"1.2.3\",\n  \"initialized_at\": \"2026-11-24T00:00:00.000Z\"\n}\n",
+      "accept": true
+    },
+    {
+      "name": "version 0.0.0",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"0.0.0\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": true
+    },
+    {
+      "name": "version 10.20.30",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"10.20.30\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": true
+    },
+    {
+      "name": "version 1.2.3-alpha-beta.1",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3-alpha-beta.1\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": true
+    },
+    {
+      "name": "version 1.2.3-rc.1",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3-rc.1\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": true
+    },
+    {
+      "name": "version 1.0.0-0.3.7",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.0.0-0.3.7\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": true
+    },
+    {
+      "name": "version 1.0.0-x.7.z.92",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.0.0-x.7.z.92\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": true
+    },
+    {
+      "name": "version 1.0.0-x-y-z.--",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.0.0-x-y-z.--\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": true
+    },
+    {
+      "name": "version 1.2.3-0a",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3-0a\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": true
+    },
+    {
+      "name": "version 2.0.0-alpha.beta.1",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"2.0.0-alpha.beta.1\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": true
+    },
+    {
+      "name": "version 9007199254740991.0.0 (the largest major npm reads as a version)",
+      "text": "{\"schema_version\":1,\"buildos_version\":\"9007199254740991.0.0\",\"initialized_at\":\"2026-11-24T00:00:00.000Z\"}",
+      "accept": true
+    },
+    {
+      "name": "version 0.9007199254740991.9007199254740991-rc.1 (the largest minor and patch)",
+      "text": "{\"schema_version\":1,\"buildos_version\":\"0.9007199254740991.9007199254740991-rc.1\",\"initialized_at\":\"2026-11-24T00:00:00.000Z\"}",
+      "accept": true
+    },
+    {
+      "name": "version \"9007199254740992.0.0\" (npm reads it as a dist-tag)",
+      "text": "{\"schema_version\":1,\"buildos_version\":\"9007199254740992.0.0\",\"initialized_at\":\"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"1.9007199254740992.0\" (minor over the bound)",
+      "text": "{\"schema_version\":1,\"buildos_version\":\"1.9007199254740992.0\",\"initialized_at\":\"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"1.2.10000000000000000\" (patch with 17 digits)",
+      "text": "{\"schema_version\":1,\"buildos_version\":\"1.2.10000000000000000\",\"initialized_at\":\"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"1.2.3-99999999999999999999\" (a large numeric pre-release stays valid)",
+      "text": "{\"schema_version\":1,\"buildos_version\":\"1.2.3-99999999999999999999\",\"initialized_at\":\"2026-11-24T00:00:00.000Z\"}",
+      "accept": true
+    },
+    {
+      "name": "version dev",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"dev\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": true
+    },
+    {
+      "name": "version \"latest\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"latest\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"next\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"next\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"1.2.3-..\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3-..\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"1.2.3-\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3-\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"1.2.3-alpha..1\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3-alpha..1\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"1.2.3+build\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3+build\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"1.2.3-rc.1+build.5\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3-rc.1+build.5\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"v1.2.3\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"v1.2.3\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"01.2.3\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"01.2.3\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"1.02.3\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.02.3\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"1.2.03\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.03\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"1.2.3-01\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3-01\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"1.2\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"1\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"^1.2.3\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"^1.2.3\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"~1.2.3\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"~1.2.3\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \">=1.2.3\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \">=1.2.3\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"1.2.x\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.x\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"*\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"*\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"1.2.3 \"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3 \", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \" 1.2.3\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \" 1.2.3\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"1.2.3\\n\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3\\n\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"DEV\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"DEV\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"Dev\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"Dev\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"1.2.3-alpha_beta\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3-alpha_beta\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"1.2.3-alpha&x\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3-alpha&x\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "version \"1.2.3-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "a 256-character version",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": true
+    },
+    {
+      "name": "a version that is a number",
+      "text": "{\"schema_version\": 1, \"buildos_version\": 1, \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "time 2026-11-24T00:00:00Z",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3\", \"initialized_at\": \"2026-11-24T00:00:00Z\"}",
+      "accept": true
+    },
+    {
+      "name": "time 2026-11-24T23:59:59.123456789Z",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3\", \"initialized_at\": \"2026-11-24T23:59:59.123456789Z\"}",
+      "accept": true
+    },
+    {
+      "name": "time 2024-02-29T12:00:00Z",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3\", \"initialized_at\": \"2024-02-29T12:00:00Z\"}",
+      "accept": true
+    },
+    {
+      "name": "time 2000-02-29T00:00:00Z",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3\", \"initialized_at\": \"2000-02-29T00:00:00Z\"}",
+      "accept": true
+    },
+    {
+      "name": "time \"1\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3\", \"initialized_at\": \"1\"}",
+      "accept": false
+    },
+    {
+      "name": "time \"\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3\", \"initialized_at\": \"\"}",
+      "accept": false
+    },
+    {
+      "name": "time \"2026-11-24\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3\", \"initialized_at\": \"2026-11-24\"}",
+      "accept": false
+    },
+    {
+      "name": "time \"2026-11-24T00:00:00\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3\", \"initialized_at\": \"2026-11-24T00:00:00\"}",
+      "accept": false
+    },
+    {
+      "name": "time \"2026-11-24T00:00:00+00:00\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3\", \"initialized_at\": \"2026-11-24T00:00:00+00:00\"}",
+      "accept": false
+    },
+    {
+      "name": "time \"2026-11-24 00:00:00Z\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3\", \"initialized_at\": \"2026-11-24 00:00:00Z\"}",
+      "accept": false
+    },
+    {
+      "name": "time \"2026-02-30T00:00:00Z\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3\", \"initialized_at\": \"2026-02-30T00:00:00Z\"}",
+      "accept": false
+    },
+    {
+      "name": "time \"2026-02-29T00:00:00Z\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3\", \"initialized_at\": \"2026-02-29T00:00:00Z\"}",
+      "accept": false
+    },
+    {
+      "name": "time \"1900-02-29T00:00:00Z\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3\", \"initialized_at\": \"1900-02-29T00:00:00Z\"}",
+      "accept": false
+    },
+    {
+      "name": "time \"2026-13-01T00:00:00Z\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3\", \"initialized_at\": \"2026-13-01T00:00:00Z\"}",
+      "accept": false
+    },
+    {
+      "name": "time \"2026-00-10T00:00:00Z\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3\", \"initialized_at\": \"2026-00-10T00:00:00Z\"}",
+      "accept": false
+    },
+    {
+      "name": "time \"2026-11-00T00:00:00Z\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3\", \"initialized_at\": \"2026-11-00T00:00:00Z\"}",
+      "accept": false
+    },
+    {
+      "name": "time \"2026-11-24T24:00:00Z\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3\", \"initialized_at\": \"2026-11-24T24:00:00Z\"}",
+      "accept": false
+    },
+    {
+      "name": "time \"2026-11-24T00:60:00Z\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3\", \"initialized_at\": \"2026-11-24T00:60:00Z\"}",
+      "accept": false
+    },
+    {
+      "name": "time \"2026-11-24T00:00:60Z\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3\", \"initialized_at\": \"2026-11-24T00:00:60Z\"}",
+      "accept": false
+    },
+    {
+      "name": "time \"2026-11-24T00:00:00.Z\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3\", \"initialized_at\": \"2026-11-24T00:00:00.Z\"}",
+      "accept": false
+    },
+    {
+      "name": "time \"2026-11-24T00:00:00.1234567890Z\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3\", \"initialized_at\": \"2026-11-24T00:00:00.1234567890Z\"}",
+      "accept": false
+    },
+    {
+      "name": "time \"2026-11-24t00:00:00z\"",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3\", \"initialized_at\": \"2026-11-24t00:00:00z\"}",
+      "accept": false
+    },
+    {
+      "name": "time that is a number",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3\", \"initialized_at\": 1}",
+      "accept": false
+    },
+    {
+      "name": "schema version 2",
+      "text": "{\"schema_version\": 2, \"buildos_version\": \"1.2.3\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "schema version as text",
+      "text": "{\"schema_version\": \"1\", \"buildos_version\": \"1.2.3\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "no schema version",
+      "text": "{\"buildos_version\": \"1.2.3\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "no version",
+      "text": "{\"schema_version\": 1, \"initialized_at\": \"2026-11-24T00:00:00.000Z\"}",
+      "accept": false
+    },
+    {
+      "name": "no time",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3\"}",
+      "accept": false
+    },
+    {
+      "name": "other fields are allowed",
+      "text": "{\"schema_version\": 1, \"buildos_version\": \"1.2.3\", \"initialized_at\": \"2026-11-24T00:00:00.000Z\", \"w2\": {\"x\": 1}}",
+      "accept": true
+    },
+    {
+      "name": "an array",
+      "text": "[]",
+      "accept": false
+    },
+    {
+      "name": "null",
+      "text": "null",
+      "accept": false
+    },
+    {
+      "name": "a string",
+      "text": "\"1.2.3\"",
+      "accept": false
+    },
+    {
+      "name": "not JSON",
+      "text": "{",
+      "accept": false
+    },
+    {
+      "name": "empty",
+      "text": "",
+      "accept": false
+    },
+    {
+      "name": "one UTF-8 byte order mark",
+      "base64": "77u/eyJzY2hlbWFfdmVyc2lvbiI6IDEsICJidWlsZG9zX3ZlcnNpb24iOiAiMS4yLjMiLCAiaW5pdGlhbGl6ZWRfYXQiOiAiMjAyNi0xMS0yNFQwMDowMDowMC4wMDBaIn0=",
+      "accept": true
+    },
+    {
+      "name": "two UTF-8 byte order marks",
+      "base64": "77u/77u/eyJzY2hlbWFfdmVyc2lvbiI6IDEsICJidWlsZG9zX3ZlcnNpb24iOiAiMS4yLjMiLCAiaW5pdGlhbGl6ZWRfYXQiOiAiMjAyNi0xMS0yNFQwMDowMDowMC4wMDBaIn0=",
+      "accept": false
+    },
+    {
+      "name": "UTF-16 LE",
+      "base64": "//57ACIAcwBjAGgAZQBtAGEAXwB2AGUAcgBzAGkAbwBuACIAOgAgADEALAAgACIAYgB1AGkAbABkAG8AcwBfAHYAZQByAHMAaQBvAG4AIgA6ACAAIgAxAC4AMgAuADMAIgAsACAAIgBpAG4AaQB0AGkAYQBsAGkAegBlAGQAXwBhAHQAIgA6ACAAIgAyADAAMgA2AC0AMQAxAC0AMgA0AFQAMAAwADoAMAAwADoAMAAwAC4AMAAwADAAWgAiAH0A",
+      "accept": false
+    },
+    {
+      "name": "bytes that are not UTF-8",
+      "base64": "eyJzY2hlbWFfdmVyc2lvbiI6IDEsICJidWlsZG9zX3ZlcnNpb24iOiAiMS4yLjMiLCAiaW5pdGlhbGl6ZWRfYXQiOiAiMjAyNi0xMS0yNFQwMDowMDowMC4wMDBaIiwgIm5vdGUiOiAi/yJ9",
+      "accept": false
+    },
+    {
+      "name": "UTF-8 text in another field",
+      "base64": "eyJzY2hlbWFfdmVyc2lvbiI6IDEsICJidWlsZG9zX3ZlcnNpb24iOiAiMS4yLjMiLCAiaW5pdGlhbGl6ZWRfYXQiOiAiMjAyNi0xMS0yNFQwMDowMDowMC4wMDBaIiwgIm5vdGUiOiAiY2FmXHUwMGU5In0=",
+      "accept": true
+    }
+  ]
+}

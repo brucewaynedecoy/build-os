@@ -1,0 +1,6 @@
+buildos version: error
+version: dev
+source revision: unknown
+write status: not_requested
+ERROR [usage_error]: flag provided but not defined: -bad
+  action: Run buildos help for command syntax.

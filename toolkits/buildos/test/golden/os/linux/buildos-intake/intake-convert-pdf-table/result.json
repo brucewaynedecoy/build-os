@@ -1,0 +1,32 @@
+{
+  "id": "intake-convert-pdf-table",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert",
+    "--source",
+    "inputs/pdf/room-table.pdf"
+  ],
+  "exit": 0,
+  "stdout_sha256": "4bf3ddb8820f05da1144826b27aa2f1f6c0f375728534769c762c8bae16674bd",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [
+    {
+      "path": "system/assets/room-table",
+      "kind": "dir"
+    },
+    {
+      "path": "system/assets/room-table/room-table.txt",
+      "kind": "file"
+    }
+  ],
+  "changed": [],
+  "removed": [],
+  "files": {
+    "system/assets/room-table/room-table.txt": "5be5def77769c55f4d18d3df62584cc14b4f6f7213d794e70357a3db8feaa0d1"
+  },
+  "modes": {
+    "system/assets/room-table": "0755",
+    "system/assets/room-table/room-table.txt": "0644"
+  }
+}

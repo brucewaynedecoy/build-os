@@ -1,0 +1,21 @@
+{
+  "id": "entities-validate-missing-index-strict",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "entities",
+    "validate",
+    "--root",
+    "root",
+    "--mode",
+    "strict"
+  ],
+  "exit": 4,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "eb754ad7deba66249687f6170337c899a2fde8cd039e6bfa6cc10294aa3d4fbb",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

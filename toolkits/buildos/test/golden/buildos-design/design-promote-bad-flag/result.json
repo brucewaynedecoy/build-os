@@ -1,0 +1,18 @@
+{
+  "id": "design-promote-bad-flag",
+  "tool": "buildos-design",
+  "invocation": "buildos-design",
+  "args": [
+    "promote",
+    "finding",
+    "--bogus"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "e2a6b2feadba173b9f270a2c9a056834229ebc6f4b9a3a1393c91cec4bc5978b",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

@@ -1,0 +1,28 @@
+{
+  "id": "intake-convert-pdf-columns",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert",
+    "--source",
+    "inputs/pdf/two-columns.pdf"
+  ],
+  "exit": 0,
+  "stdout_sha256": "9d776d32571a0e64504219cfa64aef8e799b8fbceda54c348188fb37dc5767d4",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [
+    {
+      "path": "system/assets/two-columns",
+      "kind": "dir"
+    },
+    {
+      "path": "system/assets/two-columns/two-columns.txt",
+      "kind": "file"
+    }
+  ],
+  "changed": [],
+  "removed": [],
+  "files": {
+    "system/assets/two-columns/two-columns.txt": "2e2e8730cc6e45a9288b342e86ec8dd63cc8f36a04e0e8b78aa8924443655d28"
+  }
+}

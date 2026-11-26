@@ -1,0 +1,1 @@
+# Design contract (fixture)

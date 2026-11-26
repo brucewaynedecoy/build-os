@@ -1,0 +1,19 @@
+{
+  "id": "intake-convert-docx-dry-run",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert",
+    "--source",
+    "inputs/service-guide.docx",
+    "--dry-run"
+  ],
+  "exit": 0,
+  "stdout_sha256": "d4f52116ae345d37b936a0a7d45d0d0a1b1a2333f037f79b0646248a020f49fe",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

@@ -1,0 +1,48 @@
+{
+  "name": "@brucewaynedecoy/buildos",
+  "version": "0.0.0-dev",
+  "description": "BuildOS deterministic project tooling CLI.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/brucewaynedecoy/build-os.git",
+    "directory": "toolkits/buildos"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "bin": {
+    "buildos": "dist/buildos.js",
+    "buildos-intake": "dist/buildos-intake.js",
+    "buildos-discovery": "dist/buildos-discovery.js",
+    "buildos-design": "dist/buildos-design.js"
+  },
+  "files": [
+    "dist/buildos.js",
+    "dist/buildos-intake.js",
+    "dist/buildos-discovery.js",
+    "dist/buildos-design.js",
+    "dist/system.json",
+    "dist/system/",
+    "LICENSE",
+    "SECURITY.md",
+    "THIRD_PARTY_NOTICES.md",
+    "README.md"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --test \"test/*.test.ts\" \"test/golden/*.test.ts\" \"test/conversion-eval/*.test.ts\"",
+    "build": "node scripts/build.ts",
+    "check:deps": "node scripts/check-dependencies.ts",
+    "check:deps:installed": "node scripts/check-dependencies.ts --installed"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "esbuild": "0.28.2",
+    "fflate": "0.8.3",
+    "parse5": "8.1.1",
+    "typescript": "7.0.2",
+    "unpdf": "2.1.0"
+  }
+}

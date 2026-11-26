@@ -1,0 +1,15 @@
+@@ section: Title and introduction @@
+Common Room and Guest Suite Rates
+Rates apply from 1 January 2027. Members pay the member rate. Non-member groups need a
+member to sponsor the booking.
+@@ section: Rate table @@
+Space Member rate Non-member rate Deposit
+Common room, half day €20 €45 €50
+Common room, full day €35 €80 €50
+Roof garden, evening €15 €40 €25
+Guest suite, per night €25 Not available €40
+Workshop, per hour €5 €12 None
+Meeting room, per hour €4 €10 None
+@@ section: Notes @@
+Deposits are returned within ten working days if the space is left clean. Cancel at least 48
+hours ahead to avoid a charge.

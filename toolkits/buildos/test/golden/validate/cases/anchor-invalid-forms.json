@@ -1,0 +1,7 @@
+{
+  "case": "anchor-invalid-forms",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/data/requirements.jsonl:line 5.doc_anchor: must point under system/docs/\n.os/data/extractions.jsonl:line 1.source_anchor: must point to a converted source twin under system/assets/\nFAIL: 2 validation error(s)\n",
+  "crashed": false
+}

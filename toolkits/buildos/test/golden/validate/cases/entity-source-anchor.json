@@ -1,0 +1,7 @@
+{
+  "case": "entity-source-anchor",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/data/requirements.jsonl:line 1.source_anchor: is required\n.os/data/requirements.jsonl:line 2.source_anchor: is required\n.os/data/requirements.jsonl:line 3.source_anchor: must be a path#anchor reference\n.os/data/requirements.jsonl:line 4.source_anchor: must be a path#anchor reference\n.os/data/requirements.jsonl:line 5.source_anchor: is required\nFAIL: 5 validation error(s)\n",
+  "crashed": false
+}

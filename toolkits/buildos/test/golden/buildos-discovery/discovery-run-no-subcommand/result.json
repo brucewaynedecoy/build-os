@@ -1,0 +1,16 @@
+{
+  "id": "discovery-run-no-subcommand",
+  "tool": "buildos-discovery",
+  "invocation": "buildos-discovery",
+  "args": [
+    "run"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "684ca0e2d60f99087046caea4d5b2d98a8fb749780ce067e69ff1e014eefbdf0",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

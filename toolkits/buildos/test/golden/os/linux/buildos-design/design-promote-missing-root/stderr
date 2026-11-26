@@ -1,0 +1,1 @@
+buildos-design: error: finding entity graph is invalid: input_contract: cannot read governed dataset capabilities.jsonl: open {ROOT}/absent/system/.os/data/capabilities.jsonl: no such file or directory; restore a readable JSONL dataset at {ROOT}/absent/system/.os/data/capabilities.jsonl

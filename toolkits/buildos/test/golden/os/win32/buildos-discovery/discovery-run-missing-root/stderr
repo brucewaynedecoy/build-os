@@ -1,0 +1,1 @@
+buildos-discovery: error: read playbook index: open {ROOT}\absent\system\.os\indexes\playbooks.json: The system cannot find the path specified.

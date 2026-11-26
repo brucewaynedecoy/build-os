@@ -1,0 +1,7 @@
+{
+  "case": "entity-not-object",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/data/requirements.jsonl:line 2: must be a JSON object\n.os/data/requirements.jsonl:line 3: must be a JSON object\n.os/data/requirements.jsonl:line 4: must be a JSON object\nFAIL: 3 validation error(s)\n",
+  "crashed": false
+}

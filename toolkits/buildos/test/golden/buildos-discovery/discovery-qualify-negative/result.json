@@ -1,0 +1,83 @@
+{
+  "id": "discovery-qualify-negative",
+  "tool": "buildos-discovery",
+  "invocation": "buildos-discovery",
+  "args": [
+    "qualify",
+    "finding",
+    "--run-id",
+    "RUN-001",
+    "--raw-finding-ref",
+    "raw-findings.md#raw-finding-2",
+    "--outcome",
+    "negative",
+    "--title",
+    "Receipt keeps old store name",
+    "--confirmation-test",
+    "tests/confirm-cart-total.spec.ts",
+    "--confirmation-evidence",
+    "evidence/confirmation-run.txt"
+  ],
+  "exit": 0,
+  "stdout_sha256": "6bce37ba4433366627c261fd8b52f3f8ec37b8fbadd193d96f99b399289ebacf",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [
+    {
+      "path": "system/workspace/findings",
+      "kind": "dir"
+    },
+    {
+      "path": "system/workspace/findings/FIND-001",
+      "kind": "dir"
+    },
+    {
+      "path": "system/workspace/findings/FIND-001/confirmation-test",
+      "kind": "dir"
+    },
+    {
+      "path": "system/workspace/findings/FIND-001/confirmation-test/001-confirm-cart-total.spec.ts",
+      "kind": "file"
+    },
+    {
+      "path": "system/workspace/findings/FIND-001/evidence",
+      "kind": "dir"
+    },
+    {
+      "path": "system/workspace/findings/FIND-001/evidence/001-confirmation-run.txt",
+      "kind": "file"
+    },
+    {
+      "path": "system/workspace/findings/FIND-001/finding.md",
+      "kind": "file"
+    },
+    {
+      "path": "system/workspace/findings/FIND-001/qualification.md",
+      "kind": "file"
+    }
+  ],
+  "changed": [
+    {
+      "path": "system/.os/data/findings.jsonl",
+      "kind": "file"
+    }
+  ],
+  "removed": [],
+  "files": {
+    "system/.os/data/findings.jsonl": "79b48c191d751ef80f18f8eadeab29f7aa3616a404f61b1b474df4c95287d884",
+    "system/workspace/findings/FIND-001/confirmation-test/001-confirm-cart-total.spec.ts": "355129cafa3574f2cde13ea4eb71dcba33eb7986afb77fa937f9e9d3bc5f2f82",
+    "system/workspace/findings/FIND-001/evidence/001-confirmation-run.txt": "6697d4e45d1771891e1da096a0d7c82bf85b37e872154a6bfd52b9c975748572",
+    "system/workspace/findings/FIND-001/finding.md": "bc9553e39c881ef4a0fc03b15ef5d0f88ad91dab6e487973425d89d52283c2a4",
+    "system/workspace/findings/FIND-001/qualification.md": "9afa4dc4c2210f5513944f181d3a34dbcbd1afabcbf30b136b927bec960a4a7e"
+  },
+  "modes": {
+    "system/.os/data/findings.jsonl": "0644",
+    "system/workspace/findings": "0755",
+    "system/workspace/findings/FIND-001": "0755",
+    "system/workspace/findings/FIND-001/confirmation-test": "0755",
+    "system/workspace/findings/FIND-001/confirmation-test/001-confirm-cart-total.spec.ts": "0644",
+    "system/workspace/findings/FIND-001/evidence": "0755",
+    "system/workspace/findings/FIND-001/evidence/001-confirmation-run.txt": "0644",
+    "system/workspace/findings/FIND-001/finding.md": "0644",
+    "system/workspace/findings/FIND-001/qualification.md": "0644"
+  }
+}

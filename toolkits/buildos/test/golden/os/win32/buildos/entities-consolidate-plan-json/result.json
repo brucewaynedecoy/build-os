@@ -1,0 +1,23 @@
+{
+  "id": "entities-consolidate-plan-json",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "entities",
+    "consolidate",
+    "--root",
+    "root",
+    "--mode",
+    "strict",
+    "--manifest",
+    "manifests/approved-persona-consolidations-v1.json",
+    "--json"
+  ],
+  "exit": 0,
+  "stdout_sha256": "2e86a6ca2dfbd219811e85d5e68afa932371ca195b5cb28ae4bc1768ba0f1f1d",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {}
+}

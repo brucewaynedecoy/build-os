@@ -1,0 +1,21 @@
+{
+  "id": "discovery-run-index-invalid-json",
+  "tool": "buildos-discovery",
+  "invocation": "buildos-discovery",
+  "args": [
+    "run",
+    "discovery",
+    "--playbook-id",
+    "PB-010",
+    "--outcome",
+    "positive"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "912d44f399b19cf901675f07aa6b8bd87eb837555963887bb12370265c085227",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

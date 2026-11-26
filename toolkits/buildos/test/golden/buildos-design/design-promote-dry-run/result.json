@@ -1,0 +1,22 @@
+{
+  "id": "design-promote-dry-run",
+  "tool": "buildos-design",
+  "invocation": "buildos-design",
+  "args": [
+    "promote",
+    "finding",
+    "--finding-id",
+    "FIND-001",
+    "--route",
+    "change-plan",
+    "--dry-run"
+  ],
+  "exit": 0,
+  "stdout_sha256": "0ff8abc1c56c1851d471357aa44f46e24d97ea5aaee853cd5bca67bbb4c54239",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

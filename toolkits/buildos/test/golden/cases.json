@@ -1,0 +1,3025 @@
+{
+  "$comment": "W1 R7 P2 golden case manifest. See CAPTURE.md. `exit` is the exit code the Go tool gave at capture; the golden result.json records the same value.",
+  "domains": {
+    "cli": {
+      "state": "enforced",
+      "owner_phase": "P1",
+      "tools": [
+        "buildos"
+      ]
+    },
+    "entities": {
+      "state": "enforced",
+      "owner_phase": "P3",
+      "tools": [
+        "buildos"
+      ]
+    },
+    "intake": {
+      "state": "enforced",
+      "owner_phase": "P4",
+      "tools": [
+        "buildos-intake"
+      ]
+    },
+    "discovery": {
+      "state": "enforced",
+      "owner_phase": "P5",
+      "tools": [
+        "buildos-discovery"
+      ]
+    },
+    "design": {
+      "state": "enforced",
+      "owner_phase": "P5",
+      "tools": [
+        "buildos-design"
+      ]
+    }
+  },
+  "normalizations": [
+    {
+      "id": "N1",
+      "token": "{ROOT}",
+      "applies_to": [
+        "stdout",
+        "stderr",
+        "file contents",
+        "file paths"
+      ],
+      "reason": "Each run copies the fixture into a fresh temporary folder, so its absolute path changes every run. Every spelling of that folder (as given, real path, native real path with 8.3 short and long forms on Windows, each with `/` and on Windows `\\` separators and both drive-letter cases) in every encoding Go prints (raw, encoding/json escaped, and %q quoted) becomes {ROOT}; the separators and the relative path after it stay as printed. Output that already holds the literal text {ROOT}, {TIMESTAMP}, or {DATE} is escaped to {!ROOT} and so on first, so it never passes for a substituted value."
+    },
+    {
+      "id": "N2",
+      "token": "{TIMESTAMP}",
+      "applies_to": [
+        "stdout",
+        "stderr",
+        "file contents",
+        "file paths"
+      ],
+      "reason": "buildos-intake (front matter `timestamp`), buildos-discovery (`started_at`, `ended_at`, `qualified_at`, `created_at`, `updated_at`), and buildos-design (`updated_at`) write the current UTC time in RFC 3339 form. Only time stamps inside the run window are replaced; fixture time stamps stay exact."
+    },
+    {
+      "id": "N3",
+      "token": "designs/{DATE}-",
+      "applies_to": [
+        "stdout",
+        "stderr",
+        "file contents",
+        "file paths"
+      ],
+      "reason": "buildos-design names the promoted design `designs/<today>-<slug>.md` from the current date. Runs set TZ=UTC, and only `designs/<run date>-` (after `/`, `\\`, or JSON-escaped `\\\\`) is replaced."
+    }
+  ],
+  "os_dependent_groups": [
+    {
+      "id": "OSD-1",
+      "summary": "Prints an absolute path inside the fixture copy",
+      "reason": "The Go tools join the repository root and a relative path with path/filepath, so stdout or stderr shows `{ROOT}/...` with the operating system's separator. Go on Windows prints `\\` there, and the TypeScript port prints the same spelling on each system (P1 go-path.ts). The Go output on each operating system is the parity target (PRD 20 Compatibility), so each system needs its own capture."
+    },
+    {
+      "id": "OSD-2",
+      "summary": "Prints an operating system file error",
+      "reason": "The output holds an error from a file system call (`no such file or directory`, `not a directory`) next to an absolute path inside the fixture copy. Go copies the operating system's error text, which differs on Windows (for example `The system cannot find the file specified.`), and joins the path with the system separator. The Go output on each operating system is the parity target (PRD 20 Compatibility), so each system needs its own capture."
+    }
+  ],
+  "commands": [
+    {
+      "invocation": "buildos",
+      "command": "version",
+      "go_json_mode": true,
+      "json_coverage": "golden"
+    },
+    {
+      "invocation": "buildos",
+      "command": "help",
+      "go_json_mode": false,
+      "json_coverage": "P1 contract tests (test/envelope.test.ts, test/cli.test.ts)"
+    },
+    {
+      "invocation": "buildos",
+      "command": "entities resolve|validate|consolidate|rebuild-index",
+      "go_json_mode": true,
+      "json_coverage": "golden"
+    },
+    {
+      "invocation": "buildos-intake",
+      "command": "convert",
+      "go_json_mode": false,
+      "json_coverage": "P1 contract tests (test/envelope.test.ts); no golden"
+    },
+    {
+      "invocation": "buildos-intake",
+      "command": "index references|playbooks",
+      "go_json_mode": false,
+      "json_coverage": "P1 contract tests (test/envelope.test.ts); no golden"
+    },
+    {
+      "invocation": "buildos-intake",
+      "command": "help",
+      "go_json_mode": false,
+      "json_coverage": "P1 contract tests; no golden"
+    },
+    {
+      "invocation": "buildos-discovery",
+      "command": "run discovery",
+      "go_json_mode": false,
+      "json_coverage": "P1 contract tests (test/envelope.test.ts); no golden"
+    },
+    {
+      "invocation": "buildos-discovery",
+      "command": "qualify finding",
+      "go_json_mode": false,
+      "json_coverage": "P1 contract tests (test/envelope.test.ts); no golden"
+    },
+    {
+      "invocation": "buildos-discovery",
+      "command": "help",
+      "go_json_mode": false,
+      "json_coverage": "P1 contract tests; no golden"
+    },
+    {
+      "invocation": "buildos-design",
+      "command": "promote finding",
+      "go_json_mode": false,
+      "json_coverage": "P1 contract tests (test/envelope.test.ts); no golden"
+    },
+    {
+      "invocation": "buildos-design",
+      "command": "help",
+      "go_json_mode": false,
+      "json_coverage": "P1 contract tests; no golden"
+    }
+  ],
+  "cases": [
+    {
+      "id": "cli-version",
+      "tool": "buildos",
+      "domain": "cli",
+      "invocation": "buildos",
+      "args": [
+        "version"
+      ],
+      "fixture": null,
+      "kind": "version",
+      "exit": 0
+    },
+    {
+      "id": "cli-version-json",
+      "tool": "buildos",
+      "domain": "cli",
+      "invocation": "buildos",
+      "args": [
+        "version",
+        "--json"
+      ],
+      "fixture": null,
+      "kind": "version",
+      "exit": 0,
+      "json": true
+    },
+    {
+      "id": "cli-version-bad-flag",
+      "tool": "buildos",
+      "domain": "cli",
+      "invocation": "buildos",
+      "args": [
+        "version",
+        "--bad"
+      ],
+      "fixture": null,
+      "kind": "usage-error",
+      "exit": 2
+    },
+    {
+      "id": "cli-version-bad-flag-json",
+      "tool": "buildos",
+      "domain": "cli",
+      "invocation": "buildos",
+      "args": [
+        "version",
+        "-json",
+        "--bad"
+      ],
+      "fixture": null,
+      "kind": "usage-error",
+      "exit": 2,
+      "json": true
+    },
+    {
+      "id": "cli-help",
+      "tool": "buildos",
+      "domain": "cli",
+      "invocation": "buildos",
+      "args": [
+        "help"
+      ],
+      "fixture": null,
+      "kind": "help",
+      "exit": 0
+    },
+    {
+      "id": "cli-help-version",
+      "tool": "buildos",
+      "domain": "cli",
+      "invocation": "buildos",
+      "args": [
+        "help",
+        "version"
+      ],
+      "fixture": null,
+      "kind": "help",
+      "exit": 0
+    },
+    {
+      "id": "cli-version-help",
+      "tool": "buildos",
+      "domain": "cli",
+      "invocation": "buildos",
+      "args": [
+        "version",
+        "--help"
+      ],
+      "fixture": null,
+      "kind": "help",
+      "exit": 2
+    },
+    {
+      "id": "cli-unknown-command",
+      "tool": "buildos",
+      "domain": "cli",
+      "invocation": "buildos",
+      "args": [
+        "bogus"
+      ],
+      "fixture": null,
+      "kind": "usage-error",
+      "exit": 2
+    },
+    {
+      "id": "entities-validate-compat",
+      "tool": "buildos",
+      "domain": "entities",
+      "invocation": "buildos",
+      "args": [
+        "entities",
+        "validate",
+        "--root",
+        "root",
+        "--mode",
+        "compat"
+      ],
+      "fixture": "testdata/persona-pilot",
+      "kind": "success",
+      "exit": 0,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "entities-validate-strict-json",
+      "tool": "buildos",
+      "domain": "entities",
+      "invocation": "buildos",
+      "args": [
+        "entities",
+        "validate",
+        "--root",
+        "root",
+        "--mode",
+        "strict",
+        "--json"
+      ],
+      "fixture": "testdata/persona-pilot",
+      "kind": "success",
+      "exit": 0,
+      "json": true,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "entities-resolve-multi-hop-json",
+      "tool": "buildos",
+      "domain": "entities",
+      "invocation": "buildos",
+      "args": [
+        "entities",
+        "resolve",
+        "--root",
+        "root",
+        "--mode",
+        "strict",
+        "--id",
+        "PER-003",
+        "--json"
+      ],
+      "fixture": "testdata/persona-pilot",
+      "kind": "success",
+      "exit": 0,
+      "json": true,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "entities-resolve-human",
+      "tool": "buildos",
+      "domain": "entities",
+      "invocation": "buildos",
+      "args": [
+        "entities",
+        "resolve",
+        "--root",
+        "root",
+        "--mode",
+        "compat",
+        "--id",
+        "PER-001"
+      ],
+      "fixture": "testdata/persona-pilot",
+      "kind": "success",
+      "exit": 0,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "entities-resolve-unknown-json",
+      "tool": "buildos",
+      "domain": "entities",
+      "invocation": "buildos",
+      "args": [
+        "entities",
+        "resolve",
+        "--root",
+        "root",
+        "--mode",
+        "strict",
+        "--id",
+        "PER-999",
+        "--json"
+      ],
+      "fixture": "testdata/persona-pilot",
+      "kind": "invalid-input",
+      "exit": 4,
+      "json": true,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "entities-resolve-unknown-human",
+      "tool": "buildos",
+      "domain": "entities",
+      "invocation": "buildos",
+      "args": [
+        "entities",
+        "resolve",
+        "--root",
+        "root",
+        "--mode",
+        "strict",
+        "--id",
+        "PER-999"
+      ],
+      "fixture": "testdata/persona-pilot",
+      "kind": "invalid-input",
+      "exit": 4,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "entities-rebuild-check-json",
+      "tool": "buildos",
+      "domain": "entities",
+      "invocation": "buildos",
+      "args": [
+        "entities",
+        "rebuild-index",
+        "--root",
+        "root",
+        "--mode",
+        "strict",
+        "--check",
+        "--json"
+      ],
+      "fixture": "testdata/persona-pilot",
+      "kind": "success",
+      "exit": 0,
+      "json": true,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "entities-rebuild-plan-json",
+      "tool": "buildos",
+      "domain": "entities",
+      "invocation": "buildos",
+      "args": [
+        "entities",
+        "rebuild-index",
+        "--root",
+        "root",
+        "--mode",
+        "strict",
+        "--json"
+      ],
+      "fixture": "testdata/persona-pilot",
+      "kind": "dry-run",
+      "exit": 0,
+      "json": true,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "entities-rebuild-apply-current-json",
+      "tool": "buildos",
+      "domain": "entities",
+      "invocation": "buildos",
+      "args": [
+        "entities",
+        "rebuild-index",
+        "--root",
+        "root",
+        "--mode",
+        "strict",
+        "--apply",
+        "--json"
+      ],
+      "fixture": "testdata/persona-pilot",
+      "kind": "success",
+      "exit": 0,
+      "json": true,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "entities-rebuild-check-stale-strict-json",
+      "tool": "buildos",
+      "domain": "entities",
+      "invocation": "buildos",
+      "args": [
+        "entities",
+        "rebuild-index",
+        "--root",
+        "root",
+        "--mode",
+        "strict",
+        "--check",
+        "--json"
+      ],
+      "fixture": "testdata/persona-pilot",
+      "kind": "invalid-input",
+      "exit": 4,
+      "json": true,
+      "prepare": [
+        {
+          "remove": "root/.os/indexes/entity-resolution.json"
+        }
+      ],
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "entities-rebuild-apply-missing-json",
+      "tool": "buildos",
+      "domain": "entities",
+      "invocation": "buildos",
+      "args": [
+        "entities",
+        "rebuild-index",
+        "--root",
+        "root",
+        "--mode",
+        "compat",
+        "--apply",
+        "--json"
+      ],
+      "fixture": "testdata/persona-pilot",
+      "kind": "success",
+      "exit": 0,
+      "json": true,
+      "prepare": [
+        {
+          "remove": "root/.os/indexes/entity-resolution.json"
+        }
+      ],
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "entities-validate-missing-index-strict",
+      "tool": "buildos",
+      "domain": "entities",
+      "invocation": "buildos",
+      "args": [
+        "entities",
+        "validate",
+        "--root",
+        "root",
+        "--mode",
+        "strict"
+      ],
+      "fixture": "testdata/persona-pilot",
+      "kind": "invalid-input",
+      "exit": 4,
+      "prepare": [
+        {
+          "remove": "root/.os/indexes/entity-resolution.json"
+        }
+      ],
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "entities-validate-missing-index-compat-json",
+      "tool": "buildos",
+      "domain": "entities",
+      "invocation": "buildos",
+      "args": [
+        "entities",
+        "validate",
+        "--root",
+        "root",
+        "--mode",
+        "compat",
+        "--json"
+      ],
+      "fixture": "testdata/persona-pilot",
+      "kind": "success",
+      "exit": 0,
+      "json": true,
+      "prepare": [
+        {
+          "remove": "root/.os/indexes/entity-resolution.json"
+        }
+      ],
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "entities-consolidate-plan-json",
+      "tool": "buildos",
+      "domain": "entities",
+      "invocation": "buildos",
+      "args": [
+        "entities",
+        "consolidate",
+        "--root",
+        "root",
+        "--mode",
+        "strict",
+        "--manifest",
+        "manifests/approved-persona-consolidations-v1.json",
+        "--json"
+      ],
+      "fixture": "testdata/persona-pilot",
+      "kind": "dry-run",
+      "exit": 0,
+      "json": true,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "entities-consolidate-apply-json",
+      "tool": "buildos",
+      "domain": "entities",
+      "invocation": "buildos",
+      "args": [
+        "entities",
+        "consolidate",
+        "--root",
+        "root",
+        "--mode",
+        "strict",
+        "--manifest",
+        "manifests/approved-persona-consolidations-v1.json",
+        "--apply",
+        "--json"
+      ],
+      "fixture": "testdata/persona-pilot",
+      "kind": "success",
+      "exit": 0,
+      "json": true,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "entities-consolidate-replay-json",
+      "tool": "buildos",
+      "domain": "entities",
+      "invocation": "buildos",
+      "args": [
+        "entities",
+        "consolidate",
+        "--root",
+        "root",
+        "--mode",
+        "strict",
+        "--manifest",
+        "manifests/approved-existing-replay-v1.json",
+        "--apply",
+        "--json"
+      ],
+      "fixture": "testdata/persona-pilot",
+      "kind": "success",
+      "exit": 0,
+      "json": true,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "entities-consolidate-conflict-json",
+      "tool": "buildos",
+      "domain": "entities",
+      "invocation": "buildos",
+      "args": [
+        "entities",
+        "consolidate",
+        "--root",
+        "root",
+        "--mode",
+        "strict",
+        "--manifest",
+        "manifests/intentionally-conflicting-remap-v1.json",
+        "--apply",
+        "--json"
+      ],
+      "fixture": "testdata/persona-pilot",
+      "kind": "conflict",
+      "exit": 4,
+      "json": true,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "entities-consolidate-missing-manifest-json",
+      "tool": "buildos",
+      "domain": "entities",
+      "invocation": "buildos",
+      "args": [
+        "entities",
+        "consolidate",
+        "--root",
+        "root",
+        "--mode",
+        "strict",
+        "--manifest",
+        "manifests/absent.json",
+        "--json"
+      ],
+      "fixture": "testdata/persona-pilot",
+      "kind": "invalid-input",
+      "exit": 3,
+      "json": true,
+      "os_dependent": "OSD-2"
+    },
+    {
+      "id": "entities-validate-missing-root-json",
+      "tool": "buildos",
+      "domain": "entities",
+      "invocation": "buildos",
+      "args": [
+        "entities",
+        "validate",
+        "--root",
+        "absent",
+        "--mode",
+        "strict",
+        "--json"
+      ],
+      "fixture": "testdata/persona-pilot",
+      "kind": "missing-root",
+      "exit": 3,
+      "json": true,
+      "os_dependent": "OSD-2",
+      "note": "PE-004 applies once entities is ported."
+    },
+    {
+      "id": "entities-validate-root-is-file-json",
+      "tool": "buildos",
+      "domain": "entities",
+      "invocation": "buildos",
+      "args": [
+        "entities",
+        "validate",
+        "--root",
+        "README.md",
+        "--mode",
+        "strict",
+        "--json"
+      ],
+      "fixture": "testdata/persona-pilot",
+      "kind": "missing-root",
+      "exit": 3,
+      "json": true,
+      "os_dependent": "OSD-2",
+      "note": "PE-004 applies once entities is ported."
+    },
+    {
+      "id": "entities-validate-missing-root-human",
+      "tool": "buildos",
+      "domain": "entities",
+      "invocation": "buildos",
+      "args": [
+        "entities",
+        "validate",
+        "--root",
+        "absent",
+        "--mode",
+        "compat"
+      ],
+      "fixture": "testdata/persona-pilot",
+      "kind": "missing-root",
+      "exit": 3,
+      "os_dependent": "OSD-2",
+      "note": "PE-004 applies once entities is ported."
+    },
+    {
+      "id": "entities-validate-malformed-row-json",
+      "tool": "buildos",
+      "domain": "entities",
+      "invocation": "buildos",
+      "args": [
+        "entities",
+        "validate",
+        "--root",
+        "root",
+        "--mode",
+        "strict",
+        "--json"
+      ],
+      "fixture": "testdata/persona-pilot",
+      "kind": "invalid-input",
+      "exit": 3,
+      "json": true,
+      "prepare": [
+        {
+          "write": "root/.os/data/capabilities.jsonl",
+          "text": "{\"id\":\"CAP-001\",\"type\":\"capability\",\"status\":\"active\"}\n{not json\n"
+        }
+      ],
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "entities-rebuild-apply-write-failure-json",
+      "tool": "buildos",
+      "domain": "entities",
+      "invocation": "buildos",
+      "args": [
+        "entities",
+        "rebuild-index",
+        "--root",
+        "root",
+        "--mode",
+        "strict",
+        "--apply",
+        "--json"
+      ],
+      "fixture": "testdata/persona-pilot",
+      "kind": "write-failure",
+      "exit": 5,
+      "json": true,
+      "prepare": [
+        {
+          "remove": "root/.os/indexes"
+        },
+        {
+          "write": "root/.os/indexes",
+          "text": "not a folder\n"
+        }
+      ],
+      "os_dependent": "OSD-2"
+    },
+    {
+      "id": "entities-consolidate-apply-index-failure-json",
+      "tool": "buildos",
+      "domain": "entities",
+      "invocation": "buildos",
+      "args": [
+        "entities",
+        "consolidate",
+        "--root",
+        "root",
+        "--mode",
+        "strict",
+        "--manifest",
+        "manifests/approved-persona-consolidations-v1.json",
+        "--apply",
+        "--json"
+      ],
+      "fixture": "testdata/persona-pilot",
+      "kind": "index-failure",
+      "exit": 6,
+      "json": true,
+      "prepare": [
+        {
+          "remove": "root/.os/indexes"
+        },
+        {
+          "write": "root/.os/indexes",
+          "text": "not a folder\n"
+        }
+      ],
+      "os_dependent": "OSD-2"
+    },
+    {
+      "id": "entities-validate-no-root-usage",
+      "tool": "buildos",
+      "domain": "entities",
+      "invocation": "buildos",
+      "args": [
+        "entities",
+        "validate",
+        "--mode",
+        "strict"
+      ],
+      "fixture": "testdata/persona-pilot",
+      "kind": "usage-error",
+      "exit": 2
+    },
+    {
+      "id": "entities-resolve-no-id-usage-json",
+      "tool": "buildos",
+      "domain": "entities",
+      "invocation": "buildos",
+      "args": [
+        "entities",
+        "resolve",
+        "--root",
+        "root",
+        "--mode",
+        "strict",
+        "--json"
+      ],
+      "fixture": "testdata/persona-pilot",
+      "kind": "usage-error",
+      "exit": 2,
+      "json": true
+    },
+    {
+      "id": "entities-consolidate-extra-arg-usage",
+      "tool": "buildos",
+      "domain": "entities",
+      "invocation": "buildos",
+      "args": [
+        "entities",
+        "consolidate",
+        "--root",
+        "root",
+        "--mode",
+        "strict",
+        "--manifest",
+        "manifests/approved-persona-consolidations-v1.json",
+        "extra"
+      ],
+      "fixture": "testdata/persona-pilot",
+      "kind": "usage-error",
+      "exit": 2
+    },
+    {
+      "id": "intake-convert-csv",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/team-roster.csv"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "success",
+      "exit": 0,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-convert-csv-dry-run",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/team-roster.csv",
+        "--dry-run"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "dry-run",
+      "exit": 0,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-convert-docx",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/service-guide.docx"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "success",
+      "exit": 0,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-convert-docx-dry-run",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/service-guide.docx",
+        "--dry-run"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "dry-run",
+      "exit": 0,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-convert-docx-literal-bullets",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/volunteer-minutes.docx"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "success",
+      "exit": 0,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-convert-docx-not-zip",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/broken.docx"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "invalid-input",
+      "exit": 1
+    },
+    {
+      "id": "intake-convert-xlsx",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/inventory.xlsx"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "success",
+      "exit": 0,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-convert-xlsx-dry-run",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/inventory.xlsx",
+        "--dry-run"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "dry-run",
+      "exit": 0,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-convert-xlsx-escaping-target",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/escaping-sheet.xlsx"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "invalid-input",
+      "exit": 1
+    },
+    {
+      "id": "intake-convert-pdf-plain",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/pdf/repair-cafe-handbook.pdf"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "success",
+      "exit": 0,
+      "pdf_text": true,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-convert-pdf-columns",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/pdf/two-columns.pdf"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "success",
+      "exit": 0,
+      "pdf_text": true,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-convert-pdf-table",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/pdf/room-table.pdf"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "success",
+      "exit": 0,
+      "pdf_text": true,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-convert-pdf-header-footer",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/pdf/garden-newsletter.pdf"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "success",
+      "exit": 0,
+      "pdf_text": true,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-convert-pdf-with-scanned-page",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/pdf/intake-with-scan.pdf"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "success",
+      "exit": 0,
+      "pdf_text": true,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-convert-pdf-scanned-only",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/pdf/scanned-only.pdf"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "invalid-input",
+      "exit": 1,
+      "pdf_text": true
+    },
+    {
+      "id": "intake-convert-html",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/handbook.html"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "success",
+      "exit": 0,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-convert-html-dry-run",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/handbook.html",
+        "--dry-run"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "dry-run",
+      "exit": 0,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-convert-html-dir",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/site"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "success",
+      "exit": 0,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-convert-html-dir-empty",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/empty-site"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "invalid-input",
+      "exit": 1
+    },
+    {
+      "id": "intake-convert-existing-output",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/existing-twin.csv"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "conflict",
+      "exit": 1,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-convert-existing-output-force",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/existing-twin.csv",
+        "--force"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "success",
+      "exit": 0,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-convert-explicit-type",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/notes.txt",
+        "--type",
+        "csv"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "success",
+      "exit": 0,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-convert-unknown-type",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/notes.txt"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "invalid-input",
+      "exit": 1,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-convert-missing-source",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/absent.csv"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "invalid-input",
+      "exit": 1,
+      "os_dependent": "OSD-2"
+    },
+    {
+      "id": "intake-convert-no-source-usage",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "usage-error",
+      "exit": 1
+    },
+    {
+      "id": "intake-convert-bad-flag-usage",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--bogus"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "usage-error",
+      "exit": 1
+    },
+    {
+      "id": "intake-convert-missing-root",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/team-roster.csv",
+        "--repo-root",
+        "absent"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "missing-root",
+      "exit": 1,
+      "os_dependent": "OSD-2"
+    },
+    {
+      "id": "intake-convert-write-failure",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/team-roster.csv"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "write-failure",
+      "exit": 1,
+      "prepare": [
+        {
+          "write": "system/assets/team-roster",
+          "text": "a file where the output folder goes\n"
+        }
+      ],
+      "os_dependent": "OSD-2"
+    },
+    {
+      "id": "intake-convert-assets-root",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/team-roster.csv",
+        "--assets-root",
+        "converted"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "success",
+      "exit": 0,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-index-references",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "index",
+        "references"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "success",
+      "exit": 0,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-index-references-fresh",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "index",
+        "references"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "success",
+      "exit": 0,
+      "prepare": [
+        {
+          "remove": "system/.os/indexes/references.json"
+        }
+      ],
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-index-references-output",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "index",
+        "references",
+        "--output",
+        "reports/refs.json"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "success",
+      "exit": 0,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-index-references-repo-root",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "index",
+        "references",
+        "--repo-root",
+        ".."
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "cwd": "inputs",
+      "kind": "success",
+      "exit": 0,
+      "os_dependent": "OSD-1",
+      "note": "Runs from inputs/ and names the repository root as `..`."
+    },
+    {
+      "id": "intake-index-references-assets-root",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "index",
+        "references",
+        "--assets-root",
+        "converted"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "prepare": [
+        {
+          "write": "converted/handout/handout.md",
+          "text": "---\nsource: \"inputs/handout.pdf\"\nsha256: \"3333333333333333333333333333333333333333333333333333333333333333\"\nconverter: \"buildos-intake/0.1.0\"\ntimestamp: \"2026-01-20T10:00:00Z\"\ntype: \"markdown\"\nstatus: \"converted\"\n---\n# Handout\n\nBring a reusable bag.\n"
+        }
+      ],
+      "kind": "success",
+      "exit": 0,
+      "os_dependent": "OSD-1",
+      "note": "Indexes a converted asset root other than system/assets."
+    },
+    {
+      "id": "intake-index-references-write-failure",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "index",
+        "references"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "prepare": [
+        {
+          "write": "system/.os/indexes/references.json",
+          "text": ""
+        },
+        {
+          "chmod": "system/.os/indexes/references.json",
+          "mode": "0444"
+        }
+      ],
+      "kind": "write-failure",
+      "exit": 1,
+      "os_dependent": "OSD-2",
+      "note": "The existing index is empty, so it reads as no previous references, and read-only, so the write fails. The read-only attribute blocks the write on Windows too."
+    },
+    {
+      "id": "intake-index-references-corrupt",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "index",
+        "references"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "index-failure",
+      "exit": 1,
+      "prepare": [
+        {
+          "write": "system/.os/indexes/references.json",
+          "text": "{\"version\": 1, \"references\": [\n"
+        }
+      ],
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-index-references-duplicate-id",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "index",
+        "references"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "index-failure",
+      "exit": 1,
+      "prepare": [
+        {
+          "write": "system/.os/indexes/references.json",
+          "text": "{\"version\":1,\"next_id\":3,\"references\":[{\"id\":\"REF-001\",\"converted\":\"system/assets/a.md\"},{\"id\":\"REF-001\",\"converted\":\"system/assets/b.md\"}]}\n"
+        }
+      ],
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-index-playbooks",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "index",
+        "playbooks"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "success",
+      "exit": 0,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-index-playbooks-repo-root",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "index",
+        "playbooks",
+        "--repo-root",
+        ".."
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "cwd": "inputs",
+      "kind": "success",
+      "exit": 0,
+      "os_dependent": "OSD-1",
+      "note": "Runs from inputs/ and names the repository root as `..`."
+    },
+    {
+      "id": "intake-index-playbooks-output",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "index",
+        "playbooks",
+        "--output",
+        "reports/playbooks.json"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "success",
+      "exit": 0,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-index-playbooks-write-failure",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "index",
+        "playbooks",
+        "--output",
+        "blocked/playbooks.json"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "prepare": [
+        {
+          "write": "blocked",
+          "text": "a file where the output folder goes\n"
+        }
+      ],
+      "kind": "write-failure",
+      "exit": 1,
+      "os_dependent": "OSD-2",
+      "note": "A regular file stands where the output folder must be created."
+    },
+    {
+      "id": "intake-index-playbooks-missing-fields",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "index",
+        "playbooks"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "invalid-input",
+      "exit": 1,
+      "prepare": [
+        {
+          "write": "system/playbooks/discovery/incomplete.md",
+          "text": "---\nid: PB-020\ntitle: Incomplete\nstatus: active\n---\n# Incomplete\n"
+        }
+      ]
+    },
+    {
+      "id": "intake-index-playbooks-missing-root",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "index",
+        "playbooks",
+        "--playbooks-root",
+        "absent"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "missing-root",
+      "exit": 0,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-index-no-subcommand",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "index"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "usage-error",
+      "exit": 1
+    },
+    {
+      "id": "intake-index-unknown-subcommand",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "index",
+        "bogus"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "usage-error",
+      "exit": 1
+    },
+    {
+      "id": "intake-no-args",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "usage-error",
+      "exit": 1
+    },
+    {
+      "id": "intake-help",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "help"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "help",
+      "exit": 0
+    },
+    {
+      "id": "intake-help-short",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "-h"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "help",
+      "exit": 0
+    },
+    {
+      "id": "intake-help-long",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "--help"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "help",
+      "exit": 0
+    },
+    {
+      "id": "intake-version",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "version"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "version",
+      "exit": 1,
+      "note": "The Go tool has no version command; it reports an unknown command."
+    },
+    {
+      "id": "intake-unknown-command",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "bogus"
+      ],
+      "fixture": "test/fixtures/golden/intake",
+      "kind": "usage-error",
+      "exit": 1
+    },
+    {
+      "id": "intake-installed-convert-csv",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/stock.csv"
+      ],
+      "fixture": "test/fixtures/golden/intake-installed",
+      "kind": "success",
+      "exit": 0,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-installed-convert-xlsx",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "convert",
+        "--source",
+        "inputs/inventory.xlsx"
+      ],
+      "fixture": "test/fixtures/golden/intake-installed",
+      "kind": "success",
+      "exit": 0,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-installed-index-playbooks",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "index",
+        "playbooks"
+      ],
+      "fixture": "test/fixtures/golden/intake-installed",
+      "kind": "success",
+      "exit": 0,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "intake-installed-index-references",
+      "tool": "buildos-intake",
+      "domain": "intake",
+      "invocation": "buildos-intake",
+      "args": [
+        "index",
+        "references"
+      ],
+      "fixture": "test/fixtures/golden/intake-installed",
+      "kind": "success",
+      "exit": 0,
+      "os_dependent": "OSD-1"
+    },
+    {
+      "id": "discovery-run",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "run",
+        "discovery",
+        "--playbook-id",
+        "PB-010",
+        "--outcome",
+        "positive",
+        "--title",
+        "Coupon checkout probe",
+        "--target",
+        "REQ-002",
+        "--target",
+        "CAP-001",
+        "--target",
+        "REQ-001",
+        "--dataset-ref",
+        "system/workspace/datasets/cart-sample.csv",
+        "--evidence",
+        "inputs/evidence/checkout-notes.txt",
+        "--evidence",
+        "inputs/evidence/Cart Export (v2).csv",
+        "--raw-finding",
+        "inputs/raw/raw-1.md",
+        "--raw-finding",
+        "inputs/raw/raw-2.md"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "success",
+      "exit": 0
+    },
+    {
+      "id": "discovery-run-dry-run",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "run",
+        "discovery",
+        "--playbook-id",
+        "PB-010",
+        "--outcome",
+        "positive",
+        "--title",
+        "Coupon checkout probe",
+        "--target",
+        "REQ-002",
+        "--target",
+        "CAP-001",
+        "--target",
+        "REQ-001",
+        "--dataset-ref",
+        "system/workspace/datasets/cart-sample.csv",
+        "--evidence",
+        "inputs/evidence/checkout-notes.txt",
+        "--evidence",
+        "inputs/evidence/Cart Export (v2).csv",
+        "--raw-finding",
+        "inputs/raw/raw-1.md",
+        "--raw-finding",
+        "inputs/raw/raw-2.md",
+        "--dry-run"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "dry-run",
+      "exit": 0
+    },
+    {
+      "id": "discovery-run-playbook-defaults",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "run",
+        "discovery",
+        "--playbook-id",
+        "PB-010",
+        "--outcome",
+        "inconclusive"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "success",
+      "exit": 0
+    },
+    {
+      "id": "discovery-run-not-runnable",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "run",
+        "discovery",
+        "--playbook-id",
+        "PB-011",
+        "--outcome",
+        "positive"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "invalid-input",
+      "exit": 1
+    },
+    {
+      "id": "discovery-run-wrong-category",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "run",
+        "discovery",
+        "--playbook-id",
+        "PB-012",
+        "--outcome",
+        "positive"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "invalid-input",
+      "exit": 1
+    },
+    {
+      "id": "discovery-run-missing-version",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "run",
+        "discovery",
+        "--playbook-id",
+        "PB-013",
+        "--outcome",
+        "positive"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "invalid-input",
+      "exit": 1
+    },
+    {
+      "id": "discovery-run-inactive",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "run",
+        "discovery",
+        "--playbook-id",
+        "PB-014",
+        "--outcome",
+        "positive"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "invalid-input",
+      "exit": 1
+    },
+    {
+      "id": "discovery-run-unknown-playbook",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "run",
+        "discovery",
+        "--playbook-id",
+        "PB-999",
+        "--outcome",
+        "positive"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "invalid-input",
+      "exit": 1
+    },
+    {
+      "id": "discovery-run-bad-outcome",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "run",
+        "discovery",
+        "--playbook-id",
+        "PB-010",
+        "--outcome",
+        "maybe"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "usage-error",
+      "exit": 1
+    },
+    {
+      "id": "discovery-run-no-playbook",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "run",
+        "discovery",
+        "--outcome",
+        "positive"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "usage-error",
+      "exit": 1
+    },
+    {
+      "id": "discovery-run-unknown-target",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "run",
+        "discovery",
+        "--playbook-id",
+        "PB-010",
+        "--outcome",
+        "positive",
+        "--target",
+        "REQ-999"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "invalid-input",
+      "exit": 1
+    },
+    {
+      "id": "discovery-run-missing-raw-file",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "run",
+        "discovery",
+        "--playbook-id",
+        "PB-010",
+        "--outcome",
+        "positive",
+        "--raw-finding",
+        "inputs/raw/absent.md"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "invalid-input",
+      "exit": 1,
+      "os_dependent": "OSD-2"
+    },
+    {
+      "id": "discovery-run-folder-exists",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "run",
+        "discovery",
+        "--playbook-id",
+        "PB-010",
+        "--outcome",
+        "positive"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "conflict",
+      "exit": 1,
+      "prepare": [
+        {
+          "mkdir": "system/workspace/runs/RUN-003"
+        }
+      ]
+    },
+    {
+      "id": "discovery-run-index-invalid-json",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "run",
+        "discovery",
+        "--playbook-id",
+        "PB-010",
+        "--outcome",
+        "positive"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "index-failure",
+      "exit": 1,
+      "prepare": [
+        {
+          "write": "system/.os/data/runs.jsonl",
+          "text": "{\"id\":\"RUN-001\",\"type\":\"run\",\"status\":\"closed\"}\n{broken\n"
+        }
+      ]
+    },
+    {
+      "id": "discovery-run-invalid-graph",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "run",
+        "discovery",
+        "--playbook-id",
+        "PB-010",
+        "--outcome",
+        "positive"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "invalid-input",
+      "exit": 1,
+      "prepare": [
+        {
+          "write": "system/.os/data/requirements.jsonl",
+          "text": "{\"id\":\"REQ-002\",\"type\":\"requirement\",\"status\":\"superseded\",\"redirect\":{\"target_id\":\"REQ-404\",\"kind\":\"duplicate\",\"decided_at\":\"2026-02-01T12:00:00Z\",\"decided_by\":\"fixture-review-board\",\"reason\":\"Broken on purpose.\",\"evidence_refs\":[]}}\n"
+        }
+      ]
+    },
+    {
+      "id": "discovery-run-missing-root",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "run",
+        "discovery",
+        "--playbook-id",
+        "PB-010",
+        "--outcome",
+        "positive",
+        "--repo-root",
+        "absent"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "missing-root",
+      "exit": 1,
+      "os_dependent": "OSD-2"
+    },
+    {
+      "id": "discovery-run-write-failure",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "run",
+        "discovery",
+        "--playbook-id",
+        "PB-010",
+        "--outcome",
+        "positive"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "write-failure",
+      "exit": 1,
+      "prepare": [
+        {
+          "remove": "system/workspace/runs"
+        },
+        {
+          "write": "system/workspace/runs",
+          "text": "a file where the runs folder goes\n"
+        }
+      ],
+      "os_dependent": "OSD-2"
+    },
+    {
+      "id": "discovery-run-bad-flag",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "run",
+        "discovery",
+        "--bogus"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "usage-error",
+      "exit": 1
+    },
+    {
+      "id": "discovery-qualify-redirected-run",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "qualify",
+        "finding",
+        "--run-id",
+        "RUN-002",
+        "--raw-finding-ref",
+        "#raw-finding-1",
+        "--outcome",
+        "positive",
+        "--confirmation-test",
+        "tests/confirm-cart-total.spec.ts",
+        "--confirmation-evidence",
+        "evidence/confirmation-run.txt"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "success",
+      "exit": 0
+    },
+    {
+      "id": "discovery-qualify-negative",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "qualify",
+        "finding",
+        "--run-id",
+        "RUN-001",
+        "--raw-finding-ref",
+        "raw-findings.md#raw-finding-2",
+        "--outcome",
+        "negative",
+        "--title",
+        "Receipt keeps old store name",
+        "--confirmation-test",
+        "tests/confirm-cart-total.spec.ts",
+        "--confirmation-evidence",
+        "evidence/confirmation-run.txt"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "success",
+      "exit": 0
+    },
+    {
+      "id": "discovery-qualify-full-ref",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "qualify",
+        "finding",
+        "--run-id",
+        "RUN-001",
+        "--raw-finding-ref",
+        "system/workspace/runs/RUN-001/raw-findings.md#raw-finding-1",
+        "--outcome",
+        "positive",
+        "--confirmation-test",
+        "tests/confirm-cart-total.spec.ts",
+        "--confirmation-evidence",
+        "evidence/confirmation-run.txt"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "success",
+      "exit": 0
+    },
+    {
+      "id": "discovery-qualify-repo-root",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "qualify",
+        "finding",
+        "--repo-root",
+        "..",
+        "--run-id",
+        "RUN-001",
+        "--raw-finding-ref",
+        "#raw-finding-1",
+        "--outcome",
+        "positive",
+        "--confirmation-test",
+        "tests/confirm-cart-total.spec.ts",
+        "--confirmation-evidence",
+        "evidence/confirmation-run.txt"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "cwd": "inputs",
+      "kind": "success",
+      "exit": 0,
+      "note": "Runs from inputs/ and names the repository root as `..`."
+    },
+    {
+      "id": "discovery-qualify-dry-run",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "qualify",
+        "finding",
+        "--run-id",
+        "RUN-001",
+        "--raw-finding-ref",
+        "#raw-finding-1",
+        "--outcome",
+        "positive",
+        "--dry-run",
+        "--confirmation-test",
+        "tests/confirm-cart-total.spec.ts",
+        "--confirmation-evidence",
+        "evidence/confirmation-run.txt"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "dry-run",
+      "exit": 0
+    },
+    {
+      "id": "discovery-qualify-missing-anchor",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "qualify",
+        "finding",
+        "--run-id",
+        "RUN-001",
+        "--raw-finding-ref",
+        "#raw-finding-9",
+        "--outcome",
+        "positive",
+        "--confirmation-test",
+        "tests/confirm-cart-total.spec.ts",
+        "--confirmation-evidence",
+        "evidence/confirmation-run.txt"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "invalid-input",
+      "exit": 1
+    },
+    {
+      "id": "discovery-qualify-ref-without-anchor",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "qualify",
+        "finding",
+        "--run-id",
+        "RUN-001",
+        "--raw-finding-ref",
+        "raw-findings.md",
+        "--outcome",
+        "positive",
+        "--confirmation-test",
+        "tests/confirm-cart-total.spec.ts",
+        "--confirmation-evidence",
+        "evidence/confirmation-run.txt"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "usage-error",
+      "exit": 1
+    },
+    {
+      "id": "discovery-qualify-missing-test-file",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "qualify",
+        "finding",
+        "--run-id",
+        "RUN-001",
+        "--raw-finding-ref",
+        "#raw-finding-1",
+        "--outcome",
+        "positive",
+        "--confirmation-test",
+        "tests/absent.spec.ts",
+        "--confirmation-evidence",
+        "evidence/confirmation-run.txt"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "invalid-input",
+      "exit": 1,
+      "os_dependent": "OSD-2"
+    },
+    {
+      "id": "discovery-qualify-unknown-run",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "qualify",
+        "finding",
+        "--run-id",
+        "RUN-999",
+        "--raw-finding-ref",
+        "#raw-finding-1",
+        "--outcome",
+        "positive",
+        "--confirmation-test",
+        "tests/confirm-cart-total.spec.ts",
+        "--confirmation-evidence",
+        "evidence/confirmation-run.txt"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "invalid-input",
+      "exit": 1
+    },
+    {
+      "id": "discovery-qualify-not-a-run",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "qualify",
+        "finding",
+        "--run-id",
+        "REQ-001",
+        "--raw-finding-ref",
+        "#raw-finding-1",
+        "--outcome",
+        "positive",
+        "--confirmation-test",
+        "tests/confirm-cart-total.spec.ts",
+        "--confirmation-evidence",
+        "evidence/confirmation-run.txt"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "invalid-input",
+      "exit": 1
+    },
+    {
+      "id": "discovery-qualify-bad-outcome",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "qualify",
+        "finding",
+        "--run-id",
+        "RUN-001",
+        "--raw-finding-ref",
+        "#raw-finding-1",
+        "--outcome",
+        "inconclusive",
+        "--confirmation-test",
+        "tests/confirm-cart-total.spec.ts",
+        "--confirmation-evidence",
+        "evidence/confirmation-run.txt"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "usage-error",
+      "exit": 1
+    },
+    {
+      "id": "discovery-qualify-no-run-id",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "qualify",
+        "finding",
+        "--raw-finding-ref",
+        "#raw-finding-1",
+        "--outcome",
+        "positive",
+        "--confirmation-test",
+        "tests/confirm-cart-total.spec.ts",
+        "--confirmation-evidence",
+        "evidence/confirmation-run.txt"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "usage-error",
+      "exit": 1
+    },
+    {
+      "id": "discovery-qualify-no-evidence",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "qualify",
+        "finding",
+        "--run-id",
+        "RUN-001",
+        "--raw-finding-ref",
+        "#raw-finding-1",
+        "--outcome",
+        "positive",
+        "--confirmation-test",
+        "tests/confirm-cart-total.spec.ts"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "usage-error",
+      "exit": 1
+    },
+    {
+      "id": "discovery-qualify-folder-exists",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "qualify",
+        "finding",
+        "--run-id",
+        "RUN-001",
+        "--raw-finding-ref",
+        "#raw-finding-1",
+        "--outcome",
+        "positive",
+        "--confirmation-test",
+        "tests/confirm-cart-total.spec.ts",
+        "--confirmation-evidence",
+        "evidence/confirmation-run.txt"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "conflict",
+      "exit": 1,
+      "prepare": [
+        {
+          "mkdir": "system/workspace/findings/FIND-001"
+        }
+      ]
+    },
+    {
+      "id": "discovery-qualify-write-failure",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "qualify",
+        "finding",
+        "--run-id",
+        "RUN-001",
+        "--raw-finding-ref",
+        "#raw-finding-1",
+        "--outcome",
+        "positive",
+        "--confirmation-test",
+        "tests/confirm-cart-total.spec.ts",
+        "--confirmation-evidence",
+        "evidence/confirmation-run.txt"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "write-failure",
+      "exit": 1,
+      "prepare": [
+        {
+          "write": "system/workspace/findings",
+          "text": "a file where the findings folder goes\n"
+        }
+      ],
+      "os_dependent": "OSD-2"
+    },
+    {
+      "id": "discovery-no-args",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "usage-error",
+      "exit": 1
+    },
+    {
+      "id": "discovery-help",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "help"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "help",
+      "exit": 0
+    },
+    {
+      "id": "discovery-help-short",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "-h"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "help",
+      "exit": 0
+    },
+    {
+      "id": "discovery-help-long",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "--help"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "help",
+      "exit": 0
+    },
+    {
+      "id": "discovery-version",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "version"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "version",
+      "exit": 1,
+      "note": "The Go tool has no version command; it reports an unknown command."
+    },
+    {
+      "id": "discovery-unknown-command",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "bogus"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "usage-error",
+      "exit": 1
+    },
+    {
+      "id": "discovery-run-no-subcommand",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "run"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "usage-error",
+      "exit": 1
+    },
+    {
+      "id": "discovery-qualify-no-subcommand",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "qualify",
+        "bogus"
+      ],
+      "fixture": "test/fixtures/golden/discovery",
+      "kind": "usage-error",
+      "exit": 1
+    },
+    {
+      "id": "discovery-installed-run",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "run",
+        "discovery",
+        "--playbook-id",
+        "PB-010",
+        "--outcome",
+        "negative",
+        "--evidence",
+        "inputs/evidence/checkout-notes.txt",
+        "--raw-finding",
+        "inputs/raw/raw-1.md"
+      ],
+      "fixture": "test/fixtures/golden/discovery-installed",
+      "kind": "success",
+      "exit": 0
+    },
+    {
+      "id": "discovery-installed-qualify",
+      "tool": "buildos-discovery",
+      "domain": "discovery",
+      "invocation": "buildos-discovery",
+      "args": [
+        "qualify",
+        "finding",
+        "--run-id",
+        "RUN-002",
+        "--raw-finding-ref",
+        "#raw-finding-1",
+        "--outcome",
+        "negative",
+        "--confirmation-test",
+        "tests/confirm-cart-total.spec.ts",
+        "--confirmation-evidence",
+        "evidence/confirmation-run.txt"
+      ],
+      "fixture": "test/fixtures/golden/discovery-installed",
+      "kind": "success",
+      "exit": 0
+    },
+    {
+      "id": "design-promote-baseline",
+      "tool": "buildos-design",
+      "domain": "design",
+      "invocation": "buildos-design",
+      "args": [
+        "promote",
+        "finding",
+        "--finding-id",
+        "FIND-001",
+        "--route",
+        "baseline-plan"
+      ],
+      "fixture": "test/fixtures/golden/design",
+      "kind": "success",
+      "exit": 0
+    },
+    {
+      "id": "design-promote-change-redirected",
+      "tool": "buildos-design",
+      "domain": "design",
+      "invocation": "buildos-design",
+      "args": [
+        "promote",
+        "finding",
+        "--finding-id",
+        "FIND-002",
+        "--route",
+        "change-plan",
+        "--title",
+        "Keep tax with coupons",
+        "--slug",
+        "keep-tax"
+      ],
+      "fixture": "test/fixtures/golden/design",
+      "kind": "success",
+      "exit": 0
+    },
+    {
+      "id": "design-promote-dry-run",
+      "tool": "buildos-design",
+      "domain": "design",
+      "invocation": "buildos-design",
+      "args": [
+        "promote",
+        "finding",
+        "--finding-id",
+        "FIND-001",
+        "--route",
+        "change-plan",
+        "--dry-run"
+      ],
+      "fixture": "test/fixtures/golden/design",
+      "kind": "dry-run",
+      "exit": 0
+    },
+    {
+      "id": "design-promote-bad-route",
+      "tool": "buildos-design",
+      "domain": "design",
+      "invocation": "buildos-design",
+      "args": [
+        "promote",
+        "finding",
+        "--finding-id",
+        "FIND-001",
+        "--route",
+        "fast-track"
+      ],
+      "fixture": "test/fixtures/golden/design",
+      "kind": "usage-error",
+      "exit": 1
+    },
+    {
+      "id": "design-promote-no-finding",
+      "tool": "buildos-design",
+      "domain": "design",
+      "invocation": "buildos-design",
+      "args": [
+        "promote",
+        "finding",
+        "--route",
+        "baseline-plan"
+      ],
+      "fixture": "test/fixtures/golden/design",
+      "kind": "usage-error",
+      "exit": 1
+    },
+    {
+      "id": "design-promote-unknown-finding",
+      "tool": "buildos-design",
+      "domain": "design",
+      "invocation": "buildos-design",
+      "args": [
+        "promote",
+        "finding",
+        "--finding-id",
+        "FIND-999",
+        "--route",
+        "baseline-plan"
+      ],
+      "fixture": "test/fixtures/golden/design",
+      "kind": "invalid-input",
+      "exit": 1
+    },
+    {
+      "id": "design-promote-not-qualified",
+      "tool": "buildos-design",
+      "domain": "design",
+      "invocation": "buildos-design",
+      "args": [
+        "promote",
+        "finding",
+        "--finding-id",
+        "FIND-003",
+        "--route",
+        "baseline-plan"
+      ],
+      "fixture": "test/fixtures/golden/design",
+      "kind": "invalid-input",
+      "exit": 1
+    },
+    {
+      "id": "design-promote-missing-anchor",
+      "tool": "buildos-design",
+      "domain": "design",
+      "invocation": "buildos-design",
+      "args": [
+        "promote",
+        "finding",
+        "--finding-id",
+        "FIND-004",
+        "--route",
+        "baseline-plan"
+      ],
+      "fixture": "test/fixtures/golden/design",
+      "kind": "invalid-input",
+      "exit": 1
+    },
+    {
+      "id": "design-promote-bad-slug",
+      "tool": "buildos-design",
+      "domain": "design",
+      "invocation": "buildos-design",
+      "args": [
+        "promote",
+        "finding",
+        "--finding-id",
+        "FIND-001",
+        "--route",
+        "baseline-plan",
+        "--slug",
+        "Bad Slug"
+      ],
+      "fixture": "test/fixtures/golden/design",
+      "kind": "usage-error",
+      "exit": 1
+    },
+    {
+      "id": "design-promote-no-slug-from-title",
+      "tool": "buildos-design",
+      "domain": "design",
+      "invocation": "buildos-design",
+      "args": [
+        "promote",
+        "finding",
+        "--finding-id",
+        "FIND-005",
+        "--route",
+        "baseline-plan"
+      ],
+      "fixture": "test/fixtures/golden/design",
+      "kind": "usage-error",
+      "exit": 1
+    },
+    {
+      "id": "design-promote-missing-finding-record",
+      "tool": "buildos-design",
+      "domain": "design",
+      "invocation": "buildos-design",
+      "args": [
+        "promote",
+        "finding",
+        "--finding-id",
+        "FIND-005",
+        "--route",
+        "baseline-plan",
+        "--slug",
+        "store-name"
+      ],
+      "fixture": "test/fixtures/golden/design",
+      "kind": "invalid-input",
+      "exit": 1,
+      "os_dependent": "OSD-2"
+    },
+    {
+      "id": "design-promote-missing-router-input",
+      "tool": "buildos-design",
+      "domain": "design",
+      "invocation": "buildos-design",
+      "args": [
+        "promote",
+        "finding",
+        "--finding-id",
+        "FIND-001",
+        "--route",
+        "baseline-plan"
+      ],
+      "fixture": "test/fixtures/golden/design",
+      "kind": "invalid-input",
+      "exit": 1,
+      "prepare": [
+        {
+          "remove": "system/docs/assets/templates/design.md"
+        }
+      ],
+      "os_dependent": "OSD-2"
+    },
+    {
+      "id": "design-promote-target-exists",
+      "tool": "buildos-design",
+      "domain": "design",
+      "invocation": "buildos-design",
+      "args": [
+        "promote",
+        "finding",
+        "--finding-id",
+        "FIND-001",
+        "--route",
+        "baseline-plan"
+      ],
+      "fixture": "test/fixtures/golden/design",
+      "kind": "conflict",
+      "exit": 1,
+      "prepare": [
+        {
+          "write": "system/docs/designs/{DATE}-coupon-drops-tax-from-cart-total.md",
+          "text": "# Already here\n"
+        }
+      ]
+    },
+    {
+      "id": "design-promote-write-failure",
+      "tool": "buildos-design",
+      "domain": "design",
+      "invocation": "buildos-design",
+      "args": [
+        "promote",
+        "finding",
+        "--finding-id",
+        "FIND-001",
+        "--route",
+        "baseline-plan"
+      ],
+      "fixture": "test/fixtures/golden/design",
+      "prepare": [
+        {
+          "remove": "system/docs/designs"
+        },
+        {
+          "write": "system/docs/designs",
+          "text": "a file where the designs folder goes\n"
+        }
+      ],
+      "kind": "write-failure",
+      "exit": 1,
+      "os_dependent": "OSD-2",
+      "note": "A regular file stands where the designs folder goes, so the design target check fails before any write. Portable to every operating system."
+    },
+    {
+      "id": "design-promote-missing-root",
+      "tool": "buildos-design",
+      "domain": "design",
+      "invocation": "buildos-design",
+      "args": [
+        "promote",
+        "finding",
+        "--finding-id",
+        "FIND-001",
+        "--route",
+        "baseline-plan",
+        "--repo-root",
+        "absent"
+      ],
+      "fixture": "test/fixtures/golden/design",
+      "kind": "missing-root",
+      "exit": 1,
+      "os_dependent": "OSD-2"
+    },
+    {
+      "id": "design-promote-invalid-index",
+      "tool": "buildos-design",
+      "domain": "design",
+      "invocation": "buildos-design",
+      "args": [
+        "promote",
+        "finding",
+        "--finding-id",
+        "FIND-001",
+        "--route",
+        "baseline-plan"
+      ],
+      "fixture": "test/fixtures/golden/design",
+      "kind": "invalid-input",
+      "exit": 1,
+      "prepare": [
+        {
+          "write": "system/.os/data/findings.jsonl",
+          "text": "{\"id\":\"FIND-001\",\"type\":\"finding\",\"status\":\"qualified\"}\n[1,2]\n"
+        }
+      ]
+    },
+    {
+      "id": "design-promote-bad-flag",
+      "tool": "buildos-design",
+      "domain": "design",
+      "invocation": "buildos-design",
+      "args": [
+        "promote",
+        "finding",
+        "--bogus"
+      ],
+      "fixture": "test/fixtures/golden/design",
+      "kind": "usage-error",
+      "exit": 1
+    },
+    {
+      "id": "design-no-args",
+      "tool": "buildos-design",
+      "domain": "design",
+      "invocation": "buildos-design",
+      "args": [],
+      "fixture": "test/fixtures/golden/design",
+      "kind": "usage-error",
+      "exit": 1
+    },
+    {
+      "id": "design-help",
+      "tool": "buildos-design",
+      "domain": "design",
+      "invocation": "buildos-design",
+      "args": [
+        "help"
+      ],
+      "fixture": "test/fixtures/golden/design",
+      "kind": "help",
+      "exit": 0
+    },
+    {
+      "id": "design-help-short",
+      "tool": "buildos-design",
+      "domain": "design",
+      "invocation": "buildos-design",
+      "args": [
+        "-h"
+      ],
+      "fixture": "test/fixtures/golden/design",
+      "kind": "help",
+      "exit": 0
+    },
+    {
+      "id": "design-help-long",
+      "tool": "buildos-design",
+      "domain": "design",
+      "invocation": "buildos-design",
+      "args": [
+        "--help"
+      ],
+      "fixture": "test/fixtures/golden/design",
+      "kind": "help",
+      "exit": 0
+    },
+    {
+      "id": "design-version",
+      "tool": "buildos-design",
+      "domain": "design",
+      "invocation": "buildos-design",
+      "args": [
+        "version"
+      ],
+      "fixture": "test/fixtures/golden/design",
+      "kind": "version",
+      "exit": 1,
+      "note": "The Go tool has no version command; it reports an unknown command."
+    },
+    {
+      "id": "design-unknown-command",
+      "tool": "buildos-design",
+      "domain": "design",
+      "invocation": "buildos-design",
+      "args": [
+        "bogus"
+      ],
+      "fixture": "test/fixtures/golden/design",
+      "kind": "usage-error",
+      "exit": 1
+    },
+    {
+      "id": "design-promote-no-subcommand",
+      "tool": "buildos-design",
+      "domain": "design",
+      "invocation": "buildos-design",
+      "args": [
+        "promote"
+      ],
+      "fixture": "test/fixtures/golden/design",
+      "kind": "usage-error",
+      "exit": 1
+    },
+    {
+      "id": "design-installed-promote",
+      "tool": "buildos-design",
+      "domain": "design",
+      "invocation": "buildos-design",
+      "args": [
+        "promote",
+        "finding",
+        "--finding-id",
+        "FIND-002",
+        "--route",
+        "baseline-plan"
+      ],
+      "fixture": "test/fixtures/golden/design-installed",
+      "kind": "success",
+      "exit": 0
+    }
+  ]
+}

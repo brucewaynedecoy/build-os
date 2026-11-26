@@ -1,0 +1,17 @@
+{
+  "id": "cli-version-json",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "version",
+    "--json"
+  ],
+  "exit": 0,
+  "stdout_sha256": "6621794028dd223dd783e1be089af7dab451ed6dcae38f6e189a97c9dd136249",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

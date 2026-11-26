@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "next_id": 3,
+  "references": [
+    {
+      "id": "REF-001",
+      "source": "inputs/existing-twin.csv",
+      "converted": "system/assets/existing-twin/existing-twin.csv",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "type": "csv",
+      "converter": "buildos-intake/0.1.0",
+      "timestamp": "2026-01-15T10:00:00Z",
+      "status": "converted"
+    },
+    {
+      "id": "REF-002",
+      "source": "inputs/meeting-notes.docx",
+      "converted": "system/assets/meeting-notes/meeting-notes.md",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "type": "markdown",
+      "converter": "buildos-intake/0.1.0",
+      "timestamp": "2026-01-16T09:30:00Z",
+      "status": "converted"
+    }
+  ]
+}

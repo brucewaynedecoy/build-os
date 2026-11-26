@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "mappings": [
+    {
+      "source_id": "PER-002",
+      "target_id": "PER-007",
+      "kind": "replaced",
+      "decided_at": "2026-07-21T12:20:00Z",
+      "decided_by": "fixture-negative-test",
+      "reason": "Unsafe negative-test input attempts to replace an existing immediate successor and must fail closed without writing.",
+      "evidence_refs": [
+        "review/README.md#intentionally-conflicting-input"
+      ]
+    }
+  ]
+}

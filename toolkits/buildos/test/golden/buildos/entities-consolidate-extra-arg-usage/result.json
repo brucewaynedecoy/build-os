@@ -1,0 +1,24 @@
+{
+  "id": "entities-consolidate-extra-arg-usage",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "entities",
+    "consolidate",
+    "--root",
+    "root",
+    "--mode",
+    "strict",
+    "--manifest",
+    "manifests/approved-persona-consolidations-v1.json",
+    "extra"
+  ],
+  "exit": 2,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "8b93e6c5fa2e5a1827a7aa4a2db3ffe22120604cd236061d15848e6ef09e5ac3",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

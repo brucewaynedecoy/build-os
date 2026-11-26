@@ -1,0 +1,7 @@
+{
+  "case": "frontmatter-required",
+  "exit": 1,
+  "stdout": "",
+  "stderr": "playbooks/sample/check-sample.md:environments: is required for scoped frontmatter\nplaybooks/sample/check-sample.md:owners: is required for scoped frontmatter\nFAIL: 2 validation error(s)\n",
+  "crashed": false
+}

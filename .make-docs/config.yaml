@@ -1,0 +1,16 @@
+projectId: 3242efaf-4744-48e8-a5ff-fab720f54ccb
+harnessIntegrations:
+  - harness: claude-code
+    mode: narrow
+    method: mcp
+    accessCeiling:
+      store: write
+      project: write
+      hostConfig: none
+  - harness: codex
+    mode: narrow
+    method: mcp
+    accessCeiling:
+      store: write
+      project: write
+      hostConfig: none

@@ -1,0 +1,23 @@
+{
+  "id": "discovery-run-missing-root",
+  "tool": "buildos-discovery",
+  "invocation": "buildos-discovery",
+  "args": [
+    "run",
+    "discovery",
+    "--playbook-id",
+    "PB-010",
+    "--outcome",
+    "positive",
+    "--repo-root",
+    "absent"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "4c0b6f5bd800f8aac6e5e455393165b07abe2b07149d0c9c1f41f2ccaac75f88",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

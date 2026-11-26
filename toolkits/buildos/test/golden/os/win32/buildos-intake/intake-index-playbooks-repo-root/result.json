@@ -1,0 +1,25 @@
+{
+  "id": "intake-index-playbooks-repo-root",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "index",
+    "playbooks",
+    "--repo-root",
+    ".."
+  ],
+  "exit": 0,
+  "stdout_sha256": "f0a28bab55afcf33dd692fd7ee565a665de9d402bdc7a17a341c4f4245483693",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [
+    {
+      "path": "system/.os/indexes/playbooks.json",
+      "kind": "file"
+    }
+  ],
+  "changed": [],
+  "removed": [],
+  "files": {
+    "system/.os/indexes/playbooks.json": "1581e1aed102a043ec1e4073126200efcf5dd90ebd1c1de791aaedcbe5d9708c"
+  }
+}

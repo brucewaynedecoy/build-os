@@ -1,0 +1,21 @@
+{
+  "id": "discovery-run-missing-version",
+  "tool": "buildos-discovery",
+  "invocation": "buildos-discovery",
+  "args": [
+    "run",
+    "discovery",
+    "--playbook-id",
+    "PB-013",
+    "--outcome",
+    "positive"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "7633da56626c78082cfeca234c08e587af688b52a6ab14a367832d75028ef3f6",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

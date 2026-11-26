@@ -1,0 +1,60 @@
+{
+  "id": "intake-convert-html-dir",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert",
+    "--source",
+    "inputs/site"
+  ],
+  "exit": 0,
+  "stdout_sha256": "c384d607414f9db97a50d8809a03062c9b3dc1f0c63072deeb133a0ed9b5fb51",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [
+    {
+      "path": "system/assets/site",
+      "kind": "dir"
+    },
+    {
+      "path": "system/assets/site/diagrams",
+      "kind": "dir"
+    },
+    {
+      "path": "system/assets/site/diagrams/guides-setup-mermaid-001.mmd",
+      "kind": "file"
+    },
+    {
+      "path": "system/assets/site/guides-setup.md",
+      "kind": "file"
+    },
+    {
+      "path": "system/assets/site/index.md",
+      "kind": "file"
+    },
+    {
+      "path": "system/assets/site/media",
+      "kind": "dir"
+    },
+    {
+      "path": "system/assets/site/media/index-image-001.png",
+      "kind": "file"
+    }
+  ],
+  "changed": [],
+  "removed": [],
+  "files": {
+    "system/assets/site/diagrams/guides-setup-mermaid-001.mmd": "d2e07380994f9fd0bf50cd164cbde0abe181b36bf65660588332061f55f42c81",
+    "system/assets/site/guides-setup.md": "c36d76636bf6ea42be373c3243b9c3e9ae4370772ff6b15e3ef9c732fcb5225a",
+    "system/assets/site/index.md": "89b2cd25a54bd5b5945e9ec1eff33ea54fe3c8fac138bfbd423a7b56fd1c1eb8",
+    "system/assets/site/media/index-image-001.png": "a822743c8b37ac44ecd1446e6467fa0f28d8dc3db44f1b207d0fc63d53fd8183"
+  },
+  "modes": {
+    "system/assets/site": "0755",
+    "system/assets/site/diagrams": "0755",
+    "system/assets/site/diagrams/guides-setup-mermaid-001.mmd": "0644",
+    "system/assets/site/guides-setup.md": "0644",
+    "system/assets/site/index.md": "0644",
+    "system/assets/site/media": "0755",
+    "system/assets/site/media/index-image-001.png": "0644"
+  }
+}

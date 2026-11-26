@@ -1,0 +1,15 @@
+flag provided but not defined: -bogus
+Usage of convert:
+  -assets-root string
+    	converted asset root (default "system/assets")
+  -dry-run
+    	print planned outputs without writing
+  -force
+    	overwrite existing converted twins
+  -repo-root string
+    	repository root (default ".")
+  -source string
+    	source file or HTML directory to convert
+  -type string
+    	source type: auto, csv, docx, xlsx, pdf, html, html-dir (default "auto")
+buildos-intake: error: flag provided but not defined: -bogus

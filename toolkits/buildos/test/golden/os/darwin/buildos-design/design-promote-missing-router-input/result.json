@@ -1,0 +1,21 @@
+{
+  "id": "design-promote-missing-router-input",
+  "tool": "buildos-design",
+  "invocation": "buildos-design",
+  "args": [
+    "promote",
+    "finding",
+    "--finding-id",
+    "FIND-001",
+    "--route",
+    "baseline-plan"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "5490acdd3e33871fe291f3ba0954657da757ae23b282541b111e77dd69aa1965",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

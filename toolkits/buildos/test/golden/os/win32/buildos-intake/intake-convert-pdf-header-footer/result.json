@@ -1,0 +1,28 @@
+{
+  "id": "intake-convert-pdf-header-footer",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert",
+    "--source",
+    "inputs/pdf/garden-newsletter.pdf"
+  ],
+  "exit": 0,
+  "stdout_sha256": "8faf3d86c7d0a0500e82083f233e0536aa39c4f7b0497b12df82220e2648af65",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [
+    {
+      "path": "system/assets/garden-newsletter",
+      "kind": "dir"
+    },
+    {
+      "path": "system/assets/garden-newsletter/garden-newsletter.txt",
+      "kind": "file"
+    }
+  ],
+  "changed": [],
+  "removed": [],
+  "files": {
+    "system/assets/garden-newsletter/garden-newsletter.txt": "dce67415104a73631a6920f6a7c4785bf8e8e72830105d9ebb4660c7fe73df4c"
+  }
+}

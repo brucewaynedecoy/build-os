@@ -1,0 +1,7 @@
+{
+  "case": "non-utf8-jsonl",
+  "exit": 1,
+  "stdout": "",
+  "stderr": "UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff in position 242: invalid start byte\n",
+  "crashed": true
+}

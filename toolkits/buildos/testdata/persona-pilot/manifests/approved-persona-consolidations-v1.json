@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "mappings": [
+    {
+      "source_id": "PER-004",
+      "target_id": "PER-001",
+      "kind": "duplicate",
+      "decided_at": "2026-07-21T12:00:00Z",
+      "decided_by": "fixture-review-board",
+      "reason": "Reviewed synthetic evidence establishes that the decision-maker row describes the same procurement owner as PER-001.",
+      "evidence_refs": [
+        "system/docs/research/persona-pilot.md#procurement-decision-maker"
+      ]
+    },
+    {
+      "source_id": "PER-005",
+      "target_id": "PER-001",
+      "kind": "consolidated",
+      "decided_at": "2026-07-21T12:05:00Z",
+      "decided_by": "fixture-review-board",
+      "reason": "Reviewers intentionally combined the overlapping sourcing and procurement profile into the broader canonical procurement persona.",
+      "evidence_refs": [
+        "system/docs/research/persona-pilot.md#sourcing-and-procurement-owner"
+      ]
+    },
+    {
+      "source_id": "PER-006",
+      "target_id": "PER-007",
+      "kind": "replaced",
+      "decided_at": "2026-07-21T12:10:00Z",
+      "decided_by": "fixture-review-board",
+      "reason": "The policy-automation owner is the reviewed successor to the retired email-based approval coordinator.",
+      "evidence_refs": [
+        "system/docs/research/persona-pilot.md#workflow-approval-owner"
+      ]
+    }
+  ]
+}

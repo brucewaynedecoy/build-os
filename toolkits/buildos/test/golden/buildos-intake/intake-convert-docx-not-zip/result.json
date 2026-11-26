@@ -1,0 +1,18 @@
+{
+  "id": "intake-convert-docx-not-zip",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert",
+    "--source",
+    "inputs/broken.docx"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "25d659873d4f4b69d54ef5c5c39475bf63c46b7360d51bcb5d4f0801ebd2feb6",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

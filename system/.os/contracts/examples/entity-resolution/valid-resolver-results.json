@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "name": "zero-hop-active",
+      "result": {
+        "requested_id": "PER-101",
+        "canonical_id": "PER-101",
+        "chain": [
+          "PER-101"
+        ],
+        "resolved": false
+      }
+    },
+    {
+      "name": "multi-hop-superseded",
+      "result": {
+        "requested_id": "PER-103",
+        "canonical_id": "PER-101",
+        "chain": [
+          "PER-103",
+          "PER-102",
+          "PER-101"
+        ],
+        "resolved": true
+      }
+    }
+  ]
+}

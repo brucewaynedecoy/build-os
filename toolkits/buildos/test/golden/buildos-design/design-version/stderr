@@ -1,0 +1,3 @@
+Usage:
+  buildos-design promote finding --finding-id <FIND-NNN> --route baseline-plan|change-plan [--title <text>] [--slug <slug>] [--repo-root <path>] [--dry-run]
+buildos-design: error: unknown command "version"

@@ -1,0 +1,29 @@
+{
+  "id": "intake-index-references-output",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "index",
+    "references",
+    "--output",
+    "reports/refs.json"
+  ],
+  "exit": 0,
+  "stdout_sha256": "bc62afc21bcea86e15a84609dab3769c6190772e9540dc6cde1bacf5f15361bd",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [
+    {
+      "path": "reports",
+      "kind": "dir"
+    },
+    {
+      "path": "reports/refs.json",
+      "kind": "file"
+    }
+  ],
+  "changed": [],
+  "removed": [],
+  "files": {
+    "reports/refs.json": "ba142cb54963daae74c6132db98ebf76a2a859d9c43e32295cfe2a919b8eb377"
+  }
+}

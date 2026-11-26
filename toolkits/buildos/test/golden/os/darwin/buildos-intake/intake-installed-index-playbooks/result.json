@@ -1,0 +1,31 @@
+{
+  "id": "intake-installed-index-playbooks",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "index",
+    "playbooks"
+  ],
+  "exit": 0,
+  "stdout_sha256": "8ac051039f83da8679f5f114ccdfb0ffaae9f2ff1808db3cfbc56bf4a966b18a",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [
+    {
+      "path": ".os/indexes",
+      "kind": "dir"
+    },
+    {
+      "path": ".os/indexes/playbooks.json",
+      "kind": "file"
+    }
+  ],
+  "changed": [],
+  "removed": [],
+  "files": {
+    ".os/indexes/playbooks.json": "79f1107c345e563f358803a32b15477580ee57435c7da0009ac3cecf7cbb9979"
+  },
+  "modes": {
+    ".os/indexes": "0755",
+    ".os/indexes/playbooks.json": "0644"
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "id": "discovery-installed-qualify",
+  "tool": "buildos-discovery",
+  "invocation": "buildos-discovery",
+  "args": [
+    "qualify",
+    "finding",
+    "--run-id",
+    "RUN-002",
+    "--raw-finding-ref",
+    "#raw-finding-1",
+    "--outcome",
+    "negative",
+    "--confirmation-test",
+    "tests/confirm-cart-total.spec.ts",
+    "--confirmation-evidence",
+    "evidence/confirmation-run.txt"
+  ],
+  "exit": 0,
+  "stdout_sha256": "fe26cd3e73d6a4c48185bd5b5db58678de6d85dc2acf55b285b549b89e28c869",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [
+    {
+      "path": "workspace/findings",
+      "kind": "dir"
+    },
+    {
+      "path": "workspace/findings/FIND-001",
+      "kind": "dir"
+    },
+    {
+      "path": "workspace/findings/FIND-001/confirmation-test",
+      "kind": "dir"
+    },
+    {
+      "path": "workspace/findings/FIND-001/confirmation-test/001-confirm-cart-total.spec.ts",
+      "kind": "file"
+    },
+    {
+      "path": "workspace/findings/FIND-001/evidence",
+      "kind": "dir"
+    },
+    {
+      "path": "workspace/findings/FIND-001/evidence/001-confirmation-run.txt",
+      "kind": "file"
+    },
+    {
+      "path": "workspace/findings/FIND-001/finding.md",
+      "kind": "file"
+    },
+    {
+      "path": "workspace/findings/FIND-001/qualification.md",
+      "kind": "file"
+    }
+  ],
+  "changed": [
+    {
+      "path": ".os/data/findings.jsonl",
+      "kind": "file"
+    }
+  ],
+  "removed": [],
+  "files": {
+    ".os/data/findings.jsonl": "d53253dde30e377c86a0d4effd5447e5dcbf72afbf337295e97200af1d650389",
+    "workspace/findings/FIND-001/confirmation-test/001-confirm-cart-total.spec.ts": "355129cafa3574f2cde13ea4eb71dcba33eb7986afb77fa937f9e9d3bc5f2f82",
+    "workspace/findings/FIND-001/evidence/001-confirmation-run.txt": "6697d4e45d1771891e1da096a0d7c82bf85b37e872154a6bfd52b9c975748572",
+    "workspace/findings/FIND-001/finding.md": "b308d9e4773291f7ca4d99f192efec5b0fea0518c658143da91ad0c3066b847a",
+    "workspace/findings/FIND-001/qualification.md": "e36abc24f0e639f72ab3a07d231d79be0383bec28e3bfcffe3871d28f515509c"
+  },
+  "modes": {
+    ".os/data/findings.jsonl": "0644",
+    "workspace/findings": "0755",
+    "workspace/findings/FIND-001": "0755",
+    "workspace/findings/FIND-001/confirmation-test": "0755",
+    "workspace/findings/FIND-001/confirmation-test/001-confirm-cart-total.spec.ts": "0644",
+    "workspace/findings/FIND-001/evidence": "0755",
+    "workspace/findings/FIND-001/evidence/001-confirmation-run.txt": "0644",
+    "workspace/findings/FIND-001/finding.md": "0644",
+    "workspace/findings/FIND-001/qualification.md": "0644"
+  }
+}

@@ -1,0 +1,2 @@
+{"id":"REQ-001","type":"requirement","status":"draft","title":"Invented need","source_anchor":"assets/sample/sample.md#need-1","systems":["primary-system"],"environments":["baseline"],"owners":["sample-team"]}
+{"id":"REQ-002","type":"requirement","status":"active","title":"Second invented need","source_anchor":"assets/sample/sample.md#need-2","doc_anchor":"docs/notes/sample.md#need-2","systems":[],"environments":[],"owners":[]}

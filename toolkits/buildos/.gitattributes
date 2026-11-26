@@ -1,0 +1,14 @@
+# Check out every text file in this package with LF line endings on every OS,
+# so goldens, fixtures, notices, and license hashes match byte for byte on
+# Windows too. Git still detects binary files by itself.
+* text=auto eol=lf
+
+# THIRD_PARTY_NOTICES.md holds license texts copied byte for byte, some with
+# trailing spaces. The texts stay as their authors wrote them;
+# `git diff --check` does not flag their trailing spaces.
+THIRD_PARTY_NOTICES.md whitespace=-trailing-space
+
+# The init adoption fixture is compared byte for byte, so git never converts
+# its line endings (one file keeps CRLF). This rule comes after the * rule
+# above, and a rule here wins over the repository root .gitattributes.
+test/fixtures/init/** -text whitespace=cr-at-eol

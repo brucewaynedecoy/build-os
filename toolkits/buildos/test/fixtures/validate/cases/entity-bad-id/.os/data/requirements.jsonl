@@ -1,0 +1,5 @@
+{"id":"CAP-001","type":"requirement","status":"draft","title":"Invented need","source_anchor":"assets/sample/sample.md#need-1","systems":["primary-system"],"environments":["baseline"],"owners":["sample-team"]}
+{"id":"REQ-01","type":"requirement","status":"draft","title":"Invented need","source_anchor":"assets/sample/sample.md#need-1","systems":["primary-system"],"environments":["baseline"],"owners":["sample-team"]}
+{"id":5,"type":"requirement","status":"draft","title":"Invented need","source_anchor":"assets/sample/sample.md#need-1","systems":["primary-system"],"environments":["baseline"],"owners":["sample-team"]}
+{"type":"requirement","status":"draft","title":"Invented need","source_anchor":"assets/sample/sample.md#need-1","systems":["primary-system"],"environments":["baseline"],"owners":["sample-team"]}
+{"id":"  ","type":"requirement","status":"draft","title":"Invented need","source_anchor":"assets/sample/sample.md#need-1","systems":["primary-system"],"environments":["baseline"],"owners":["sample-team"]}

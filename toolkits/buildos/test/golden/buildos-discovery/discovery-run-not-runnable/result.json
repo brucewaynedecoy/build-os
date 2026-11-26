@@ -1,0 +1,21 @@
+{
+  "id": "discovery-run-not-runnable",
+  "tool": "buildos-discovery",
+  "invocation": "buildos-discovery",
+  "args": [
+    "run",
+    "discovery",
+    "--playbook-id",
+    "PB-011",
+    "--outcome",
+    "positive"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "0ad7786d79b2d9bbcdc49f8c68eca773ab88d06bb2219560fe49ace4b554aef8",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

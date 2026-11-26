@@ -1,0 +1,21 @@
+flag provided but not defined: -bogus
+Usage of run discovery:
+  -dataset-ref value
+    	dataset reference used by the run; may be repeated
+  -dry-run
+    	print planned run without writing
+  -evidence value
+    	evidence file to copy into the run; may be repeated
+  -outcome string
+    	run outcome: positive, negative, inconclusive
+  -playbook-id string
+    	active discovery playbook ID
+  -raw-finding value
+    	raw finding text/markdown file; may be repeated
+  -repo-root string
+    	repository root (default ".")
+  -target value
+    	entity target addressed by the run; may be repeated
+  -title string
+    	run title
+buildos-discovery: error: flag provided but not defined: -bogus

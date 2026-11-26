@@ -1,0 +1,2 @@
+{"id":"REQ-001","type":"requirement","status":"active","title":"Cart total includes tax"}
+{"id":"REQ-002","type":"requirement","status":"superseded","title":"Cart shows tax","redirect":{"target_id":"REQ-001","kind":"duplicate","decided_at":"2026-02-01T12:00:00Z","decided_by":"fixture-review-board","reason":"Same synthetic record.","evidence_refs":[]}}

@@ -1,0 +1,19 @@
+{
+  "id": "entities-validate-no-root-usage",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "entities",
+    "validate",
+    "--mode",
+    "strict"
+  ],
+  "exit": 2,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "419a99a3bcc3cfa886243b09840dc2981e5845d785e6237bdc4cd6fc51d770da",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

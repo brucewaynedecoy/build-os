@@ -1,0 +1,9 @@
+---
+source: "inputs/inventory.xlsx"
+sha256: "c1235c14511a48a85c02baa9881cd4c3a7c4b15a893ad0c7665b01dc8b14627e"
+converter: "buildos-intake/0.1.0"
+timestamp: "{TIMESTAMP}"
+type: "csv"
+status: "converted"
+---
+Reviewed

@@ -1,0 +1,25 @@
+{
+  "id": "entities-consolidate-replay-json",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "entities",
+    "consolidate",
+    "--root",
+    "root",
+    "--mode",
+    "strict",
+    "--manifest",
+    "manifests/approved-existing-replay-v1.json",
+    "--apply",
+    "--json"
+  ],
+  "exit": 0,
+  "stdout_sha256": "9a962179195f5348e422fe1f395ecd195121b3c44a59cc174cc4ca0cdf9589a3",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

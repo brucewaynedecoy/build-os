@@ -1,0 +1,15 @@
+flag provided but not defined: -bogus
+Usage of promote finding:
+  -dry-run
+    	print planned design hand-off without writing
+  -finding-id string
+    	qualified finding ID
+  -repo-root string
+    	repository root (default ".")
+  -route string
+    	design follow-on route: baseline-plan or change-plan
+  -slug string
+    	design slug; lowercase letters, numbers, and hyphens
+  -title string
+    	design title
+buildos-design: error: flag provided but not defined: -bogus

@@ -1,0 +1,14 @@
+BuildOS deterministic project tooling
+
+Usage:
+  buildos help
+  buildos version [--json]
+  buildos entities <command> [flags]
+
+Entity commands:
+  resolve        Resolve an entity ID to its active canonical record
+  validate       Validate the complete governed entity graph
+  consolidate    Plan or apply a reviewed consolidation manifest
+  rebuild-index  Check or rebuild the derived entity-resolution index
+
+Run "buildos entities help" for entity command details.

@@ -1,0 +1,27 @@
+{
+  "ok": false,
+  "command": "entities.validate",
+  "version": "dev",
+  "source_revision": "unknown",
+  "root": "",
+  "mode": "strict",
+  "write_status": "not_requested",
+  "result": {
+    "valid": false,
+    "record_count": 0,
+    "index": {
+      "state": "",
+      "current": false,
+      "message": "",
+      "expected_sha256": ""
+    }
+  },
+  "diagnostics": [
+    {
+      "code": "internal_error",
+      "severity": "error",
+      "message": "resolve root \"{ROOT}/README.md\": not a directory",
+      "correction": "Review the reported error and retry after correcting the input or root."
+    }
+  ]
+}

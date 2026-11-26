@@ -1,0 +1,361 @@
+{
+  "$comment": "Validate fixture cases (W1 R7 P7 t12). Each case is the project in base/ with the files under cases/<id>/ laid over it (a file there replaces or adds a file) and the paths in `remove` taken away. A `.keep` file only keeps an empty case folder in git and is never copied. Every case is invented; it names no real person, organization, or client. The legacy validator's recorded result for each case is in test/golden/validate/.",
+  "cases": [
+    {
+      "id": "contract-missing",
+      "about": "The config contract file is missing.",
+      "remove": [
+        ".os/contracts/config-contract.md"
+      ]
+    },
+    {
+      "id": "contract-term-missing",
+      "about": "The contract does not name defaults.owners or environments[].systems."
+    },
+    {
+      "id": "config-missing",
+      "about": "The config file is missing.",
+      "remove": [
+        ".os/config/instance.yaml"
+      ]
+    },
+    {
+      "id": "config-folder",
+      "about": "The config path is a folder.",
+      "remove": [
+        ".os/config/instance.yaml"
+      ]
+    },
+    {
+      "id": "config-empty",
+      "about": "The config file is empty."
+    },
+    {
+      "id": "config-not-mapping",
+      "about": "The config file holds a list."
+    },
+    {
+      "id": "config-tab",
+      "about": "A tab in the indentation."
+    },
+    {
+      "id": "config-duplicate-key",
+      "about": "A key appears twice in one mapping."
+    },
+    {
+      "id": "config-unexpected-indent",
+      "about": "A line is indented more than its mapping."
+    },
+    {
+      "id": "config-no-key-value",
+      "about": "A line with no key and value."
+    },
+    {
+      "id": "config-empty-key",
+      "about": "A line with an empty key."
+    },
+    {
+      "id": "config-unexpected-content",
+      "about": "Text after the top-level block at a lower indent."
+    },
+    {
+      "id": "config-uneven-sequence-indent",
+      "about": "A nested list is indented unevenly (the legacy parser reports an unexpected indent; its 'expected indent' message cannot be reached)."
+    },
+    {
+      "id": "version-not-integer",
+      "about": "version is text."
+    },
+    {
+      "id": "instance-not-mapping",
+      "about": "instance is plain text."
+    },
+    {
+      "id": "instance-fields",
+      "about": "instance.id is not a slug and instance.name is a number."
+    },
+    {
+      "id": "instance-id-missing",
+      "about": "instance has no id."
+    },
+    {
+      "id": "collection-not-list",
+      "about": "systems is plain text, so environment references are unknown."
+    },
+    {
+      "id": "collection-item-not-mapping",
+      "about": "An owners entry is plain text."
+    },
+    {
+      "id": "collection-required",
+      "about": "An environment has no description and an owner has no kind."
+    },
+    {
+      "id": "collection-id-not-string",
+      "about": "A system id is a number and another has no id."
+    },
+    {
+      "id": "collection-duplicate-id",
+      "about": "Two systems share one id."
+    },
+    {
+      "id": "collection-slug",
+      "about": "A system id and an owner kind are not slugs."
+    },
+    {
+      "id": "environment-systems-missing",
+      "about": "An environment has no systems."
+    },
+    {
+      "id": "environment-systems-not-list",
+      "about": "An environment lists systems as text."
+    },
+    {
+      "id": "environment-systems-unknown",
+      "about": "An environment names an unknown system and a number."
+    },
+    {
+      "id": "defaults-not-mapping",
+      "about": "defaults is plain text."
+    },
+    {
+      "id": "defaults-not-list",
+      "about": "defaults.systems is text."
+    },
+    {
+      "id": "defaults-unknown",
+      "about": "Defaults name unknown IDs and a non-text value."
+    },
+    {
+      "id": "frontmatter-parse",
+      "about": "A playbook frontmatter has a tab indent."
+    },
+    {
+      "id": "frontmatter-not-mapping",
+      "about": "A playbook frontmatter is a list."
+    },
+    {
+      "id": "frontmatter-empty",
+      "about": "A playbook frontmatter is empty."
+    },
+    {
+      "id": "frontmatter-legacy",
+      "about": "A playbook uses all four legacy scoped fields."
+    },
+    {
+      "id": "frontmatter-required",
+      "about": "A playbook has no owners and a null environments."
+    },
+    {
+      "id": "frontmatter-not-list",
+      "about": "A playbook lists systems as text."
+    },
+    {
+      "id": "frontmatter-unknown",
+      "about": "A playbook names unknown IDs, a sentinel, and a number."
+    },
+    {
+      "id": "frontmatter-template",
+      "about": "A playbook template has a legacy field; a non-playbook template and a file with no closing line are skipped."
+    },
+    {
+      "id": "frontmatter-hidden-and-nested",
+      "about": "A hidden playbook file and a nested folder are checked; an upper-case .MD file is checked too (names match ASCII case-insensitively)."
+    },
+    {
+      "id": "entity-file-missing",
+      "about": "Two data files are missing.",
+      "remove": [
+        ".os/data/runs.jsonl",
+        ".os/data/findings.jsonl"
+      ]
+    },
+    {
+      "id": "entity-file-folder",
+      "about": "A data file path is a folder.",
+      "remove": [
+        ".os/data/personas.jsonl"
+      ]
+    },
+    {
+      "id": "entity-blank-line",
+      "about": "Blank lines between and after rows."
+    },
+    {
+      "id": "entity-invalid-json",
+      "about": "A line that is not JSON."
+    },
+    {
+      "id": "entity-not-object",
+      "about": "Lines that are JSON but not objects."
+    },
+    {
+      "id": "entity-duplicate-id",
+      "about": "Two rows share one ID."
+    },
+    {
+      "id": "entity-wrong-type",
+      "about": "A row has the wrong type, and one has none."
+    },
+    {
+      "id": "entity-bad-id",
+      "about": "IDs with the wrong prefix, too few digits, a number, and none."
+    },
+    {
+      "id": "entity-bad-status",
+      "about": "Statuses outside the vocabulary."
+    },
+    {
+      "id": "entity-source-anchor",
+      "about": "Missing, empty, hashless, and hash-ended source anchors."
+    },
+    {
+      "id": "entity-doc-anchor",
+      "about": "Promoted rows without a doc anchor or outside docs/, and drafts with an empty or bad one."
+    },
+    {
+      "id": "entity-scoped-fields",
+      "about": "Scoped fields that are not lists, unknown IDs, a sentinel, and a number."
+    },
+    {
+      "id": "extraction-minted",
+      "about": "minted is missing, not a list, or has bad IDs."
+    },
+    {
+      "id": "extraction-fields",
+      "about": "extracted_by and the source anchor are wrong."
+    },
+    {
+      "id": "extraction-extracted-at",
+      "about": "Missing, wrongly formatted, and impossible times; a long fraction is valid; 24:00:00 fails."
+    },
+    {
+      "id": "extraction-dataset-refs",
+      "about": "dataset_refs is text, or has empty entries."
+    },
+    {
+      "id": "crlf",
+      "about": "CRLF line endings in the config, a playbook, and a data file."
+    },
+    {
+      "id": "crlf-findings",
+      "about": "CRLF line endings with a finding in each file."
+    },
+    {
+      "id": "bom-config",
+      "about": "The config file starts with a byte order mark."
+    },
+    {
+      "id": "bom-jsonl",
+      "about": "A data file starts with a byte order mark."
+    },
+    {
+      "id": "bom-frontmatter",
+      "about": "A playbook with a legacy field starts with a byte order mark."
+    },
+    {
+      "id": "non-utf8-config",
+      "about": "The config file is not UTF-8."
+    },
+    {
+      "id": "non-utf8-jsonl",
+      "about": "A data file is not UTF-8."
+    },
+    {
+      "id": "non-utf8-contract",
+      "about": "The config contract is not UTF-8."
+    },
+    {
+      "id": "defaults-absent",
+      "about": "The config has no defaults (PRD 13: optional)."
+    },
+    {
+      "id": "defaults-partial",
+      "about": "defaults has only systems (PRD 13: each list is optional)."
+    },
+    {
+      "id": "version-boolean",
+      "about": "version is true (PRD 13: a boolean is not an integer)."
+    },
+    {
+      "id": "owner-kind-number",
+      "about": "An owner kind is a number (PRD 13: kind is a string slug)."
+    },
+    {
+      "id": "type-specific-status",
+      "about": "A qualified finding and closed, running, and aborted runs (PRD 13 and PRD 17 allow them), and a qualified requirement (not allowed)."
+    },
+    {
+      "id": "extracted-at-minutes",
+      "about": "extracted_at without seconds fails: the RFC 3339 UTC profile needs seconds."
+    },
+    {
+      "id": "dataset-refs-null",
+      "about": "dataset_refs is null (PRD 13: present means a list)."
+    },
+    {
+      "id": "entity-legacy-fields",
+      "about": "Entity rows carry legacy scoped fields (PRD 13 rejects them)."
+    },
+    {
+      "id": "anchor-forms",
+      "about": "Anchors with no path, an absolute path, a Windows path, and a path out of the project (PRD 13 and register D-004 reject them)."
+    },
+    {
+      "id": "entity-line-separator",
+      "about": "A valid row whose title holds a raw U+2028 line separator (JSON allows it in a string)."
+    },
+    {
+      "id": "entity-nan",
+      "about": "A row with a NaN number, which JSON does not allow."
+    },
+    {
+      "id": "base",
+      "about": "The valid project, with nothing laid over it."
+    },
+    {
+      "id": "anchor-invalid-forms",
+      "about": "Saved anchors with the source-package system/ prefix, a web address, a URI scheme, and a path that folds to the project folder."
+    },
+    {
+      "id": "sentinel-configured",
+      "about": "The config defines the reserved value both as a system ID and uses it in defaults, a data row, and a playbook."
+    },
+    {
+      "id": "extracted-at-forms",
+      "about": "extracted_at in the basic format, with a comma fraction, lowercase, with no Z, with an offset, at 24:00:00, with a 12-digit fraction, in year 0, on a day that does not exist, and one valid time."
+    },
+    {
+      "id": "entity-id-escaped-newline",
+      "about": "An ID, a minted ID, and extracted_at that end in an escaped line feed (\\n in the JSON string)."
+    },
+    {
+      "id": "entity-status-mapping",
+      "about": "A row whose status is a JSON object."
+    },
+    {
+      "id": "entity-lone-cr",
+      "about": "Two valid rows separated by a lone CR, not LF."
+    },
+    {
+      "id": "version-beyond-2-53",
+      "about": "version is 2^53 + 1, an integer that a JavaScript number cannot hold exactly."
+    },
+    {
+      "id": "version-310-digits",
+      "about": "version is an integer with 310 digits."
+    },
+    {
+      "id": "version-4301-digits",
+      "about": "version is an integer with 4,301 digits: past Python's default integer string limit of 4,300 digits."
+    },
+    {
+      "id": "owner-kind-null-mapping",
+      "about": "An owner kind with no value (null) and an owner kind that is a mapping."
+    },
+    {
+      "id": "name-case",
+      "about": "A playbook named Check.MD and a template named Extra-PlayBook.Md, each with a legacy field."
+    }
+  ]
+}

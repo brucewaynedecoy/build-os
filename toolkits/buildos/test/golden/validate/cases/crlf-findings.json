@@ -1,0 +1,7 @@
+{
+  "case": "crlf-findings",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/config/instance.yaml:version: must be an integer\nplaybooks/sample/check-sample.md:env: legacy scoped field is not allowed; use systems, environments, and owners\n.os/data/requirements.jsonl:line 2.status: must be one of: active, archived, draft, superseded\nFAIL: 3 validation error(s)\n",
+  "crashed": false
+}

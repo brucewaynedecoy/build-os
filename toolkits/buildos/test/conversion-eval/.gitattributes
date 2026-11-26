@@ -1,0 +1,10 @@
+# The eval inputs, references, manifest, and review page are compared byte
+# for byte on every OS. Git must never convert their line endings. The CSV
+# input keeps its CRLF line endings on purpose.
+inputs/** -text
+references/** -text
+manifest.json -text
+review.html -text
+# The inputs are fixtures written byte for byte (CRLF CSV rows, PDF streams):
+# `git diff --check` does not flag their white space.
+inputs/** -whitespace

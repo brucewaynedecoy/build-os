@@ -1,0 +1,29 @@
+{
+  "case": "exact-persona-v1-identity",
+  "records": [
+    {
+      "id": "PER-003",
+      "type": "persona",
+      "status": "active",
+      "description": "Coordinates release readiness for the platform.",
+      "goals": [],
+      "needs": [],
+      "identity": {
+        "scheme": "persona-v1",
+        "key": "release manager | platform"
+      }
+    }
+  ],
+  "candidate": {
+    "type": "persona",
+    "identity": {
+      "scheme": "persona-v1",
+      "phrase": " Release   Manager | PLATFORM "
+    }
+  },
+  "expected": {
+    "outcome": "matched",
+    "canonical_id": "PER-003",
+    "basis": "persona-v1"
+  }
+}

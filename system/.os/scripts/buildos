@@ -1,0 +1,109 @@
+#!/usr/bin/env sh
+# BuildOS project wrapper. Pin first (PRD 06): it always runs the version
+# pinned in .os/manifest.json. With Node.js 24 or newer, it runs an npm
+# install of that version (in the project's node_modules, or the first
+# `buildos` on PATH) with the same `node`, and it never starts a program to
+# learn its version; else `npx -y @brucewaynedecoy/buildos@VERSION`; else one
+# plain message. Every start sets BUILDOS_REQUIRE_VERSION, and BuildOS stops
+# itself when its own version is another one. See pinned-version.cjs.
+set -u
+
+case "$0" in
+  */*) script_dir=$(CDPATH= cd -- "${0%/*}" && pwd) ;;
+  *) script_dir=$(pwd) ;;
+esac
+self="$script_dir/buildos"
+
+# A wrapper chain that comes back here would never end: stop it instead.
+# BuildOS itself clears this variable when it starts, so a program that it
+# starts can call this wrapper again.
+if [ -n "${BUILDOS_WRAPPER_ACTIVE-}" ]; then
+  echo 'BuildOS stopped: its project wrappers kept calling each other. Remove the other BuildOS wrapper folders from PATH, then try again.' >&2
+  exit 127
+fi
+BUILDOS_WRAPPER_ACTIVE=1
+export BUILDOS_WRAPPER_ACTIVE
+# Self-check variables that a caller left behind never count.
+unset BUILDOS_REQUIRE_VERSION BUILDOS_NPM_BIN_LINKS_OVERRIDE BUILDOS_SAVED_npm_config_bin_links BUILDOS_SAVED_NPM_CONFIG_BIN_LINKS
+
+node_required() {
+  while IFS= read -r line || [ -n "$line" ]; do
+    printf '%s\n' "$line" >&2
+  done < "$script_dir/node-required.txt"
+  exit 127
+}
+
+# The path of program $1 on PATH, in $program, for a start by path, never by
+# bare name: a relative PATH entry gets a leading ./, so a folder name that
+# starts with - is never read as an option, also by the interpreter that a
+# script's first line names (W1 R7 P8 pin-first review round 2, finding 1).
+find_program() {
+  program=$(command -v "$1" 2>/dev/null) || return 1
+  case "$program" in
+    /*) ;;
+    *) program="./$program" ;;
+  esac
+  [ -f "$program" ] && [ -x "$program" ]
+}
+
+find_program node || node_required
+node_cmd=$program
+# The pin first: a dev pin with no matching install stops with its own
+# message (exit 3) before npx matters. The helper looks for a buildos on
+# PATH only when no local install counts.
+decision=$("$node_cmd" "$script_dir/pinned-version.cjs" --sh "$self" "$script_dir/../manifest.json") || exit $?
+nl='
+'
+# Only a plain version may reach the program: never an empty one, which npm
+# would read as "any version".
+plain_version() {
+  case "$1" in
+    "" | *[!0-9A-Za-z.-]* | [!0-9]*)
+      [ "$1" = dev ] && return 0
+      echo 'BuildOS cannot find its version for this project in .os/manifest.json. Run "buildos init" in the project folder, then try again.' >&2
+      exit 3
+      ;;
+  esac
+}
+# "run", then the pinned version, then the absolute path of the node that ran
+# the helper, then the absolute path of the package's bin file, one per line.
+case "$decision" in
+  "run$nl"*)
+    rest=${decision#"run$nl"}
+    version=${rest%%"$nl"*}
+    rest=${rest#*"$nl"}
+    node_bin=${rest%%"$nl"*}
+    entry=${rest#*"$nl"}
+    plain_version "$version"
+    case "$node_bin" in
+      /*)
+        case "$entry" in
+          /*)
+            BUILDOS_REQUIRE_VERSION=$version
+            export BUILDOS_REQUIRE_VERSION
+            exec "$node_bin" "$entry" "$@"
+            ;;
+        esac
+        ;;
+    esac
+    echo 'BuildOS cannot find its version for this project in .os/manifest.json. Run "buildos init" in the project folder, then try again.' >&2
+    exit 3
+    ;;
+esac
+version=$decision
+case "$version" in
+  dev) version= ;;
+esac
+plain_version "$version"
+if ! find_program npx; then
+  echo 'BuildOS needs npx to fetch the BuildOS version this project uses. npx comes with Node.js: install Node.js 24 or newer from https://nodejs.org, then try again.' >&2
+  exit 127
+fi
+# The helper starts npx, as on Windows (pin-first final check, findings 2
+# and 5): npx -y --prefix <this folder> --workspaces=false, so npm runs the
+# program in this folder and never in an npm workspace folder above it; it
+# sets BUILDOS_REQUIRE_VERSION, and it turns npm bin links on, so npx starts
+# the pinned package's own bin file. It keeps the caller's own bin-links
+# settings in any case and spelling, and BuildOS puts them back when it
+# starts.
+exec "$node_cmd" "$script_dir/pinned-version.cjs" --npx "$program" "$version" "$@"

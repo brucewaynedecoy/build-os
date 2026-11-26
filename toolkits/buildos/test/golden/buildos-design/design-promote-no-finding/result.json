@@ -1,0 +1,19 @@
+{
+  "id": "design-promote-no-finding",
+  "tool": "buildos-design",
+  "invocation": "buildos-design",
+  "args": [
+    "promote",
+    "finding",
+    "--route",
+    "baseline-plan"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "bd81a4de91efea7226e45bac85136dde1069101a28728431176ab4024fb799c2",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

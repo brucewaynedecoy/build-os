@@ -1,0 +1,33 @@
+version: 1
+
+instance:
+  id: fixture-instance
+  name: Fixture Instance
+
+systems:
+  - id: primary-system
+    name: Primary System
+    description: An invented system for the validate fixtures.
+  - id: second-system
+    name: Second System
+    description: Another invented system.
+
+environments:
+  - id: baseline
+    name: Baseline
+    systems:
+      - primary-system
+    description: An invented environment.
+  - id: variant
+    name: Variant
+    systems: [primary-system, second-system]
+    description: Another invented environment.
+
+owners:
+  - id: sample-team
+    name: Sample Team
+    kind: team
+
+defaults:
+  systems:
+    - primary-system

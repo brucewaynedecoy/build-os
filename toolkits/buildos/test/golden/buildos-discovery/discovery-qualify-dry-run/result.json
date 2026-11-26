@@ -1,0 +1,28 @@
+{
+  "id": "discovery-qualify-dry-run",
+  "tool": "buildos-discovery",
+  "invocation": "buildos-discovery",
+  "args": [
+    "qualify",
+    "finding",
+    "--run-id",
+    "RUN-001",
+    "--raw-finding-ref",
+    "#raw-finding-1",
+    "--outcome",
+    "positive",
+    "--dry-run",
+    "--confirmation-test",
+    "tests/confirm-cart-total.spec.ts",
+    "--confirmation-evidence",
+    "evidence/confirmation-run.txt"
+  ],
+  "exit": 0,
+  "stdout_sha256": "8f184d3f5b0da9345973cea40f8447e40dfb220c8268a09034fd8a313d386fe1",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

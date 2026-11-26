@@ -1,0 +1,21 @@
+{
+  "id": "entities-validate-compat",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "entities",
+    "validate",
+    "--root",
+    "root",
+    "--mode",
+    "compat"
+  ],
+  "exit": 0,
+  "stdout_sha256": "18c64f470a6415bdde54027fe0275b02a43c4eaeafb83f05c61864abfe737b5d",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

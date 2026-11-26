@@ -1,0 +1,11 @@
+---
+source: "inputs/existing-twin.csv"
+sha256: "53ce38654553b92f045ee77020082435dda128656c8cddce6d4991cea8583073"
+converter: "buildos-intake/0.1.0"
+timestamp: "{TIMESTAMP}"
+type: "csv"
+status: "converted"
+---
+tool,status
+ladder,on loan
+drill,available

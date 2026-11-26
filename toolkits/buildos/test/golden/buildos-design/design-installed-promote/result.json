@@ -1,0 +1,43 @@
+{
+  "id": "design-installed-promote",
+  "tool": "buildos-design",
+  "invocation": "buildos-design",
+  "args": [
+    "promote",
+    "finding",
+    "--finding-id",
+    "FIND-002",
+    "--route",
+    "baseline-plan"
+  ],
+  "exit": 0,
+  "stdout_sha256": "82c5b9a90ac39d7ac5bd0963bc8acef4f97f13a79dd2242ede0f3b65141cf58d",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [
+    {
+      "path": "docs/designs/{DATE}-coupon-drops-tax-from-cart-total.md",
+      "kind": "file"
+    }
+  ],
+  "changed": [
+    {
+      "path": ".os/data/findings.jsonl",
+      "kind": "file"
+    },
+    {
+      "path": "workspace/findings/FIND-001/finding.md",
+      "kind": "file"
+    }
+  ],
+  "removed": [],
+  "files": {
+    ".os/data/findings.jsonl": "4dfeb8001a51eb038097a7d5308c703e600e56991597476fd54a97ce8c0c67d5",
+    "docs/designs/{DATE}-coupon-drops-tax-from-cart-total.md": "37c96370f6a77b944aac49b74987df8dfb1ad0772bf7c083ffc9ee9310c50147",
+    "workspace/findings/FIND-001/finding.md": "d45f177917cdf2305a88b35ece83c87b4641c5ffbd0ee41df730396de56a588e"
+  },
+  "modes": {
+    ".os/data/findings.jsonl": "0644",
+    "docs/designs/{DATE}-coupon-drops-tax-from-cart-total.md": "0644",
+    "workspace/findings/FIND-001/finding.md": "0644"
+  }
+}

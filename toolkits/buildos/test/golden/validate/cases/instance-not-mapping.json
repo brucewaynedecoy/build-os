@@ -1,0 +1,7 @@
+{
+  "case": "instance-not-mapping",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/config/instance.yaml:instance: must be a mapping\nFAIL: 1 validation error(s)\n",
+  "crashed": false
+}

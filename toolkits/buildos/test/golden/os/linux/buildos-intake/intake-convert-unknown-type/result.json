@@ -1,0 +1,18 @@
+{
+  "id": "intake-convert-unknown-type",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert",
+    "--source",
+    "inputs/notes.txt"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "bf46d3da7b8bdf22ea2057e58172c70805f3ffc0fc98bf02c2b565e904d73d7f",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

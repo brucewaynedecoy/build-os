@@ -1,0 +1,26 @@
+{
+  "id": "discovery-qualify-missing-test-file",
+  "tool": "buildos-discovery",
+  "invocation": "buildos-discovery",
+  "args": [
+    "qualify",
+    "finding",
+    "--run-id",
+    "RUN-001",
+    "--raw-finding-ref",
+    "#raw-finding-1",
+    "--outcome",
+    "positive",
+    "--confirmation-test",
+    "tests/absent.spec.ts",
+    "--confirmation-evidence",
+    "evidence/confirmation-run.txt"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "fdeeb06da1437985f57dd670ff48613e0466ae18ad099811c006c80bb61fe4af",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {}
+}

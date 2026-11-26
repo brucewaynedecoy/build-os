@@ -1,0 +1,7 @@
+{
+  "case": "contract-term-missing",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/contracts/config-contract.md:contract: missing contract term environments[].systems\n.os/contracts/config-contract.md:contract: missing contract term defaults.owners\nFAIL: 2 validation error(s)\n",
+  "crashed": false
+}

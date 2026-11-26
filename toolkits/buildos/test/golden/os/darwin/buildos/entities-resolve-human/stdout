@@ -1,0 +1,21 @@
+entities.resolve: ok
+root: {ROOT}/root
+mode: compat
+version: dev
+source revision: unknown
+write status: not_requested
+{
+  "requested_id": "PER-001",
+  "canonical_id": "PER-001",
+  "chain": [
+    "PER-001"
+  ],
+  "resolved": false,
+  "index": {
+    "state": "current",
+    "current": true,
+    "message": "entity-resolution index is current and reproducible",
+    "expected_sha256": "941c43d958ae76c8aa3b5b6775883675dc230f8776c806ee4a9afcb49c5061e9",
+    "actual_sha256": "941c43d958ae76c8aa3b5b6775883675dc230f8776c806ee4a9afcb49c5061e9"
+  }
+}

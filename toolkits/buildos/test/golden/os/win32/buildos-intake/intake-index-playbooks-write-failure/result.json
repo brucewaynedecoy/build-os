@@ -1,0 +1,18 @@
+{
+  "id": "intake-index-playbooks-write-failure",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "index",
+    "playbooks",
+    "--output",
+    "blocked/playbooks.json"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "9ba663994a54abdb02f19202cee4401158d5d87c9c065e09b3d299213587fb96",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {}
+}

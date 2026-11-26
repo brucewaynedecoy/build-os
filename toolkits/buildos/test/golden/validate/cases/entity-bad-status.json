@@ -1,0 +1,7 @@
+{
+  "case": "entity-bad-status",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/data/requirements.jsonl:line 1.status: must be one of: active, archived, draft, superseded\n.os/data/requirements.jsonl:line 2.status: must be one of: active, archived, draft, superseded\n.os/data/requirements.jsonl:line 3.status: must be one of: active, archived, draft, superseded\n.os/data/requirements.jsonl:line 4.status: must be one of: active, archived, draft, superseded\nFAIL: 4 validation error(s)\n",
+  "crashed": false
+}

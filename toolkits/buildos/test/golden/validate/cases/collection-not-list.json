@@ -1,0 +1,7 @@
+{
+  "case": "collection-not-list",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/config/instance.yaml:systems: must be a list\n.os/config/instance.yaml:environments[0].systems[0]: unknown configured ID 'primary-system'\n.os/config/instance.yaml:environments[1].systems[0]: unknown configured ID 'primary-system'\n.os/config/instance.yaml:environments[1].systems[1]: unknown configured ID 'second-system'\n.os/config/instance.yaml:defaults.systems[0]: unknown configured ID 'primary-system'\nplaybooks/sample/check-sample.md:systems[0]: unknown configured ID 'primary-system'\n.os/data/requirements.jsonl:line 1.systems[0]: unknown configured ID 'primary-system'\nFAIL: 7 validation error(s)\n",
+  "crashed": false
+}

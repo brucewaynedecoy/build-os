@@ -1,0 +1,28 @@
+{
+  "id": "intake-index-playbooks-missing-root",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "index",
+    "playbooks",
+    "--playbooks-root",
+    "absent"
+  ],
+  "exit": 0,
+  "stdout_sha256": "66527550796b449ab12a2ec88612eb5e62325c46e0b70ef819007f4ebef2b9e2",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [
+    {
+      "path": "system/.os/indexes/playbooks.json",
+      "kind": "file"
+    }
+  ],
+  "changed": [],
+  "removed": [],
+  "files": {
+    "system/.os/indexes/playbooks.json": "79f1107c345e563f358803a32b15477580ee57435c7da0009ac3cecf7cbb9979"
+  },
+  "modes": {
+    "system/.os/indexes/playbooks.json": "0644"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "id": "intake-convert-existing-output-force",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert",
+    "--source",
+    "inputs/existing-twin.csv",
+    "--force"
+  ],
+  "exit": 0,
+  "stdout_sha256": "8bca38bc1c9f16f52e956f7f9417d0e150b7c329c0b60984878ee240d9f62c3b",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [
+    {
+      "path": "system/assets/existing-twin/existing-twin.csv",
+      "kind": "file"
+    }
+  ],
+  "removed": [],
+  "files": {
+    "system/assets/existing-twin/existing-twin.csv": "c451b2bac748133c980cf1a2b089a1e4b6ad06c653a1a3bb82925ce7f2383b3f"
+  }
+}

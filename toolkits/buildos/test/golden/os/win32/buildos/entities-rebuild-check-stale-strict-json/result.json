@@ -1,0 +1,22 @@
+{
+  "id": "entities-rebuild-check-stale-strict-json",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "entities",
+    "rebuild-index",
+    "--root",
+    "root",
+    "--mode",
+    "strict",
+    "--check",
+    "--json"
+  ],
+  "exit": 4,
+  "stdout_sha256": "0bbaf47dd9e13d71346c57ed7b422740313d1b055c96152736dc4b35350619a2",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {}
+}

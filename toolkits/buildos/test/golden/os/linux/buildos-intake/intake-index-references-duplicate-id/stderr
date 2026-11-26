@@ -1,0 +1,1 @@
+buildos-intake: error: existing references index {ROOT}/system/.os/indexes/references.json gives REF-001 to both system/assets/a.md and system/assets/b.md; fix it before rebuilding

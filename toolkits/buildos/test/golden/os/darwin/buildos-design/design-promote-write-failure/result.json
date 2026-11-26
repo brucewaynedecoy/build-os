@@ -1,0 +1,21 @@
+{
+  "id": "design-promote-write-failure",
+  "tool": "buildos-design",
+  "invocation": "buildos-design",
+  "args": [
+    "promote",
+    "finding",
+    "--finding-id",
+    "FIND-001",
+    "--route",
+    "baseline-plan"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "861a8190577b83c58da2c9f3244c5206d784440d00caee2929e00c07cf1874c1",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

@@ -1,0 +1,27 @@
+<!-- make-docs:begin -->
+# Plans Directory
+
+This directory contains approach and rationale documents created before execution begins. Plans are always directories: an entry-point `00-overview.md` plus one or more `0N-<phase>.md` files.
+
+## Naming Convention
+
+Pattern: `YYYY-MM-DD-w{W}-r{R}-<slug>/`
+
+- Inside the directory: `00-overview.md` plus one or more `0N-<phase>.md` files.
+- Slug: lowercase, hyphens only, no special characters.
+- Example: `docs/plans/2026-04-15-w1-r0-migration-strategy/` containing `00-overview.md`, `01-clean-room.md`, `02-integration.md`.
+- Use a valid local `.make-docs/system/references/wave-model.md` body for W/R semantics. When it is absent, run `make-docs resource read make-docs://system/reference/wave-model.md`.
+
+## Agent Instructions
+
+- Before writing, use a valid local `.make-docs/system/references/planning-workflow.md` body or, when it is absent, run `make-docs resource read make-docs://system/reference/planning-workflow.md`.
+- For a new or materially updated governed plan, also read `.make-docs/system/contracts/human-experience-contract.md`, `.make-docs/system/references/human-experience.md`, and `.make-docs/system/references/lifecycle.md`. When a valid local body is absent, use its matching `make-docs://system/contract/human-experience-contract.md`, `make-docs://system/reference/human-experience.md`, or `make-docs://system/reference/lifecycle.md` URI.
+- When a performance candidate exists, use the `performance-evidence` catalog workflow. Load `.make-docs/system/contracts/performance-evidence-governance.md`, or read `make-docs://system/contract/performance-evidence-governance.md` when the local body is absent. Under the same condition, load `.make-docs/system/prompts/performance-coverage.prompt.md` and `.make-docs/system/templates/performance-evidence-profile.md`, or read `make-docs://system/prompt/performance-coverage.prompt.md` and `make-docs://system/template/performance-evidence-profile.md` when a local body is absent. Do not load the prompt or template otherwise.
+- For `00-overview.md`, use `.make-docs/system/templates/plan-overview.md` or run `make-docs resource read make-docs://system/template/plan-overview.md` when the local body is absent.
+- For PRD authority-maintenance overview content, use `.make-docs/system/templates/plan-prd.md`, `.make-docs/system/templates/plan-prd-decompose.md`, or `.make-docs/system/templates/plan-prd-change.md`. When the selected local body is absent, run `make-docs resource read` with its exact `make-docs://system/template/plan-prd.md`, `make-docs://system/template/plan-prd-decompose.md`, or `make-docs://system/template/plan-prd-change.md` URI.
+- PRD authority-maintenance plans list existing PRD owners to update, genuinely new product PRDs if any, requirement-history entries, and affected links, risks, plans, and work artifacts. Editorial change and revision language belongs here, not in `docs/prd/`.
+- Always create the plan as a directory; even single-phase plans use the same shape with one `0N-<phase>.md` file.
+- Apply the date-slug-W/R naming; do not backdate plans.
+- Plans are written before execution, not retroactively.
+- Archived plans live in `.make-docs/archive/plans/`. Before first use, run `make-docs project surface ensure archive`. Never archive unless explicitly asked.
+<!-- make-docs:end -->

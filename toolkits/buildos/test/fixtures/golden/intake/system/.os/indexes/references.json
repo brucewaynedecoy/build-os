@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "next_id": 5,
+  "references": [
+    {
+      "id": "REF-001",
+      "source": "inputs/meeting-notes.docx",
+      "converted": "system/assets/meeting-notes/meeting-notes.md",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "type": "markdown",
+      "converter": "buildos-intake/0.1.0",
+      "timestamp": "2026-01-16T09:30:00Z",
+      "status": "converted"
+    },
+    {
+      "id": "REF-004",
+      "source": "inputs/removed.csv",
+      "converted": "system/assets/removed/removed.csv",
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "type": "csv",
+      "converter": "buildos-intake/0.1.0",
+      "timestamp": "2026-01-10T08:00:00Z",
+      "status": "converted"
+    }
+  ]
+}

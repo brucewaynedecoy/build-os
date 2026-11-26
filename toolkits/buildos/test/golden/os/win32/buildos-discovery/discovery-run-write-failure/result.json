@@ -1,0 +1,20 @@
+{
+  "id": "discovery-run-write-failure",
+  "tool": "buildos-discovery",
+  "invocation": "buildos-discovery",
+  "args": [
+    "run",
+    "discovery",
+    "--playbook-id",
+    "PB-010",
+    "--outcome",
+    "positive"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "2fbb431316eb25f297d045099aa1887999a9c4e797813810eeb1206721bc42ba",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {}
+}

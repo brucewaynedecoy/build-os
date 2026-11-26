@@ -1,0 +1,18 @@
+{
+  "id": "intake-convert-pdf-scanned-only",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert",
+    "--source",
+    "inputs/pdf/scanned-only.pdf"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "1887ee83242c11eab6a3fdac162346cde6740f4685d0d855d3857651c73a23cc",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

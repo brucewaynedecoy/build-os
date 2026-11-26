@@ -1,0 +1,18 @@
+{
+  "ok": false,
+  "command": "entities.rebuild-index",
+  "version": "dev",
+  "source_revision": "unknown",
+  "root": "{ROOT}/root",
+  "mode": "strict",
+  "write_status": "not_requested",
+  "result": null,
+  "diagnostics": [
+    {
+      "code": "internal_error",
+      "severity": "error",
+      "message": "read entity-resolution index \"{ROOT}/root/.os/indexes/entity-resolution.json\": open {ROOT}/root/.os/indexes/entity-resolution.json: not a directory",
+      "correction": "Review the reported error and retry after correcting the input or root."
+    }
+  ]
+}

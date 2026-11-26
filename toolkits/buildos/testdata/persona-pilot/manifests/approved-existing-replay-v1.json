@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "mappings": [
+    {
+      "source_id": "PER-002",
+      "target_id": "PER-001",
+      "kind": "duplicate",
+      "decided_at": "2026-07-21T12:15:00Z",
+      "decided_by": "fixture-review-board",
+      "reason": "This reviewed fixture mapping intentionally repeats the existing immediate successor to prove idempotent no-op behavior.",
+      "evidence_refs": [
+        "system/docs/research/persona-pilot.md#reviewed-history"
+      ]
+    }
+  ]
+}

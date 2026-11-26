@@ -1,0 +1,5 @@
+Usage:
+  buildos-intake convert --source <path> [--repo-root <path>] [--assets-root system/assets] [--type auto|csv|docx|xlsx|pdf|html|html-dir] [--force] [--dry-run]
+  buildos-intake index references [--repo-root <path>] [--assets-root system/assets] [--output system/.os/indexes/references.json]
+  buildos-intake index playbooks [--repo-root <path>] [--playbooks-root system/playbooks] [--output system/.os/indexes/playbooks.json]
+buildos-intake: error: missing command

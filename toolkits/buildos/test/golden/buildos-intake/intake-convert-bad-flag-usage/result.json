@@ -1,0 +1,17 @@
+{
+  "id": "intake-convert-bad-flag-usage",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert",
+    "--bogus"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "6fb151cf4fe13834419dd18d6dc5a4c2296e2a4c2ac67501d3382c076b414263",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

@@ -1,0 +1,23 @@
+{
+  "id": "discovery-run-unknown-target",
+  "tool": "buildos-discovery",
+  "invocation": "buildos-discovery",
+  "args": [
+    "run",
+    "discovery",
+    "--playbook-id",
+    "PB-010",
+    "--outcome",
+    "positive",
+    "--target",
+    "REQ-999"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "4280ddae367554caa4d15847925eadd9a82c6b5dab870d9a8a5552164f344802",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

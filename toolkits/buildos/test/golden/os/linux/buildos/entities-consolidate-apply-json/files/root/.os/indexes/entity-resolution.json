@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "canonical_by_id": {
+    "PER-002": "PER-001",
+    "PER-003": "PER-001",
+    "PER-004": "PER-001",
+    "PER-005": "PER-001",
+    "PER-006": "PER-007"
+  },
+  "members_by_canonical": {
+    "PER-001": [
+      "PER-002",
+      "PER-003",
+      "PER-004",
+      "PER-005"
+    ],
+    "PER-007": [
+      "PER-006"
+    ]
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "source": "scripts/capture-pwd-goldens.ts with the Go seed built from toolkits/buildos/cmd/buildos",
+  "goVersion": "go1.24.1",
+  "cases": [
+    {
+      "name": "pwd-through-symlink",
+      "pwd": "link",
+      "args": [
+        "entities",
+        "validate",
+        "--root",
+        "root",
+        "--mode",
+        "compat",
+        "--json"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"command\": \"entities.validate\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"{LINK}/root\",\n  \"mode\": \"compat\",\n  \"write_status\": \"not_requested\",\n  \"result\": {\n    \"valid\": true,\n    \"record_count\": 0,\n    \"index\": {\n      \"state\": \"missing\",\n      \"current\": false,\n      \"diagnostic_code\": \"index_stale\",\n      \"message\": \"entity-resolution index is missing\",\n      \"expected_sha256\": \"9d88ae2bb9eb0c1a8afab8f1b9c7fbf905b2ed0ae8c913425b05ad54ec50348f\",\n      \"remediation_command\": \"buildos entities rebuild-index --root \\\"{LINK}/root\\\" --mode compat --apply\"\n    }\n  },\n  \"diagnostics\": [\n    {\n      \"code\": \"index_stale\",\n      \"severity\": \"warning\",\n      \"message\": \"entity-resolution index is missing\",\n      \"correction\": \"buildos entities rebuild-index --root \\\"{LINK}/root\\\" --mode compat --apply\"\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "name": "pwd-through-symlink-dotdot",
+      "pwd": "link",
+      "args": [
+        "entities",
+        "rebuild-index",
+        "--root",
+        "../work/root",
+        "--mode",
+        "compat",
+        "--json"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"command\": \"entities.rebuild-index\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"{BASE}/work/root\",\n  \"mode\": \"compat\",\n  \"write_status\": \"planned\",\n  \"result\": {\n    \"before\": {\n      \"state\": \"missing\",\n      \"current\": false,\n      \"diagnostic_code\": \"index_stale\",\n      \"message\": \"entity-resolution index is missing\",\n      \"expected_sha256\": \"9d88ae2bb9eb0c1a8afab8f1b9c7fbf905b2ed0ae8c913425b05ad54ec50348f\",\n      \"remediation_command\": \"buildos entities rebuild-index --root \\\"{BASE}/work/root\\\" --mode compat --apply\"\n    },\n    \"after\": {\n      \"state\": \"missing\",\n      \"current\": false,\n      \"diagnostic_code\": \"index_stale\",\n      \"message\": \"entity-resolution index is missing\",\n      \"expected_sha256\": \"9d88ae2bb9eb0c1a8afab8f1b9c7fbf905b2ed0ae8c913425b05ad54ec50348f\",\n      \"remediation_command\": \"buildos entities rebuild-index --root \\\"{BASE}/work/root\\\" --mode compat --apply\"\n    }\n  },\n  \"diagnostics\": [\n    {\n      \"code\": \"index_stale\",\n      \"severity\": \"warning\",\n      \"message\": \"entity-resolution index is missing\",\n      \"correction\": \"buildos entities rebuild-index --root \\\"{BASE}/work/root\\\" --mode compat --apply\"\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "name": "pwd-names-another-folder",
+      "pwd": "other",
+      "args": [
+        "entities",
+        "validate",
+        "--root",
+        "root",
+        "--mode",
+        "compat",
+        "--json"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"command\": \"entities.validate\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"{REAL}/root\",\n  \"mode\": \"compat\",\n  \"write_status\": \"not_requested\",\n  \"result\": {\n    \"valid\": true,\n    \"record_count\": 0,\n    \"index\": {\n      \"state\": \"missing\",\n      \"current\": false,\n      \"diagnostic_code\": \"index_stale\",\n      \"message\": \"entity-resolution index is missing\",\n      \"expected_sha256\": \"9d88ae2bb9eb0c1a8afab8f1b9c7fbf905b2ed0ae8c913425b05ad54ec50348f\",\n      \"remediation_command\": \"buildos entities rebuild-index --root \\\"{REAL}/root\\\" --mode compat --apply\"\n    }\n  },\n  \"diagnostics\": [\n    {\n      \"code\": \"index_stale\",\n      \"severity\": \"warning\",\n      \"message\": \"entity-resolution index is missing\",\n      \"correction\": \"buildos entities rebuild-index --root \\\"{REAL}/root\\\" --mode compat --apply\"\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "name": "pwd-relative",
+      "pwd": "relative",
+      "args": [
+        "entities",
+        "validate",
+        "--root",
+        "root",
+        "--mode",
+        "compat",
+        "--json"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"command\": \"entities.validate\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"{REAL}/root\",\n  \"mode\": \"compat\",\n  \"write_status\": \"not_requested\",\n  \"result\": {\n    \"valid\": true,\n    \"record_count\": 0,\n    \"index\": {\n      \"state\": \"missing\",\n      \"current\": false,\n      \"diagnostic_code\": \"index_stale\",\n      \"message\": \"entity-resolution index is missing\",\n      \"expected_sha256\": \"9d88ae2bb9eb0c1a8afab8f1b9c7fbf905b2ed0ae8c913425b05ad54ec50348f\",\n      \"remediation_command\": \"buildos entities rebuild-index --root \\\"{REAL}/root\\\" --mode compat --apply\"\n    }\n  },\n  \"diagnostics\": [\n    {\n      \"code\": \"index_stale\",\n      \"severity\": \"warning\",\n      \"message\": \"entity-resolution index is missing\",\n      \"correction\": \"buildos entities rebuild-index --root \\\"{REAL}/root\\\" --mode compat --apply\"\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "name": "pwd-unset",
+      "pwd": "unset",
+      "args": [
+        "entities",
+        "validate",
+        "--root",
+        "root",
+        "--mode",
+        "compat",
+        "--json"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"command\": \"entities.validate\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"{REAL}/root\",\n  \"mode\": \"compat\",\n  \"write_status\": \"not_requested\",\n  \"result\": {\n    \"valid\": true,\n    \"record_count\": 0,\n    \"index\": {\n      \"state\": \"missing\",\n      \"current\": false,\n      \"diagnostic_code\": \"index_stale\",\n      \"message\": \"entity-resolution index is missing\",\n      \"expected_sha256\": \"9d88ae2bb9eb0c1a8afab8f1b9c7fbf905b2ed0ae8c913425b05ad54ec50348f\",\n      \"remediation_command\": \"buildos entities rebuild-index --root \\\"{REAL}/root\\\" --mode compat --apply\"\n    }\n  },\n  \"diagnostics\": [\n    {\n      \"code\": \"index_stale\",\n      \"severity\": \"warning\",\n      \"message\": \"entity-resolution index is missing\",\n      \"correction\": \"buildos entities rebuild-index --root \\\"{REAL}/root\\\" --mode compat --apply\"\n    }\n  ]\n}\n",
+      "stderr": ""
+    }
+  ]
+}

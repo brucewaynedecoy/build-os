@@ -1,0 +1,18 @@
+{
+  "id": "discovery-run-bad-flag",
+  "tool": "buildos-discovery",
+  "invocation": "buildos-discovery",
+  "args": [
+    "run",
+    "discovery",
+    "--bogus"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "a0b2236e720eea8ba1b9a8914980b0ae7a534f839cd8c31cd283cf2d4922677c",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

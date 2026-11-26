@@ -1,0 +1,63 @@
+@@ section: Title and introduction @@
+# Sample Housing Cooperative Operations Handbook
+
+This handbook explains how the sample housing cooperative runs day-to-day operations. It is written for new committee members and staff. Every name in it is invented.
+
+Version 3.2 — reviewed in October 2026.
+@@ section: Roles and Responsibilities @@
+# 1. Roles and Responsibilities
+
+The cooperative has three standing committees. Each committee meets once a month and reports to the board.
+@@ section: Board @@
+## Board
+
+The board sets the annual budget, approves contracts over the spending limit, and hires the operations manager.
+@@ section: Maintenance Committee @@
+## Maintenance Committee
+
+The maintenance committee plans repairs, reviews requests, and keeps the contractor list current.
+@@ section: Membership Committee @@
+## Membership Committee
+
+The membership committee runs the waiting list, welcomes new members, and handles move-outs.
+@@ section: Handling a Repair Request @@
+# 2. Handling a Repair Request
+
+Use these steps for every request, even small ones:
+
+1. Log the request in the maintenance tracker within one working day.
+1. Assign a priority:
+  1. High: no heat, no water, a safety risk, or a door that will not lock.
+  1. Medium: a fault that affects daily use.
+  1. Low: anything else.
+1. Book a contractor or a volunteer.
+1. Confirm the fix with the member and close the request.
+@@ section: Emergency Contacts @@
+## Emergency Contacts
+
+Out of hours: call the on-call line listed on the notice board.
+
+- Water or gas leak: shut the valve first, then call.
+- Lift fault: call the lift contractor.
+- Fire: leave the building and call emergency services.
+@@ section: Spending Limits @@
+# 3. Spending Limits
+
+The operations manager may approve spending up to the limits below. Anything above a limit goes to the board.
+
+| Category | Single item limit | Monthly limit | Notes |
+| --- | --- | --- | --- |
+| Routine repairs | €500 | €3,000 | Two quotes over €250 |
+| Cleaning supplies | €150 | €600 | Use the approved supplier |
+| Emergency work | €2,000 | No limit | Report to the board within 48 hours |
+| Office costs | €100 | €400 | Keep all receipts |
+
+Limits are reviewed each January. The next review is in January 2027.
+@@ section: Records @@
+# 4. Records
+
+Keep signed contracts for seven years. Keep repair photos for two years. Store both in the shared drive under the year and the building name.
+@@ section: Embedded assets @@
+## Embedded Assets
+
+- media/image1.png

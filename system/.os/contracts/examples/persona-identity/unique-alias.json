@@ -1,0 +1,23 @@
+{
+  "case": "unique-approved-alias",
+  "records": [
+    {
+      "id": "PER-001",
+      "type": "persona",
+      "status": "active",
+      "description": "Leads enterprise customer support operations.",
+      "goals": [],
+      "needs": [],
+      "aliases": ["Enterprise Support Lead"]
+    }
+  ],
+  "candidate": {
+    "type": "persona",
+    "alias": "  enterprise   SUPPORT lead "
+  },
+  "expected": {
+    "outcome": "matched",
+    "canonical_id": "PER-001",
+    "basis": "approved_alias"
+  }
+}

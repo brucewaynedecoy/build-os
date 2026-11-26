@@ -1,0 +1,21 @@
+{
+  "id": "design-promote-invalid-index",
+  "tool": "buildos-design",
+  "invocation": "buildos-design",
+  "args": [
+    "promote",
+    "finding",
+    "--finding-id",
+    "FIND-001",
+    "--route",
+    "baseline-plan"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "b659f2abb3d54dfbf4988e86c540e13535f98baa9bc60d9d280acafbb5b514b9",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

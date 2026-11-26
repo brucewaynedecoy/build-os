@@ -1,0 +1,22 @@
+---
+source: "inputs/pdf/room-table.pdf"
+sha256: "a7ac287b4226a8d8ec4f2bc377cf76fd9982a502da9ef71805c8d39df2b612d7"
+converter: "buildos-intake/0.1.0"
+timestamp: "{TIMESTAMP}"
+type: "text"
+status: "converted"
+---
+
+Room Booking Table
+Room
+Seats
+Projector
+Workshop A
+12
+Yes
+Workshop B
+8
+No
+Quiet room
+4
+No

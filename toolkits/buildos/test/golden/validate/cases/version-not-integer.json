@@ -1,0 +1,7 @@
+{
+  "case": "version-not-integer",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/config/instance.yaml:version: must be an integer\nFAIL: 1 validation error(s)\n",
+  "crashed": false
+}

@@ -1,0 +1,16 @@
+{
+  "id": "cli-version",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "version"
+  ],
+  "exit": 0,
+  "stdout_sha256": "a608dcf85c4ed34ba5de40c03c5f425b120e4e2b2ced5e7de56113e27654bbfa",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

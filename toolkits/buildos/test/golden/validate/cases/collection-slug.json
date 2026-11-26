@@ -1,0 +1,7 @@
+{
+  "case": "collection-slug",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/config/instance.yaml:systems[1].id: must be a stable slug: lowercase letters, digits, and hyphens\n.os/config/instance.yaml:owners[0].kind: must be a stable slug: lowercase letters, digits, and hyphens\n.os/config/instance.yaml:environments[1].systems[1]: unknown configured ID 'second-system'\nFAIL: 3 validation error(s)\n",
+  "crashed": false
+}

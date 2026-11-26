@@ -1,0 +1,14 @@
+{
+  "id": "discovery-no-args",
+  "tool": "buildos-discovery",
+  "invocation": "buildos-discovery",
+  "args": [],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "44b444ca3892367d459691bd03db11ed30912bb016912240150ccbbf2aa50e2d",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

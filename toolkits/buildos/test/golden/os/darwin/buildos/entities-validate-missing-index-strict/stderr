@@ -1,0 +1,20 @@
+entities.validate: error
+root: {ROOT}/root
+mode: strict
+version: dev
+source revision: unknown
+write status: not_requested
+ERROR [index_stale]: entity-resolution index is missing
+  action: buildos entities rebuild-index --root "{ROOT}/root" --mode strict --apply
+{
+  "valid": false,
+  "record_count": 19,
+  "index": {
+    "state": "missing",
+    "current": false,
+    "diagnostic_code": "index_stale",
+    "message": "entity-resolution index is missing",
+    "expected_sha256": "941c43d958ae76c8aa3b5b6775883675dc230f8776c806ee4a9afcb49c5061e9",
+    "remediation_command": "buildos entities rebuild-index --root \"{ROOT}/root\" --mode strict --apply"
+  }
+}

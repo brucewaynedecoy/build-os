@@ -1,0 +1,7 @@
+{
+  "case": "type-specific-status",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/data/requirements.jsonl:line 1.status: must be one of: active, archived, draft, superseded\n.os/data/runs.jsonl:line 1.status: must be one of: active, archived, draft, superseded\n.os/data/runs.jsonl:line 2.status: must be one of: active, archived, draft, superseded\n.os/data/runs.jsonl:line 3.status: must be one of: active, archived, draft, superseded\n.os/data/findings.jsonl:line 1.status: must be one of: active, archived, draft, superseded\nFAIL: 5 validation error(s)\n",
+  "crashed": false
+}

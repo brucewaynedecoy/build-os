@@ -1,0 +1,33 @@
+{
+  "case": "ambiguous-approved-alias",
+  "records": [
+    {
+      "id": "PER-001",
+      "type": "persona",
+      "status": "active",
+      "description": "Approves purchases for a small business.",
+      "goals": [],
+      "needs": [],
+      "aliases": ["Buyer"]
+    },
+    {
+      "id": "PER-002",
+      "type": "persona",
+      "status": "active",
+      "description": "Approves purchases for a global enterprise.",
+      "goals": [],
+      "needs": [],
+      "aliases": ["Buyer"]
+    }
+  ],
+  "candidate": {
+    "type": "persona",
+    "alias": "buyer"
+  },
+  "expected": {
+    "outcome": "review",
+    "reason": "ambiguous_alias",
+    "candidate_ids": ["PER-001", "PER-002"],
+    "mutated": false
+  }
+}

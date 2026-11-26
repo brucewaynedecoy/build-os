@@ -1,0 +1,11 @@
+{
+  "$comment": "Neutral owner colors for the To-Dos sheet, given to the frame owners in order. A frame can set its own with owner_colors. Colors are RRGGBB.",
+  "palette": [
+    {"fill": "DDEBF7", "font": "1F4E78"},
+    {"fill": "E2F0D9", "font": "375623"},
+    {"fill": "FFF2CC", "font": "7F6000"},
+    {"fill": "EDE7F6", "font": "4A2C82"},
+    {"fill": "FCE4D6", "font": "833C0B"},
+    {"fill": "E7E6E6", "font": "3A3838"}
+  ]
+}

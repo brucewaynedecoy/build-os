@@ -1,0 +1,53 @@
+@@ section: Site name @@
+Sample Housing Cooperative
+@@ section: Visitor and Guest Policy @@
+# Visitor and Guest Policy
+
+This policy explains how members host visitors and overnight guests. It applies to all three buildings.
+@@ section: Day Visitors @@
+## Day Visitors
+
+Members may host day visitors at any time. Visitors must leave the common room by 22:00.
+@@ section: Overnight Guests @@
+## Overnight Guests
+
+A member may host an overnight guest for up to 14 nights in any 90-day period. Longer stays need written approval from the [membership committee](/committees/membership.html).
+
+- Tell the front desk the guest’s name and dates.
+- Guests may not use the laundry room alone.
+- Parking: guests use the visitor bays only.
+  - Bays V1 to V4 are in the north lot.
+  - Bay V5 is kept for deliveries.
+@@ section: Approval Steps @@
+### Approval Steps
+
+1. Fill in the guest form.
+1. Send it to the membership committee.
+1. Wait for the written reply, usually within five working days.
+@@ section: Callout note @@
+Note: Guests who stay longer than 30 nights in a year count as occupants under the lease.
+@@ section: Shared Spaces @@
+## Shared Spaces
+
+| Space | Guests allowed | Booking |
+| --- | --- | --- |
+| Common room | Up to 10 | Book at the front desk |
+| Roof garden | Up to 6 | No booking |
+| Guest suite | 2 per night | Book online, €25 per night |
+
+Route for guests: front desk, then the common room, then the guest suite.
+@@ section: Ground floor plan and diagram @@
+![Ground floor plan](media/visitor-policy-image-001.png)
+
+[Mermaid diagram source](diagrams/visitor-policy-mermaid-001.mmd)
+
+```mermaid
+flowchart LR
+  Member --> Form --> Committee --> Reply
+```
+@@ section: Questions @@
+## Questions
+
+Ask at the front desk or email [desk@example.org](mailto:desk@example.org).
+@@ section: Footer @@
+Last updated 2 October 2026. Policy owner: membership committee.

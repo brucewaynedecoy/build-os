@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "next_id": 6,
+  "references": [
+    {
+      "id": "REF-005",
+      "source": "inputs/handout.pdf",
+      "converted": "converted/handout/handout.md",
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "type": "markdown",
+      "converter": "buildos-intake/0.1.0",
+      "timestamp": "2026-01-20T10:00:00Z",
+      "status": "converted"
+    }
+  ]
+}

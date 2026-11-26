@@ -1,0 +1,135 @@
+# 16 Revise Toolkit Ownership Boundaries
+
+## Purpose
+
+Clarify that packaged `buildos-*` toolkits are domain-owned deterministic CLIs, not a single expandable catch-all toolkit, and prevent durable logic from moving into legacy scripts or unrelated toolkit directories.
+
+This revision tightens [14 Revise Deterministic Toolkit Deployment](./14-revise-deterministic-toolkit-deployment.md) after the W1 R0 P6 implementation attempt exposed ambiguity between "use a Go toolkit" and "choose the correct owning Go toolkit."
+
+## Change Type
+
+This document records a `revision`.
+
+The effective requirement is stricter toolkit ownership: before implementing deterministic behavior, the work must identify the capability domain and either use the existing toolkit that already owns that domain or create a new domain-specific toolkit.
+
+## Baseline Being Revised or Removed
+
+This revision updates the toolkit deployment requirement in PRD 14 and constrains implementation ownership for PRDs 07 through 12.
+
+It does not remove the packaged-toolkit standard. It narrows where future deterministic logic may be placed.
+
+## Rationale
+
+The P6 implementation attempt placed discovery-run and finding-qualification behavior in `buildos-intake` and added run/finding validation to `system/.os/scripts/validate_config.py`. That was a serious ownership mismatch:
+
+- `buildos-intake` is scoped to intake, conversion, and intake-adjacent indexes.
+- `validate_config.py` is a legacy unmanaged script that should eventually move to a dedicated config toolkit, not accumulate new durable domains.
+- PRD 14 makes scripts wrappers, routers, compatibility surfaces, and command documentation, not the default home for new deterministic logic.
+
+Code anchors:
+
+- `toolkits/`
+- `toolkits/buildos-intake/`
+- `system/.os/scripts/validate_config.py`
+- `docs/work/2026-06-03-w1-r0-build-os-baseline/06-discovery-runs-qualification.md`
+
+## Effective Requirement
+
+Toolkit ownership is part of the implementation contract.
+
+BuildOS is one TypeScript package at `toolkits/buildos/` that ships one `buildos` CLI ([PRD 20](../../../../docs/prd/20-buildos-cli-and-distribution.md#command-surface)). Domain ownership is enforced inside that package. Each domain is a separate part of the package with its own scope contract, and it is exposed as `buildos <domain>`. In the rules below, "toolkit" means one of these domains. The package boundary does not merge domain boundaries.
+
+Before adding or moving durable deterministic logic, the work must:
+
+1. Identify the capability domain.
+2. Read the target domain's scope contract, its README and `AGENTS.md`.
+3. Confirm the target domain already owns that capability.
+4. If no existing domain owns the capability, create or plan a new domain inside `toolkits/buildos/`.
+5. Keep `system/.os/scripts/` as wrappers, routers, compatibility shims, or command documentation.
+6. Avoid adding new durable domains to legacy unmanaged scripts unless an explicit PRD/design revision authorizes that temporary state.
+
+A toolkit README and local `AGENTS.md` are scope contracts. An existing domain may not gain unrelated commands merely because it already exists in the package.
+
+Known toolkit ownership inventory from the active PRD set and remaining W1 R0 work:
+
+| Toolkit | Status | Owns | PRD / phase source |
+| --- | --- | --- | --- |
+| `buildos-intake` (`buildos intake`) | Existing | Source intake, conversion, converted twins, and the `references.json` derived catalog. | PRD 07, W1 R0 P3 |
+| `buildos-config` (`buildos validate`) | Planned | Instance config validation and scoped metadata/frontmatter hygiene, through `buildos validate`. | PRD 13 |
+| `buildos-playbooks` | Candidate / needs ownership decision | Playbook catalog rebuilds, active-only runnable playbook resolution, and playbook contract validation if these remain durable deterministic commands. | PRD 08, PRD 09, W1 R0 P5 |
+| `buildos-extract` or `buildos-data` | Candidate / needs ownership decision | Extraction load-plan helpers, entity-row loaders, and `.os/data` deterministic hygiene beyond config-owned checks. | PRD 08, W1 R0 P4 |
+| `buildos-discovery` (`buildos discovery`) | Implemented for P6 | Discovery-run recording, run artifact creation, raw-finding anchoring, finding qualification, negative assertions, and run/finding-specific validation. | PRD 10, W1 R0 P6 |
+| `buildos-design` (`buildos design`) | Implemented for P7 | Qualified-finding to design hand-off, design route selection, finding design-link updates, and make-docs design-router boundary enforcement. | PRD 11, W1 R0 P7 |
+| `buildos-stage` | Candidate / needs ownership decision | Stage-mover orchestration that routes to owning toolkits without absorbing their domain logic. | PRD 12, W1 R0 P8 |
+
+W1 R0 P6 remediation moved Flow B behavior to `buildos-discovery` and removed P6-specific logic from `buildos-intake` and `validate_config.py`. W1 R0 P7 keeps qualified-finding design promotion in `buildos-design` and leaves stage automation as a separate ownership decision.
+
+Code anchors:
+
+- `toolkits/AGENTS.md`
+- `toolkits/buildos/`
+- `toolkits/buildos/AGENTS.md`
+- `docs/assets/maintainer/buildos-toolkit-cli-development.md`
+
+### Change Notes
+
+- Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](../../../../docs/prd/17-entity-identity-and-canonical-resolution.md): the entity-graph domain is owned by the new `buildos-entities` toolkit; extraction-specific helpers remain a separate ownership decision unless explicitly assigned later.
+- Superseded by [18 Revise Unified BuildOS CLI and Distribution](./18-revise-unified-buildos-cli-and-distribution.md): domain ownership remains mandatory, but domains become isolated packages and subcommands inside the single `toolkits/buildos/` module. Public binary boundaries no longer define domain boundaries, and W1 R4 seeds the entity domain as `buildos entities`.
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): domain ownership remains mandatory inside the cohesive Go program, but every domain is owned by transport-neutral core operations projected through same-change CLI and MCP adapters. Existing independent-toolkit product boundaries are compatibility and migration evidence, not the target product topology.
+- 2026-11-23 (W1 R7): the PRD 14, 18, and 19 notes in this document are not current authority. Domain ownership is enforced inside the one TypeScript package, as stated in this section. The current product has no MCP server. See `## Requirement History`.
+
+## Impacted Docs and Dependencies
+
+- PRD 07 remains the source for the intake domain (`buildos intake`); it should not be read as permission to add discovery, finding, config, extraction, or stage commands to that toolkit.
+- PRD 08 and PRD 09 need an explicit ownership decision before further durable playbook/data commands are added.
+- PRD 10 needs a discovery-owned toolkit implementation for P6.
+- PRD 11 now owns the `buildos design promote` qualified-finding to design hand-off.
+- PRD 12 still needs an explicit stage ownership decision before stage-mover implementation.
+- PRD 14 remains active but is superseded where it did not force a domain ownership check.
+
+Code anchors:
+
+- `docs/prd/07-intake-and-conversion.md`
+- `docs/prd/08-data-and-extraction.md`
+- `docs/prd/09-playbooks.md`
+- `docs/prd/10-discovery-runs-and-qualification.md`
+- `docs/prd/11-flow-c-integration.md`
+- `docs/prd/12-stage-automation.md`
+- `docs/prd/14-revise-deterministic-toolkit-deployment.md`
+
+### Change Notes
+
+- Enhanced by [17 Enhance Entity Consolidation and Canonical Resolution](../../../../docs/prd/17-entity-identity-and-canonical-resolution.md): PRD 17 resolves canonical entity graph operations into `buildos-entities` without granting unrelated extraction or playbook behavior to that toolkit.
+- Superseded by [18 Revise Unified BuildOS CLI and Distribution](./18-revise-unified-buildos-cli-and-distribution.md): W1 R5 migrates intake, discovery, design, and entities into the unified module only after command-parity tests, and temporary legacy-name aliases route to the same executable for one stable minor-release cycle.
+- Superseded by [19 Revise Build OS Headless Core, CLI, and MCP Program](./19-revise-build-os-headless-core-cli-and-mcp-program.md): migration targets core-operation domains rather than CLI command packages, and every migrated behavior requires same-change CLI/MCP parity, compatibility evidence, and explicit disposition in the approved capability map.
+
+## Required Baseline Annotations
+
+- `10-discovery-runs-and-qualification.md`: add a `### Change Notes` entry stating that Flow B implementation ownership is superseded by this revision and belongs in a discovery-specific toolkit.
+- `11-flow-c-integration.md`: add a `### Change Notes` entry stating that qualified-finding design promotion ownership is superseded by this revision and belongs in `buildos-design`.
+- `12-stage-automation.md`: add a `### Change Notes` entry stating that stage-movers route to owning toolkits rather than becoming unmanaged script logic or expanding unrelated toolkits.
+- `14-revise-deterministic-toolkit-deployment.md`: add a `### Change Notes` entry stating that this revision adds a toolkit-domain ownership gate.
+
+## Requirement History
+
+### 2026-11-23 — W1 R7
+
+- Affected requirement or section: `## Effective Requirement` (domain ownership container)
+- Previous contract: Domain ownership was enforced inside one cohesive Go program, built from one Go module at `toolkits/buildos/`.
+- Replacement contract: Domain ownership is enforced inside one TypeScript package at `toolkits/buildos/`, exposed as `buildos <domain>`. All ownership rules stay the same.
+- Rationale: The runtime changed from Go to Node.js with TypeScript. The ownership rules do not depend on the language.
+- Source: [BuildOS Node and TypeScript CLI Rewrite](../../../../docs/designs/2026-11-23-buildos-node-typescript-cli-rewrite.md)
+
+## Source Anchors
+
+- `docs/prd/14-revise-deterministic-toolkit-deployment.md`
+- `docs/prd/10-discovery-runs-and-qualification.md`
+- `docs/prd/12-stage-automation.md`
+- `docs/work/2026-06-03-w1-r0-build-os-baseline/06-discovery-runs-qualification.md`
+- `docs/work/2026-06-03-w1-r0-build-os-baseline/07-flow-c-integration.md`
+- `.make-docs/archive/history/2026-06-05-w1-r0-p6-discovery-runs-qualification.md`
+- `toolkits/`
+- `toolkits/buildos-intake/`
+- `toolkits/buildos-design/`
+- `docs/prd/18-revise-unified-buildos-cli-and-distribution.md`
+- [BuildOS Node and TypeScript CLI Rewrite](../../../../docs/designs/2026-11-23-buildos-node-typescript-cli-rewrite.md)

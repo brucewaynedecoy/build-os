@@ -1,0 +1,1 @@
+# Baseline plan prompt (fixture)

@@ -1,0 +1,54 @@
+@@ section: faq.htm @@
+# Frequently Asked Questions
+
+### Can I paint my walls?
+
+Yes. Use a light color, and return the walls to white when you move out.
+
+### Who fixes a broken appliance?
+
+The cooperative fixes appliances that came with the home. Report the fault through the maintenance tracker.
+
+### Can I sublet my home?
+
+No. Subletting is not allowed under the lease.
+@@ section: guides/getting-started.html @@
+# Getting Started
+
+Welcome to the cooperative. This guide covers your first two weeks.
+
+## Your First Day
+
+1. Collect your keys and fob from the front desk.
+1. Read the house rules in your welcome pack.
+1. Test the smoke alarm in your home.
+
+## Your First Two Weeks
+
+Register any pets, set up your monthly charge payment, and come to a welcome evening. The membership committee will contact you to arrange a short visit.
+@@ section: guides/paying-charges.html @@
+# Paying Monthly Charges
+
+Monthly charges cover the cost of running the buildings. They are due on the first day of each month.
+
+| Home size | Monthly charge | Repairs reserve share |
+| --- | --- | --- |
+| Studio | €610 | €45 |
+| One bedroom | €780 | €60 |
+| Two bedrooms | €945 | €75 |
+
+## Late Payments
+
+If you cannot pay on time, tell the treasurer before the due date. The cooperative can agree a payment plan.
+@@ section: index.html @@
+# Member Help Center
+
+![Help Center logo](media/index-image-001.png)
+
+Find answers about living in the cooperative. Most questions are answered in the guides below.
+
+- [Getting started](guides/getting-started.html)
+- [Paying monthly charges](guides/paying-charges.html)
+- [Frequently asked questions](faq.htm)
+
+Cannot find an answer? Visit the front desk from 09:00 to 17:30.

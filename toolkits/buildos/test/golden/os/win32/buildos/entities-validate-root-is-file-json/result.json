@@ -1,0 +1,21 @@
+{
+  "id": "entities-validate-root-is-file-json",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "entities",
+    "validate",
+    "--root",
+    "README.md",
+    "--mode",
+    "strict",
+    "--json"
+  ],
+  "exit": 3,
+  "stdout_sha256": "0c7aef9ba51d294abfc045b760c53eee3a84c6fdd24727142a6449a563c021c8",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {}
+}

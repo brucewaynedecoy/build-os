@@ -1,0 +1,4 @@
+{
+  "$comment": "Proposed parity exceptions: each waits for an owner decision and is NOT approved (approved ones are in parity-exceptions.json). The harness holds each to its exact pinned value: a golden entry matches one field of one case exactly, as in parity-exceptions.json, and is reported as pending in the compare summary; a hostile entry names a case of test/intake-hostile.test.ts and its exact allowed TypeScript exit, stdout, and stderr, and that test checks it. PE-013 and PE-015 were approved on 2026-11-23 and moved to parity-exceptions.json. PE-017 (W1 R7 P7 review rounds 1 and 2) was approved on 2026-11-24 and moved to parity-exceptions.json. PE-018 and PE-019 (W1 R7 P7 review round 3) were approved on 2026-11-24 and moved to parity-exceptions.json; no exception is pending. Owner decisions: docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#p7-review-round-3",
+  "proposed": []
+}

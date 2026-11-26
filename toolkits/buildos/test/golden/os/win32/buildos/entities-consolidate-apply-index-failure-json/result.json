@@ -1,0 +1,36 @@
+{
+  "id": "entities-consolidate-apply-index-failure-json",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "entities",
+    "consolidate",
+    "--root",
+    "root",
+    "--mode",
+    "strict",
+    "--manifest",
+    "manifests/approved-persona-consolidations-v1.json",
+    "--apply",
+    "--json"
+  ],
+  "exit": 6,
+  "stdout_sha256": "3393559c5779818ab4670a5d1026ed9f5c5cf89adee5cd86a80152de9a683abe",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [
+    {
+      "path": "root/.os/data/personas.jsonl",
+      "kind": "file"
+    }
+  ],
+  "removed": [],
+  "files": {
+    "root/.os/data/personas.jsonl": "f61575c1a8751c8df4b7bb3cae4bbf1e0d7f37eb98dc50072d09718f0d8699c3"
+  },
+  "derived": {
+    "exception": "PE-005",
+    "source": "os/linux/buildos/entities-consolidate-apply-index-failure-json",
+    "source_sha256": "e55ebdd974243042a39580684b017cb2f015144a9d6ffe5f2e63d4282f6791fb"
+  }
+}

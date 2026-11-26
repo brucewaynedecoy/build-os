@@ -1,0 +1,7 @@
+{
+  "case": "frontmatter-unknown",
+  "exit": 1,
+  "stdout": "",
+  "stderr": "playbooks/sample/check-sample.md:systems[1]: unknown configured ID 'both'\nplaybooks/sample/check-sample.md:environments[0]: must be a string configured ID\nplaybooks/sample/check-sample.md:owners[0]: unknown configured ID 'missing-team'\nFAIL: 3 validation error(s)\n",
+  "crashed": false
+}

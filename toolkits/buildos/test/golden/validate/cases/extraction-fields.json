@@ -1,0 +1,7 @@
+{
+  "case": "extraction-fields",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/data/extractions.jsonl:line 1.extracted_by: must be a non-empty string\n.os/data/extractions.jsonl:line 2.extracted_by: must be a non-empty string\n.os/data/extractions.jsonl:line 3.source_anchor: must point to a converted source twin under system/assets/\n.os/data/extractions.jsonl:line 4.source_anchor: must be a path#anchor reference\nFAIL: 4 validation error(s)\n",
+  "crashed": false
+}

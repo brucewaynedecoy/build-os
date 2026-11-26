@@ -1,0 +1,9 @@
+---
+source: "inputs/notes.txt"
+sha256: "13a35c2ecfed85dbe7c9e27b9777314e69dad5a3b68859149da532ddfd0f7dc6"
+converter: "buildos-intake/0.1.0"
+timestamp: "{TIMESTAMP}"
+type: "csv"
+status: "converted"
+---
+A plain text note that the converter cannot classify by extension.

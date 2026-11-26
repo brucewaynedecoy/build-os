@@ -1,0 +1,7 @@
+{
+  "case": "entity-file-folder",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/data/personas.jsonl:file: must be a JSONL file\nFAIL: 1 validation error(s)\n",
+  "crashed": false
+}

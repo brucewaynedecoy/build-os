@@ -1,0 +1,30 @@
+@@ section: Sheet: Summary @@
+Sample Housing Cooperative — 2026 Budget
+Category,Budget,Spent to date,Remaining
+Maintenance,48000,31250.5,16749.5
+Utilities,36000,29880,6120
+Insurance,12500,12500,0
+Administration,8000,5410.75,2589.25
+Total,104500,79041.25,25458.75
+Figures in euros. Spent to date runs to 30 September 2026.
+@@ section: Sheet: Q3 Expenses @@
+Date,Vendor,Category,Amount,Invoice,Note
+2026-07-03,Sample Plumbing & Heating,Maintenance,640,INV-2207
+2026-07-15,Sample Grid Energy,Utilities,2410.4,EL-7781
+2026-07-28,Sample Office Supply,Administration,86.9,,Paid by card
+2026-08-04,Sample Lift Services,Maintenance,1180,LS-0412,Annual lift check
+2026-08-19,Sample Grid Energy,Utilities,2295.15,EL-7802
+2026-09-02,Sample Plumbing & Heating,Maintenance,310,INV-2251,"Radiator valve, south building"
+2026-09-22,Sample Mutual Insurance,Insurance,3125,POL-55-Q3
+,,Quarter total,10047.45
+@@ section: Sheet: Vendors @@
+Vendor,Service,Contact role,Terms,Comment
+Sample Plumbing & Heating,"Plumbing, boilers",Service desk,Net 30,"Prefers email, not ""urgent"" calls"
+Sample Lift Services,Lift maintenance,Account manager,"Net 45
+Early payment 2%"
+Sample Office Supply,Stationery,Online orders,Card," Free delivery over €50"
+Sample Grid Energy,Electricity,Business team,Direct debit
+@@ section: Sheet: Notes @@
+Budget approved by the board on 9 December 2025.
+Maintenance includes the boiler service contract.
+Next review: March 2026.

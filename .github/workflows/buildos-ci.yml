@@ -1,0 +1,279 @@
+# BuildOS CLI checks: build, tests, and supply-chain scans.
+# See toolkits/buildos/SECURITY.md for what each check guards.
+name: buildos-ci
+
+# Runs when a file the tests build, read, or ship changes. The filter is
+# wide on purpose (W1 R7 P7 skills review round 2, P7S-R2-06): the tests read
+# link targets anywhere under docs/ and guide/ and in the root Markdown files,
+# and every workflow file, so the filter covers those folders whole instead of
+# a list that drifts (and the root justfile, which a test reads). test/system-content.test.ts fails when a test reads a
+# repository path the filter does not cover. The client-name deny-list check
+# is in its own workflow (buildos-deny-list.yml), which runs on every push and
+# pull request with no path filter (W1 R7 P7 review round 3).
+on:
+  push:
+    paths:
+      - "toolkits/buildos/**"
+      - "system/**"
+      - "docs/**"
+      - "guide/**"
+      - "*.md"
+      - "justfile"
+      - ".github/**"
+  pull_request:
+    paths:
+      - "toolkits/buildos/**"
+      - "system/**"
+      - "docs/**"
+      - "guide/**"
+      - "*.md"
+      - "justfile"
+      - ".github/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: buildos-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: test (${{ matrix.os }}, Node 24)
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: toolkits/buildos
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      # Runs before install. Needs only Node and its bundled npm. Checks
+      # package.json, package-lock.json, .npmrc, and npm's effective
+      # ignore-scripts value, including the closed esbuild install-script
+      # exception (PRD 20 Supply Chain).
+      - name: Dependency policy guard (lockfile and .npmrc)
+        run: node scripts/check-dependencies.ts
+
+      - name: Install with install scripts off
+        run: npm ci --ignore-scripts
+
+      # Runs before every step that uses node_modules. Checks each installed
+      # package.json for lifecycle scripts; only esbuild 0.28.2 postinstall
+      # is allowed.
+      - name: Dependency policy guard (installed manifests)
+        run: node scripts/check-dependencies.ts --installed
+
+      # W1 R7 P8 t2: two release builds of this commit, each from an empty
+      # dist/, must give the same tarball bytes (scripts/reproducible-pack.ts).
+      # Runs before the tests, on the clean checkout, and removes dist/ after,
+      # so the later steps start as before. The tarball content list goes to
+      # the cross-OS comparison job, which only reports: byte identity is
+      # claimed on the release workflow's reference environment.
+      - name: Reproducible pack (two clean release builds, same SHA-256)
+        run: |
+          node scripts/reproducible-pack.ts --manifest "$RUNNER_TEMP/pack-manifest-$RUNNER_OS.json"
+          rm -rf dist
+
+      - name: Keep the pack content list
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: buildos-pack-manifest-${{ runner.os }}
+          path: ${{ runner.temp }}/pack-manifest-${{ runner.os }}.json
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: node --test "test/*.test.ts"
+
+      # Golden parity harness (W1 R7 P2): compares the bundled CLI with the Go
+      # goldens in test/golden/, runs the planted-difference self-test, and
+      # checks the generated fixtures. Enforced domains fail the job; pending
+      # domains are listed in the summary. `npm test` runs both test steps.
+      - name: Golden parity harness
+        run: node --test --test-reporter=spec "test/golden/*.test.ts"
+
+      - name: Build
+        run: npm run build
+
+      - name: Smoke run
+        run: node dist/buildos.js version
+
+      # W1 R7 P6 t5: every golden case under its own name (buildos and the
+      # legacy names) from the packed and installed tarball, on all three
+      # systems. On macOS and Linux the harness starts the .bin links; on
+      # Windows it runs npm's real .cmd shims through cmd.exe (review round 1).
+      # Windows runs this in Git Bash, where $RUNNER_TEMP is a Windows path
+      # with backslashes: a glob after it would read each backslash as an
+      # escape and match nothing (W1 R7 P6 review round 3). So the tarball
+      # name comes from npm pack --json, never from a glob. On a failure the
+      # step prints what it made and npm's own log.
+      - name: Golden parity from the installed tarball
+        run: |
+          diagnostics() {
+            echo "::group::Diagnostics for the installed-tarball step"
+            echo "RUNNER_TEMP=$RUNNER_TEMP"
+            ls -la "$RUNNER_TEMP" || true
+            ls -la "$RUNNER_TEMP/installed/node_modules/.bin" || true
+            ls -la "$RUNNER_TEMP/installed/node_modules/@brucewaynedecoy/buildos" || true
+            # Node lists npm's logs: a glob after a Windows path matches nothing in Git Bash.
+            node -e 'const fs=require("fs"),p=require("path");const d=p.join(process.argv[1],"_logs");for(const f of fs.existsSync(d)?fs.readdirSync(d):[]){console.log("--- "+f);console.log(fs.readFileSync(p.join(d,f),"utf8"))}' "$(npm config get cache)" || true
+            echo "::endgroup::"
+          }
+          trap 'status=$?; [ "$status" -eq 0 ] || diagnostics; exit "$status"' EXIT
+          set -x
+          tarball=$(npm pack --pack-destination "$RUNNER_TEMP" --json | node -e 'let s="";process.stdin.on("data",(d)=>s+=d).on("end",()=>console.log(JSON.parse(s)[0].filename))')
+          test -f "$RUNNER_TEMP/$tarball"
+          npm install --offline --ignore-scripts --no-save --no-audit --no-fund --prefix "$RUNNER_TEMP/installed" "$RUNNER_TEMP/$tarball"
+          ls -la "$RUNNER_TEMP/installed/node_modules/.bin"
+          BUILDOS_GOLDEN_BIN_DIR="$RUNNER_TEMP/installed/node_modules/.bin" node --test --test-reporter=spec test/golden/compare.test.ts
+
+      - name: npm audit (fails on high or critical)
+        run: npm audit --audit-level=high
+
+  # W1 R7 P8 t2: compares the tarball content lists of the three systems with
+  # the Linux one and prints each difference. Report only (a warning, never a
+  # failure): the release is built on one reference environment.
+  pack-compare:
+    name: Cross-OS pack comparison (report only)
+    needs: test
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: toolkits/buildos
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      - name: Dependency policy guard (lockfile and .npmrc)
+        run: node scripts/check-dependencies.ts
+
+      - name: Install with install scripts off
+        run: npm ci --ignore-scripts
+
+      - name: Dependency policy guard (installed manifests)
+        run: node scripts/check-dependencies.ts --installed
+
+      - name: Download the pack content lists
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: buildos-pack-manifest-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/manifests
+
+      - name: Compare (Linux first)
+        run: |
+          set -- "$RUNNER_TEMP/manifests/pack-manifest-Linux.json"
+          for os in macOS Windows; do
+            if [ -f "$RUNNER_TEMP/manifests/pack-manifest-$os.json" ]; then set -- "$@" "$RUNNER_TEMP/manifests/pack-manifest-$os.json"; fi
+          done
+          node scripts/reproducible-pack.ts --compare "$@"
+
+  # W1 R7 P6 t23 (PRD 20 Make Docs Companion Setup; register Q-010, R-001):
+  # the three Make Docs commands BuildOS relies on, at both bounds of the
+  # pinned range in src/core/init/make-docs-range.ts. Fails when a setup flag
+  # BuildOS passes or a JSON field BuildOS reads changes.
+  make-docs-contract:
+    name: Make Docs contract (pinned range bounds)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: toolkits/buildos
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      - name: Contract check self-test (fails on a renamed setup flag)
+        run: node --test test/make-docs-contract.test.ts
+
+      - name: Contract check at both bounds of the pinned range
+        run: |
+          range=$(node -e 'import("./src/core/init/make-docs-range.ts").then((m) => console.log(m.MAKE_DOCS_RANGE))')
+          lower=$(node -e 'import("./src/core/init/make-docs-range.ts").then((m) => console.log(m.MAKE_DOCS_LOWER_BOUND))')
+          upper=$(npm view "@brucewaynedecoy/make-docs@$range" version --json | node -e 'let s="";process.stdin.on("data",(d)=>s+=d).on("end",()=>{const v=JSON.parse(s);console.log(Array.isArray(v)?v[v.length-1]:v)})')
+          echo "range $range: lower bound $lower, upper bound $upper"
+          for version in "$lower" "$upper"; do
+            node scripts/make-docs-contract.ts --expect-version "$version" -- npx -y "@brucewaynedecoy/make-docs@$version"
+          done
+
+  osv:
+    name: OSV scan of package-lock.json
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      OSV_SCANNER_VERSION: "2.7.1"
+      # SHA-256 of osv-scanner_linux_amd64 from the v2.7.1 release osv-scanner_SHA256SUMS.
+      OSV_SCANNER_SHA256: fb7dab19a8bd9bbe5c3189f09d4b7ee1820c9553a23bac202648a56efd2f6ee8
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      # Proves the gate fails on high findings and on scanner errors, and passes
+      # on low findings and clean scans, before it judges the real scan.
+      - name: OSV gate self-check
+        working-directory: toolkits/buildos
+        run: node --test test/osv-gate.test.ts
+
+      - name: Install osv-scanner (checksum pinned)
+        run: |
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/osv-scanner" \
+            "https://github.com/google/osv-scanner/releases/download/v${OSV_SCANNER_VERSION}/osv-scanner_linux_amd64"
+          echo "${OSV_SCANNER_SHA256}  $RUNNER_TEMP/osv-scanner" | sha256sum --check --strict
+          chmod +x "$RUNNER_TEMP/osv-scanner"
+
+      # The scanner exit code is the only proof the scan completed: an
+      # unreachable OSV API exits 127 with the same empty results as a clean
+      # scan. The gate gets the exit code and fails on anything but a clean
+      # scan (0) or findings (1) that are all below high.
+      - name: OSV scan and gate (fails on high, critical, unscored, or scanner error)
+        run: |
+          set +e
+          "$RUNNER_TEMP/osv-scanner" scan source \
+            --lockfile=toolkits/buildos/package-lock.json \
+            --format=json \
+            --output-file="$RUNNER_TEMP/osv-results.json"
+          scanner_exit=$?
+          set -e
+          node toolkits/buildos/scripts/osv-gate.ts --exit-code "$scanner_exit" "$RUNNER_TEMP/osv-results.json"

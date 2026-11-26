@@ -1,0 +1,21 @@
+{
+  "id": "entities-validate-missing-index-compat-json",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "entities",
+    "validate",
+    "--root",
+    "root",
+    "--mode",
+    "compat",
+    "--json"
+  ],
+  "exit": 0,
+  "stdout_sha256": "4a9266408a1a52b4c2a5fd10e9a2449613e59cae83eb3fa1c6f4df2ba62a094c",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {}
+}

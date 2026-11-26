@@ -1,0 +1,7 @@
+{
+  "case": "entity-doc-anchor",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/data/requirements.jsonl:line 1.doc_anchor: is required\n.os/data/requirements.jsonl:line 2.doc_anchor: must point under system/docs/\n.os/data/requirements.jsonl:line 3.doc_anchor: is required\n.os/data/requirements.jsonl:line 4.doc_anchor: must be a non-empty path#anchor reference when set\n.os/data/requirements.jsonl:line 5.doc_anchor: must be a path#anchor reference\n.os/data/requirements.jsonl:line 7.status: must be one of: active, archived, draft, superseded\n.os/data/requirements.jsonl:line 7.doc_anchor: must point under system/docs/\nFAIL: 7 validation error(s)\n",
+  "crashed": false
+}

@@ -1,0 +1,49 @@
+{
+  "id": "intake-convert-docx",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert",
+    "--source",
+    "inputs/service-guide.docx"
+  ],
+  "exit": 0,
+  "stdout_sha256": "5a85f2f6cfd7d279e892a3e56eb821dd680dc7ac3c526c1b3176e20f16983782",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [
+    {
+      "path": "system/assets/service-guide",
+      "kind": "dir"
+    },
+    {
+      "path": "system/assets/service-guide/media",
+      "kind": "dir"
+    },
+    {
+      "path": "system/assets/service-guide/media/image1.png",
+      "kind": "file"
+    },
+    {
+      "path": "system/assets/service-guide/media/image2.png",
+      "kind": "file"
+    },
+    {
+      "path": "system/assets/service-guide/service-guide.md",
+      "kind": "file"
+    }
+  ],
+  "changed": [],
+  "removed": [],
+  "files": {
+    "system/assets/service-guide/media/image1.png": "bb23f96176c55a08c856edb9e1e31220a3434f2294a358e6fc8010f35c5cc3b6",
+    "system/assets/service-guide/media/image2.png": "114e1aa473015337d766cd70aecdf3f2193c51de6aa441c29182e97e41a33355",
+    "system/assets/service-guide/service-guide.md": "b5ac88ebffdaa75eaddfc45212542819bc2ffd71074521fb950fe649f436b221"
+  },
+  "modes": {
+    "system/assets/service-guide": "0755",
+    "system/assets/service-guide/media": "0755",
+    "system/assets/service-guide/media/image1.png": "0644",
+    "system/assets/service-guide/media/image2.png": "0644",
+    "system/assets/service-guide/service-guide.md": "0644"
+  }
+}

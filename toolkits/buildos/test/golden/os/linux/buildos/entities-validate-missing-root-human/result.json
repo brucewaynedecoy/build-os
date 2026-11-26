@@ -1,0 +1,21 @@
+{
+  "id": "entities-validate-missing-root-human",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "entities",
+    "validate",
+    "--root",
+    "absent",
+    "--mode",
+    "compat"
+  ],
+  "exit": 3,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "fafc938adee60de2b6f35ba433ddc40f628c5a4fb24e7533ddc508f845f525f7",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

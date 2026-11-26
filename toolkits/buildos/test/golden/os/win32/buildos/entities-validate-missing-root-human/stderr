@@ -1,0 +1,17 @@
+entities.validate: error
+mode: compat
+version: dev
+source revision: unknown
+write status: not_requested
+ERROR [internal_error]: resolve root "{ROOT}\\absent": CreateFile {ROOT}\absent: The system cannot find the file specified.
+  action: Review the reported error and retry after correcting the input or root.
+{
+  "valid": false,
+  "record_count": 0,
+  "index": {
+    "state": "",
+    "current": false,
+    "message": "",
+    "expected_sha256": ""
+  }
+}

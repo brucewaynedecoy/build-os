@@ -1,0 +1,133 @@
+{
+  "$comment": "Go intake tool twin bodies for the conversion eval set (front matter removed). Captured by scripts/capture-intake-eval-goldens.ts.",
+  "go_version": "go1.24.1",
+  "files": [
+    {
+      "id": "csv-maintenance-requests",
+      "parts": [
+        {
+          "name": "maintenance-requests.csv",
+          "body": "Request ID,Opened,Building,Unit,Category,Summary,Priority,Status,Closed\nMR-1041,2026-09-02,North,N-104,Plumbing,\"Kitchen tap drips, worse at night\",Medium,Closed,2026-09-05\nMR-1042,2026-09-03,North,N-210,Electrical,Hall light flickers,Low,Closed,2026-09-10\nMR-1043,2026-09-08,South,S-003,Heating,\"Radiator cold; member says \"\"no heat since Sunday\"\"\",High,Closed,2026-09-09\nMR-1044,2026-09-11,South,S-115,Doors,\"Front door closer sticks\nNeeds a new arm\",Medium,Closed,2026-09-19\nMR-1045,2026-09-15,Annex,A-2,Pest control,Ants near the back step,Low,Closed,2026-09-22\nMR-1046,2026-09-21,North,,Grounds,Fallen branch by the bike shed,Medium,Closed,2026-09-21\nMR-1047,2026-10-01,South,S-207,Plumbing,Shower drain slow,Low,Open,\nMR-1048,2026-10-04,Annex,A-5,Electrical,Outlet by the window is dead – breaker checked,High,Open,\nMR-1049,2026-10-09,North,N-301,Windows,Sash cord broken,Medium,Open,\nMR-1050,2026-10-12,South,S-118,Appliances,\"Fridge seal torn, about 30 cm\",Medium,Open,\nMR-1051,2026-10-17,North,N-112,Heating,Thermostat reads 3° high,Low,Open,\nMR-1052,2026-10-20,Annex,,Common room,Café table wobbles,Low,Open,\n"
+        }
+      ]
+    },
+    {
+      "id": "docx-operations-handbook",
+      "parts": [
+        {
+          "name": "operations-handbook.md",
+          "body": "# Sample Housing Cooperative Operations Handbook\n\nThis handbook explains how the sample housing cooperative runs day-to-day operations. It is written for new committee members and staff. Every name in it is invented.\n\nVersion 3.2 — reviewed in October 2026.\n\n# 1. Roles and Responsibilities\n\nThe cooperative has three standing committees. Each committee meets once a month and reports to the board.\n\n## Board\n\nThe board sets the annual budget, approves contracts over the spending limit, and hires the operations manager.\n\n## Maintenance Committee\n\nThe maintenance committee plans repairs, reviews requests, and keeps the contractor list current.\n\n## Membership Committee\n\nThe membership committee runs the waiting list, welcomes new members, and handles move-outs.\n\n# 2. Handling a Repair Request\n\nUse these steps for every request, even small ones:\n\n1. Log the request in the maintenance tracker within one working day.\n1. Assign a priority:\n  1. High: no heat, no water, a safety risk, or a door that will not lock.\n  1. Medium: a fault that affects daily use.\n  1. Low: anything else.\n1. Book a contractor or a volunteer.\n1. Confirm the fix with the member and close the request.\n\n## Emergency Contacts\n\nOut of hours: call the on-call line listed on the notice board.\n\n- Water or gas leak: shut the valve first, then call.\n- Lift fault: call the lift contractor.\n- Fire: leave the building and call emergency services.\n\n# 3. Spending Limits\n\nThe operations manager may approve spending up to the limits below. Anything above a limit goes to the board.\n\n| Category | Single item limit | Monthly limit | Notes |\n| --- | --- | --- | --- |\n| Routine repairs | €500 | €3,000 | Two quotes over €250 |\n| Cleaning supplies | €150 | €600 | Use the approved supplier |\n| Emergency work | €2,000 | No limit | Report to the board within 48 hours |\n| Office costs | €100 | €400 | Keep all receipts |\n\nLimits are reviewed each January. The next review is in January 2027.\n\n# 4. Records\n\nKeep signed contracts for seven years. Keep repair photos for two years. Store both in the shared drive under the year and the building name.\n\n\n## Embedded Assets\n\n- media/image1.png\n"
+        }
+      ]
+    },
+    {
+      "id": "docx-committee-minutes",
+      "parts": [
+        {
+          "name": "committee-minutes.md",
+          "body": "# Maintenance Committee Minutes\n\nDate: 14 October 2026. Location: the common room.\n\nPresent: chair, treasurer, two volunteers, and the operations manager. Apologies: the secretary.\n\n## Agenda\n\n- Review of open repair requests\n- Winter heating check\n- Contractor list\n\n## 1. Open Repair Requests\n\nSeven requests are open. Two are high priority: the dead outlet in the annex and the radiator in the south building, which is fixed now.\n\n## 2. Winter Heating Check\n\nThe heating contractor will service both boilers in the first week of November. Members get two days’ notice before each visit.\n\n| Decision | Owner | Due |\n| --- | --- | --- |\n| Approve the boiler service quote | Treasurer | 31 Oct 2026 |\n| Send the visit notice to members | Operations manager | 3 Nov 2026 |\n\n## 3. Contractor List\n\nThe list has eleven contractors. The committee removed one roofing firm after two missed visits.\n\n## Actions\n\n1. Treasurer to sign the boiler quote.\n1. Operations manager to update the contractor list.\n\nNext meeting: 11 November 2026.\n"
+        }
+      ]
+    },
+    {
+      "id": "xlsx-annual-budget",
+      "parts": [
+        {
+          "name": "annual-budget-summary.csv",
+          "body": "Sample Housing Cooperative — 2026 Budget\nCategory,Budget,Spent to date,Remaining\nMaintenance,48000,31250.5,16749.5\nUtilities,36000,29880,6120\nInsurance,12500,12500,0\nAdministration,8000,5410.75,2589.25\nTotal,104500,79041.25,25458.75\nFigures in euros. Spent to date runs to 30 September 2026.\n"
+        },
+        {
+          "name": "annual-budget-q3-expenses.csv",
+          "body": "Date,Vendor,Category,Amount,Invoice,Note\n2026-07-03,Sample Plumbing & Heating,Maintenance,640,INV-2207\n2026-07-15,Sample Grid Energy,Utilities,2410.4,EL-7781\n2026-07-28,Sample Office Supply,Administration,86.9,,Paid by card\n2026-08-04,Sample Lift Services,Maintenance,1180,LS-0412,Annual lift check\n2026-08-19,Sample Grid Energy,Utilities,2295.15,EL-7802\n2026-09-02,Sample Plumbing & Heating,Maintenance,310,INV-2251,\"Radiator valve, south building\"\n2026-09-22,Sample Mutual Insurance,Insurance,3125,POL-55-Q3\n,,Quarter total,10047.45\n"
+        },
+        {
+          "name": "annual-budget-vendors.csv",
+          "body": "Vendor,Service,Contact role,Terms,Comment\n,\"Plumbing, boilers\",Service desk,Net 30,\"Prefers email, not \"\"urgent\"\" calls\"\nSample Lift Services,Lift maintenance,Account manager,\"Net 45\nEarly payment 2%\"\nSample Office Supply,Stationery,Online orders,Card,\" Free delivery over €50\"\nSample Grid Energy,Electricity,Business team,Direct debit\n"
+        },
+        {
+          "name": "annual-budget-notes.csv",
+          "body": "Budget approved by the board on 9 December 2025.\nMaintenance includes the boiler service contract.\nNext review: March 2026.\n"
+        }
+      ]
+    },
+    {
+      "id": "html-visitor-policy",
+      "parts": [
+        {
+          "name": "visitor-policy.md",
+          "body": "Sample Housing Cooperative\n\n# Visitor and Guest Policy\n\nThis policy explains how members host visitors and overnight guests. It applies to all three buildings.\n\n## Day Visitors\n\nMembers may host day visitors at any time. Visitors must leave the common room by 22:00 .\n\n## Overnight Guests\n\nA member may host an overnight guest for up to 14 nights in any 90-day period. Longer stays need written approval from the [membership committee](/committees/membership.html) .\n\n- Tell the front desk the guest’s name and dates.\n\n- Guests may not use the laundry room alone.\n\n- Parking: guests use the visitor bays only. Bays V1 to V4 are in the north lot. Bay V5 is kept for deliveries.\n\n### Approval Steps\n\n- Fill in the guest form.\n\n- Send it to the membership committee.\n\n- Wait for the written reply, usually within five working days.\n\n## Shared Spaces\n\n| Space | Guests allowed | Booking |\n| --- | --- | --- |\n| Common room | Up to 10 | Book at the front desk |\n| Roof garden | Up to 6 | No booking |\n| Guest suite | 2 per night | Book online, €25 per night |\n\nRoute for guests: front desk, then the common room, then the guest suite.\n\n![Ground floor plan](media/visitor-policy-image-001.png)\n\n[Mermaid diagram source](diagrams/visitor-policy-mermaid-001.mmd)\n\n```mermaid\nflowchart LR\n  Member --> Form --> Committee --> Reply\n```\n\n## Questions\n\nAsk at the front desk or email [desk@example.org](mailto:desk@example.org) .\n\nLast updated 2 October 2026. Policy owner: membership committee.\n"
+        }
+      ]
+    },
+    {
+      "id": "html-dir-help-center",
+      "parts": [
+        {
+          "name": "faq.md",
+          "body": "# Frequently Asked Questions\n\n### Can I paint my walls?\n\nYes. Use a light color, and return the walls to white when you move out.\n\n### Who fixes a broken appliance?\n\nThe cooperative fixes appliances that came with the home. Report the fault through the maintenance tracker.\n\n### Can I sublet my home?\n\nNo. Subletting is not allowed under the lease.\n"
+        },
+        {
+          "name": "guides-getting-started.md",
+          "body": "# Getting Started\n\nWelcome to the cooperative. This guide covers your first two weeks.\n\n## Your First Day\n\n- Collect your keys and fob from the front desk.\n\n- Read the house rules in your welcome pack.\n\n- Test the smoke alarm in your home.\n\n## Your First Two Weeks\n\nRegister any pets, set up your monthly charge payment, and come to a welcome evening. The membership committee will contact you to arrange a short visit.\n"
+        },
+        {
+          "name": "guides-paying-charges.md",
+          "body": "# Paying Monthly Charges\n\nMonthly charges cover the cost of running the buildings. They are due on the first day of each month.\n\n| Home size | Monthly charge | Repairs reserve share |\n| --- | --- | --- |\n| Studio | €610 | €45 |\n| One bedroom | €780 | €60 |\n| Two bedrooms | €945 | €75 |\n\n## Late Payments\n\nIf you cannot pay on time, tell the treasurer before the due date. The cooperative can agree a payment plan.\n"
+        },
+        {
+          "name": "index.md",
+          "body": "# Member Help Center\n\n![Help Center logo](media/index-image-001.png)\n\nFind answers about living in the cooperative. Most questions are answered in the guides below.\n\n- [Getting started](guides/getting-started.html)\n\n- [Paying monthly charges](guides/paying-charges.html)\n\n- [Frequently asked questions](faq.htm)\n\nCannot find an answer? Visit the front desk from 09:00 to 17:30.\n"
+        }
+      ]
+    },
+    {
+      "id": "pdf-annual-report",
+      "parts": [
+        {
+          "name": "annual-report-summary.txt",
+          "body": "\nAnnual Report Summary 2025–26\nSample Housing Cooperative · Prepared for the annual general meeting\nOverview\nThe cooperative ended the year with all 64 homes occupied and a small operating surplus.\nMembers voted to keep monthly charges flat for a second year. The board thanks the\nvolunteers who gave more than 1,900 hours of their time.\nMembership\nNine households moved in and seven moved out. The waiting list grew to 112 households, the\nlongest it has been since the cooperative opened. The membership committee ran four\nwelcome evenings and one open day.\nTwonewmembersjoinedtheboardinMarch.Trainingfornewboardmembersnowrunsover\nthreeeveningsinsteadofone.Year-roundsupportcomesfromamentorontheboard.\nFinances\nIncome from monthly charges was €612,400. Spending was €598,150, so the surplus was\n€14,250. Most of the surplus goes to the repairs reserve, which now holds €186,000.\nEnergy costs fell by 9% after the boiler upgrade in the south building. Insurance rose by 6%.\nLooking Ahead\nNext year the cooperative will replace the north building’s roof, add bicycle storage, and review\nthe visitor policy. The board will report on progress at each quarterly members’ meeting."
+        }
+      ]
+    },
+    {
+      "id": "pdf-newsletter-columns",
+      "parts": [
+        {
+          "name": "newsletter-two-columns.txt",
+          "body": "\nCooperative News\nAutumn 2026 · Issue 14\nRoof Works Start in May\nContractors will put up scaffolding on the north\nbuilding in the first week of May. Work should take\nten weeks. Balconies on the top floor will be closed\nwhile the scaffold is up. The maintenance committee\nwill post a weekly update in the lobby.\nBike Store Plans\nThe bike store will go in the old drying room. It will\nhold 40 bikes on two-tier racks, plus space for two\ncargo bikes. Members can comment on the plan until\n15 December.\nNew Members Welcome Evening\nSeven households joined the cooperative this\nautumn. A welcome evening takes place on 28\nNovember in the common room. Bring a dish to share\nif you can.\nGarden Volunteers Needed\nThe roof garden team needs three more volunteers\nfor the winter. Tasks include covering the raised\nbeds, clearing leaves, and checking the water butts\nonce a week.\nSample Housing Cooperative · Page 1 of 1"
+        }
+      ]
+    },
+    {
+      "id": "pdf-rates-table",
+      "parts": [
+        {
+          "name": "room-rates-table.txt",
+          "body": "\nCommon Room and Guest Suite Rates\nRates apply from 1 January 2027. Members pay the member rate. Non-member groups need a\nmember to sponsor the booking.\nSpace\nMember rate\nNon-member rate\nDeposit\nCommon room, half day\n€20\n€45\n€50\nCommon room, full day\n€35\n€80\n€50\nRoof garden, evening\n€15\n€40\n€25\nGuest suite, per night\n€25\nNot available\n€40\nWorkshop, per hour\n€5\n€12\nNone\nMeeting room, per hour\n€4\n€10\nNone\nDeposits are returned within ten working days if the space is left clean. Cancel at least 48\nhours ahead to avoid a charge."
+        }
+      ]
+    },
+    {
+      "id": "pdf-pet-policy-headers",
+      "parts": [
+        {
+          "name": "pet-policy.txt",
+          "body": "\nSample Housing Cooperative — Pet Policy\nPet Policy\nThis policy sets out which pets members may keep and how to keep them without disturbing\nneighbours. It applies to every home and to all shared spaces.\nPets Allowed\nMembers may keep up to two cats or one dog per home. Small caged animals and fish do not\nneed approval. Any other animal needs written approval from the board.\nApproved by the board on 3 June 2026\nPage 1 of 3\nSample Housing Cooperative — Pet Policy\nRegistration\nRegister each cat or dog with the front desk within two weeks of moving in or getting the pet.\nBring proof of vaccination. The front desk keeps the register and shares it only with the\nmaintenance team when they need to enter a home.\nShared Spaces\nDogs must be on a lead in all corridors, lifts, and the courtyard. Pets are not allowed in the\ncommon room, the laundry room, or the roof garden, except for assistance animals.\nApproved by the board on 3 June 2026\nPage 2 of 3\nSample Housing Cooperative — Pet Policy\nComplaints\nIf a pet causes repeated noise or damage, the membership committee will first talk with the\nmember. If the problem continues, the committee may ask the board to withdraw approval.\nReview\nThe board will review this policy every two years.\nApproved by the board on 3 June 2026\nPage 3 of 3"
+        }
+      ]
+    },
+    {
+      "id": "pdf-signup-with-scan",
+      "parts": [
+        {
+          "name": "volunteer-signup-with-scan.txt",
+          "body": "\nVolunteer Day Sign-Up\nThe autumn volunteer day is on Saturday 18 October 2026, from 10:00 to 15:00. Tasks include\nclearing gutters, painting the bike shed, and sorting the lost-property box.\nHow to Sign Up\nAdd your name to the sheet at the front desk. A scanned copy of the sheet is on the next page\nfor members who cannot reach the desk."
+        }
+      ]
+    },
+    {
+      "id": "pdf-scanned-notice",
+      "error": "pdf text extraction produced no usable text"
+    }
+  ]
+}

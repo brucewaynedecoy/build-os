@@ -1,0 +1,22 @@
+{
+  "id": "entities-rebuild-apply-write-failure-json",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "entities",
+    "rebuild-index",
+    "--root",
+    "root",
+    "--mode",
+    "strict",
+    "--apply",
+    "--json"
+  ],
+  "exit": 5,
+  "stdout_sha256": "4426b2c1ab285022ec4198753f6f3dd7230a6b9c6bb182033b9082c9248df0f8",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {}
+}

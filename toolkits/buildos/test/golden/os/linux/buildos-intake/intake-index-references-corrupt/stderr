@@ -1,0 +1,1 @@
+buildos-intake: error: read existing references index {ROOT}/system/.os/indexes/references.json: unexpected end of JSON input (fix or move the file before rebuilding so reference IDs are not lost)

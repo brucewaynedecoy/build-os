@@ -1,0 +1,163 @@
+# BuildOS client-name deny-list check. See toolkits/buildos/SECURITY.md
+# (Client-Name Deny-List Check, Release Trust Boundary).
+#
+# W1 R7 P7 review round 3: split out of buildos-ci.yml so that this check runs
+# on every push and pull request, with no path filter (a client name can land
+# in any folder).
+#
+# W1 R7 P8 review round 1 (P8-R1-02): any person who can push a branch can
+# change a workflow on that branch, so a job on that branch must never hold
+# the real list. So:
+# - invented (every push and pull request, forks too): no secret. Builds and
+#   packs the candidate, runs the scanner self-test, and scans the tree and
+#   the tarball with an invented list (home-folder paths, unread files).
+# - deny-list (pushes to the default branch and runs started there by hand):
+#   the real list, from the environment secret BUILDOS_DENY_LIST_ENV of the
+#   environment buildos-deny-list, whose deployment refs are the default
+#   branch and v* tags, so GitHub gives the secret to no other ref. No
+#   repository or organization secret has that name, so none can stand in for
+#   it (P8-R2-04); the job first checks the environment's deployment refs. The job runs no npm and no build: only the scanner, with
+#   Node built-ins, over the tree and the tarball from the invented job as
+#   data. A missing or empty list fails it (fail closed).
+# Other refs (feature branches, pull requests, forks) get a notice: the real
+# list runs after merge and in the release workflow, before staging. A
+# maintainer can run it before pushing with --list-file (SECURITY.md).
+name: buildos-deny-list
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: buildos-deny-list-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  invented:
+    name: Deny list (invented list, every push and pull request)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: toolkits/buildos
+    env:
+      FORK_PR: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+      ON_DEFAULT: ${{ github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      - name: Real-list notice
+        if: env.ON_DEFAULT != 'true'
+        run: |
+          if [ "$FORK_PR" = "true" ]; then
+            echo "::notice title=Real deny list not run::This pull request comes from a fork. The real client-name list runs after merge on the default branch and in the release workflow, before staging."
+          else
+            echo "::notice title=Real deny list not run::The real client-name list runs only on the default branch and in the release workflow, before staging. This run checks the tree and the package with an invented list."
+          fi
+
+      - name: Dependency policy guard (lockfile and .npmrc)
+        run: node scripts/check-dependencies.ts
+
+      - name: Install with install scripts off
+        run: npm ci --ignore-scripts
+
+      - name: Dependency policy guard (installed manifests)
+        run: node scripts/check-dependencies.ts --installed
+
+      - name: Deny-list check self-test (invented terms only)
+        run: node --test test/deny-list.test.ts
+
+      # scripts/pack-for-scan.ts creates the pack folder, builds, and packs
+      # (P8-R2-03: the folder did not exist); test/deny-list-workflow.test.ts
+      # runs the same script in a clean temp folder.
+      - name: Build and pack (the package content that npm ships)
+        id: pack
+        run: node scripts/pack-for-scan.ts --out "$RUNNER_TEMP/pack"
+
+      - name: Deny-list scanner with an invented list (repository tree and the tarball)
+        env:
+          TARBALL: ${{ steps.pack.outputs.tarball }}
+        run: node scripts/release-gate.ts deny-list --invented-list --tarball "$TARBALL"
+
+      - name: Keep the tarball for the real-list job (default branch only)
+        if: env.ON_DEFAULT == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: buildos-deny-list-tarball-${{ github.run_id }}
+          path: ${{ runner.temp }}/pack/
+          if-no-files-found: error
+          retention-days: 1
+
+  deny-list:
+    name: Deny list (real list, default branch only)
+    needs: invented
+    if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    environment: buildos-deny-list
+    permissions:
+      contents: read
+      actions: read
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out (the default branch)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      # The environment must deploy only from the default branch and v* tags,
+      # so no other ref gets its secret (P8-R2-04). Node built-ins only.
+      - name: The environment deploys only from the default branch and v* tags
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: node toolkits/buildos/scripts/release-github.ts environment --name buildos-deny-list --allow "branch:$DEFAULT_BRANCH,tag:v*"
+
+      # Before the step that holds the secret (P8-F-01). The job token reads
+      # rulesets with the Metadata permission it always has.
+      - name: The branch and tag rulesets are active
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: node toolkits/buildos/scripts/release-github.ts rulesets --branch "$DEFAULT_BRANCH"
+
+      - name: Download the tarball (data only)
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: buildos-deny-list-tarball-${{ github.run_id }}
+          path: ${{ runner.temp }}/pack
+
+      # Only the scanner runs (Node built-ins). The list stays in this step's
+      # environment; the scanner prints redacted locations only.
+      - name: Deny-list check (repository tree, test fixtures, and every file of the tarball)
+        env:
+          BUILDOS_DENY_LIST: ${{ secrets.BUILDOS_DENY_LIST_ENV }}
+        run: |
+          set -o pipefail
+          tarball=$(find "$RUNNER_TEMP/pack" -maxdepth 1 -name '*.tgz' -print -quit)
+          test -n "$tarball"
+          status=0
+          node toolkits/buildos/scripts/check-deny-list.mjs --root . --tarball "$tarball" | tee "$RUNNER_TEMP/deny-list.txt" || status=$?
+          {
+            echo "### Client-name deny list (real list)"
+            grep '^deny-list: ' "$RUNNER_TEMP/deny-list.txt" | sed 's/^/- /' || true
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"

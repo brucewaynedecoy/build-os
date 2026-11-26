@@ -1,0 +1,18 @@
+{
+  "id": "intake-convert-xlsx-dry-run",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert",
+    "--source",
+    "inputs/inventory.xlsx",
+    "--dry-run"
+  ],
+  "exit": 0,
+  "stdout_sha256": "b07b5283bab49dc74f13a4ed2dc715d9f332aea6eeb0de74499e15531345d012",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {}
+}

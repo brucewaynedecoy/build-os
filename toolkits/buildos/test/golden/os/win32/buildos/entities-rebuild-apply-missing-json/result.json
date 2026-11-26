@@ -1,0 +1,34 @@
+{
+  "id": "entities-rebuild-apply-missing-json",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "entities",
+    "rebuild-index",
+    "--root",
+    "root",
+    "--mode",
+    "compat",
+    "--apply",
+    "--json"
+  ],
+  "exit": 0,
+  "stdout_sha256": "aecf8d1e25ce8b023885f9dbab09a896d2ddea32c33afc63cb3b2f4e530aaec9",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [
+    {
+      "path": "root/.os/indexes/entity-resolution.json",
+      "kind": "file"
+    }
+  ],
+  "changed": [],
+  "removed": [],
+  "files": {
+    "root/.os/indexes/entity-resolution.json": "941c43d958ae76c8aa3b5b6775883675dc230f8776c806ee4a9afcb49c5061e9"
+  },
+  "derived": {
+    "exception": "PE-005",
+    "source": "os/linux/buildos/entities-rebuild-apply-missing-json",
+    "source_sha256": "0a6281926f68d8e5475731ec422b28364b69f23e5e4a8b252055be1d3d293baa"
+  }
+}

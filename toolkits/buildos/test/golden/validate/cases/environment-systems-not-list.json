@@ -1,0 +1,7 @@
+{
+  "case": "environment-systems-not-list",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/config/instance.yaml:environments[0].systems: must be a list of configured systems[].id values\nFAIL: 1 validation error(s)\n",
+  "crashed": false
+}

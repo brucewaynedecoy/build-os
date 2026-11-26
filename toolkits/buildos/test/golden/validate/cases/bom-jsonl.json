@@ -1,0 +1,7 @@
+{
+  "case": "bom-jsonl",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/data/requirements.jsonl:line 1: invalid JSON: Unexpected UTF-8 BOM (decode using utf-8-sig)\nFAIL: 1 validation error(s)\n",
+  "crashed": false
+}

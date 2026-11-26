@@ -1,0 +1,1 @@
+buildos-discovery: error: validate entity graph: redirect_missing_target: entity REQ-002 redirects to missing target REQ-404; correction: restore the target record or review a different existing same-type successor

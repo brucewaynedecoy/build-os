@@ -1,0 +1,7 @@
+{
+  "case": "bom-frontmatter",
+  "exit": 0,
+  "stdout": "OK: config, frontmatter, and entity data hygiene passed\n",
+  "stderr": "",
+  "crashed": false
+}

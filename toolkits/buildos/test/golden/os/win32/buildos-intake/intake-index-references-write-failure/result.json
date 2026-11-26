@@ -1,0 +1,16 @@
+{
+  "id": "intake-index-references-write-failure",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "index",
+    "references"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "448dc8232afab814352a8cb4b1595a072d5a59b3208aad9b9f56de19150b7c0f",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {}
+}

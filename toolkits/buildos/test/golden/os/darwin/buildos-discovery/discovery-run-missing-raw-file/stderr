@@ -1,0 +1,1 @@
+buildos-discovery: error: inputs/raw/absent.md: stat {ROOT}/inputs/raw/absent.md: no such file or directory

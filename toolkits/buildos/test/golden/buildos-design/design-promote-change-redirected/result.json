@@ -1,0 +1,47 @@
+{
+  "id": "design-promote-change-redirected",
+  "tool": "buildos-design",
+  "invocation": "buildos-design",
+  "args": [
+    "promote",
+    "finding",
+    "--finding-id",
+    "FIND-002",
+    "--route",
+    "change-plan",
+    "--title",
+    "Keep tax with coupons",
+    "--slug",
+    "keep-tax"
+  ],
+  "exit": 0,
+  "stdout_sha256": "9a82572efd5f7212dedc84b9e72da445e246a245d3792bd60cbadf78e8ce3f4a",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [
+    {
+      "path": "system/docs/designs/{DATE}-keep-tax.md",
+      "kind": "file"
+    }
+  ],
+  "changed": [
+    {
+      "path": "system/.os/data/findings.jsonl",
+      "kind": "file"
+    },
+    {
+      "path": "system/workspace/findings/FIND-001/finding.md",
+      "kind": "file"
+    }
+  ],
+  "removed": [],
+  "files": {
+    "system/.os/data/findings.jsonl": "cc78386f467aa8d82739621e33565a535f46fb2aeeb7cfc6b8891c2768067d26",
+    "system/docs/designs/{DATE}-keep-tax.md": "fa7cce61c6fd7aec0370920e2755cf87840a2da1bac3e5c52210faff67ff9781",
+    "system/workspace/findings/FIND-001/finding.md": "16aa5ac96f3b78c3ac00e8169717ec79f1d263b80f0730b861bb66aae9d7b515"
+  },
+  "modes": {
+    "system/.os/data/findings.jsonl": "0644",
+    "system/docs/designs/{DATE}-keep-tax.md": "0644",
+    "system/workspace/findings/FIND-001/finding.md": "0644"
+  }
+}

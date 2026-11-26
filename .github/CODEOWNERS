@@ -1,0 +1,28 @@
+# Code owners (W1 R7 P8 review round 2, P8-R2-01; final check, P8-F-04).
+# With "Require review from Code Owners" on in the default branch ruleset, a
+# change to these paths needs the maintainer's review. They decide what the
+# release workflow runs with a secret, a write permission, or the npm OIDC
+# token, and what a green release or CI check means: the workflows and this
+# file, every build, release, and gate script with its policy inputs and
+# vendored schemas, the tests and gate corpora the checks run (golden
+# harness, conversion eval, planted-failure fixtures), the package manifest,
+# lockfile, and npm and TypeScript settings, the SBOM policy documents, and
+# the product files the build scripts read to decide the package content.
+# test/codeowners.test.ts computes that set from the workflows and the
+# scripts and fails when a file is outside every pattern here.
+# See toolkits/buildos/SECURITY.md, Owner Settings for Releases.
+/.github/ @brucewaynedecoy
+/toolkits/buildos/scripts/ @brucewaynedecoy
+/toolkits/buildos/test/ @brucewaynedecoy
+/toolkits/buildos/release-candidates.json @brucewaynedecoy
+/toolkits/buildos/package.json @brucewaynedecoy
+/toolkits/buildos/package-lock.json @brucewaynedecoy
+/toolkits/buildos/.npmrc @brucewaynedecoy
+/toolkits/buildos/tsconfig.json @brucewaynedecoy
+/toolkits/buildos/SECURITY.md @brucewaynedecoy
+/toolkits/buildos/THIRD_PARTY_NOTICES.md @brucewaynedecoy
+/toolkits/buildos/src/cli/main.ts @brucewaynedecoy
+/toolkits/buildos/src/cli/invocation.ts @brucewaynedecoy
+/toolkits/buildos/src/adapters/package-content.ts @brucewaynedecoy
+/toolkits/buildos/src/core/init/make-docs.ts @brucewaynedecoy
+/toolkits/buildos/src/core/init/make-docs-range.ts @brucewaynedecoy

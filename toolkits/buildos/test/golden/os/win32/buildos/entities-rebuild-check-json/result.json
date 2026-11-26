@@ -1,0 +1,22 @@
+{
+  "id": "entities-rebuild-check-json",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "entities",
+    "rebuild-index",
+    "--root",
+    "root",
+    "--mode",
+    "strict",
+    "--check",
+    "--json"
+  ],
+  "exit": 0,
+  "stdout_sha256": "f8e2b803e03d7d63a19b7e181b5caac32736418a82166402ac53e0e0cf201620",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {}
+}

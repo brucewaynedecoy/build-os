@@ -1,0 +1,731 @@
+{
+  "$comment": "Deliberate divergences of buildos validate from the legacy validator (validate_config.py), W1 R7 P7 t14. `cases` lists each fixture case whose findings differ: `python_only` keys the legacy script reported and buildos validate does not, `buildos_only` keys buildos validate reports and the legacy script did not. A key is [code, path, field, detail]; detail is null unless the code is in DETAIL_CODES (cases.ts). test/validate-parity.test.ts fails on any other difference, and on an entry here that no longer matches a real difference. Evidence: docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#p7-skills-and-validation",
+  "divergences": [
+    {
+      "id": "VD-01",
+      "summary": "Exit codes: a check that finds a problem exits 4, a folder with no .os/ exits 3, and a usage error (such as an unknown flag) exits 2. The legacy script exited 1 for every problem and for a crash; Python's argparse already exited 2 for an unknown flag.",
+      "reason": "PRD 20 Output and Exit Contract assigns 4 to a validation failure and keeps 1 for an internal failure.",
+      "authority": "PRD 20 Output and Exit Contract",
+      "changes_pass_fail": "no: pass and fail stay the same; only the failing code changes (1 to 4 for a problem, 1 to 3 for a missing project)"
+    },
+    {
+      "id": "VD-02",
+      "summary": "Installed paths and anchors: buildos validate reads .os/, playbooks/, and .os/data/ at the project root, and requires doc_anchor under docs/ and an extraction source_anchor under assets/. The legacy script read the source checkout (system/...) and required system/docs/ and system/assets/. The goldens are captured in the source layout (normalization N2), so every case compares the same rule.",
+      "reason": "PRD 13 states every path and saved anchor relative to the initialized project root; register D-004 rules out the legacy anchor prefixes.",
+      "authority": "PRD 13 buildos validate checks; register D-004",
+      "changes_pass_fail": "yes, for every installed project with a promoted row or an extraction: the legacy script failed them; buildos validate passes them"
+    },
+    {
+      "id": "VD-03",
+      "summary": "defaults is optional, and so is each of its lists. A key that is present must still be a mapping or a list.",
+      "reason": "PRD 13 and the config contract make defaults and its lists optional.",
+      "authority": "PRD 13; register D-006 item 1",
+      "changes_pass_fail": "yes: a config with no defaults, or only some lists, failed before and passes now",
+      "owner_decision": "Decided on 2026-11-24: D-006 item 1, option a (the PRD 13 rule). See evidence.md Owner Decisions."
+    },
+    {
+      "id": "VD-04",
+      "summary": "version: true fails: a boolean is not an integer. Python's bool is an int, so the legacy script accepted it.",
+      "reason": "PRD 13: version is an integer, and a boolean is not an integer.",
+      "authority": "PRD 13; register D-006 item 2",
+      "changes_pass_fail": "yes, only for a config with version: true or false"
+    },
+    {
+      "id": "VD-05",
+      "summary": "An owner kind that is not text fails (not_string): a number, true, a list, no value (null), or a mapping. The legacy script skipped the slug check for every one of them.",
+      "reason": "PRD 13: kind is a string slug.",
+      "authority": "PRD 13; register D-006 item 2",
+      "changes_pass_fail": "yes, only for an owner kind written as a number, true, a list, no value, or a mapping"
+    },
+    {
+      "id": "VD-06",
+      "summary": "Entity-specific states pass: qualified for a finding, and running, closed, or aborted for a run. They stay invalid for other types. Such a row, not draft, needs a doc_anchor under docs/.",
+      "reason": "PRD 08, PRD 13, PRD 17, and the entity records contract allow these states; discovery writes closed runs and qualified findings.",
+      "authority": "PRD 13; PRD 17; register D-007 item 2",
+      "changes_pass_fail": "yes: every project with a discovery run or a qualified finding failed the legacy script and passes now",
+      "owner_decision": "Decided on 2026-11-24: D-007 item 2, option a (closed runs and qualified findings pass). See evidence.md Owner Decisions."
+    },
+    {
+      "id": "VD-07",
+      "summary": "extracted_at follows the RFC 3339 UTC profile: YYYY-MM-DDTHH:MM:SS, an optional . and one or more fraction digits, then Z; ASCII digits, uppercase T and Z; a real calendar date in years 0001 to 9999; hour 00 to 23, minute and second 00 to 59. The legacy script used the same pattern, so the basic format (20261124T102030Z), a comma fraction, lowercase t or z, an offset, and a time with no seconds fail in both. Two differences: 24:00:00 fails (the legacy script read it as the next day and passed it), and a value that ends in a line feed is datetime_format here and datetime_invalid in the legacy script (both fail).",
+      "reason": "PRD 13 states the RFC 3339 UTC profile (W1 R7 P7 review round 1, P7-R1-03, an orchestrator decision the owner may veto). RFC 3339 has no hour 24. The earlier wording 'any ISO 8601 UTC datetime that ends in Z' was wider than the check.",
+      "authority": "PRD 13; register D-007 item 3",
+      "changes_pass_fail": "yes, only for a time of 24:00:00"
+    },
+    {
+      "id": "VD-08",
+      "summary": "dataset_refs: null fails: when the field is present, it must be a list.",
+      "reason": "PRD 13: dataset_refs is optional, and when present it is a list of non-empty strings.",
+      "authority": "PRD 13; register D-007 item 1",
+      "changes_pass_fail": "yes, for an extraction row that writes dataset_refs as null",
+      "owner_decision": "Decided on 2026-11-24: D-007 item 1, option a (dataset_refs: null fails). The imported skills write no dataset_refs (P7-O10 closed). See evidence.md Owner Decisions."
+    },
+    {
+      "id": "VD-09",
+      "summary": "A legacy scoped field (env, for, envs, target_systems) in an entity row fails. The legacy script checked them only in frontmatter.",
+      "reason": "PRD 13 Scoped data references and PRD 08.",
+      "authority": "PRD 13; register D-007 item 4",
+      "changes_pass_fail": "yes, only for a row with a legacy field; no shipped row has one"
+    },
+    {
+      "id": "VD-10",
+      "summary": "A saved anchor must name a file inside the project before the #: no empty path (#heading), no absolute path (/x or C:x), and no path that leaves the project (../x). A prefix check uses the path with . and .. folded.",
+      "reason": "PRD 13 and the Root and Path Contract; register D-004 lists these forms.",
+      "authority": "PRD 13; register D-004",
+      "changes_pass_fail": "yes, only for such anchors"
+    },
+    {
+      "id": "VD-11",
+      "summary": "One UTF-8 byte order mark at the start of a file is ignored. The legacy script read it as text: a config failed (the first key was not version), a data file failed (invalid JSON), and a playbook was skipped without a word (its first line was not ---).",
+      "reason": "BuildOS reads the manifest the same way (PRD 20); a text editor on Windows may add the mark.",
+      "authority": "PRD 20 manifest contract (same rule); safe input handling",
+      "changes_pass_fail": "yes: a config or data file with the mark passes now; a playbook with the mark is now checked, so a wrong value in it fails"
+    },
+    {
+      "id": "VD-12",
+      "summary": "Bytes that are not UTF-8 give a not_utf8 finding (exit 4). The legacy script crashed with a Python traceback (exit 1).",
+      "reason": "A crash is not a result; the user needs the file name and the fix.",
+      "authority": "PRD 20 Human Experience Outcomes (no stack trace); safe input handling",
+      "changes_pass_fail": "no: both fail"
+    },
+    {
+      "id": "VD-13",
+      "summary": "Links: an entry at a checked name (a .md name under playbooks/, a *playbook*.md name in .os/templates/, the contract, the config, or a data file) that is a link is never followed and is a finding (not_regular_file, exit 4): BuildOS cannot check it. A pipe, socket, or device at a checked name is the same finding. A link at any other name under playbooks/, also one to a folder or to a file out of the project, is skipped without a word: BuildOS never follows it or looks through it to decide. playbooks/ or .os/templates/ itself as a link is reported (folder_link, exit 4), because none of its files can be checked. A folder link that leads out of the project is never read (outside_root). The legacy script followed file links, also out of the project, and silently skipped folder links inside playbooks/.",
+      "reason": "Reads never follow links out of the project root (PRD 20, SECURITY.md).",
+      "authority": "PRD 20 Output and Exit Contract; SECURITY.md",
+      "changes_pass_fail": "yes, only for a project that keeps a checked file, playbooks/, or .os/templates/ as a link, or a special file at a checked name"
+    },
+    {
+      "id": "VD-14",
+      "summary": "Limits: 1 MiB for the contract and the config, 4 MiB for a Markdown file, 128 MiB for a data file, 64 YAML levels (block levels and inline list levels share the budget; a `- key: value` sequence item opens a mapping one level below its list, review round 2), 512 JSON levels, 32 folder levels under playbooks/, 10,000 Markdown files, and 10,000 findings (the collector stops adding, and every loop over lines, folder entries, list entries, collections, environments, minted IDs, and dataset_refs breaks once the budget is spent, so no entry is visited after that: review round 2). Each gives a finding, never a crash. The legacy script read every file whole and crashed on deep nesting (Python recursion limit).",
+      "reason": "Untrusted input is bounded before it is read (PRD 20, SECURITY.md); W1 R7 P7 review rounds 1 and 2 (P7-R1-06, P7-R1-07, P7-R2-05, P7-R2-06).",
+      "authority": "SECURITY.md",
+      "changes_pass_fail": "yes, only past a limit"
+    },
+    {
+      "id": "VD-15",
+      "summary": "Data files are split into lines at LF (one CR before it is removed). The legacy script also split at a lone CR and at VT, FF, FS, GS, RS, NEL, U+2028, and U+2029. So a valid row with one of those characters raw inside a string failed there as invalid JSON and shifted the line numbers, and two valid rows separated by a lone CR passed there and fail here as one invalid line.",
+      "reason": "JSON Lines and the entity commands split at LF only.",
+      "authority": "PRD 13 Entity record hygiene (every line is a JSON object)",
+      "changes_pass_fail": "yes: a row with such a character raw in a string passes now; two rows separated by a lone CR fail now"
+    },
+    {
+      "id": "VD-16",
+      "summary": "NaN, Infinity, and -Infinity are not JSON (RFC 8259), so a row with one fails as invalid JSON. Python's json module accepted them.",
+      "reason": "Every line must be a JSON object; the entity commands use a strict JSON parser.",
+      "authority": "PRD 13 Entity record hygiene",
+      "changes_pass_fail": "yes, only for a row with such a number"
+    },
+    {
+      "id": "VD-17",
+      "summary": "Not ported: --repo-root, --config, --contract, --data-dir, --skip-frontmatter, --skip-data, and --self-test. buildos validate takes --root and --json and checks the fixed installed paths; the parity tests replace the self-test.",
+      "reason": "PRD 13 lists the checks for an initialized project; PRD 20 gives every command --root and --json.",
+      "authority": "PRD 13; PRD 20 Output and Exit Contract",
+      "changes_pass_fail": "yes, only for a run that used --skip-frontmatter or --skip-data: those flags hid findings in the skipped part, which buildos validate always reports"
+    },
+    {
+      "id": "VD-18",
+      "summary": "A saved anchor path (source_anchor, doc_anchor) must also not start with a URI scheme (https:, file:), must not start with the source-package folder system/ (as written or folded, so system/../docs/a.md fails; review round 2), must not fold to the project folder itself (folder/..#x), and must not name a folder (a last part that is empty, ., or .., such as docs/designs/#x; review round 2). The anchor splits at its first #, and the fragment after it must not be empty but may hold # (docs/terms.md#C# passes; review round 2). Only the spelling is checked: the file and the fragment are never looked up. Each failure is anchor_format. The legacy script passed all of these, except where its own system/docs/ or system/assets/ prefix rule failed them.",
+      "reason": "PRD 13 states every saved anchor relative to the initialized project root and never with the system/ prefix; a URI, the root folder, or a folder is not a project file (W1 R7 P7 review rounds 1 and 2, P7-R1-01, P7-R2-04).",
+      "authority": "PRD 13 buildos validate checks; register D-004",
+      "changes_pass_fail": "yes, only for such anchors"
+    },
+    {
+      "id": "VD-19",
+      "summary": "The reserved value both fails in every scoped list (sentinel_value), also when the config defines both as an ID; such a config definition fails too (reserved_id). The legacy script reported both only when it was not configured (as unknown_id), and passed it when it was.",
+      "reason": "PRD 13: a sentinel such as both in a scoped field fails; it is not contract vocabulary, so it cannot be a configured ID either. PRD 13 names only both, so the reserved list is both (W1 R7 P7 review round 1, P7-R1-02).",
+      "authority": "PRD 13 Scoped vocabulary and buildos validate checks",
+      "changes_pass_fail": "yes, only for a config that defines both as an ID"
+    },
+    {
+      "id": "VD-20",
+      "summary": "File names are selected ASCII case-insensitively on every OS: .md, .MD, and .Md under playbooks/, and *playbook*.md in .os/templates/ in any letter case. The legacy script matched case by case on macOS and Linux (pathlib), and without case on Windows, so the same project checked differently by OS.",
+      "reason": "One rule on every OS (W1 R7 P7 review round 1, P7-R1-10, an orchestrator decision); the files are scoped Markdown whatever the case of the name.",
+      "authority": "PRD 13 Frontmatter hygiene",
+      "changes_pass_fail": "yes, on macOS and Linux, only for a playbook or template whose name has an upper-case letter in .md or playbook"
+    },
+    {
+      "id": "VD-21",
+      "summary": "An ID, a minted ID, or extracted_at that ends in a line feed (\\n in the JSON string) fails. Python's $ also matches before a final line feed, so the legacy script passed such an ID and a minted ID, and reported such a time as datetime_invalid (datetime_format here).",
+      "reason": "An ID is the exact text; a trailing line feed is not part of the ID pattern. Kept strict (W1 R7 P7 review round 1, P7-R1-12).",
+      "authority": "PRD 13 Entity record hygiene and Extraction rows",
+      "changes_pass_fail": "yes, only for an ID or minted ID that ends in a line feed"
+    },
+    {
+      "id": "VD-22",
+      "summary": "A status that is a JSON object fails with bad_status. The legacy script crashed (TypeError: a dict cannot be a set element).",
+      "reason": "A crash is not a result; the user needs the line and the fix (W1 R7 P7 review round 1, P7-R1-12).",
+      "authority": "PRD 20 Human Experience Outcomes (no stack trace)",
+      "changes_pass_fail": "no: both fail"
+    },
+    {
+      "id": "VD-23",
+      "summary": "An integer version with more than 4,300 digits passes. Python 3.11 and later (3.14.10 at capture) limit integer string conversion to 4,300 digits by default, so the legacy script crashed (ValueError: Exceeds the limit (4300 digits) for integer string conversion).",
+      "reason": "PRD 13: version is an integer of any size. The port parses it as an exact bigint and keeps that behavior (W1 R7 P7 review round 2, P7-R2-10). A crash is not a result (PRD 20).",
+      "authority": "PRD 13 Config file; PRD 20 Human Experience Outcomes (no stack trace)",
+      "changes_pass_fail": "yes, only for such a version: the script crashed, buildos validate passes"
+    }
+  ],
+  "cases": {
+    "bom-config": {
+      "divergence": "VD-11",
+      "python_only": [
+        [
+          "version_not_integer",
+          ".os/config/instance.yaml",
+          "version",
+          null
+        ]
+      ],
+      "buildos_only": []
+    },
+    "bom-jsonl": {
+      "divergence": "VD-11",
+      "python_only": [
+        [
+          "invalid_json",
+          ".os/data/requirements.jsonl",
+          "line 1",
+          null
+        ]
+      ],
+      "buildos_only": []
+    },
+    "bom-frontmatter": {
+      "divergence": "VD-11",
+      "python_only": [],
+      "buildos_only": [
+        [
+          "legacy_scoped_field",
+          "playbooks/sample/check-sample.md",
+          "env",
+          "env"
+        ]
+      ]
+    },
+    "non-utf8-config": {
+      "divergence": "VD-12",
+      "python_only": [],
+      "buildos_only": [
+        [
+          "not_utf8",
+          ".os/config/instance.yaml",
+          "config",
+          null
+        ],
+        [
+          "unknown_id",
+          ".os/data/requirements.jsonl",
+          "line 1.environments[0]",
+          "baseline"
+        ],
+        [
+          "unknown_id",
+          ".os/data/requirements.jsonl",
+          "line 1.owners[0]",
+          "sample-team"
+        ],
+        [
+          "unknown_id",
+          ".os/data/requirements.jsonl",
+          "line 1.systems[0]",
+          "primary-system"
+        ],
+        [
+          "unknown_id",
+          "playbooks/sample/check-sample.md",
+          "environments[0]",
+          "baseline"
+        ],
+        [
+          "unknown_id",
+          "playbooks/sample/check-sample.md",
+          "systems[0]",
+          "primary-system"
+        ]
+      ]
+    },
+    "non-utf8-jsonl": {
+      "divergence": "VD-12",
+      "python_only": [],
+      "buildos_only": [
+        [
+          "not_utf8",
+          ".os/data/requirements.jsonl",
+          "file",
+          null
+        ]
+      ]
+    },
+    "non-utf8-contract": {
+      "divergence": "VD-12",
+      "python_only": [],
+      "buildos_only": [
+        [
+          "not_utf8",
+          ".os/contracts/config-contract.md",
+          "contract",
+          null
+        ]
+      ]
+    },
+    "defaults-absent": {
+      "divergence": "VD-03",
+      "python_only": [
+        [
+          "not_mapping",
+          ".os/config/instance.yaml",
+          "defaults",
+          null
+        ]
+      ],
+      "buildos_only": []
+    },
+    "defaults-partial": {
+      "divergence": "VD-03",
+      "python_only": [
+        [
+          "not_list",
+          ".os/config/instance.yaml",
+          "defaults.environments",
+          null
+        ],
+        [
+          "not_list",
+          ".os/config/instance.yaml",
+          "defaults.owners",
+          null
+        ]
+      ],
+      "buildos_only": []
+    },
+    "version-boolean": {
+      "divergence": "VD-04",
+      "python_only": [],
+      "buildos_only": [
+        [
+          "version_not_integer",
+          ".os/config/instance.yaml",
+          "version",
+          null
+        ]
+      ]
+    },
+    "owner-kind-number": {
+      "divergence": "VD-05",
+      "python_only": [],
+      "buildos_only": [
+        [
+          "not_string",
+          ".os/config/instance.yaml",
+          "owners[0].kind",
+          null
+        ]
+      ]
+    },
+    "type-specific-status": {
+      "divergence": "VD-06",
+      "python_only": [
+        [
+          "bad_status",
+          ".os/data/findings.jsonl",
+          "line 1.status",
+          null
+        ],
+        [
+          "bad_status",
+          ".os/data/runs.jsonl",
+          "line 1.status",
+          null
+        ],
+        [
+          "bad_status",
+          ".os/data/runs.jsonl",
+          "line 2.status",
+          null
+        ],
+        [
+          "bad_status",
+          ".os/data/runs.jsonl",
+          "line 3.status",
+          null
+        ]
+      ],
+      "buildos_only": []
+    },
+    "dataset-refs-null": {
+      "divergence": "VD-08",
+      "python_only": [],
+      "buildos_only": [
+        [
+          "not_list",
+          ".os/data/extractions.jsonl",
+          "line 1.dataset_refs",
+          null
+        ]
+      ]
+    },
+    "entity-legacy-fields": {
+      "divergence": "VD-09",
+      "python_only": [],
+      "buildos_only": [
+        [
+          "legacy_scoped_field",
+          ".os/data/requirements.jsonl",
+          "line 1.env",
+          "env"
+        ],
+        [
+          "legacy_scoped_field",
+          ".os/data/requirements.jsonl",
+          "line 2.envs",
+          "envs"
+        ],
+        [
+          "legacy_scoped_field",
+          ".os/data/requirements.jsonl",
+          "line 2.for",
+          "for"
+        ],
+        [
+          "legacy_scoped_field",
+          ".os/data/requirements.jsonl",
+          "line 2.target_systems",
+          "target_systems"
+        ]
+      ]
+    },
+    "anchor-forms": {
+      "divergence": "VD-10",
+      "python_only": [],
+      "buildos_only": [
+        [
+          "anchor_format",
+          ".os/data/requirements.jsonl",
+          "line 1.source_anchor",
+          null
+        ],
+        [
+          "anchor_format",
+          ".os/data/requirements.jsonl",
+          "line 2.source_anchor",
+          null
+        ],
+        [
+          "anchor_format",
+          ".os/data/requirements.jsonl",
+          "line 3.source_anchor",
+          null
+        ],
+        [
+          "anchor_format",
+          ".os/data/requirements.jsonl",
+          "line 4.doc_anchor",
+          null
+        ],
+        [
+          "anchor_format",
+          ".os/data/requirements.jsonl",
+          "line 5.source_anchor",
+          null
+        ]
+      ]
+    },
+    "entity-line-separator": {
+      "divergence": "VD-15",
+      "python_only": [
+        [
+          "invalid_json",
+          ".os/data/requirements.jsonl",
+          "line 1",
+          null
+        ],
+        [
+          "invalid_json",
+          ".os/data/requirements.jsonl",
+          "line 2",
+          null
+        ]
+      ],
+      "buildos_only": []
+    },
+    "entity-nan": {
+      "divergence": "VD-16",
+      "python_only": [],
+      "buildos_only": [
+        [
+          "invalid_json",
+          ".os/data/requirements.jsonl",
+          "line 1",
+          null
+        ]
+      ]
+    },
+    "frontmatter-unknown": {
+      "divergence": "VD-19",
+      "python_only": [
+        [
+          "unknown_id",
+          "playbooks/sample/check-sample.md",
+          "systems[1]",
+          "both"
+        ]
+      ],
+      "buildos_only": [
+        [
+          "sentinel_value",
+          "playbooks/sample/check-sample.md",
+          "systems[1]",
+          "both"
+        ]
+      ]
+    },
+    "frontmatter-hidden-and-nested": {
+      "divergence": "VD-20",
+      "python_only": [],
+      "buildos_only": [
+        [
+          "legacy_scoped_field",
+          "playbooks/sample/UPPER.MD",
+          "env",
+          "env"
+        ],
+        [
+          "scoped_field_required",
+          "playbooks/sample/UPPER.MD",
+          "environments",
+          null
+        ],
+        [
+          "scoped_field_required",
+          "playbooks/sample/UPPER.MD",
+          "owners",
+          null
+        ],
+        [
+          "scoped_field_required",
+          "playbooks/sample/UPPER.MD",
+          "systems",
+          null
+        ]
+      ]
+    },
+    "entity-scoped-fields": {
+      "divergence": "VD-19",
+      "python_only": [
+        [
+          "unknown_id",
+          ".os/data/requirements.jsonl",
+          "line 2.environments[1]",
+          "both"
+        ]
+      ],
+      "buildos_only": [
+        [
+          "sentinel_value",
+          ".os/data/requirements.jsonl",
+          "line 2.environments[1]",
+          "both"
+        ]
+      ]
+    },
+    "extraction-extracted-at": {
+      "divergence": "VD-07",
+      "python_only": [],
+      "buildos_only": [
+        [
+          "datetime_invalid",
+          ".os/data/extractions.jsonl",
+          "line 6.extracted_at",
+          null
+        ]
+      ]
+    },
+    "anchor-invalid-forms": {
+      "divergence": "VD-18",
+      "python_only": [],
+      "buildos_only": [
+        [
+          "anchor_format",
+          ".os/data/extractions.jsonl",
+          "line 1.source_anchor",
+          null
+        ],
+        [
+          "anchor_format",
+          ".os/data/extractions.jsonl",
+          "line 2.source_anchor",
+          null
+        ],
+        [
+          "anchor_format",
+          ".os/data/requirements.jsonl",
+          "line 1.source_anchor",
+          null
+        ],
+        [
+          "anchor_format",
+          ".os/data/requirements.jsonl",
+          "line 2.source_anchor",
+          null
+        ],
+        [
+          "anchor_format",
+          ".os/data/requirements.jsonl",
+          "line 3.source_anchor",
+          null
+        ],
+        [
+          "anchor_format",
+          ".os/data/requirements.jsonl",
+          "line 4.doc_anchor",
+          null
+        ],
+        [
+          "anchor_format",
+          ".os/data/requirements.jsonl",
+          "line 5.doc_anchor",
+          null
+        ]
+      ]
+    },
+    "sentinel-configured": {
+      "divergence": "VD-19",
+      "python_only": [],
+      "buildos_only": [
+        [
+          "reserved_id",
+          ".os/config/instance.yaml",
+          "systems[2].id",
+          "both"
+        ],
+        [
+          "sentinel_value",
+          ".os/config/instance.yaml",
+          "defaults.systems[1]",
+          "both"
+        ],
+        [
+          "sentinel_value",
+          ".os/data/requirements.jsonl",
+          "line 1.systems[0]",
+          "both"
+        ],
+        [
+          "sentinel_value",
+          "playbooks/sample/check-sample.md",
+          "systems[0]",
+          "both"
+        ]
+      ]
+    },
+    "extracted-at-forms": {
+      "divergence": "VD-07",
+      "python_only": [],
+      "buildos_only": [
+        [
+          "datetime_invalid",
+          ".os/data/extractions.jsonl",
+          "line 6.extracted_at",
+          null
+        ]
+      ]
+    },
+    "entity-id-escaped-newline": {
+      "divergence": "VD-21",
+      "python_only": [
+        [
+          "datetime_invalid",
+          ".os/data/extractions.jsonl",
+          "line 1.extracted_at",
+          null
+        ]
+      ],
+      "buildos_only": [
+        [
+          "bad_id_prefix",
+          ".os/data/requirements.jsonl",
+          "line 1.id",
+          "REQ"
+        ],
+        [
+          "datetime_format",
+          ".os/data/extractions.jsonl",
+          "line 1.extracted_at",
+          null
+        ],
+        [
+          "minted_bad_prefix",
+          ".os/data/extractions.jsonl",
+          "line 1.minted[0]",
+          null
+        ]
+      ]
+    },
+    "entity-status-mapping": {
+      "divergence": "VD-22",
+      "python_only": [],
+      "buildos_only": [
+        [
+          "bad_status",
+          ".os/data/requirements.jsonl",
+          "line 1.status",
+          null
+        ]
+      ]
+    },
+    "entity-lone-cr": {
+      "divergence": "VD-15",
+      "python_only": [],
+      "buildos_only": [
+        [
+          "invalid_json",
+          ".os/data/requirements.jsonl",
+          "line 1",
+          null
+        ]
+      ]
+    },
+    "owner-kind-null-mapping": {
+      "divergence": "VD-05",
+      "python_only": [],
+      "buildos_only": [
+        [
+          "not_string",
+          ".os/config/instance.yaml",
+          "owners[1].kind",
+          null
+        ],
+        [
+          "not_string",
+          ".os/config/instance.yaml",
+          "owners[2].kind",
+          null
+        ]
+      ]
+    },
+    "name-case": {
+      "divergence": "VD-20",
+      "python_only": [],
+      "buildos_only": [
+        [
+          "legacy_scoped_field",
+          ".os/templates/Extra-PlayBook.Md",
+          "for",
+          "for"
+        ],
+        [
+          "legacy_scoped_field",
+          "playbooks/sample/Check.MD",
+          "env",
+          "env"
+        ]
+      ]
+    },
+    "version-4301-digits": {
+      "divergence": "VD-23",
+      "python_only": [],
+      "buildos_only": []
+    }
+  }
+}

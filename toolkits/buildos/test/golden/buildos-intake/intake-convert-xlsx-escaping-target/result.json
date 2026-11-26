@@ -1,0 +1,37 @@
+{
+  "id": "intake-convert-xlsx-escaping-target",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert",
+    "--source",
+    "inputs/escaping-sheet.xlsx"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "21014f69c50bd4df71b675e07238675478a1c2bcd840c2eac318d6ec7eb9bf7d",
+  "added": [
+    {
+      "path": "system/assets/escaping-sheet",
+      "kind": "dir"
+    },
+    {
+      "path": "system/assets/escaping-sheet/media",
+      "kind": "dir"
+    },
+    {
+      "path": "system/assets/escaping-sheet/media/image1.png",
+      "kind": "file"
+    }
+  ],
+  "changed": [],
+  "removed": [],
+  "files": {
+    "system/assets/escaping-sheet/media/image1.png": "09b4c107fff60a7f9df68c6e0f1a3dc6e99e2d6747245fc362c0bdbf7b5d0dcf"
+  },
+  "modes": {
+    "system/assets/escaping-sheet": "0755",
+    "system/assets/escaping-sheet/media": "0755",
+    "system/assets/escaping-sheet/media/image1.png": "0644"
+  }
+}

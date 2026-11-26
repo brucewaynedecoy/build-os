@@ -1,0 +1,21 @@
+{
+  "id": "design-promote-missing-anchor",
+  "tool": "buildos-design",
+  "invocation": "buildos-design",
+  "args": [
+    "promote",
+    "finding",
+    "--finding-id",
+    "FIND-004",
+    "--route",
+    "baseline-plan"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "91b4b24ffd9948187a3b5b85640237a56024f3f0450dc47c1d85e807e00ad045",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

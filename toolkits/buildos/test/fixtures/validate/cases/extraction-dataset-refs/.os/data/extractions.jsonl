@@ -1,0 +1,3 @@
+{"id":"EXT-001","type":"extraction","status":"draft","source_anchor":"assets/sample/sample.md#fact-1","minted":["REQ-001","PB-001"],"dataset_refs":"dataset","extracted_by":"fixture","extracted_at":"2026-01-15T10:00:00Z"}
+{"id":"EXT-002","type":"extraction","status":"draft","source_anchor":"assets/sample/sample.md#fact-1","minted":["REQ-001","PB-001"],"dataset_refs":["",3,"ok.csv"],"extracted_by":"fixture","extracted_at":"2026-01-15T10:00:00Z"}
+{"id":"EXT-003","type":"extraction","status":"draft","source_anchor":"assets/sample/sample.md#fact-1","minted":["REQ-001","PB-001"],"extracted_by":"fixture","extracted_at":"2026-01-15T10:00:00Z"}

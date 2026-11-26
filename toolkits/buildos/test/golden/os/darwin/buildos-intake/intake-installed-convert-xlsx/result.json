@@ -1,0 +1,55 @@
+{
+  "id": "intake-installed-convert-xlsx",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert",
+    "--source",
+    "inputs/inventory.xlsx"
+  ],
+  "exit": 0,
+  "stdout_sha256": "f591edeeb4cea58f09ae88d02446f8cb82e4592d716b4b04b03b3e9438d5a65d",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [
+    {
+      "path": "assets/inventory",
+      "kind": "dir"
+    },
+    {
+      "path": "assets/inventory/inventory-notes.csv",
+      "kind": "file"
+    },
+    {
+      "path": "assets/inventory/inventory-stock-levels.csv",
+      "kind": "file"
+    },
+    {
+      "path": "assets/inventory/inventory-suppliers-terms.csv",
+      "kind": "file"
+    },
+    {
+      "path": "assets/inventory/media",
+      "kind": "dir"
+    },
+    {
+      "path": "assets/inventory/media/image1.png",
+      "kind": "file"
+    }
+  ],
+  "changed": [],
+  "removed": [],
+  "files": {
+    "assets/inventory/inventory-notes.csv": "c02f9cd177f0b77d28c96d18885e25fbedda121d6809bfcd034c1cc82f9fce87",
+    "assets/inventory/inventory-stock-levels.csv": "ae9eae1db53f3f7ecf928617930cbb696e03f85c7be0fd06a744b784cf5baffd",
+    "assets/inventory/inventory-suppliers-terms.csv": "3a67ec334879c0a36fc134f2057e0b633f79b4dd178773129225cbcf8c73281c",
+    "assets/inventory/media/image1.png": "09b4c107fff60a7f9df68c6e0f1a3dc6e99e2d6747245fc362c0bdbf7b5d0dcf"
+  },
+  "modes": {
+    "assets/inventory": "0755",
+    "assets/inventory/inventory-notes.csv": "0644",
+    "assets/inventory/inventory-stock-levels.csv": "0644",
+    "assets/inventory/inventory-suppliers-terms.csv": "0644",
+    "assets/inventory/media": "0755",
+    "assets/inventory/media/image1.png": "0644"
+  }
+}

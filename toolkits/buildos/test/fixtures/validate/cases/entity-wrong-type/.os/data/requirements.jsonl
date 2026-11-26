@@ -1,0 +1,2 @@
+{"id":"REQ-001","type":"capability","status":"draft","title":"Invented need","source_anchor":"assets/sample/sample.md#need-1","systems":["primary-system"],"environments":["baseline"],"owners":["sample-team"]}
+{"id":"REQ-002","status":"draft","title":"Invented need","source_anchor":"assets/sample/sample.md#need-1","systems":["primary-system"],"environments":["baseline"],"owners":["sample-team"]}

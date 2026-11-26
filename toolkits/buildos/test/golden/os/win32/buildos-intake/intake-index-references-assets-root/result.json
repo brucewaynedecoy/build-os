@@ -1,0 +1,25 @@
+{
+  "id": "intake-index-references-assets-root",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "index",
+    "references",
+    "--assets-root",
+    "converted"
+  ],
+  "exit": 0,
+  "stdout_sha256": "fd5312a187069c82fa45c9e57d0416f3a922c156397dfaee5dd6b3e550ff354b",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [
+    {
+      "path": "system/.os/indexes/references.json",
+      "kind": "file"
+    }
+  ],
+  "removed": [],
+  "files": {
+    "system/.os/indexes/references.json": "68c82e9e16c5371b655831be6e5d7577c674af8bfb41dc2cc5304f4bd0067c14"
+  }
+}

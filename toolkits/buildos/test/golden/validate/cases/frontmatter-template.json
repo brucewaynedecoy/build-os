@@ -1,0 +1,7 @@
+{
+  "case": "frontmatter-template",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/templates/sample-playbook.md:env: legacy scoped field is not allowed; use systems, environments, and owners\nFAIL: 1 validation error(s)\n",
+  "crashed": false
+}

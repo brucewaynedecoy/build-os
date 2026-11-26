@@ -1,0 +1,7 @@
+{
+  "case": "entity-blank-line",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/data/requirements.jsonl:line 2: blank lines are not valid JSONL rows\n.os/data/requirements.jsonl:line 3: blank lines are not valid JSONL rows\n.os/data/requirements.jsonl:line 5: blank lines are not valid JSONL rows\nFAIL: 3 validation error(s)\n",
+  "crashed": false
+}

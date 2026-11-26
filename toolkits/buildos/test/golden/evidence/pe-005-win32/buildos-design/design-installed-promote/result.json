@@ -1,0 +1,27 @@
+{
+  "id": "design-installed-promote",
+  "tool": "buildos-design",
+  "invocation": "buildos-design",
+  "args": [
+    "promote",
+    "finding",
+    "--finding-id",
+    "FIND-002",
+    "--route",
+    "baseline-plan"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "f7480114b0df53a51808bc0b90304c43fb1de950db6d2b805f91aed45b3593cf",
+  "added": [],
+  "changed": [
+    {
+      "path": ".os/data/findings.jsonl",
+      "kind": "file"
+    }
+  ],
+  "removed": [],
+  "files": {
+    ".os/data/findings.jsonl": "4dfeb8001a51eb038097a7d5308c703e600e56991597476fd54a97ce8c0c67d5"
+  }
+}

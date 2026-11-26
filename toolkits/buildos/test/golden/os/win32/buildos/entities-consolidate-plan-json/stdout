@@ -1,0 +1,42 @@
+{
+  "ok": true,
+  "command": "entities.consolidate",
+  "version": "dev",
+  "source_revision": "unknown",
+  "root": "{ROOT}\\root",
+  "mode": "strict",
+  "write_status": "planned",
+  "result": {
+    "consolidation": {
+      "manifest_version": 1,
+      "mapping_count": 3,
+      "change_count": 3,
+      "no_op_count": 0,
+      "affected_files": [
+        "personas.jsonl"
+      ],
+      "changes": [
+        {
+          "source_id": "PER-004",
+          "target_id": "PER-001",
+          "dataset": "personas.jsonl",
+          "action": "supersede"
+        },
+        {
+          "source_id": "PER-005",
+          "target_id": "PER-001",
+          "dataset": "personas.jsonl",
+          "action": "supersede"
+        },
+        {
+          "source_id": "PER-006",
+          "target_id": "PER-007",
+          "dataset": "personas.jsonl",
+          "action": "supersede"
+        }
+      ],
+      "applied": false
+    }
+  },
+  "diagnostics": []
+}

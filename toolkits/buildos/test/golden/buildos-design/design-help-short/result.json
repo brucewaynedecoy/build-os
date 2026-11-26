@@ -1,0 +1,16 @@
+{
+  "id": "design-help-short",
+  "tool": "buildos-design",
+  "invocation": "buildos-design",
+  "args": [
+    "-h"
+  ],
+  "exit": 0,
+  "stdout_sha256": "20959fb8b74c9c9b5831a03483ed9d98916dd20b4d2a2e9aa4d6c3034cf41f38",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

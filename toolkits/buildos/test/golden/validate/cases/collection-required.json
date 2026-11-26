@@ -1,0 +1,7 @@
+{
+  "case": "collection-required",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/config/instance.yaml:environments[0].description: is required\n.os/config/instance.yaml:owners[0].kind: is required\nFAIL: 2 validation error(s)\n",
+  "crashed": false
+}

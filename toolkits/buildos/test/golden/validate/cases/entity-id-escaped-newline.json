@@ -1,0 +1,7 @@
+{
+  "case": "entity-id-escaped-newline",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/data/extractions.jsonl:line 1.extracted_at: must be a valid ISO 8601 UTC datetime\nFAIL: 1 validation error(s)\n",
+  "crashed": false
+}

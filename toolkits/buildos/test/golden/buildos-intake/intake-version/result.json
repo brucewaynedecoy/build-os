@@ -1,0 +1,16 @@
+{
+  "id": "intake-version",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "version"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "5d7203f08569c0e6b03bf5a7b9f9882319371a52b35daf3aff5eff193aeec489",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

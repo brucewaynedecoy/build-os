@@ -1,0 +1,16 @@
+{
+  "id": "design-unknown-command",
+  "tool": "buildos-design",
+  "invocation": "buildos-design",
+  "args": [
+    "bogus"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "0cb4d846b96bbb160242f924be28468bb510c7c6b7a026f78ebb321ecc5d45cd",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

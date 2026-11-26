@@ -1,0 +1,22 @@
+{
+  "id": "entities-validate-strict-json",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "entities",
+    "validate",
+    "--root",
+    "root",
+    "--mode",
+    "strict",
+    "--json"
+  ],
+  "exit": 0,
+  "stdout_sha256": "332e432da1a421ee092233012fc1342992e5a3dba5c0a38b9c323d14caecc498",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

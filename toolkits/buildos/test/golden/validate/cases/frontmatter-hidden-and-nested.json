@@ -1,0 +1,7 @@
+{
+  "case": "frontmatter-hidden-and-nested",
+  "exit": 1,
+  "stdout": "",
+  "stderr": "playbooks/.drafts/deep/folder/hidden-playbook.md:systems[0]: unknown configured ID 'missing-system'\nplaybooks/sample/.draft.md:owners: is required for scoped frontmatter\nFAIL: 2 validation error(s)\n",
+  "crashed": false
+}

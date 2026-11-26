@@ -1,0 +1,36 @@
+@@ section: Page 1 header @@
+Sample Housing Cooperative — Pet Policy
+@@ section: Pet Policy @@
+Pet Policy
+This policy sets out which pets members may keep and how to keep them without disturbing
+neighbours. It applies to every home and to all shared spaces.
+@@ section: Pets Allowed @@
+Pets Allowed
+Members may keep up to two cats or one dog per home. Small caged animals and fish do not
+need approval. Any other animal needs written approval from the board.
+@@ section: Page 1 footer @@
+Approved by the board on 3 June 2026 Page 1 of 3
+@@ section: Page 2 header @@
+Sample Housing Cooperative — Pet Policy
+@@ section: Registration @@
+Registration
+Register each cat or dog with the front desk within two weeks of moving in or getting the pet.
+Bring proof of vaccination. The front desk keeps the register and shares it only with the
+maintenance team when they need to enter a home.
+@@ section: Shared Spaces @@
+Shared Spaces
+Dogs must be on a lead in all corridors, lifts, and the courtyard. Pets are not allowed in the
+common room, the laundry room, or the roof garden, except for assistance animals.
+@@ section: Page 2 footer @@
+Approved by the board on 3 June 2026 Page 2 of 3
+@@ section: Page 3 header @@
+Sample Housing Cooperative — Pet Policy
+@@ section: Complaints @@
+Complaints
+If a pet causes repeated noise or damage, the membership committee will first talk with the
+member. If the problem continues, the committee may ask the board to withdraw approval.
+@@ section: Review @@
+Review
+The board will review this policy every two years.
+@@ section: Page 3 footer @@
+Approved by the board on 3 June 2026 Page 3 of 3

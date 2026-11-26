@@ -1,0 +1,1 @@
+buildos-intake: error: playbook system/playbooks/discovery/incomplete.md missing required frontmatter fields: category, execution_mode, state_nature, audience, source_anchor, version, harness, systems, environments, owners, targets, produces, related

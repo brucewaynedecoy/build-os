@@ -1,0 +1,18 @@
+{
+  "id": "intake-convert-html-dry-run",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert",
+    "--source",
+    "inputs/handbook.html",
+    "--dry-run"
+  ],
+  "exit": 0,
+  "stdout_sha256": "df50f59970be352bbfb8fc3e04f38f3a938b4c95acc9a610bca2f7240673fe5d",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {}
+}

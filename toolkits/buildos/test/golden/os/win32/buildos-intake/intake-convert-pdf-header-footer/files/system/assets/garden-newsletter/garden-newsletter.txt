@@ -1,0 +1,17 @@
+---
+source: "inputs/pdf/garden-newsletter.pdf"
+sha256: "f4b23a64ce007e578bfd278cbd72af98bcc22b1a5b467f5831b31ca024945390"
+converter: "buildos-intake/0.1.0"
+timestamp: "{TIMESTAMP}"
+type: "text"
+status: "converted"
+---
+
+Sample Garden Club - Internal Newsletter
+Plot fees are due in March.
+The water tap opens in April.
+Page 1 of 2
+Sample Garden Club - Internal Newsletter
+Tool shed keys are at the front desk.
+Please return them the same day.
+Page 2 of 2

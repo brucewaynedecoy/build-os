@@ -1,0 +1,10 @@
+version: ok
+root: not_applicable
+mode: not_applicable
+version: dev
+source revision: unknown
+write status: not_requested
+{
+  "version": "dev",
+  "source_revision": "unknown"
+}

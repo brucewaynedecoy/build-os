@@ -1,0 +1,23 @@
+{
+  "id": "entities-resolve-unknown-json",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "entities",
+    "resolve",
+    "--root",
+    "root",
+    "--mode",
+    "strict",
+    "--id",
+    "PER-999",
+    "--json"
+  ],
+  "exit": 4,
+  "stdout_sha256": "415ca6a91422239d177ac0d346ffbdfaa5db3b99aba3331cb955f683f9f6d5a8",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {}
+}

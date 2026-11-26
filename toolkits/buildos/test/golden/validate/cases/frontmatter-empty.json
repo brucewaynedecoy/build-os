@@ -1,0 +1,7 @@
+{
+  "case": "frontmatter-empty",
+  "exit": 1,
+  "stdout": "",
+  "stderr": "playbooks/sample/check-sample.md:frontmatter: must be a mapping\nFAIL: 1 validation error(s)\n",
+  "crashed": false
+}

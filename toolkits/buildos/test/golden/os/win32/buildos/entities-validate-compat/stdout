@@ -1,0 +1,17 @@
+entities.validate: ok
+root: {ROOT}\root
+mode: compat
+version: dev
+source revision: unknown
+write status: not_requested
+{
+  "valid": true,
+  "record_count": 19,
+  "index": {
+    "state": "current",
+    "current": true,
+    "message": "entity-resolution index is current and reproducible",
+    "expected_sha256": "941c43d958ae76c8aa3b5b6775883675dc230f8776c806ee4a9afcb49c5061e9",
+    "actual_sha256": "941c43d958ae76c8aa3b5b6775883675dc230f8776c806ee4a9afcb49c5061e9"
+  }
+}

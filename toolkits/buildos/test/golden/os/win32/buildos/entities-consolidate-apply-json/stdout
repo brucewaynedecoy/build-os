@@ -1,0 +1,49 @@
+{
+  "ok": true,
+  "command": "entities.consolidate",
+  "version": "dev",
+  "source_revision": "unknown",
+  "root": "{ROOT}\\root",
+  "mode": "strict",
+  "write_status": "applied",
+  "result": {
+    "consolidation": {
+      "manifest_version": 1,
+      "mapping_count": 3,
+      "change_count": 3,
+      "no_op_count": 0,
+      "affected_files": [
+        "personas.jsonl"
+      ],
+      "changes": [
+        {
+          "source_id": "PER-004",
+          "target_id": "PER-001",
+          "dataset": "personas.jsonl",
+          "action": "supersede"
+        },
+        {
+          "source_id": "PER-005",
+          "target_id": "PER-001",
+          "dataset": "personas.jsonl",
+          "action": "supersede"
+        },
+        {
+          "source_id": "PER-006",
+          "target_id": "PER-007",
+          "dataset": "personas.jsonl",
+          "action": "supersede"
+        }
+      ],
+      "applied": true
+    },
+    "index": {
+      "state": "current",
+      "current": true,
+      "message": "entity-resolution index is current and reproducible",
+      "expected_sha256": "afe1935e3ed50c416498f912bd09150a3f8fe625a8f6c1007d3749d3198853cd",
+      "actual_sha256": "afe1935e3ed50c416498f912bd09150a3f8fe625a8f6c1007d3749d3198853cd"
+    }
+  },
+  "diagnostics": []
+}

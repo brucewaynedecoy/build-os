@@ -1,0 +1,22 @@
+{
+  "id": "design-promote-missing-root",
+  "tool": "buildos-design",
+  "invocation": "buildos-design",
+  "args": [
+    "promote",
+    "finding",
+    "--finding-id",
+    "FIND-001",
+    "--route",
+    "baseline-plan",
+    "--repo-root",
+    "absent"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "b267c556dff7b0decb4f5cd98b2e567a7f0f5e49a13bfc9119ae035dddf40edc",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {}
+}

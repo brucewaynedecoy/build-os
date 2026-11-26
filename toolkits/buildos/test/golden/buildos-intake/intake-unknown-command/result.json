@@ -1,0 +1,16 @@
+{
+  "id": "intake-unknown-command",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "bogus"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "90793d4c6fb9a7e0bf17ccf28117e26c5acfe44a2869fc2d725b0646e9ec79a2",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

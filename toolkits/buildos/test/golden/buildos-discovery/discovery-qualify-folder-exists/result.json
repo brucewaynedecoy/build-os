@@ -1,0 +1,27 @@
+{
+  "id": "discovery-qualify-folder-exists",
+  "tool": "buildos-discovery",
+  "invocation": "buildos-discovery",
+  "args": [
+    "qualify",
+    "finding",
+    "--run-id",
+    "RUN-001",
+    "--raw-finding-ref",
+    "#raw-finding-1",
+    "--outcome",
+    "positive",
+    "--confirmation-test",
+    "tests/confirm-cart-total.spec.ts",
+    "--confirmation-evidence",
+    "evidence/confirmation-run.txt"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "00b699c53dbd8e1cec75966cadb65093c86d2b596c0cf0beba5430035c93765d",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

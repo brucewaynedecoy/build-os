@@ -1,0 +1,16 @@
+{
+  "id": "discovery-unknown-command",
+  "tool": "buildos-discovery",
+  "invocation": "buildos-discovery",
+  "args": [
+    "bogus"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "f39e6cf7392c3f4af9da3ba4c44ad05a8fe894301edf5e26ea86920f7120ac56",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

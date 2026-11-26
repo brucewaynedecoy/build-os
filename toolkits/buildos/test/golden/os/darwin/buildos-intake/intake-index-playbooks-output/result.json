@@ -1,0 +1,33 @@
+{
+  "id": "intake-index-playbooks-output",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "index",
+    "playbooks",
+    "--output",
+    "reports/playbooks.json"
+  ],
+  "exit": 0,
+  "stdout_sha256": "fdda8cd9f6655124d83cd08d289838aa91065255b3c45dae2d40cf6abe76fb1b",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [
+    {
+      "path": "reports",
+      "kind": "dir"
+    },
+    {
+      "path": "reports/playbooks.json",
+      "kind": "file"
+    }
+  ],
+  "changed": [],
+  "removed": [],
+  "files": {
+    "reports/playbooks.json": "1581e1aed102a043ec1e4073126200efcf5dd90ebd1c1de791aaedcbe5d9708c"
+  },
+  "modes": {
+    "reports": "0755",
+    "reports/playbooks.json": "0644"
+  }
+}

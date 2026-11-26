@@ -1,0 +1,18 @@
+{
+  "id": "intake-convert-html-dir-empty",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert",
+    "--source",
+    "inputs/empty-site"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "78c098ce2007261252561519b2659bc667a28ff28f830b19ccd3bc3e1ec788a2",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

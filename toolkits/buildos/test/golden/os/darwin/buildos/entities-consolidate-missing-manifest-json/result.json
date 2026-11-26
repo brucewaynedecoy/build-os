@@ -1,0 +1,24 @@
+{
+  "id": "entities-consolidate-missing-manifest-json",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "entities",
+    "consolidate",
+    "--root",
+    "root",
+    "--mode",
+    "strict",
+    "--manifest",
+    "manifests/absent.json",
+    "--json"
+  ],
+  "exit": 3,
+  "stdout_sha256": "7fa6385e8f990990f42e78da75a0bb5e4f8ec99e8fb6a7548b772d477eccdaa8",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

@@ -1,0 +1,2 @@
+{"id":"RUN-001","type":"run","status":"closed","path":"workspace/runs/RUN-001/","systems":["sample-shop"],"environments":["baseline"],"owners":["fixture-team"]}
+{"id":"RUN-002","type":"run","status":"superseded","systems":["old-shop"],"environments":["old"],"owners":["old-team"],"redirect":{"target_id":"RUN-001","kind":"duplicate","decided_at":"2026-02-01T12:00:00Z","decided_by":"fixture-review-board","reason":"Same synthetic record.","evidence_refs":[]}}

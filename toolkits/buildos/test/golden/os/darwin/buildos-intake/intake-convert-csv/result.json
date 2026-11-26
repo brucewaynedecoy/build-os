@@ -1,0 +1,32 @@
+{
+  "id": "intake-convert-csv",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert",
+    "--source",
+    "inputs/team-roster.csv"
+  ],
+  "exit": 0,
+  "stdout_sha256": "b9e8e0f5bf44594268d00a99a09bb4f238c80ba81c1695bc4b1a25aae366df4d",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [
+    {
+      "path": "system/assets/team-roster",
+      "kind": "dir"
+    },
+    {
+      "path": "system/assets/team-roster/team-roster.csv",
+      "kind": "file"
+    }
+  ],
+  "changed": [],
+  "removed": [],
+  "files": {
+    "system/assets/team-roster/team-roster.csv": "db832473f310f810201c2ff1fe4be00846da11320d558fc7315d7224c97ede60"
+  },
+  "modes": {
+    "system/assets/team-roster": "0755",
+    "system/assets/team-roster/team-roster.csv": "0644"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "id": "intake-index-references-repo-root",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "index",
+    "references",
+    "--repo-root",
+    ".."
+  ],
+  "exit": 0,
+  "stdout_sha256": "3d7f8d0a5ff1dd33adccb5dadfd5200dc7842cce87993649b646b059711ca29a",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [
+    {
+      "path": "system/.os/indexes/references.json",
+      "kind": "file"
+    }
+  ],
+  "removed": [],
+  "files": {
+    "system/.os/indexes/references.json": "ec8d8a9facf0316d1fbd0ee1a208adcad217da43e3369dfca05ccd54d8cb13e0"
+  }
+}

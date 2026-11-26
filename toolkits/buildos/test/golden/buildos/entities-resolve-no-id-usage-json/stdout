@@ -1,0 +1,18 @@
+{
+  "ok": false,
+  "command": "entities.resolve",
+  "version": "dev",
+  "source_revision": "unknown",
+  "root": "",
+  "mode": "",
+  "write_status": "not_requested",
+  "result": null,
+  "diagnostics": [
+    {
+      "code": "usage_error",
+      "severity": "error",
+      "message": "--id is required",
+      "correction": "Run buildos help for command syntax."
+    }
+  ]
+}

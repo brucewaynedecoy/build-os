@@ -1,0 +1,23 @@
+{
+  "id": "discovery-run-missing-raw-file",
+  "tool": "buildos-discovery",
+  "invocation": "buildos-discovery",
+  "args": [
+    "run",
+    "discovery",
+    "--playbook-id",
+    "PB-010",
+    "--outcome",
+    "positive",
+    "--raw-finding",
+    "inputs/raw/absent.md"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "3d5410d9e60e41ab40b1be75d7efc0514ab01f80e5f3a9900909fb247ae711c1",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

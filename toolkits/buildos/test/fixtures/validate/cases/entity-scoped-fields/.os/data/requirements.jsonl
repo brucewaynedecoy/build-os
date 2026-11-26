@@ -1,0 +1,3 @@
+{"id":"REQ-001","type":"requirement","status":"draft","title":"Invented need","source_anchor":"assets/sample/sample.md#need-1","systems":"primary-system","environments":["baseline"],"owners":["sample-team"]}
+{"id":"REQ-002","type":"requirement","status":"draft","title":"Invented need","source_anchor":"assets/sample/sample.md#need-1","systems":["primary-system"],"environments":["baseline","both"],"owners":[3]}
+{"id":"REQ-003","type":"requirement","status":"draft","title":"Invented need","source_anchor":"assets/sample/sample.md#need-1","systems":null,"environments":["baseline"],"owners":["sample-team"]}

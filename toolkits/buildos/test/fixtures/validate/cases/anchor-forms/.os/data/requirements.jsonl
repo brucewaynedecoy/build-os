@@ -1,0 +1,6 @@
+{"id":"REQ-001","type":"requirement","status":"draft","title":"Invented need","source_anchor":"#heading","systems":["primary-system"],"environments":["baseline"],"owners":["sample-team"]}
+{"id":"REQ-002","type":"requirement","status":"draft","title":"Invented need","source_anchor":"/abs/notes.md#a","systems":["primary-system"],"environments":["baseline"],"owners":["sample-team"]}
+{"id":"REQ-003","type":"requirement","status":"draft","title":"Invented need","source_anchor":"../outside.md#a","systems":["primary-system"],"environments":["baseline"],"owners":["sample-team"]}
+{"id":"REQ-004","type":"requirement","status":"active","title":"Invented need","source_anchor":"assets/sample/sample.md#need-1","systems":["primary-system"],"environments":["baseline"],"owners":["sample-team"],"doc_anchor":"docs/../../outside.md#a"}
+{"id":"REQ-005","type":"requirement","status":"draft","title":"Invented need","source_anchor":"C:/notes.md#a","systems":["primary-system"],"environments":["baseline"],"owners":["sample-team"]}
+{"id":"REQ-006","type":"requirement","status":"draft","title":"Invented need","source_anchor":"assets/./sample/../sample/sample.md#ok","systems":["primary-system"],"environments":["baseline"],"owners":["sample-team"]}

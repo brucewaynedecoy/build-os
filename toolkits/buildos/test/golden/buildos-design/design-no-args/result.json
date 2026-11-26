@@ -1,0 +1,14 @@
+{
+  "id": "design-no-args",
+  "tool": "buildos-design",
+  "invocation": "buildos-design",
+  "args": [],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "bbb0561b34dfbac7a4617f8b4b04064c76191a0dfe7f7b380f32d892ab9e2422",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

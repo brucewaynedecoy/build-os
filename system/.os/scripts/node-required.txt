@@ -1,0 +1,1 @@
+BuildOS needs Node.js 24 or newer on this computer. Install it from https://nodejs.org, then try again.

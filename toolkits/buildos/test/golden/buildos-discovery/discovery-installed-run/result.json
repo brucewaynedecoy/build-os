@@ -1,0 +1,63 @@
+{
+  "id": "discovery-installed-run",
+  "tool": "buildos-discovery",
+  "invocation": "buildos-discovery",
+  "args": [
+    "run",
+    "discovery",
+    "--playbook-id",
+    "PB-010",
+    "--outcome",
+    "negative",
+    "--evidence",
+    "inputs/evidence/checkout-notes.txt",
+    "--raw-finding",
+    "inputs/raw/raw-1.md"
+  ],
+  "exit": 0,
+  "stdout_sha256": "78f995a429823aff4ea7d9e56b8277a7ee53632d3fcb4ffb8fc0b255f73b55c9",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [
+    {
+      "path": "workspace/runs/RUN-003",
+      "kind": "dir"
+    },
+    {
+      "path": "workspace/runs/RUN-003/evidence",
+      "kind": "dir"
+    },
+    {
+      "path": "workspace/runs/RUN-003/evidence/001-checkout-notes.txt",
+      "kind": "file"
+    },
+    {
+      "path": "workspace/runs/RUN-003/raw-findings.md",
+      "kind": "file"
+    },
+    {
+      "path": "workspace/runs/RUN-003/run.md",
+      "kind": "file"
+    }
+  ],
+  "changed": [
+    {
+      "path": ".os/data/runs.jsonl",
+      "kind": "file"
+    }
+  ],
+  "removed": [],
+  "files": {
+    ".os/data/runs.jsonl": "04ad93ed8f0affb61b257eb6762ed188584170a9e2753956ef15ae11c5a4d627",
+    "workspace/runs/RUN-003/evidence/001-checkout-notes.txt": "4bc66976beed99065b5642f4a223cb1002504489be7e949c402fb9124491190e",
+    "workspace/runs/RUN-003/raw-findings.md": "36bbf5ca559f25397eff4782ddee61a4dc8ffebb6be0cf8b536e2420fbcc766c",
+    "workspace/runs/RUN-003/run.md": "5f639647c17ab2047e9d388aed15c9d5fc5e0e503f30ff197350d3e8a8463784"
+  },
+  "modes": {
+    ".os/data/runs.jsonl": "0644",
+    "workspace/runs/RUN-003": "0755",
+    "workspace/runs/RUN-003/evidence": "0755",
+    "workspace/runs/RUN-003/evidence/001-checkout-notes.txt": "0644",
+    "workspace/runs/RUN-003/raw-findings.md": "0644",
+    "workspace/runs/RUN-003/run.md": "0644"
+  }
+}

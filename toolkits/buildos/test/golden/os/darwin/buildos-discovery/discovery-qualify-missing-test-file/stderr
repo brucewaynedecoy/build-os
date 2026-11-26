@@ -1,0 +1,1 @@
+buildos-discovery: error: --confirmation-test: stat {ROOT}/tests/absent.spec.ts: no such file or directory

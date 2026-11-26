@@ -1,0 +1,7 @@
+{
+  "case": "entity-file-missing",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/data/runs.jsonl:file: canonical entity JSONL file is missing\n.os/data/findings.jsonl:file: canonical entity JSONL file is missing\nFAIL: 2 validation error(s)\n",
+  "crashed": false
+}

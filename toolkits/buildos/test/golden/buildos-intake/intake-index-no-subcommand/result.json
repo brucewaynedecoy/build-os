@@ -1,0 +1,16 @@
+{
+  "id": "intake-index-no-subcommand",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "index"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "1e3242273a49f4aa1c241f2e31c093935df87dbc85211b8982dfc2fc72d5c91f",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

@@ -1,0 +1,7 @@
+{
+  "case": "environment-systems-unknown",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/config/instance.yaml:environments[1].systems[0]: unknown configured ID 'missing-system'\n.os/config/instance.yaml:environments[1].systems[1]: must be a string configured ID\nFAIL: 2 validation error(s)\n",
+  "crashed": false
+}

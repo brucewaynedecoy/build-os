@@ -1,0 +1,7 @@
+{
+  "case": "frontmatter-legacy",
+  "exit": 1,
+  "stdout": "",
+  "stderr": "playbooks/sample/check-sample.md:env: legacy scoped field is not allowed; use systems, environments, and owners\nplaybooks/sample/check-sample.md:for: legacy scoped field is not allowed; use systems, environments, and owners\nplaybooks/sample/check-sample.md:envs: legacy scoped field is not allowed; use systems, environments, and owners\nplaybooks/sample/check-sample.md:target_systems: legacy scoped field is not allowed; use systems, environments, and owners\nFAIL: 4 validation error(s)\n",
+  "crashed": false
+}

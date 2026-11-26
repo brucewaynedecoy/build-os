@@ -1,0 +1,37 @@
+{
+  "ok": false,
+  "command": "entities.consolidate",
+  "version": "dev",
+  "source_revision": "unknown",
+  "root": "{ROOT}\\root",
+  "mode": "strict",
+  "write_status": "not_requested",
+  "result": {
+    "consolidation": {
+      "manifest_version": 1,
+      "mapping_count": 1,
+      "change_count": 0,
+      "no_op_count": 0,
+      "affected_files": [],
+      "changes": [],
+      "applied": false
+    }
+  },
+  "diagnostics": [
+    {
+      "code": "redirect_remap_conflict",
+      "severity": "error",
+      "message": "entity PER-002 already redirects to PER-001; requested target is PER-007",
+      "dataset": "personas.jsonl",
+      "line": 2,
+      "entity_id": "PER-002",
+      "target_id": "PER-007",
+      "chain": [
+        "PER-002",
+        "PER-001",
+        "PER-007"
+      ],
+      "correction": "submit a separate reviewed redirect-change decision; do not overwrite the existing successor implicitly"
+    }
+  ]
+}

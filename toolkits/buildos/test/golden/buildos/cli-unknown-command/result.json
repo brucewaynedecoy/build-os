@@ -1,0 +1,16 @@
+{
+  "id": "cli-unknown-command",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "bogus"
+  ],
+  "exit": 2,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "1f16a39583855ffbec20b7e7e144bdf14af14e3161cb79dc1b08af2ff0941228",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

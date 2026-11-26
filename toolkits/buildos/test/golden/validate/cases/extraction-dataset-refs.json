@@ -1,0 +1,7 @@
+{
+  "case": "extraction-dataset-refs",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/data/extractions.jsonl:line 1.dataset_refs: must be a list\n.os/data/extractions.jsonl:line 2.dataset_refs[0]: must be a non-empty string\n.os/data/extractions.jsonl:line 2.dataset_refs[1]: must be a non-empty string\nFAIL: 3 validation error(s)\n",
+  "crashed": false
+}

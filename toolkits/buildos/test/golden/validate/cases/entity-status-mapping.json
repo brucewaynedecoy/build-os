@@ -1,0 +1,7 @@
+{
+  "case": "entity-status-mapping",
+  "exit": 1,
+  "stdout": "",
+  "stderr": "TypeError: cannot use 'dict' as a set element (unhashable type: 'dict')\n",
+  "crashed": true
+}

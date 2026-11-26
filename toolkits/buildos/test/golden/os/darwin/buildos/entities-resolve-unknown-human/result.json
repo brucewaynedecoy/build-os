@@ -1,0 +1,23 @@
+{
+  "id": "entities-resolve-unknown-human",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "entities",
+    "resolve",
+    "--root",
+    "root",
+    "--mode",
+    "strict",
+    "--id",
+    "PER-999"
+  ],
+  "exit": 4,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "5e969a9420b66da8308f28d116133606dc3992440bb1bfe1c0cd2a929200eecf",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

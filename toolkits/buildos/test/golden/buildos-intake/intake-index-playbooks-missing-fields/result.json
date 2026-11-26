@@ -1,0 +1,17 @@
+{
+  "id": "intake-index-playbooks-missing-fields",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "index",
+    "playbooks"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "b63f42b00110f2a7f359c3115dcc22f0f611ae54c0e712743559495452b7fe89",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

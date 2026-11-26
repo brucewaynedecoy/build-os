@@ -1,0 +1,18 @@
+{
+  "id": "intake-convert-existing-output",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert",
+    "--source",
+    "inputs/existing-twin.csv"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "9d5d8de6f6d2684fad07e17beea1f54c309fd75ea433cb911665ba485226d4ec",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

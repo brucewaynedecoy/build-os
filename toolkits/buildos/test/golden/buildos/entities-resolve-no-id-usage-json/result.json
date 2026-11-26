@@ -1,0 +1,22 @@
+{
+  "id": "entities-resolve-no-id-usage-json",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "entities",
+    "resolve",
+    "--root",
+    "root",
+    "--mode",
+    "strict",
+    "--json"
+  ],
+  "exit": 2,
+  "stdout_sha256": "5ee86f8c7e229184b2fa6706af94bd31b71c53f45c709e39daad8a74259f4753",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

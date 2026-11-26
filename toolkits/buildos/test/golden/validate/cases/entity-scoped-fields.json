@@ -1,0 +1,7 @@
+{
+  "case": "entity-scoped-fields",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/data/requirements.jsonl:line 1.systems: must be a list\n.os/data/requirements.jsonl:line 2.environments[1]: unknown configured ID 'both'\n.os/data/requirements.jsonl:line 2.owners[0]: must be a string configured ID\n.os/data/requirements.jsonl:line 3.systems: must be a list\nFAIL: 4 validation error(s)\n",
+  "crashed": false
+}

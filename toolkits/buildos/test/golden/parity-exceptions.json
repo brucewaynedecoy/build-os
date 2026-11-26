@@ -1,0 +1,1044 @@
+{
+  "$comment": "Approved differences from the Go output (PRD 20 Compatibility). Each golden entry names a case, a field (exit, stdout, stderr, tree, or file:<path>), and the exact allowed TypeScript value. The harness fails on any difference without an entry, on an entry whose exact value does not match, and on an entry that no longer matches a real difference. `actual` stays null while the case domain is pending; the port phase that enforces the domain sets it. `go_seed` lists P1 seed goldens (test/fixtures/go-seed/cli-goldens.json) that test/go-parity.test.ts expects to differ: each entry names the arguments and, in `allowed`, the exact TypeScript value of each field (exit, stdout, stderr) that may differ from Go. Every field not in `allowed` must equal Go, and every field in `allowed` must still differ from Go. Owner decisions: docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#owner-decisions A platform exception class (`platform` and `cases`, for example PE-005) names cases whose Go output on that one operating system has a known defect: `go_observation_sha256` is the observationDigest (harness.ts) of the complete normalized defect observation (exit code, full normalized stdout and stderr, and the normalized filesystem snapshot of changes), taken from a real capture on that operating system and named in `go_observation_evidence`; `go_exit` and `go_text` (a text in `go_stream`) describe it for readers; capture.mjs on that operating system records such a case as `<id>-skipped` (for example `pe-005-skipped`) instead of writing or comparing it only when the digest matches exactly, and fails on any other output of a listed case; and `win32_golden` says which golden the platform uses: `shared` (the shared golden), or a source golden folder from which `capture.mjs --derive` makes a derived golden in os/<platform>/ (Windows path spelling, after each `windows_text` replacement, see CAPTURE.md). The harness accepts a derived golden only for a case listed here. `edge` lists entity edge goldens (test/fixtures/go-seed/entity-edge-goldens.json) that differ from Go: each entry names an edge case, a field (exit, stdout, stderr, or tree: JSON.stringify of the normalized file-tree snapshot, taken before the harness restores folder permissions, of the root and, as `../<name>`, the other files of the scratch folder, such as the manifest and an outside link target), and the exact allowed TypeScript value. test/entities-edge.test.ts (edgeExceptionProblems in harness.ts) fails on any other difference, on a value that is not the allowed one, on an entry whose field now equals Go, and on a case whose `exception` does not match its entries. `eval` lists conversion eval twins (test/conversion-eval/) whose body differs from the Go intake tool body for the same eval file (test/fixtures/go-seed/intake-eval-goldens.json, from scripts/capture-intake-eval-goldens.ts): each entry names the eval file, the twin part, the exact allowed TypeScript body (`actual`), and `added_blocks`, the Markdown blocks TypeScript adds; Go's body must equal `actual` with each added block and its following blank line removed once. test/intake-eval-parity.test.ts fails on any other eval difference, on a body that is not the allowed one, and on an entry that no longer differs from Go. PE-009 is a class exception: every PDF comparison with Go applies harness.ts pdfWordGapClass (the rule is stated in its `reason`). Its `pdf` entries are regression fixtures: each names a PDF body and the exact offsets of Go's body after normalizePdfWhitespace where the class check finds one added space (harness.ts pdfWordGapProblems); test/intake-eval-parity.test.ts and test/intake-hostile.test.ts check them. `intake_edge` (PE-010) lists intake write-target edge goldens (test/fixtures/go-seed/intake-edge-goldens.json, from scripts/capture-intake-edge-goldens.ts) that differ from Go, with the same fields and rules as `edge` over the whole scratch work folder ({ROOT}); test/intake-edge.test.ts checks them. `hostile` (PE-013 preflight cases and PE-015) lists cases of test/intake-hostile.test.ts that differ from Go: each names the case, Go's observed result for readers (`go`: exit, outcome, first stderr line; CI has no Go tool), and in `allowed` the exact TypeScript exit, stdout, and stderr ({PROJECT} stands for the project folder). That test fails on a case list that differs from its own and on any result that is not the allowed one. `p5_edge` lists P5 discovery and design edge goldens (test/fixtures/go-seed/p5-edge-goldens.json, from scripts/capture-p5-edge-goldens.ts) that test/p5-edge.test.ts expects to differ, with the same shape and rules as `edge`. `design_rollback` (PE-014) names test/design.test.ts promotion-rollback cases where Go's end state after an injected failure differs from the start state the port restores, with Go's end state for readers. `legacy_notice` (PE-016) maps each legacy invocation name to the exact stderr line it writes first; harness.ts stripLegacyNotice requires that line, removes it once, and compares the rest byte for byte.",
+  "exceptions": [
+    {
+      "id": "PE-001",
+      "summary": "Root help lists the registered TypeScript domains, not the Go seed text.",
+      "reason": "The TypeScript root help lists the domains that exist (help, entities, intake, discovery, design, init since W1 R7 P6, validate since W1 R7 P7, and version). It differs from the seed's fixed text, and it will list more domains than the seed after the later ports. Port phases update the exact value when they add a domain.",
+      "owner_decision": "docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#owner-decisions (2026-11-23, PE-001 to PE-003 approved: \"Approve all three\")",
+      "golden": [
+        {
+          "case": "cli-help",
+          "field": "stdout",
+          "actual": "BuildOS deterministic project tooling\n\nUsage:\n  buildos <domain> [flags]\n  buildos help [<domain>]\n  buildos <domain> --help\n\nDomains:\n  help       Print help for the CLI or a domain\n  entities   Resolve, validate, consolidate, and index entity records\n  intake     Convert source files and rebuild the reference and playbook indexes\n  discovery  Run discovery, anchor raw findings, and qualify findings\n  design     Promote a qualified finding into a design file\n  init       Set up BuildOS in a new or existing project folder\n  validate   Check the project config, scoped frontmatter, and entity records\n  version    Print the package version and source revision\n\nAdd --json for the stable automation envelope.\nRun \"buildos help <domain>\" for domain details.\n"
+        }
+      ],
+      "go_seed": [
+        {
+          "args": [],
+          "allowed": {
+            "stdout": "BuildOS deterministic project tooling\n\nUsage:\n  buildos <domain> [flags]\n  buildos help [<domain>]\n  buildos <domain> --help\n\nDomains:\n  help       Print help for the CLI or a domain\n  entities   Resolve, validate, consolidate, and index entity records\n  intake     Convert source files and rebuild the reference and playbook indexes\n  discovery  Run discovery, anchor raw findings, and qualify findings\n  design     Promote a qualified finding into a design file\n  init       Set up BuildOS in a new or existing project folder\n  validate   Check the project config, scoped frontmatter, and entity records\n  version    Print the package version and source revision\n\nAdd --json for the stable automation envelope.\nRun \"buildos help <domain>\" for domain details.\n"
+          }
+        },
+        {
+          "args": [
+            "help"
+          ],
+          "allowed": {
+            "stdout": "BuildOS deterministic project tooling\n\nUsage:\n  buildos <domain> [flags]\n  buildos help [<domain>]\n  buildos <domain> --help\n\nDomains:\n  help       Print help for the CLI or a domain\n  entities   Resolve, validate, consolidate, and index entity records\n  intake     Convert source files and rebuild the reference and playbook indexes\n  discovery  Run discovery, anchor raw findings, and qualify findings\n  design     Promote a qualified finding into a design file\n  init       Set up BuildOS in a new or existing project folder\n  validate   Check the project config, scoped frontmatter, and entity records\n  version    Print the package version and source revision\n\nAdd --json for the stable automation envelope.\nRun \"buildos help <domain>\" for domain details.\n"
+          }
+        },
+        {
+          "args": [
+            "--help"
+          ],
+          "allowed": {
+            "stdout": "BuildOS deterministic project tooling\n\nUsage:\n  buildos <domain> [flags]\n  buildos help [<domain>]\n  buildos <domain> --help\n\nDomains:\n  help       Print help for the CLI or a domain\n  entities   Resolve, validate, consolidate, and index entity records\n  intake     Convert source files and rebuild the reference and playbook indexes\n  discovery  Run discovery, anchor raw findings, and qualify findings\n  design     Promote a qualified finding into a design file\n  init       Set up BuildOS in a new or existing project folder\n  validate   Check the project config, scoped frontmatter, and entity records\n  version    Print the package version and source revision\n\nAdd --json for the stable automation envelope.\nRun \"buildos help <domain>\" for domain details.\n"
+          }
+        },
+        {
+          "args": [
+            "-h"
+          ],
+          "allowed": {
+            "stdout": "BuildOS deterministic project tooling\n\nUsage:\n  buildos <domain> [flags]\n  buildos help [<domain>]\n  buildos <domain> --help\n\nDomains:\n  help       Print help for the CLI or a domain\n  entities   Resolve, validate, consolidate, and index entity records\n  intake     Convert source files and rebuild the reference and playbook indexes\n  discovery  Run discovery, anchor raw findings, and qualify findings\n  design     Promote a qualified finding into a design file\n  init       Set up BuildOS in a new or existing project folder\n  validate   Check the project config, scoped frontmatter, and entity records\n  version    Print the package version and source revision\n\nAdd --json for the stable automation envelope.\nRun \"buildos help <domain>\" for domain details.\n"
+          }
+        },
+        {
+          "args": [
+            "help",
+            "--json"
+          ],
+          "allowed": {
+            "stdout": "BuildOS deterministic project tooling\n\nUsage:\n  buildos <domain> [flags]\n  buildos help [<domain>]\n  buildos <domain> --help\n\nDomains:\n  help       Print help for the CLI or a domain\n  entities   Resolve, validate, consolidate, and index entity records\n  intake     Convert source files and rebuild the reference and playbook indexes\n  discovery  Run discovery, anchor raw findings, and qualify findings\n  design     Promote a qualified finding into a design file\n  init       Set up BuildOS in a new or existing project folder\n  validate   Check the project config, scoped frontmatter, and entity records\n  version    Print the package version and source revision\n\nAdd --json for the stable automation envelope.\nRun \"buildos help <domain>\" for domain details.\n"
+          }
+        },
+        {
+          "args": [
+            "help",
+            "x"
+          ],
+          "allowed": {
+            "stdout": "BuildOS deterministic project tooling\n\nUsage:\n  buildos <domain> [flags]\n  buildos help [<domain>]\n  buildos <domain> --help\n\nDomains:\n  help       Print help for the CLI or a domain\n  entities   Resolve, validate, consolidate, and index entity records\n  intake     Convert source files and rebuild the reference and playbook indexes\n  discovery  Run discovery, anchor raw findings, and qualify findings\n  design     Promote a qualified finding into a design file\n  init       Set up BuildOS in a new or existing project folder\n  validate   Check the project config, scoped frontmatter, and entity records\n  version    Print the package version and source revision\n\nAdd --json for the stable automation envelope.\nRun \"buildos help <domain>\" for domain details.\n"
+          }
+        }
+      ]
+    },
+    {
+      "id": "PE-002",
+      "summary": "`help <domain>` prints that domain help; the seed prints root help.",
+      "reason": "PRD 20 Command Surface says `buildos help` prints help for the CLI or a domain.",
+      "owner_decision": "docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#owner-decisions (2026-11-23, PE-001 to PE-003 approved)",
+      "golden": [
+        {
+          "case": "cli-help-version",
+          "field": "stdout",
+          "actual": "Usage:\n  buildos version [--json]\n\nPrints the BuildOS package version and source revision.\nA source build reports version \"dev\" and source revision \"unknown\".\n"
+        }
+      ],
+      "go_seed": [
+        {
+          "args": [
+            "help",
+            "version"
+          ],
+          "allowed": {
+            "stdout": "Usage:\n  buildos version [--json]\n\nPrints the BuildOS package version and source revision.\nA source build reports version \"dev\" and source revision \"unknown\".\n"
+          }
+        },
+        {
+          "args": [
+            "help",
+            "help"
+          ],
+          "allowed": {
+            "stdout": "Usage:\n  buildos help [<domain>]\n\nPrints help for the CLI, or for one domain.\n"
+          }
+        }
+      ]
+    },
+    {
+      "id": "PE-003",
+      "summary": "`version --help`, `-h`, and `help` print version help with exit 0; the seed reports a usage error with exit 2.",
+      "reason": "PRD 20 Output and Exit Contract says help behaves the same in every domain, and the seed entities domain prints help for these spellings.",
+      "owner_decision": "docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#owner-decisions (2026-11-23, PE-001 to PE-003 approved)",
+      "golden": [
+        {
+          "case": "cli-version-help",
+          "field": "exit",
+          "actual": "0"
+        },
+        {
+          "case": "cli-version-help",
+          "field": "stdout",
+          "actual": "Usage:\n  buildos version [--json]\n\nPrints the BuildOS package version and source revision.\nA source build reports version \"dev\" and source revision \"unknown\".\n"
+        },
+        {
+          "case": "cli-version-help",
+          "field": "stderr",
+          "actual": ""
+        }
+      ],
+      "go_seed": [
+        {
+          "args": [
+            "version",
+            "--help"
+          ],
+          "allowed": {
+            "exit": 0,
+            "stdout": "Usage:\n  buildos version [--json]\n\nPrints the BuildOS package version and source revision.\nA source build reports version \"dev\" and source revision \"unknown\".\n",
+            "stderr": ""
+          }
+        },
+        {
+          "args": [
+            "version",
+            "-h"
+          ],
+          "allowed": {
+            "exit": 0,
+            "stdout": "Usage:\n  buildos version [--json]\n\nPrints the BuildOS package version and source revision.\nA source build reports version \"dev\" and source revision \"unknown\".\n",
+            "stderr": ""
+          }
+        },
+        {
+          "args": [
+            "version",
+            "help"
+          ],
+          "allowed": {
+            "exit": 0,
+            "stdout": "Usage:\n  buildos version [--json]\n\nPrints the BuildOS package version and source revision.\nA source build reports version \"dev\" and source revision \"unknown\".\n",
+            "stderr": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "PE-004",
+      "summary": "A root that cannot be loaded gives exit 3 with the given root in Go filepath.Abs form and a typed diagnostic (root_unreadable, path_refused, or root_not_found), not an empty root and internal_error.",
+      "reason": "The exit code matches the seed and PRD 20. The envelope names the given root, and the typed diagnostic codes follow the TypeScript core error model. P3 set the exact values when it enforced the entities domain (P3 t8 and t11). The three cases are OS-dependent, so each entry names its operating system: the darwin and linux values are equal, and the win32 value spells the root with a backslash. A root with no `.os/data/` folder (a missing folder, a file, or a folder without `.os/data/`) gives `root_not_found` and `root <root> has no .os/data/ folder`. The result payload, mode, and write status equal the seed's. Scope extended by the owner on 2026-11-23 (\"A, A, A\", choice 1): a root folder that exists without `.os/data/` also gives exit 3, `root_not_found` with `root <root> has no .os/data/ folder`, and the given root; Go gives exit 3, an empty root, and `internal_error` (`resolve root \"<root>\": expected .os/data: stat <root>/.os/data: no such file or directory`). Only stdout differs. Edge golden `root-without-os-data`.",
+      "owner_decision": "docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#owner-decisions (2026-11-23, PE-004 approved; scope extended to a root without .os/data/: \"A, A, A\")",
+      "golden": [
+        {
+          "case": "entities-validate-missing-root-json",
+          "field": "stdout",
+          "platform": "darwin",
+          "actual": "{\n  \"ok\": false,\n  \"command\": \"entities.validate\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"{ROOT}/absent\",\n  \"mode\": \"strict\",\n  \"write_status\": \"not_requested\",\n  \"result\": {\n    \"valid\": false,\n    \"record_count\": 0,\n    \"index\": {\n      \"state\": \"\",\n      \"current\": false,\n      \"message\": \"\",\n      \"expected_sha256\": \"\"\n    }\n  },\n  \"diagnostics\": [\n    {\n      \"code\": \"root_not_found\",\n      \"severity\": \"error\",\n      \"message\": \"root {ROOT}/absent has no .os/data/ folder\",\n      \"correction\": \"Pass --root with the project folder that holds .os/data/.\"\n    }\n  ]\n}\n"
+        },
+        {
+          "case": "entities-validate-missing-root-json",
+          "field": "stdout",
+          "platform": "linux",
+          "actual": "{\n  \"ok\": false,\n  \"command\": \"entities.validate\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"{ROOT}/absent\",\n  \"mode\": \"strict\",\n  \"write_status\": \"not_requested\",\n  \"result\": {\n    \"valid\": false,\n    \"record_count\": 0,\n    \"index\": {\n      \"state\": \"\",\n      \"current\": false,\n      \"message\": \"\",\n      \"expected_sha256\": \"\"\n    }\n  },\n  \"diagnostics\": [\n    {\n      \"code\": \"root_not_found\",\n      \"severity\": \"error\",\n      \"message\": \"root {ROOT}/absent has no .os/data/ folder\",\n      \"correction\": \"Pass --root with the project folder that holds .os/data/.\"\n    }\n  ]\n}\n"
+        },
+        {
+          "case": "entities-validate-missing-root-json",
+          "field": "stdout",
+          "platform": "win32",
+          "actual": "{\n  \"ok\": false,\n  \"command\": \"entities.validate\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"{ROOT}\\\\absent\",\n  \"mode\": \"strict\",\n  \"write_status\": \"not_requested\",\n  \"result\": {\n    \"valid\": false,\n    \"record_count\": 0,\n    \"index\": {\n      \"state\": \"\",\n      \"current\": false,\n      \"message\": \"\",\n      \"expected_sha256\": \"\"\n    }\n  },\n  \"diagnostics\": [\n    {\n      \"code\": \"root_not_found\",\n      \"severity\": \"error\",\n      \"message\": \"root {ROOT}\\\\absent has no .os/data/ folder\",\n      \"correction\": \"Pass --root with the project folder that holds .os/data/.\"\n    }\n  ]\n}\n"
+        },
+        {
+          "case": "entities-validate-root-is-file-json",
+          "field": "stdout",
+          "platform": "darwin",
+          "actual": "{\n  \"ok\": false,\n  \"command\": \"entities.validate\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"{ROOT}/README.md\",\n  \"mode\": \"strict\",\n  \"write_status\": \"not_requested\",\n  \"result\": {\n    \"valid\": false,\n    \"record_count\": 0,\n    \"index\": {\n      \"state\": \"\",\n      \"current\": false,\n      \"message\": \"\",\n      \"expected_sha256\": \"\"\n    }\n  },\n  \"diagnostics\": [\n    {\n      \"code\": \"root_not_found\",\n      \"severity\": \"error\",\n      \"message\": \"root {ROOT}/README.md has no .os/data/ folder\",\n      \"correction\": \"Pass --root with the project folder that holds .os/data/.\"\n    }\n  ]\n}\n"
+        },
+        {
+          "case": "entities-validate-root-is-file-json",
+          "field": "stdout",
+          "platform": "linux",
+          "actual": "{\n  \"ok\": false,\n  \"command\": \"entities.validate\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"{ROOT}/README.md\",\n  \"mode\": \"strict\",\n  \"write_status\": \"not_requested\",\n  \"result\": {\n    \"valid\": false,\n    \"record_count\": 0,\n    \"index\": {\n      \"state\": \"\",\n      \"current\": false,\n      \"message\": \"\",\n      \"expected_sha256\": \"\"\n    }\n  },\n  \"diagnostics\": [\n    {\n      \"code\": \"root_not_found\",\n      \"severity\": \"error\",\n      \"message\": \"root {ROOT}/README.md has no .os/data/ folder\",\n      \"correction\": \"Pass --root with the project folder that holds .os/data/.\"\n    }\n  ]\n}\n"
+        },
+        {
+          "case": "entities-validate-root-is-file-json",
+          "field": "stdout",
+          "platform": "win32",
+          "actual": "{\n  \"ok\": false,\n  \"command\": \"entities.validate\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"{ROOT}\\\\README.md\",\n  \"mode\": \"strict\",\n  \"write_status\": \"not_requested\",\n  \"result\": {\n    \"valid\": false,\n    \"record_count\": 0,\n    \"index\": {\n      \"state\": \"\",\n      \"current\": false,\n      \"message\": \"\",\n      \"expected_sha256\": \"\"\n    }\n  },\n  \"diagnostics\": [\n    {\n      \"code\": \"root_not_found\",\n      \"severity\": \"error\",\n      \"message\": \"root {ROOT}\\\\README.md has no .os/data/ folder\",\n      \"correction\": \"Pass --root with the project folder that holds .os/data/.\"\n    }\n  ]\n}\n"
+        },
+        {
+          "case": "entities-validate-missing-root-human",
+          "field": "stderr",
+          "platform": "darwin",
+          "actual": "entities.validate: error\nroot: {ROOT}/absent\nmode: compat\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [root_not_found]: root {ROOT}/absent has no .os/data/ folder\n  action: Pass --root with the project folder that holds .os/data/.\n{\n  \"valid\": false,\n  \"record_count\": 0,\n  \"index\": {\n    \"state\": \"\",\n    \"current\": false,\n    \"message\": \"\",\n    \"expected_sha256\": \"\"\n  }\n}\n"
+        },
+        {
+          "case": "entities-validate-missing-root-human",
+          "field": "stderr",
+          "platform": "linux",
+          "actual": "entities.validate: error\nroot: {ROOT}/absent\nmode: compat\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [root_not_found]: root {ROOT}/absent has no .os/data/ folder\n  action: Pass --root with the project folder that holds .os/data/.\n{\n  \"valid\": false,\n  \"record_count\": 0,\n  \"index\": {\n    \"state\": \"\",\n    \"current\": false,\n    \"message\": \"\",\n    \"expected_sha256\": \"\"\n  }\n}\n"
+        },
+        {
+          "case": "entities-validate-missing-root-human",
+          "field": "stderr",
+          "platform": "win32",
+          "actual": "entities.validate: error\nroot: {ROOT}\\absent\nmode: compat\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [root_not_found]: root {ROOT}\\absent has no .os/data/ folder\n  action: Pass --root with the project folder that holds .os/data/.\n{\n  \"valid\": false,\n  \"record_count\": 0,\n  \"index\": {\n    \"state\": \"\",\n    \"current\": false,\n    \"message\": \"\",\n    \"expected_sha256\": \"\"\n  }\n}\n"
+        }
+      ],
+      "go_seed": [],
+      "edge": [
+        {
+          "case": "root-without-os-data",
+          "field": "stdout",
+          "actual": "{\n  \"ok\": false,\n  \"command\": \"entities.validate\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"{ROOT}/root\",\n  \"mode\": \"strict\",\n  \"write_status\": \"not_requested\",\n  \"result\": {\n    \"valid\": false,\n    \"record_count\": 0,\n    \"index\": {\n      \"state\": \"\",\n      \"current\": false,\n      \"message\": \"\",\n      \"expected_sha256\": \"\"\n    }\n  },\n  \"diagnostics\": [\n    {\n      \"code\": \"root_not_found\",\n      \"severity\": \"error\",\n      \"message\": \"root {ROOT}/root has no .os/data/ folder\",\n      \"correction\": \"Pass --root with the project folder that holds .os/data/.\"\n    }\n  ]\n}\n"
+        }
+      ]
+    },
+    {
+      "id": "PE-005",
+      "class": "Go Windows directory-sync defect",
+      "summary": "On Windows, the parity target of six apply and promote cases is the Go result on Linux and macOS, not Go 1.24.1's failed post-rename folder sync (`Access is denied.`).",
+      "platform": "win32",
+      "reason": "Root cause: after Go renames the temporary file over the target, it opens the parent folder with os.Open and calls (*os.File).Sync() on it (the POSIX directory fsync pattern). On Windows, os.Open gives a read-only folder handle, Sync calls FlushFileBuffers, which needs write access, and Windows returns ERROR_ACCESS_DENIED (`Access is denied.`). The rename has already committed, so Go reports a failure after the write landed: the entity cases exit 5 with write_status not_requested (and consolidate skips the index rebuild and its exit-6 recovery path), and the design cases exit 1 with a half-done promotion (the findings index row updated, no finding record or design file). Sync sites: toolkits/buildos/internal/entities/index.go writeIndexAtomic, toolkits/buildos/internal/entities/consolidate.go writeCanonicalAtomic, toolkits/buildos-design/internal/design/promotion.go syncDirectory. This contradicts PRD 20 (Windows support; exit 5 means a failure stopped a valid write from committing), PRD 17 Atomic Writes, and PRD 11 promotion. The TypeScript CLI must not reproduce the defect (P3 t14, P5 t11).",
+      "rule": "The win32 golden of each case is the Linux/macOS Go result, with Windows path spelling and Windows-only text where it legitimately differs. A shared case whose Go output on Linux and macOS prints no absolute path and no OS error text (`shared`) uses the shared golden on Windows. An OS-dependent case gets a derived golden in os/win32/, made by `capture.mjs --derive` from the committed linux golden (which must equal the darwin golden): in stdout and stderr (each JSON string decoded first), every `{ROOT}` followed by `/`-separated segments gets `\\` separators, or `\\\\` when the `{ROOT}` directly follows a `\"` (a Go %q string); each `windows_text` replacement is applied before that, on the raw stream (`scope` `raw`, first) or on each decoded JSON string (`json-string`), and must occur exactly once; `modes` is dropped (Windows has no permission bits); every other byte stays as captured. The result.json `derived` field names the exception, the source folder, and its SHA-256.",
+      "owner_decision": "docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#owner-decisions (2026-11-23, PE-005 approved: option A, \"on Windows, the parity target for the six cases where Go 1.24.1 fails its post-rename parent-directory sync (\\\"Access is denied\\\") is the Go behavior on Linux and macOS\")",
+      "cases": [
+        {
+          "case": "entities-rebuild-apply-missing-json",
+          "go_exit": 5,
+          "go_stream": "stdout",
+          "go_text": "sync entity-resolution index directory: sync {ROOT}\\\\root\\\\.os\\\\indexes: Access is denied.",
+          "go_observation_sha256": "d023bcb18a6c8d986df8bbf0c02f6129bb291b8f02c516dcd1b7b4542e0d91e2",
+          "go_observation_evidence": "observationDigest of buildos/entities-rebuild-apply-missing-json/ in the buildos-goldens-win32 artifact of capture run 45293367433, committed unchanged at test/golden/evidence/pe-005-win32/buildos/entities-rebuild-apply-missing-json/ (commit 8be0b70, before the skip existed, so Go's defect output was written as a golden; Go 1.24.1 windows/amd64, Go source commit 263f5ca). Confirmed by capture run 45296349916 (commit bd67f5e, the same Go source commit, Go version, and runner image, and no change to the fixtures or the normalization since 8be0b70): it recorded this case as pe-005-skipped with go_exit 5, in both its capture and its --check run.",
+          "win32_golden": {
+            "source": "os/linux/buildos/entities-rebuild-apply-missing-json",
+            "windows_text": []
+          }
+        },
+        {
+          "case": "entities-consolidate-apply-json",
+          "go_exit": 5,
+          "go_stream": "stdout",
+          "go_text": "sync canonical directory: sync {ROOT}\\\\root\\\\.os\\\\data: Access is denied.",
+          "go_observation_sha256": "20bddd0916a94faf7b94e88c2c68dd6cf4a5844de22e0ec6232a23bb4c382a26",
+          "go_observation_evidence": "observationDigest of buildos/entities-consolidate-apply-json/ in the buildos-goldens-win32 artifact of capture run 45293367433, committed unchanged at test/golden/evidence/pe-005-win32/buildos/entities-consolidate-apply-json/ (commit 8be0b70, before the skip existed, so Go's defect output was written as a golden; Go 1.24.1 windows/amd64, Go source commit 263f5ca). Confirmed by capture run 45296349916 (commit bd67f5e, the same Go source commit, Go version, and runner image, and no change to the fixtures or the normalization since 8be0b70): it recorded this case as pe-005-skipped with go_exit 5, in both its capture and its --check run.",
+          "win32_golden": {
+            "source": "os/linux/buildos/entities-consolidate-apply-json",
+            "windows_text": []
+          }
+        },
+        {
+          "case": "entities-consolidate-apply-index-failure-json",
+          "go_exit": 5,
+          "go_stream": "stdout",
+          "go_text": "sync canonical directory: sync {ROOT}\\\\root\\\\.os\\\\data: Access is denied.",
+          "go_observation_sha256": "20bddd0916a94faf7b94e88c2c68dd6cf4a5844de22e0ec6232a23bb4c382a26",
+          "go_observation_evidence": "observationDigest of buildos/entities-consolidate-apply-index-failure-json/ in the buildos-goldens-win32 artifact of capture run 45293367433, committed unchanged at test/golden/evidence/pe-005-win32/buildos/entities-consolidate-apply-index-failure-json/ (commit 8be0b70, before the skip existed, so Go's defect output was written as a golden; Go 1.24.1 windows/amd64, Go source commit 263f5ca). Confirmed by capture run 45296349916 (commit bd67f5e, the same Go source commit, Go version, and runner image, and no change to the fixtures or the normalization since 8be0b70): it recorded this case as pe-005-skipped with go_exit 5, in both its capture and its --check run.",
+          "win32_golden": {
+            "source": "os/linux/buildos/entities-consolidate-apply-index-failure-json",
+            "windows_text": [
+              {
+                "scope": "raw",
+                "from": "      \"applied\": true\n    },\n    \"recovery_command\": ",
+                "to": "      \"applied\": true\n    },\n    \"index\": {\n      \"state\": \"missing\",\n      \"current\": false,\n      \"diagnostic_code\": \"index_stale\",\n      \"message\": \"entity-resolution index is missing\",\n      \"expected_sha256\": \"afe1935e3ed50c416498f912bd09150a3f8fe625a8f6c1007d3749d3198853cd\",\n      \"remediation_command\": \"buildos entities rebuild-index --root \\\"{ROOT}/root\\\" --mode strict --apply\"\n    },\n    \"recovery_command\": ",
+                "evidence": "On Windows the index read reports the index missing (ERROR_PATH_NOT_FOUND is os.ErrNotExist), so the failure comes from applyResolutionIndex, and toolkits/buildos/internal/cli/domain.go Consolidate sets payload.Index to that before check (state missing) before failedAfterCanonical. Its fields follow entities.IndexCheckResult; expected_sha256 is the consolidated graph's index (the same value as in entities-consolidate-apply-json), and remediation_command is the recovery command. Go 1.24.1 on Windows prints the same missing-index check for the same planted file in entities-rebuild-apply-write-failure-json (capture run 45293367433)."
+              },
+              {
+                "from": "read entity-resolution index \"{ROOT}/root/.os/indexes/entity-resolution.json\": open {ROOT}/root/.os/indexes/entity-resolution.json: not a directory",
+                "to": "create entity-resolution index directory \"{ROOT}/root/.os/indexes\": mkdir {ROOT}/root/.os/indexes: The system cannot find the path specified.",
+                "evidence": "On Windows, reading .os/indexes/entity-resolution.json when .os/indexes is a file fails with ERROR_PATH_NOT_FOUND, which Go treats as os.ErrNotExist, so CheckIndex reports the index missing and ApplyIndex fails at os.MkdirAll in writeIndexAtomic. Go 1.24.1 on Windows prints exactly this text for the same planted file in entities-rebuild-apply-write-failure-json (capture run 45293367433).",
+                "scope": "json-string"
+              }
+            ]
+          }
+        },
+        {
+          "case": "design-promote-baseline",
+          "go_exit": 1,
+          "go_stream": "stderr",
+          "go_text": "buildos-design: error: replace findings index: sync {ROOT}\\system\\.os\\data: Access is denied.",
+          "go_observation_sha256": "d5ea9c66952889d444b1928e94d8f089653a775cce2039e3f8ecf88fdf967289",
+          "go_observation_evidence": "observationDigest of buildos-design/design-promote-baseline/ in the buildos-goldens-win32 artifact of capture run 45293367433, committed unchanged at test/golden/evidence/pe-005-win32/buildos-design/design-promote-baseline/ (commit 8be0b70, before the skip existed, so Go's defect output was written as a golden; Go 1.24.1 windows/amd64, Go source commit 263f5ca). Confirmed by capture run 45296349916 (commit bd67f5e, the same Go source commit, Go version, and runner image, and no change to the fixtures or the normalization since 8be0b70): it recorded this case as pe-005-skipped with go_exit 1, in both its capture and its --check run.",
+          "win32_golden": {
+            "source": "shared"
+          }
+        },
+        {
+          "case": "design-promote-change-redirected",
+          "go_exit": 1,
+          "go_stream": "stderr",
+          "go_text": "buildos-design: error: replace findings index: sync {ROOT}\\system\\.os\\data: Access is denied.",
+          "go_observation_sha256": "ae7e4e68868cc93bcddc1d8f7311acb1ff89e4829e2cdfe3e3dd184920cff35d",
+          "go_observation_evidence": "observationDigest of buildos-design/design-promote-change-redirected/ in the buildos-goldens-win32 artifact of capture run 45293367433, committed unchanged at test/golden/evidence/pe-005-win32/buildos-design/design-promote-change-redirected/ (commit 8be0b70, before the skip existed, so Go's defect output was written as a golden; Go 1.24.1 windows/amd64, Go source commit 263f5ca). Confirmed by capture run 45296349916 (commit bd67f5e, the same Go source commit, Go version, and runner image, and no change to the fixtures or the normalization since 8be0b70): it recorded this case as pe-005-skipped with go_exit 1, in both its capture and its --check run.",
+          "win32_golden": {
+            "source": "shared"
+          }
+        },
+        {
+          "case": "design-installed-promote",
+          "go_exit": 1,
+          "go_stream": "stderr",
+          "go_text": "buildos-design: error: replace findings index: sync {ROOT}\\.os\\data: Access is denied.",
+          "go_observation_sha256": "d47fc5bd3a936033c49104f183023a6c1d13c11f6972784387beb03d7c183caa",
+          "go_observation_evidence": "observationDigest of buildos-design/design-installed-promote/ in the buildos-goldens-win32 artifact of capture run 45293367433, committed unchanged at test/golden/evidence/pe-005-win32/buildos-design/design-installed-promote/ (commit 8be0b70, before the skip existed, so Go's defect output was written as a golden; Go 1.24.1 windows/amd64, Go source commit 263f5ca). Confirmed by capture run 45296349916 (commit bd67f5e, the same Go source commit, Go version, and runner image, and no change to the fixtures or the normalization since 8be0b70): it recorded this case as pe-005-skipped with go_exit 1, in both its capture and its --check run.",
+          "win32_golden": {
+            "source": "shared"
+          }
+        }
+      ],
+      "golden": [],
+      "go_seed": []
+    },
+    {
+      "id": "PE-006",
+      "summary": "`entities consolidate` dry run writes nothing; the Go seed creates a temporary preflight folder in `.os/`.",
+      "reason": "The Go seed copies the eight datasets into `.os/.buildos-consolidation-preflight-<n>` and loads the copy, on a dry run too. The TypeScript CLI loads the same bytes from memory and writes nothing, as a dry run should (PRD 20: mutations are dry-run by default). Output is the same whenever Go's copy succeeds. They differ in two cases. 1: `.os/` is not writable. Go exits 5 with `create prospective graph directory: mkdir <root>/.os/.buildos-consolidation-preflight-<n>: permission denied` (ok false, internal_error); the TypeScript CLI exits 0 with the plan (ok true, no diagnostics). The file tree is the same (Go's mkdir fails). Edge golden `consolidate-dry-run-os-read-only`: exit and stdout differ. 2: the disk fills during the preflight copy. Go exits 5 with `write prospective input ...: no space left on device`; the TypeScript CLI exits 0. The review reproduced case 2; no golden covers it, because a full disk cannot be made portably in a test. No other difference is allowed.",
+      "owner_decision": "docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#owner-decisions (2026-11-23, PE-006 approved: \"A, A, A\")",
+      "golden": [],
+      "go_seed": [],
+      "edge": [
+        {
+          "case": "consolidate-dry-run-os-read-only",
+          "field": "exit",
+          "actual": "0"
+        },
+        {
+          "case": "consolidate-dry-run-os-read-only",
+          "field": "stdout",
+          "actual": "{\n  \"ok\": true,\n  \"command\": \"entities.consolidate\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"{ROOT}/root\",\n  \"mode\": \"strict\",\n  \"write_status\": \"planned\",\n  \"result\": {\n    \"consolidation\": {\n      \"manifest_version\": 1,\n      \"mapping_count\": 1,\n      \"change_count\": 1,\n      \"no_op_count\": 0,\n      \"affected_files\": [\n        \"personas.jsonl\"\n      ],\n      \"changes\": [\n        {\n          \"source_id\": \"Alfa\",\n          \"target_id\": \"Zulu\",\n          \"dataset\": \"personas.jsonl\",\n          \"action\": \"supersede\"\n        }\n      ],\n      \"applied\": false\n    }\n  },\n  \"diagnostics\": []\n}\n"
+        }
+      ]
+    },
+    {
+      "id": "PE-007",
+      "summary": "A dataset symlink that points outside the root is refused (exit 3); the Go seed reads the outside file and replaces the link.",
+      "reason": "PRD 20 requires every read and write to stay inside the project root, and the filesystem port checks containment on the real path (`outside-root`). With `.os/data/personas.jsonl` a symlink to a file outside the root, `entities consolidate --apply` in the Go seed reads the outside file, writes the result into `.os/data/`, replaces the link with a regular file, and writes the index (exit 0, applied). The TypeScript CLI refuses (exit 3, ok false, `path_refused`, `.os/data/personas.jsonl resolves outside the root <root>`) and changes nothing: the link and the outside file stay. Edge golden `dataset-link-outside-root`: exit, stdout, and the file tree differ; stderr is equal. No other difference is allowed.",
+      "owner_decision": "docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#owner-decisions (2026-11-23, PE-007 approved: \"A, A, A\")",
+      "golden": [],
+      "go_seed": [],
+      "edge": [
+        {
+          "case": "dataset-link-outside-root",
+          "field": "exit",
+          "actual": "3"
+        },
+        {
+          "case": "dataset-link-outside-root",
+          "field": "stdout",
+          "actual": "{\n  \"ok\": false,\n  \"command\": \"entities.consolidate\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"{ROOT}/root\",\n  \"mode\": \"strict\",\n  \"write_status\": \"not_requested\",\n  \"result\": null,\n  \"diagnostics\": [\n    {\n      \"code\": \"path_refused\",\n      \"severity\": \"error\",\n      \"message\": \".os/data/personas.jsonl resolves outside the root {ROOT}/root\",\n      \"correction\": \"Use a file or folder path inside the BuildOS root.\"\n    }\n  ]\n}\n"
+        },
+        {
+          "case": "dataset-link-outside-root",
+          "field": "tree",
+          "actual": "{\".\":\"dir 755\",\"./.os\":\"dir 755\",\"./.os/data\":\"dir 755\",\"./.os/data/capabilities.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"./.os/data/extractions.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"./.os/data/findings.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"./.os/data/personas.jsonl\":\"link ../../../outside.jsonl\",\"./.os/data/requirements.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"./.os/data/results.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"./.os/data/runs.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"./.os/data/test-cases.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"../manifest.json\":\"file 644 bde0ca00e7c415795dceda7269e472599aa9f491ef832d900ba58f192c0bc994\",\"../outside.jsonl\":\"file 640 24c92a9b30b53c62af05b3a92644578ea348ffaefd7b02782188f549f33f57ff\"}"
+        }
+      ]
+    },
+    {
+      "id": "PE-008",
+      "summary": "Text directly inside a div (an HTML callout) is kept as a paragraph; the Go converter drops it.",
+      "reason": "PRD 07 Contracts and Data requires that a converted document loses no section. Go 1.24.1 buildos-intake writes HTML text only from p, h1-h6, li, and table cells, so the text of a div box is lost (eval file html-visitor-policy: section \"Callout note\" lost, 93.37%). The TypeScript converter writes each run of text and inline elements directly inside a div as one paragraph, where it stands (src/core/intake/convert/html.ts). No golden case is affected: all 55 intake golden cases, including the HTML cases intake-convert-html, intake-convert-html-dry-run, intake-convert-html-dir, and intake-convert-html-dir-empty, equal Go byte for byte. The only allowed difference is the eval twin below: the exact TypeScript body, which equals Go's body (test/fixtures/go-seed/intake-eval-goldens.json) with exactly the added paragraphs in `added_blocks` removed. test/intake-eval-parity.test.ts checks it.",
+      "owner_decision": "docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#owner-decisions (2026-11-23, PE-008 approved)",
+      "golden": [],
+      "go_seed": [],
+      "eval": [
+        {
+          "file": "html-visitor-policy",
+          "part": "visitor-policy.md",
+          "added_blocks": [
+            "Note: Guests who stay longer than 30 nights in a year count as occupants under the lease."
+          ],
+          "actual": "Sample Housing Cooperative\n\n# Visitor and Guest Policy\n\nThis policy explains how members host visitors and overnight guests. It applies to all three buildings.\n\n## Day Visitors\n\nMembers may host day visitors at any time. Visitors must leave the common room by 22:00 .\n\n## Overnight Guests\n\nA member may host an overnight guest for up to 14 nights in any 90-day period. Longer stays need written approval from the [membership committee](/committees/membership.html) .\n\n- Tell the front desk the guest’s name and dates.\n\n- Guests may not use the laundry room alone.\n\n- Parking: guests use the visitor bays only. Bays V1 to V4 are in the north lot. Bay V5 is kept for deliveries.\n\n### Approval Steps\n\n- Fill in the guest form.\n\n- Send it to the membership committee.\n\n- Wait for the written reply, usually within five working days.\n\nNote: Guests who stay longer than 30 nights in a year count as occupants under the lease.\n\n## Shared Spaces\n\n| Space | Guests allowed | Booking |\n| --- | --- | --- |\n| Common room | Up to 10 | Book at the front desk |\n| Roof garden | Up to 6 | No booking |\n| Guest suite | 2 per night | Book online, €25 per night |\n\nRoute for guests: front desk, then the common room, then the guest suite.\n\n![Ground floor plan](media/visitor-policy-image-001.png)\n\n[Mermaid diagram source](diagrams/visitor-policy-mermaid-001.mmd)\n\n```mermaid\nflowchart LR\n  Member --> Form --> Committee --> Reply\n```\n\n## Questions\n\nAsk at the front desk or email [desk@example.org](mailto:desk@example.org) .\n\nLast updated 2 October 2026. Policy owner: membership committee.\n"
+        }
+      ]
+    },
+    {
+      "id": "PE-009",
+      "summary": "Class exception: the port's PDF text may differ from Go's only by spaces between words that Go ran together.",
+      "reason": "Go github.com/ledongthuc/pdf GetPlainText joins every text run of one BT block with no separator, so a word gap drawn with a TJ offset, a Td move, or a line move inside one text object is lost (TwonewmembersjoinedtheboardinMarch.; MinutesMay meeting; QuarterlyStaff meeting). PE-009 is a class, not a list of cases. The rule, checked on every PDF comparison with Go (harness.ts pdfWordGapClass: the golden harness, the eval parity test, and the hostile-input tests): after normalizePdfWhitespace on both texts, the two texts must be identical after removing, from the port's text, only single spaces that sit at positions where Go has two adjacent non-space characters that the PDF renders as separate words. The PDF renders two characters as separate words when pdf.js puts a space between them inside one text run (a space character, or a TJ offset or glyph gap), or when they end and start two runs and the second run starts a new line (the baseline moves by more than half the larger font size), a new page, or more than 0.15 of its font size to the right of the end of the first (harness.ts pdfSeparations, computed from the PDF's runs, not from the port's output). No other character may differ, the port may never drop a space Go has, and the port's text must equal the PDF's runs with one space at each such run boundary, so it cannot add a space the PDF does not render. The check runs in both directions on every PDF twin (review round 3), also when the port text equals Go after white-space normalization: a port text that keeps Go's joined words (for example QuarterlyStaff meeting) fails, because it lacks a word gap the PDF renders. The `pdf` entries are regression fixtures, not the scope: for each, the class check must find exactly the recorded spaces. Without the gaps, eval file pdf-annual-report scores 97.67%, below the 98% gate. No golden case is affected: every PDF golden case equals Go after white-space normalization.",
+      "owner_decision": "docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#owner-decisions (2026-11-23, PE-009 and PE-010 approved; PE-010 with the --allow-outside-root addition)",
+      "golden": [],
+      "go_seed": [],
+      "pdf": [
+        {
+          "source": "eval:pdf-annual-report",
+          "part": "annual-report-summary.txt",
+          "inserted_spaces": [
+            561,
+            564,
+            571,
+            577,
+            580,
+            585,
+            587,
+            593,
+            601,
+            604,
+            607,
+            612,
+            619,
+            622,
+            626,
+            636,
+            644,
+            651,
+            653,
+            657,
+            667,
+            674,
+            679,
+            683,
+            684,
+            690,
+            692,
+            695
+          ],
+          "context": [
+            "pen day. Two|newmembersjo",
+            " day. Twonew|membersjoine",
+            "wonewmembers|joinedtheboa",
+            "embersjoined|theboardinMa",
+            "ersjoinedthe|boardinMarch",
+            "inedtheboard|inMarch.Trai",
+            "edtheboardin|March.Traini",
+            "oardinMarch.|Trainingforn",
+            "rch.Training|fornewboardm",
+            ".Trainingfor|newboardmemb",
+            "ainingfornew|boardmembers",
+            "gfornewboard|membersnowru",
+            "boardmembers|nowrunsover ",
+            "rdmembersnow|runsover thr",
+            "mbersnowruns|over threeev",
+            "nsover three|eveningsinst",
+            "hreeevenings|insteadofone",
+            "ningsinstead|ofone.Year-r",
+            "ngsinsteadof|one.Year-rou",
+            "nsteadofone.|Year-roundsu",
+            "e.Year-round|supportcomes",
+            "roundsupport|comesfromame",
+            "supportcomes|fromamentoro",
+            "ortcomesfrom|amentoronthe",
+            "rtcomesfroma|mentorontheb",
+            "sfromamentor|ontheboard. ",
+            "romamentoron|theboard. Fi",
+            "amentoronthe|board. Finan"
+          ]
+        },
+        {
+          "source": "fixture:pdf-minutes-two-lines",
+          "part": "minutes.txt",
+          "inserted_spaces": [
+            7
+          ],
+          "context": [
+            "Minutes|May meeting"
+          ]
+        },
+        {
+          "source": "fixture:pdf-quarterly-staff-meeting",
+          "part": "quarterly.txt",
+          "inserted_spaces": [
+            9
+          ],
+          "context": [
+            "Quarterly|Staff meetin"
+          ]
+        },
+        {
+          "source": "fixture:pdf-quarterly-staff-meeting-tj",
+          "part": "quarterly.txt",
+          "inserted_spaces": [
+            9
+          ],
+          "context": [
+            "Quarterly|Staff meetin"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "PE-010",
+      "summary": "An intake write target outside --repo-root is refused (exit 3) unless --allow-outside-root is given; a link at the written file itself is replaced, never followed. The Go tool writes there and follows the link.",
+      "reason": "PRD 20 Output and Exit Contract: a write that would land outside the project root is refused (exit 3) unless the command is given --allow-outside-root; a link at the written file itself is replaced, never followed. Without the flag, an absolute --assets-root or --output outside the root, or a folder link that leads out of it, ends with buildos-intake: error: <path> resolves outside the root <root>; pass --allow-outside-root to allow a write outside the repository root, exit 3, and no change (every write folder is checked before the first write). The Go tool writes there (exit 0). With the flag (in flag position only, Go flag rules, as P5's PE-011 --json and PE-012), the same writes equal Go byte for byte (intake edge goldens *-allowed). The flag relaxes only root containment: device paths (--output /dev/null), file descriptors, special files, hostile archives, and the read rules stay. A symlink at a twin, side artifact, or index file is replaced by a regular file with or without the flag, so the file it points at (inside or outside the root, or missing) keeps its bytes; Go's os.WriteFile writes through it. Reads outside the root (an absolute --source) work as in Go, and Go's --force existence check still follows a link. Intake edge goldens listed under intake_edge: exit, stdout, stderr, and tree differ exactly as pinned. No other difference is allowed.",
+      "owner_decision": "docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#owner-decisions (2026-11-23, PE-009 and PE-010 approved; PE-010 with the --allow-outside-root addition)",
+      "golden": [],
+      "go_seed": [],
+      "intake_edge": [
+        {
+          "case": "assets-root-outside",
+          "field": "exit",
+          "actual": "3"
+        },
+        {
+          "case": "assets-root-outside",
+          "field": "stdout",
+          "actual": ""
+        },
+        {
+          "case": "assets-root-outside",
+          "field": "stderr",
+          "actual": "buildos-intake: error: {ROOT}/out/assets/data resolves outside the root {ROOT}/repo; pass --allow-outside-root to allow a write outside the repository root\n"
+        },
+        {
+          "case": "assets-root-outside",
+          "field": "tree",
+          "actual": "{\".\":\"dir 700\",\"./out\":\"dir 755\",\"./repo\":\"dir 755\",\"./repo/data.csv\":\"file 644 492d5ea496056f1a6a6592241032fab764c321596317930b4fa0e1e8bc3b7470\",\"./repo/system\":\"dir 755\",\"./repo/system/assets\":\"dir 755\"}"
+        },
+        {
+          "case": "docx-media-outside",
+          "field": "exit",
+          "actual": "3"
+        },
+        {
+          "case": "docx-media-outside",
+          "field": "stdout",
+          "actual": ""
+        },
+        {
+          "case": "docx-media-outside",
+          "field": "stderr",
+          "actual": "buildos-intake: error: {ROOT}/out/assets/handbook/media resolves outside the root {ROOT}/repo; pass --allow-outside-root to allow a write outside the repository root\n"
+        },
+        {
+          "case": "docx-media-outside",
+          "field": "tree",
+          "actual": "{\".\":\"dir 700\",\"./out\":\"dir 755\",\"./repo\":\"dir 755\",\"./repo/data.csv\":\"file 644 492d5ea496056f1a6a6592241032fab764c321596317930b4fa0e1e8bc3b7470\",\"./repo/handbook.docx\":\"file 644 f54a1146b041b4673c9ce0f5bc8e6d6fc331f26473c30ae005e1be2183b13961\",\"./repo/system\":\"dir 755\",\"./repo/system/assets\":\"dir 755\"}"
+        },
+        {
+          "case": "references-output-outside",
+          "field": "exit",
+          "actual": "3"
+        },
+        {
+          "case": "references-output-outside",
+          "field": "stdout",
+          "actual": ""
+        },
+        {
+          "case": "references-output-outside",
+          "field": "stderr",
+          "actual": "buildos-intake: error: {ROOT}/out resolves outside the root {ROOT}/repo; pass --allow-outside-root to allow a write outside the repository root\n"
+        },
+        {
+          "case": "references-output-outside",
+          "field": "tree",
+          "actual": "{\".\":\"dir 700\",\"./out\":\"dir 755\",\"./repo\":\"dir 755\",\"./repo/data.csv\":\"file 644 492d5ea496056f1a6a6592241032fab764c321596317930b4fa0e1e8bc3b7470\",\"./repo/system\":\"dir 755\",\"./repo/system/assets\":\"dir 755\"}"
+        },
+        {
+          "case": "playbooks-output-outside",
+          "field": "exit",
+          "actual": "3"
+        },
+        {
+          "case": "playbooks-output-outside",
+          "field": "stdout",
+          "actual": ""
+        },
+        {
+          "case": "playbooks-output-outside",
+          "field": "stderr",
+          "actual": "buildos-intake: error: {ROOT}/out resolves outside the root {ROOT}/repo; pass --allow-outside-root to allow a write outside the repository root\n"
+        },
+        {
+          "case": "playbooks-output-outside",
+          "field": "tree",
+          "actual": "{\".\":\"dir 700\",\"./out\":\"dir 755\",\"./repo\":\"dir 755\",\"./repo/data.csv\":\"file 644 492d5ea496056f1a6a6592241032fab764c321596317930b4fa0e1e8bc3b7470\",\"./repo/system\":\"dir 755\",\"./repo/system/assets\":\"dir 755\",\"./repo/system/playbooks\":\"dir 755\"}"
+        },
+        {
+          "case": "assets-link-outside",
+          "field": "exit",
+          "actual": "3"
+        },
+        {
+          "case": "assets-link-outside",
+          "field": "stdout",
+          "actual": ""
+        },
+        {
+          "case": "assets-link-outside",
+          "field": "stderr",
+          "actual": "buildos-intake: error: system/assets/data resolves outside the root {ROOT}/repo; pass --allow-outside-root to allow a write outside the repository root\n"
+        },
+        {
+          "case": "assets-link-outside",
+          "field": "tree",
+          "actual": "{\".\":\"dir 700\",\"./out\":\"dir 755\",\"./repo\":\"dir 755\",\"./repo/data.csv\":\"file 644 492d5ea496056f1a6a6592241032fab764c321596317930b4fa0e1e8bc3b7470\",\"./repo/system\":\"dir 755\",\"./repo/system/assets\":\"link ../../out\"}"
+        },
+        {
+          "case": "twin-link-outside-force",
+          "field": "tree",
+          "actual": "{\".\":\"dir 700\",\"./out\":\"dir 755\",\"./out/victim.csv\":\"file 644 f660a7996deacfbc7560e4240054a8ad82eb02fe25a95064257e07084bcacb85\",\"./repo\":\"dir 755\",\"./repo/data.csv\":\"file 644 492d5ea496056f1a6a6592241032fab764c321596317930b4fa0e1e8bc3b7470\",\"./repo/system\":\"dir 755\",\"./repo/system/assets\":\"dir 755\",\"./repo/system/assets/data\":\"dir 755\",\"./repo/system/assets/data/data.csv\":\"file 644 86c7fe700a8169abeef980582b05ec995fd27a002b2bfa288e9337033204a94b\"}"
+        },
+        {
+          "case": "twin-link-outside-force-allowed",
+          "field": "tree",
+          "actual": "{\".\":\"dir 700\",\"./out\":\"dir 755\",\"./out/victim.csv\":\"file 644 f660a7996deacfbc7560e4240054a8ad82eb02fe25a95064257e07084bcacb85\",\"./repo\":\"dir 755\",\"./repo/data.csv\":\"file 644 492d5ea496056f1a6a6592241032fab764c321596317930b4fa0e1e8bc3b7470\",\"./repo/system\":\"dir 755\",\"./repo/system/assets\":\"dir 755\",\"./repo/system/assets/data\":\"dir 755\",\"./repo/system/assets/data/data.csv\":\"file 644 86c7fe700a8169abeef980582b05ec995fd27a002b2bfa288e9337033204a94b\"}"
+        },
+        {
+          "case": "twin-link-inside-force",
+          "field": "tree",
+          "actual": "{\".\":\"dir 700\",\"./out\":\"dir 755\",\"./repo\":\"dir 755\",\"./repo/data.csv\":\"file 644 492d5ea496056f1a6a6592241032fab764c321596317930b4fa0e1e8bc3b7470\",\"./repo/keep\":\"dir 755\",\"./repo/keep/inside.csv\":\"file 644 f660a7996deacfbc7560e4240054a8ad82eb02fe25a95064257e07084bcacb85\",\"./repo/system\":\"dir 755\",\"./repo/system/assets\":\"dir 755\",\"./repo/system/assets/data\":\"dir 755\",\"./repo/system/assets/data/data.csv\":\"file 644 86c7fe700a8169abeef980582b05ec995fd27a002b2bfa288e9337033204a94b\"}"
+        },
+        {
+          "case": "twin-link-dangling",
+          "field": "tree",
+          "actual": "{\".\":\"dir 700\",\"./out\":\"dir 755\",\"./repo\":\"dir 755\",\"./repo/data.csv\":\"file 644 492d5ea496056f1a6a6592241032fab764c321596317930b4fa0e1e8bc3b7470\",\"./repo/system\":\"dir 755\",\"./repo/system/assets\":\"dir 755\",\"./repo/system/assets/data\":\"dir 755\",\"./repo/system/assets/data/data.csv\":\"file 644 86c7fe700a8169abeef980582b05ec995fd27a002b2bfa288e9337033204a94b\"}"
+        },
+        {
+          "case": "references-link-outside",
+          "field": "tree",
+          "actual": "{\".\":\"dir 700\",\"./out\":\"dir 755\",\"./out/victim.json\":\"file 644 ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356\",\"./repo\":\"dir 755\",\"./repo/data.csv\":\"file 644 492d5ea496056f1a6a6592241032fab764c321596317930b4fa0e1e8bc3b7470\",\"./repo/system\":\"dir 755\",\"./repo/system/.os\":\"dir 755\",\"./repo/system/.os/indexes\":\"dir 755\",\"./repo/system/.os/indexes/references.json\":\"file 644 56bd47771ca90a70cd18a516aae2af7edb049dfbd693e0e32bc23ac7273806e9\",\"./repo/system/assets\":\"dir 755\"}"
+        },
+        {
+          "case": "device-output-allowed",
+          "field": "exit",
+          "actual": "3"
+        },
+        {
+          "case": "device-output-allowed",
+          "field": "stdout",
+          "actual": ""
+        },
+        {
+          "case": "device-output-allowed",
+          "field": "stderr",
+          "actual": "buildos-intake: error: /dev/null is a device or special path\n"
+        },
+        {
+          "case": "flag-after-dashdash",
+          "field": "exit",
+          "actual": "3"
+        },
+        {
+          "case": "flag-after-dashdash",
+          "field": "stdout",
+          "actual": ""
+        },
+        {
+          "case": "flag-after-dashdash",
+          "field": "stderr",
+          "actual": "buildos-intake: error: {ROOT}/out/assets/data resolves outside the root {ROOT}/repo; pass --allow-outside-root to allow a write outside the repository root\n"
+        },
+        {
+          "case": "flag-after-dashdash",
+          "field": "tree",
+          "actual": "{\".\":\"dir 700\",\"./out\":\"dir 755\",\"./repo\":\"dir 755\",\"./repo/data.csv\":\"file 644 492d5ea496056f1a6a6592241032fab764c321596317930b4fa0e1e8bc3b7470\",\"./repo/system\":\"dir 755\",\"./repo/system/assets\":\"dir 755\"}"
+        }
+      ]
+    },
+    {
+      "id": "PE-011",
+      "summary": "`--json` in flag position works on the discovery and design commands; the Go tools reject it.",
+      "reason": "PRD 20 Output and Exit Contract: `--json` gives a stable automation form, and P5 A35 requires a dry run to report `planned` in JSON mode. The Go tools `buildos-discovery` and `buildos-design` define no `-json` flag: `--json` prints `flag provided but not defined: -json`, the flag usage, and exits 1. The TypeScript CLI (under `buildos discovery`, `buildos design`, and the legacy names) treats a whole `--json` argument in flag position as the switch: before the first non-flag argument, before `--`, and never as a flag value (Go `flag` rules). It prints the shared envelope (`discovery.run`, `discovery.qualify`, or `design.promote`; `write_status` `planned` for a dry run, `applied` for a write) on stdout with nothing on stderr, and the exit code of the human form. Every other spelling (`-json`, `--json=true`, `--title --json`, `-- --json`, `x --json`) behaves as in Go (P5 edge goldens `design-json-*`, `discovery-json-*`). P5 edge goldens `design-json-in-flag-position` and `discovery-json-in-flag-position`: exit, stdout, and stderr differ; the tree is equal (a dry run). No other difference is allowed.",
+      "owner_decision": "docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#owner-decisions (2026-11-23, PE-011 and PE-012 approved)",
+      "golden": [],
+      "go_seed": [],
+      "p5_edge": [
+        {
+          "case": "design-json-in-flag-position",
+          "field": "exit",
+          "actual": "0"
+        },
+        {
+          "case": "design-json-in-flag-position",
+          "field": "stdout",
+          "actual": "{\n  \"ok\": true,\n  \"command\": \"design.promote\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"{ROOT}/root\",\n  \"mode\": \"\",\n  \"write_status\": \"planned\",\n  \"result\": {\n    \"finding_id\": \"FIND-001\",\n    \"requested_finding_id\": \"FIND-001\",\n    \"canonical_finding_id\": \"FIND-001\",\n    \"redirect_chain\": [\n      \"FIND-001\"\n    ],\n    \"design_path\": \"system/docs/designs/{DATE}-coupon-drops-tax-from-cart-total.md\",\n    \"finding_path\": \"system/workspace/findings/FIND-001/\",\n    \"findings_index_path\": \"system/.os/data/findings.jsonl\",\n    \"design_content\": \"# Coupon drops tax from cart total\\n\\n## Purpose\\n\\nCapture the design hand-off for qualified finding `FIND-001` so planning can proceed from repeatable evidence.\\n\\n## Context\\n\\n- Finding: [FIND-001](../../workspace/findings/FIND-001/finding.md)\\n- Origin run: `RUN-001`\\n- Qualification: [system/workspace/findings/FIND-001/qualification.md#confirmation-test](../../workspace/findings/FIND-001/qualification.md#confirmation-test)\\n- Raw anchor: [system/workspace/runs/RUN-001/raw-findings.md#raw-finding-1](../../workspace/runs/RUN-001/raw-findings.md#raw-finding-1)\\n- Systems: sample-shop\\n- Environments: baseline\\n- Owners: fixture-team\\n\\nFinding qualified from run RUN-001.\\n\\nRaw finding system/workspace/runs/RUN-001/raw-findings.md#raw-finding-1 was deterministically confirmed.\\n\\n## Decision\\n\\nUse this design as the make-docs-routed follow-on artifact for the qualified finding. The finding remains the evidence-backed observation; this design owns solution framing, tradeoffs, and downstream planning context.\\n\\n## Alternatives Considered\\n\\n- Auto-promoting qualified findings was rejected because design promotion must remain user-gated.\\n- Writing outside the `system/docs/designs/` router was rejected because Build OS must preserve the make-docs boundary.\\n\\n## Consequences\\n\\n- The promoted design carries finding lineage, qualification evidence, configured scope, and owner metadata into the planning path.\\n- The source finding now records this design in its `designs` list for traceability.\\n- Stage-mover automation remains a later concern.\\n\\n## Intended Follow-On\\n\\n- Route: `baseline-plan`\\n- Next Prompt: [designs-to-plan.prompt.md](../assets/prompts/designs-to-plan.prompt.md)\\n- Why: This design should feed a fresh baseline planning flow for the promoted finding.\\n- Coordinate Handoff: not applicable for baseline planning.\\n\",\n    \"dry_run\": true\n  },\n  \"diagnostics\": []\n}\n"
+        },
+        {
+          "case": "design-json-in-flag-position",
+          "field": "stderr",
+          "actual": ""
+        },
+        {
+          "case": "discovery-json-in-flag-position",
+          "field": "exit",
+          "actual": "0"
+        },
+        {
+          "case": "discovery-json-in-flag-position",
+          "field": "stdout",
+          "actual": "{\n  \"ok\": true,\n  \"command\": \"discovery.run\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"{ROOT}/root\",\n  \"mode\": \"\",\n  \"write_status\": \"planned\",\n  \"result\": {\n    \"run_id\": \"RUN-003\",\n    \"run_path\": \"system/workspace/runs/RUN-003/\",\n    \"runs_index_path\": \"system/.os/data/runs.jsonl\",\n    \"requested_targets\": [\n      \"CAP-001\",\n      \"REQ-002\"\n    ],\n    \"canonical_targets\": [\n      \"CAP-001\",\n      \"REQ-001\"\n    ],\n    \"target_resolutions\": [\n      {\n        \"requested_id\": \"CAP-001\",\n        \"canonical_id\": \"CAP-001\",\n        \"chain\": [\n          \"CAP-001\"\n        ]\n      },\n      {\n        \"requested_id\": \"REQ-002\",\n        \"canonical_id\": \"REQ-001\",\n        \"chain\": [\n          \"REQ-002\",\n          \"REQ-001\"\n        ]\n      }\n    ],\n    \"evidence_count\": 0,\n    \"raw_finding_count\": 0,\n    \"dry_run\": true\n  },\n  \"diagnostics\": []\n}\n"
+        },
+        {
+          "case": "discovery-json-in-flag-position",
+          "field": "stderr",
+          "actual": ""
+        }
+      ]
+    },
+    {
+      "id": "PE-012",
+      "summary": "A discovery or design write that would land outside the project root through a symlinked folder is refused (exit 3) unless `--allow-outside-root` is given; the Go tools follow the link.",
+      "reason": "PRD 20 requires writes to stay inside the project root, as PE-007 does for `entities`. With a symlinked finding folder, designs folder, or runs folder that leads outside the root, the Go tools write through the link (exit 0). The TypeScript CLI checks every write folder before the first write, refuses with `buildos-<tool>: error: <path> resolves outside the root <root>; pass --allow-outside-root to allow a write outside the repository root` and exit 3 (one wording for intake, discovery, and design since the P4 and P5 merge), and changes nothing; a refusal or failure after a write rolls back as Go does for its own errors. The opt-in flag `--allow-outside-root` (in flag position, as PE-011; the same flag P4 adds for intake) keeps Go's behavior: the P5 edge goldens `design-finding-folder-link-outside-allowed`, `design-designs-link-outside-allowed`, and `discovery-runs-link-outside-allowed` equal Go byte for byte. A symlink at a design file itself (the finding record or the findings index) is replaced, never followed, as Go's `os.Rename` does, so no byte lands outside and that case equals Go with no flag (`design-record-link-outside`, `design-index-link-outside`). Reads of ordinary paths outside the root are allowed, as Go reads them. P5 edge goldens `design-finding-folder-link-outside`, `design-designs-link-outside`, and `discovery-runs-link-outside`: exit, stdout, stderr, and tree differ. No other difference is allowed. A symlink at the discovery index (`runs.jsonl` or `findings.jsonl`) is PE-014. The option applies to write destinations only: content reads stay inside the root in every mode.",
+      "owner_decision": "docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#owner-decisions (2026-11-23, PE-011 and PE-012 approved)",
+      "golden": [],
+      "go_seed": [],
+      "p5_edge": [
+        {
+          "case": "design-finding-folder-link-outside",
+          "field": "exit",
+          "actual": "3"
+        },
+        {
+          "case": "design-finding-folder-link-outside",
+          "field": "stdout",
+          "actual": ""
+        },
+        {
+          "case": "design-finding-folder-link-outside",
+          "field": "stderr",
+          "actual": "buildos-design: error: system/workspace/findings/FIND-001 resolves outside the root {ROOT}/root; pass --allow-outside-root to allow a write outside the repository root\n"
+        },
+        {
+          "case": "design-finding-folder-link-outside",
+          "field": "tree",
+          "actual": "{\"outside-FIND-001\":\"dir 755\",\"outside-FIND-001/finding.md\":\"file 644 81e907b47740fc196c5ad7a9685ed058ff1188727d124c5a424a93a82b602e75\",\"outside-FIND-001/qualification.md\":\"file 644 981afcb562d3d336c4940903135aa8cbb722481fe191a2a278e07be92fd7a1b8\",\"root\":\"dir 755\",\"root/system\":\"dir 755\",\"root/system/.os\":\"dir 755\",\"root/system/.os/data\":\"dir 755\",\"root/system/.os/data/capabilities.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/extractions.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/findings.jsonl\":\"file 644 91955507baa155007bd66d17409370645b2478d3a0c0da05c23704e3a5a8ba9f\",\"root/system/.os/data/personas.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/requirements.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/results.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/runs.jsonl\":\"file 644 b9f99454fa3bb74dfd8979183eff29bd86ebe1d1f0384869b329096189cd649d\",\"root/system/.os/data/test-cases.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/docs\":\"dir 755\",\"root/system/docs/assets\":\"dir 755\",\"root/system/docs/assets/prompts\":\"dir 755\",\"root/system/docs/assets/prompts/designs-to-plan-change.prompt.md\":\"file 644 c644dd885a382147571191ffeff86b532693611315cec6f5d565809d8c1f9656\",\"root/system/docs/assets/prompts/designs-to-plan.prompt.md\":\"file 644 70a1599922dfc055dfb31c1106937532c2e538351cfb5a6c05f9a9de4377116f\",\"root/system/docs/assets/references\":\"dir 755\",\"root/system/docs/assets/references/design-contract.md\":\"file 644 5cdff3bcc05a4f50c7ef986a1dc6f5c375b384cdb23f00528f56b2a57e845bf3\",\"root/system/docs/assets/references/design-workflow.md\":\"file 644 c3d014c3098c5901b9486e80de380a6d77b45a3add1091086c1986dd55c5bec3\",\"root/system/docs/assets/templates\":\"dir 755\",\"root/system/docs/assets/templates/design.md\":\"file 644 94207cf39763b02798e07a83dc912a44642230189dc97ed49c4645f248d4828d\",\"root/system/docs/designs\":\"dir 755\",\"root/system/docs/designs/AGENTS.md\":\"file 644 e1a66c3b2bbf55ddbff5f6013c4dfbe8e3227bd0609480c15f5ebf334b3aa8ae\",\"root/system/workspace\":\"dir 755\",\"root/system/workspace/findings\":\"dir 755\",\"root/system/workspace/findings/FIND-001\":\"link {ROOT}/outside-FIND-001\",\"root/system/workspace/findings/FIND-004\":\"dir 755\",\"root/system/workspace/findings/FIND-004/finding.md\":\"file 644 81213d4c7a61938b6c1151e5f21a5f7cfc1904791003e6d00cce92641f805478\",\"root/system/workspace/findings/FIND-004/qualification.md\":\"file 644 8899745c5b9aaae309af240c40dacb6331072ea703daca07513c7f6170e2b1ed\",\"root/system/workspace/findings/FIND-005\":\"dir 755\",\"root/system/workspace/findings/FIND-005/qualification.md\":\"file 644 91a0e25fbe6a6facb3209c20e168a276d5654fa50ba7a42fdabf7409029e0778\"}"
+        },
+        {
+          "case": "design-designs-link-outside",
+          "field": "exit",
+          "actual": "3"
+        },
+        {
+          "case": "design-designs-link-outside",
+          "field": "stdout",
+          "actual": ""
+        },
+        {
+          "case": "design-designs-link-outside",
+          "field": "stderr",
+          "actual": "buildos-design: error: system/docs/designs resolves outside the root {ROOT}/root; pass --allow-outside-root to allow a write outside the repository root\n"
+        },
+        {
+          "case": "design-designs-link-outside",
+          "field": "tree",
+          "actual": "{\"outside-designs\":\"dir 755\",\"outside-designs/AGENTS.md\":\"file 644 e1a66c3b2bbf55ddbff5f6013c4dfbe8e3227bd0609480c15f5ebf334b3aa8ae\",\"root\":\"dir 755\",\"root/system\":\"dir 755\",\"root/system/.os\":\"dir 755\",\"root/system/.os/data\":\"dir 755\",\"root/system/.os/data/capabilities.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/extractions.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/findings.jsonl\":\"file 644 91955507baa155007bd66d17409370645b2478d3a0c0da05c23704e3a5a8ba9f\",\"root/system/.os/data/personas.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/requirements.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/results.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/runs.jsonl\":\"file 644 b9f99454fa3bb74dfd8979183eff29bd86ebe1d1f0384869b329096189cd649d\",\"root/system/.os/data/test-cases.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/docs\":\"dir 755\",\"root/system/docs/assets\":\"dir 755\",\"root/system/docs/assets/prompts\":\"dir 755\",\"root/system/docs/assets/prompts/designs-to-plan-change.prompt.md\":\"file 644 c644dd885a382147571191ffeff86b532693611315cec6f5d565809d8c1f9656\",\"root/system/docs/assets/prompts/designs-to-plan.prompt.md\":\"file 644 70a1599922dfc055dfb31c1106937532c2e538351cfb5a6c05f9a9de4377116f\",\"root/system/docs/assets/references\":\"dir 755\",\"root/system/docs/assets/references/design-contract.md\":\"file 644 5cdff3bcc05a4f50c7ef986a1dc6f5c375b384cdb23f00528f56b2a57e845bf3\",\"root/system/docs/assets/references/design-workflow.md\":\"file 644 c3d014c3098c5901b9486e80de380a6d77b45a3add1091086c1986dd55c5bec3\",\"root/system/docs/assets/templates\":\"dir 755\",\"root/system/docs/assets/templates/design.md\":\"file 644 94207cf39763b02798e07a83dc912a44642230189dc97ed49c4645f248d4828d\",\"root/system/docs/designs\":\"link {ROOT}/outside-designs\",\"root/system/workspace\":\"dir 755\",\"root/system/workspace/findings\":\"dir 755\",\"root/system/workspace/findings/FIND-001\":\"dir 755\",\"root/system/workspace/findings/FIND-001/finding.md\":\"file 644 81e907b47740fc196c5ad7a9685ed058ff1188727d124c5a424a93a82b602e75\",\"root/system/workspace/findings/FIND-001/qualification.md\":\"file 644 981afcb562d3d336c4940903135aa8cbb722481fe191a2a278e07be92fd7a1b8\",\"root/system/workspace/findings/FIND-004\":\"dir 755\",\"root/system/workspace/findings/FIND-004/finding.md\":\"file 644 81213d4c7a61938b6c1151e5f21a5f7cfc1904791003e6d00cce92641f805478\",\"root/system/workspace/findings/FIND-004/qualification.md\":\"file 644 8899745c5b9aaae309af240c40dacb6331072ea703daca07513c7f6170e2b1ed\",\"root/system/workspace/findings/FIND-005\":\"dir 755\",\"root/system/workspace/findings/FIND-005/qualification.md\":\"file 644 91a0e25fbe6a6facb3209c20e168a276d5654fa50ba7a42fdabf7409029e0778\"}"
+        },
+        {
+          "case": "discovery-runs-link-outside",
+          "field": "exit",
+          "actual": "3"
+        },
+        {
+          "case": "discovery-runs-link-outside",
+          "field": "stdout",
+          "actual": ""
+        },
+        {
+          "case": "discovery-runs-link-outside",
+          "field": "stderr",
+          "actual": "buildos-discovery: error: system/workspace/runs/RUN-003 resolves outside the root {ROOT}/root; pass --allow-outside-root to allow a write outside the repository root\n"
+        },
+        {
+          "case": "discovery-runs-link-outside",
+          "field": "tree",
+          "actual": "{\"outside-runs\":\"dir 755\",\"outside-runs/RUN-001\":\"dir 755\",\"outside-runs/RUN-001/raw-findings.md\":\"file 644 6c57286dad1b281990aae1a42ce75cc9ecb65c897e79e7b0eaedfca4e97fa44e\",\"outside-runs/RUN-002\":\"dir 755\",\"outside-runs/RUN-002/raw-findings.md\":\"file 644 4935a12887f4a0a01eae20d5da969b6d7a50b63b15f49d90ffe3c5e863754898\",\"root\":\"dir 755\",\"root/evidence\":\"dir 755\",\"root/evidence/confirmation-run.txt\":\"file 644 6697d4e45d1771891e1da096a0d7c82bf85b37e872154a6bfd52b9c975748572\",\"root/inputs\":\"dir 755\",\"root/inputs/evidence\":\"dir 755\",\"root/inputs/evidence/Cart Export (v2).csv\":\"file 644 6a38f4ca323d92f25ba55346d767834c1bbf1c481e46b2fa37c7bd485c5b6440\",\"root/inputs/evidence/checkout-notes.txt\":\"file 644 4bc66976beed99065b5642f4a223cb1002504489be7e949c402fb9124491190e\",\"root/inputs/raw\":\"dir 755\",\"root/inputs/raw/raw-1.md\":\"file 644 baf72687a8bd059a84c0b8f1ac8528a94179e918b96acc80d446a040181b91b5\",\"root/inputs/raw/raw-2.md\":\"file 644 dc4b5cf92549d5b228f0fe042521b7947d57f1df5bf6d14c410127f8005ece16\",\"root/system\":\"dir 755\",\"root/system/.os\":\"dir 755\",\"root/system/.os/data\":\"dir 755\",\"root/system/.os/data/capabilities.jsonl\":\"file 644 3cb07b0e7de097c0d6ddae59a80d76c248b07fe036cbdafd332ed8c13e4add6f\",\"root/system/.os/data/extractions.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/findings.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/personas.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/requirements.jsonl\":\"file 644 d86f8eced4968851856a2838cb2ec8b451b87bca350f8633ccce683dff0ce2d6\",\"root/system/.os/data/results.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/runs.jsonl\":\"file 644 96c2d080a76439900d0619895b69ea8f8f3f98c670af8f8c30d873a2869f7db1\",\"root/system/.os/data/test-cases.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/indexes\":\"dir 755\",\"root/system/.os/indexes/playbooks.json\":\"file 644 a132c84a4ddc60d7d7c0843fd7f21da88ed8ebb27de60f00f9b37b6acfefb044\",\"root/system/playbooks\":\"dir 755\",\"root/system/playbooks/discovery\":\"dir 755\",\"root/system/playbooks/discovery/checkout-review.md\":\"file 644 a517f39c2352d9739a408e8c727946f191f4d2cf1dfb3ad64ea9f80cb6ba0779\",\"root/system/workspace\":\"dir 755\",\"root/system/workspace/runs\":\"link {ROOT}/outside-runs\",\"root/tests\":\"dir 755\",\"root/tests/confirm-cart-total.spec.ts\":\"file 644 355129cafa3574f2cde13ea4eb71dcba33eb7986afb77fa937f9e9d3bc5f2f82\"}"
+        }
+      ]
+    },
+    {
+      "id": "PE-013",
+      "summary": "A failed convert leaves no files behind: side artifacts are written only after the whole source has been read and checked; Go writes each one as it meets it.",
+      "reason": "Input files are untrusted. Go writes xl/media and word/media files (and HTML images, SVG, and Mermaid files) while it reads the source, so a source that then fails leaves files behind. The port reads and checks the whole source first (every input limit, every XML part, every relationship), then writes the same side artifacts in the same order with the same --force checks, then the twins. A valid source gives the same output as Go. Only intake-convert-xlsx-escaping-target changes: Go writes system/assets/escaping-sheet/media/image1.png and then fails on the escaping relationship; the port fails with the same message and writes nothing. No other difference is allowed. Preflight cases (W1 R7 P4 review round 3, `hostile`): an HTML page with one image, whose side artifact system/assets/page/media/page-image-001.png Go writes before the twin system/assets/page/page.md, and a condition at the twin that exists before the convert: a folder at the twin with --force, an existing twin without --force, a read-only twin with --force, and a read-only twin folder (with media/ already there) with --force. Go writes the side artifact and then fails; the port checks every write first, in Go's order (folder creation, existence against --force, the entry's type, the open of an existing entry, a new entry's folder, link count, containment), fails with the same exit code and text, and writes nothing. In a hostile entry, {PROJECT} stands for the project folder. The go fields come from a Go 1.24.1 buildos-intake run on macOS on 2026-11-23; test/intake-hostile.test.ts checks that its PE-013 preflight cases are exactly these and that each port result equals the pinned one.",
+      "owner_decision": "docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#owner-decisions (2026-11-23, PE-013 approved: \"A failed convert leaves no files behind\")",
+      "golden": [
+        {
+          "case": "intake-convert-xlsx-escaping-target",
+          "field": "tree",
+          "actual": "\n"
+        }
+      ],
+      "go_seed": [],
+      "hostile": [
+        {
+          "case": "preflight-twin-directory-force",
+          "go": {
+            "exit": 1,
+            "outcome": "writes system/assets/page/media/page-image-001.png, then fails",
+            "stderr_first_line": "buildos-intake: error: open {PROJECT}/system/assets/page/page.md: is a directory"
+          },
+          "allowed": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "buildos-intake: error: open {PROJECT}/system/assets/page/page.md: is a directory\n"
+          }
+        },
+        {
+          "case": "preflight-twin-exists",
+          "go": {
+            "exit": 1,
+            "outcome": "writes system/assets/page/media/page-image-001.png, then fails",
+            "stderr_first_line": "buildos-intake: error: output exists, use --force to overwrite: {PROJECT}/system/assets/page/page.md"
+          },
+          "allowed": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "buildos-intake: error: output exists, use --force to overwrite: {PROJECT}/system/assets/page/page.md\n"
+          }
+        },
+        {
+          "case": "preflight-twin-read-only-force",
+          "go": {
+            "exit": 1,
+            "outcome": "writes system/assets/page/media/page-image-001.png, then fails",
+            "stderr_first_line": "buildos-intake: error: open {PROJECT}/system/assets/page/page.md: permission denied"
+          },
+          "allowed": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "buildos-intake: error: open {PROJECT}/system/assets/page/page.md: permission denied\n"
+          }
+        },
+        {
+          "case": "preflight-twin-folder-read-only-force",
+          "go": {
+            "exit": 1,
+            "outcome": "writes system/assets/page/media/page-image-001.png, then fails",
+            "stderr_first_line": "buildos-intake: error: open {PROJECT}/system/assets/page/page.md: permission denied"
+          },
+          "allowed": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "buildos-intake: error: open {PROJECT}/system/assets/page/page.md: permission denied\n"
+          }
+        }
+      ]
+    },
+    {
+      "id": "PE-014",
+      "summary": "A failed promotion is fully undone: the port restores the start state after any promotion failure, where Go can leave changed bytes or a changed link type; a symlink at the discovery index (`runs.jsonl` or `findings.jsonl`) is replaced, never followed, where Go appends through it.",
+      "reason": "PRD 20 requires a failed write to leave the project as it was. Promotion rollback: before the first write, `design promote finding` records each entry it replaces (the bytes and full mode of a file, with its setuid, setgid, and sticky bits, which Go's rollback drops, or the text and own mode of a symlink), and after any failure it restores that start state, removes the design file it created, and leaves no temporary file. The error text and exit code are Go's. The Go 1.24.1 design tool, with the same injected failures (a scratch Go test in package design that wraps replaceExistingFile and createExclusiveFile, on test/fixtures/golden/design), ends in another state in five of six cases, listed in `design_rollback` with Go's end state; the sixth (the design creation fails on regular files) ends in the start state in Go too and is not an exception. test/design.test.ts \"a failed promotion restores every replaced entry as it was\" checks the start state in all six cases and that this list names exactly the five cases where Go differs. Discovery index: discovery adds its index row with an atomic replace (the index as it is plus the new line, renamed over the entry), not Go's append, so a failed write leaves the old index; a symlink at the index, to a file outside or inside the root, is replaced by a regular file with exactly the bytes Go writes through the link, and the link target is kept, also with `--allow-outside-root`. P5 edge goldens `discovery-runs-index-link-outside`, `discovery-runs-index-link-outside-allowed`, and `discovery-runs-index-link-inside`: only the tree differs, by exactly the values below. A consequence of the same index-replacement rule (orchestrator ruling, 2026-11-23; the owner is informed): with a writable (0644) runs.jsonl in a folder the user cannot write (0555), Go opens the index in place, appends, and exits 0; the atomic replace must create a temporary file in that folder, so the port exits 1 with `open <index>: permission denied`, keeps the old index bytes, and removes the run folder it created. P5 edge golden `discovery-runs-index-folder-readonly`: exit, stdout, stderr, and tree differ, by exactly the values below. No other difference is allowed.",
+      "owner_decision": "docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#owner-decisions (2026-11-23, PE-014 approved: \"A failed promotion is fully undone\")",
+      "golden": [],
+      "go_seed": [],
+      "p5_edge": [
+        {
+          "case": "discovery-runs-index-link-outside",
+          "field": "tree",
+          "actual": "{\"outside-runs.jsonl\":\"file 640 96c2d080a76439900d0619895b69ea8f8f3f98c670af8f8c30d873a2869f7db1\",\"root\":\"dir 755\",\"root/evidence\":\"dir 755\",\"root/evidence/confirmation-run.txt\":\"file 644 6697d4e45d1771891e1da096a0d7c82bf85b37e872154a6bfd52b9c975748572\",\"root/inputs\":\"dir 755\",\"root/inputs/evidence\":\"dir 755\",\"root/inputs/evidence/Cart Export (v2).csv\":\"file 644 6a38f4ca323d92f25ba55346d767834c1bbf1c481e46b2fa37c7bd485c5b6440\",\"root/inputs/evidence/checkout-notes.txt\":\"file 644 4bc66976beed99065b5642f4a223cb1002504489be7e949c402fb9124491190e\",\"root/inputs/raw\":\"dir 755\",\"root/inputs/raw/raw-1.md\":\"file 644 baf72687a8bd059a84c0b8f1ac8528a94179e918b96acc80d446a040181b91b5\",\"root/inputs/raw/raw-2.md\":\"file 644 dc4b5cf92549d5b228f0fe042521b7947d57f1df5bf6d14c410127f8005ece16\",\"root/system\":\"dir 755\",\"root/system/.os\":\"dir 755\",\"root/system/.os/data\":\"dir 755\",\"root/system/.os/data/capabilities.jsonl\":\"file 644 3cb07b0e7de097c0d6ddae59a80d76c248b07fe036cbdafd332ed8c13e4add6f\",\"root/system/.os/data/extractions.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/findings.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/personas.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/requirements.jsonl\":\"file 644 d86f8eced4968851856a2838cb2ec8b451b87bca350f8633ccce683dff0ce2d6\",\"root/system/.os/data/results.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/runs.jsonl\":\"file 640 7cf193f9640141aca57b365ee6a7abcb630089651e0b37867dbfdf637ef5ccd4\",\"root/system/.os/data/test-cases.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/indexes\":\"dir 755\",\"root/system/.os/indexes/playbooks.json\":\"file 644 a132c84a4ddc60d7d7c0843fd7f21da88ed8ebb27de60f00f9b37b6acfefb044\",\"root/system/playbooks\":\"dir 755\",\"root/system/playbooks/discovery\":\"dir 755\",\"root/system/playbooks/discovery/checkout-review.md\":\"file 644 a517f39c2352d9739a408e8c727946f191f4d2cf1dfb3ad64ea9f80cb6ba0779\",\"root/system/workspace\":\"dir 755\",\"root/system/workspace/runs\":\"dir 755\",\"root/system/workspace/runs/RUN-001\":\"dir 755\",\"root/system/workspace/runs/RUN-001/raw-findings.md\":\"file 644 6c57286dad1b281990aae1a42ce75cc9ecb65c897e79e7b0eaedfca4e97fa44e\",\"root/system/workspace/runs/RUN-002\":\"dir 755\",\"root/system/workspace/runs/RUN-002/raw-findings.md\":\"file 644 4935a12887f4a0a01eae20d5da969b6d7a50b63b15f49d90ffe3c5e863754898\",\"root/system/workspace/runs/RUN-003\":\"dir 755\",\"root/system/workspace/runs/RUN-003/evidence\":\"dir 755\",\"root/system/workspace/runs/RUN-003/raw-findings.md\":\"file 644 0de891e095fd5ea389796918aa0fd4ddfe99182bf06b7a2a54292a9453caaaaf\",\"root/system/workspace/runs/RUN-003/run.md\":\"file 644 2bba66c855a131a392cc6a162931db4b0d7627e4c39dc390397aff8a23b9d525\",\"root/tests\":\"dir 755\",\"root/tests/confirm-cart-total.spec.ts\":\"file 644 355129cafa3574f2cde13ea4eb71dcba33eb7986afb77fa937f9e9d3bc5f2f82\"}"
+        },
+        {
+          "case": "discovery-runs-index-link-outside-allowed",
+          "field": "tree",
+          "actual": "{\"outside-runs.jsonl\":\"file 640 96c2d080a76439900d0619895b69ea8f8f3f98c670af8f8c30d873a2869f7db1\",\"root\":\"dir 755\",\"root/evidence\":\"dir 755\",\"root/evidence/confirmation-run.txt\":\"file 644 6697d4e45d1771891e1da096a0d7c82bf85b37e872154a6bfd52b9c975748572\",\"root/inputs\":\"dir 755\",\"root/inputs/evidence\":\"dir 755\",\"root/inputs/evidence/Cart Export (v2).csv\":\"file 644 6a38f4ca323d92f25ba55346d767834c1bbf1c481e46b2fa37c7bd485c5b6440\",\"root/inputs/evidence/checkout-notes.txt\":\"file 644 4bc66976beed99065b5642f4a223cb1002504489be7e949c402fb9124491190e\",\"root/inputs/raw\":\"dir 755\",\"root/inputs/raw/raw-1.md\":\"file 644 baf72687a8bd059a84c0b8f1ac8528a94179e918b96acc80d446a040181b91b5\",\"root/inputs/raw/raw-2.md\":\"file 644 dc4b5cf92549d5b228f0fe042521b7947d57f1df5bf6d14c410127f8005ece16\",\"root/system\":\"dir 755\",\"root/system/.os\":\"dir 755\",\"root/system/.os/data\":\"dir 755\",\"root/system/.os/data/capabilities.jsonl\":\"file 644 3cb07b0e7de097c0d6ddae59a80d76c248b07fe036cbdafd332ed8c13e4add6f\",\"root/system/.os/data/extractions.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/findings.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/personas.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/requirements.jsonl\":\"file 644 d86f8eced4968851856a2838cb2ec8b451b87bca350f8633ccce683dff0ce2d6\",\"root/system/.os/data/results.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/runs.jsonl\":\"file 640 7cf193f9640141aca57b365ee6a7abcb630089651e0b37867dbfdf637ef5ccd4\",\"root/system/.os/data/test-cases.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/indexes\":\"dir 755\",\"root/system/.os/indexes/playbooks.json\":\"file 644 a132c84a4ddc60d7d7c0843fd7f21da88ed8ebb27de60f00f9b37b6acfefb044\",\"root/system/playbooks\":\"dir 755\",\"root/system/playbooks/discovery\":\"dir 755\",\"root/system/playbooks/discovery/checkout-review.md\":\"file 644 a517f39c2352d9739a408e8c727946f191f4d2cf1dfb3ad64ea9f80cb6ba0779\",\"root/system/workspace\":\"dir 755\",\"root/system/workspace/runs\":\"dir 755\",\"root/system/workspace/runs/RUN-001\":\"dir 755\",\"root/system/workspace/runs/RUN-001/raw-findings.md\":\"file 644 6c57286dad1b281990aae1a42ce75cc9ecb65c897e79e7b0eaedfca4e97fa44e\",\"root/system/workspace/runs/RUN-002\":\"dir 755\",\"root/system/workspace/runs/RUN-002/raw-findings.md\":\"file 644 4935a12887f4a0a01eae20d5da969b6d7a50b63b15f49d90ffe3c5e863754898\",\"root/system/workspace/runs/RUN-003\":\"dir 755\",\"root/system/workspace/runs/RUN-003/evidence\":\"dir 755\",\"root/system/workspace/runs/RUN-003/raw-findings.md\":\"file 644 0de891e095fd5ea389796918aa0fd4ddfe99182bf06b7a2a54292a9453caaaaf\",\"root/system/workspace/runs/RUN-003/run.md\":\"file 644 2bba66c855a131a392cc6a162931db4b0d7627e4c39dc390397aff8a23b9d525\",\"root/tests\":\"dir 755\",\"root/tests/confirm-cart-total.spec.ts\":\"file 644 355129cafa3574f2cde13ea4eb71dcba33eb7986afb77fa937f9e9d3bc5f2f82\"}"
+        },
+        {
+          "case": "discovery-runs-index-link-inside",
+          "field": "tree",
+          "actual": "{\"root\":\"dir 755\",\"root/evidence\":\"dir 755\",\"root/evidence/confirmation-run.txt\":\"file 644 6697d4e45d1771891e1da096a0d7c82bf85b37e872154a6bfd52b9c975748572\",\"root/inputs\":\"dir 755\",\"root/inputs/evidence\":\"dir 755\",\"root/inputs/evidence/Cart Export (v2).csv\":\"file 644 6a38f4ca323d92f25ba55346d767834c1bbf1c481e46b2fa37c7bd485c5b6440\",\"root/inputs/evidence/checkout-notes.txt\":\"file 644 4bc66976beed99065b5642f4a223cb1002504489be7e949c402fb9124491190e\",\"root/inputs/raw\":\"dir 755\",\"root/inputs/raw/raw-1.md\":\"file 644 baf72687a8bd059a84c0b8f1ac8528a94179e918b96acc80d446a040181b91b5\",\"root/inputs/raw/raw-2.md\":\"file 644 dc4b5cf92549d5b228f0fe042521b7947d57f1df5bf6d14c410127f8005ece16\",\"root/system\":\"dir 755\",\"root/system/.os\":\"dir 755\",\"root/system/.os/data\":\"dir 755\",\"root/system/.os/data/capabilities.jsonl\":\"file 644 3cb07b0e7de097c0d6ddae59a80d76c248b07fe036cbdafd332ed8c13e4add6f\",\"root/system/.os/data/extractions.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/findings.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/personas.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/requirements.jsonl\":\"file 644 d86f8eced4968851856a2838cb2ec8b451b87bca350f8633ccce683dff0ce2d6\",\"root/system/.os/data/results.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/runs.jsonl\":\"file 644 7cf193f9640141aca57b365ee6a7abcb630089651e0b37867dbfdf637ef5ccd4\",\"root/system/.os/data/test-cases.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/indexes\":\"dir 755\",\"root/system/.os/indexes/playbooks.json\":\"file 644 a132c84a4ddc60d7d7c0843fd7f21da88ed8ebb27de60f00f9b37b6acfefb044\",\"root/system/playbooks\":\"dir 755\",\"root/system/playbooks/discovery\":\"dir 755\",\"root/system/playbooks/discovery/checkout-review.md\":\"file 644 a517f39c2352d9739a408e8c727946f191f4d2cf1dfb3ad64ea9f80cb6ba0779\",\"root/system/runs-target.jsonl\":\"file 644 96c2d080a76439900d0619895b69ea8f8f3f98c670af8f8c30d873a2869f7db1\",\"root/system/workspace\":\"dir 755\",\"root/system/workspace/runs\":\"dir 755\",\"root/system/workspace/runs/RUN-001\":\"dir 755\",\"root/system/workspace/runs/RUN-001/raw-findings.md\":\"file 644 6c57286dad1b281990aae1a42ce75cc9ecb65c897e79e7b0eaedfca4e97fa44e\",\"root/system/workspace/runs/RUN-002\":\"dir 755\",\"root/system/workspace/runs/RUN-002/raw-findings.md\":\"file 644 4935a12887f4a0a01eae20d5da969b6d7a50b63b15f49d90ffe3c5e863754898\",\"root/system/workspace/runs/RUN-003\":\"dir 755\",\"root/system/workspace/runs/RUN-003/evidence\":\"dir 755\",\"root/system/workspace/runs/RUN-003/raw-findings.md\":\"file 644 0de891e095fd5ea389796918aa0fd4ddfe99182bf06b7a2a54292a9453caaaaf\",\"root/system/workspace/runs/RUN-003/run.md\":\"file 644 2bba66c855a131a392cc6a162931db4b0d7627e4c39dc390397aff8a23b9d525\",\"root/tests\":\"dir 755\",\"root/tests/confirm-cart-total.spec.ts\":\"file 644 355129cafa3574f2cde13ea4eb71dcba33eb7986afb77fa937f9e9d3bc5f2f82\"}"
+        },
+        {
+          "case": "discovery-runs-index-folder-readonly",
+          "field": "exit",
+          "actual": "1"
+        },
+        {
+          "case": "discovery-runs-index-folder-readonly",
+          "field": "stdout",
+          "actual": ""
+        },
+        {
+          "case": "discovery-runs-index-folder-readonly",
+          "field": "stderr",
+          "actual": "buildos-discovery: error: open {ROOT}/root/system/.os/data/runs.jsonl: permission denied\n"
+        },
+        {
+          "case": "discovery-runs-index-folder-readonly",
+          "field": "tree",
+          "actual": "{\"root\":\"dir 755\",\"root/evidence\":\"dir 755\",\"root/evidence/confirmation-run.txt\":\"file 644 6697d4e45d1771891e1da096a0d7c82bf85b37e872154a6bfd52b9c975748572\",\"root/inputs\":\"dir 755\",\"root/inputs/evidence\":\"dir 755\",\"root/inputs/evidence/Cart Export (v2).csv\":\"file 644 6a38f4ca323d92f25ba55346d767834c1bbf1c481e46b2fa37c7bd485c5b6440\",\"root/inputs/evidence/checkout-notes.txt\":\"file 644 4bc66976beed99065b5642f4a223cb1002504489be7e949c402fb9124491190e\",\"root/inputs/raw\":\"dir 755\",\"root/inputs/raw/raw-1.md\":\"file 644 baf72687a8bd059a84c0b8f1ac8528a94179e918b96acc80d446a040181b91b5\",\"root/inputs/raw/raw-2.md\":\"file 644 dc4b5cf92549d5b228f0fe042521b7947d57f1df5bf6d14c410127f8005ece16\",\"root/system\":\"dir 755\",\"root/system/.os\":\"dir 755\",\"root/system/.os/data\":\"dir 555\",\"root/system/.os/data/capabilities.jsonl\":\"file 644 3cb07b0e7de097c0d6ddae59a80d76c248b07fe036cbdafd332ed8c13e4add6f\",\"root/system/.os/data/extractions.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/findings.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/personas.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/requirements.jsonl\":\"file 644 d86f8eced4968851856a2838cb2ec8b451b87bca350f8633ccce683dff0ce2d6\",\"root/system/.os/data/results.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/data/runs.jsonl\":\"file 644 96c2d080a76439900d0619895b69ea8f8f3f98c670af8f8c30d873a2869f7db1\",\"root/system/.os/data/test-cases.jsonl\":\"file 644 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"root/system/.os/indexes\":\"dir 755\",\"root/system/.os/indexes/playbooks.json\":\"file 644 a132c84a4ddc60d7d7c0843fd7f21da88ed8ebb27de60f00f9b37b6acfefb044\",\"root/system/playbooks\":\"dir 755\",\"root/system/playbooks/discovery\":\"dir 755\",\"root/system/playbooks/discovery/checkout-review.md\":\"file 644 a517f39c2352d9739a408e8c727946f191f4d2cf1dfb3ad64ea9f80cb6ba0779\",\"root/system/workspace\":\"dir 755\",\"root/system/workspace/runs\":\"dir 755\",\"root/system/workspace/runs/RUN-001\":\"dir 755\",\"root/system/workspace/runs/RUN-001/raw-findings.md\":\"file 644 6c57286dad1b281990aae1a42ce75cc9ecb65c897e79e7b0eaedfca4e97fa44e\",\"root/system/workspace/runs/RUN-002\":\"dir 755\",\"root/system/workspace/runs/RUN-002/raw-findings.md\":\"file 644 4935a12887f4a0a01eae20d5da969b6d7a50b63b15f49d90ffe3c5e863754898\",\"root/tests\":\"dir 755\",\"root/tests/confirm-cart-total.spec.ts\":\"file 644 355129cafa3574f2cde13ea4eb71dcba33eb7986afb77fa937f9e9d3bc5f2f82\"}"
+        }
+      ],
+      "design_rollback": [
+        {
+          "case": "regular index and record: the index folder flush fails after its rename",
+          "go_end_state": "the new findings index (changed bytes)",
+          "allowed": "the start state"
+        },
+        {
+          "case": "regular index and record: the record folder flush fails after its rename",
+          "go_end_state": "the index restored, the new finding record kept (changed bytes; it names a design that does not exist)",
+          "allowed": "the start state"
+        },
+        {
+          "case": "symlinked index and record: the index folder flush fails after its rename",
+          "go_end_state": "the new findings index (changed bytes)",
+          "allowed": "the start state"
+        },
+        {
+          "case": "symlinked index and record: the record folder flush fails after its rename",
+          "go_end_state": "the index restored, the new finding record kept (changed bytes; it names a design that does not exist)",
+          "allowed": "the start state"
+        },
+        {
+          "case": "symlinked index and record: the design creation fails",
+          "go_end_state": "regular files (mode 640) in place of the two links (changed link type)",
+          "allowed": "the start state"
+        }
+      ]
+    },
+    {
+      "id": "PE-015",
+      "summary": "Where the Go tool crashes (panic, exit 2) or does not terminate on a malformed PDF, the port exits 1 with a clean diagnostic; no files are written.",
+      "reason": "Input files are untrusted, and PRD 20 Output and Exit Contract gives exit 1 for a source that cannot be converted. Go's ledongthuc/pdf reader panics on some malformed cross-reference sections (Go exits 2 and prints a stack trace) and loops forever on a /Prev cycle. The port reads the same sections (go-pdf-xref.ts) and exits 1 with one line: the panic's message after open pdf:, or a BuildOS input limit (1,000 /Prev sections, 1,000 object levels). Allowed difference: exit code and stderr only. stdout is empty and no file is written, in either tool. Every other malformed PDF trailer (the 21 cases in test/intake-hostile.test.ts) equals Go's exit 1 and text. Each hostile entry pins the exact port result; test/intake-hostile.test.ts checks that its Go-crash cases are exactly these and that each result equals the pinned one. The go fields come from a Go 1.24.1 buildos-intake run on macOS on 2026-11-23 (15 s timeout) and are for readers; CI has no Go tool.",
+      "owner_decision": "docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#owner-decisions (2026-11-23, PE-015 approved: where the Go tool crashes (exit 2) or does not terminate on a malformed PDF, the port exits 1 with a clean diagnostic; no files written)",
+      "golden": [],
+      "go_seed": [],
+      "hostile": [
+        {
+          "case": "past-eof",
+          "go": {
+            "exit": 2,
+            "outcome": "panic",
+            "stderr_first_line": "panic: malformed PDF: reading at offset 99999999: EOF"
+          },
+          "allowed": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "buildos-intake: error: open pdf: malformed PDF: reading at offset 99999999: EOF\n"
+          }
+        },
+        {
+          "case": "huge-int",
+          "go": {
+            "exit": 2,
+            "outcome": "panic",
+            "stderr_first_line": "panic: invalid integer 99999999999999999999"
+          },
+          "allowed": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "buildos-intake: error: open pdf: invalid integer 99999999999999999999\n"
+          }
+        },
+        {
+          "case": "nothing",
+          "go": {
+            "exit": 2,
+            "outcome": "panic",
+            "stderr_first_line": "panic: malformed PDF: reading at offset 845: EOF"
+          },
+          "allowed": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "buildos-intake: error: open pdf: malformed PDF: reading at offset 845: EOF\n"
+          }
+        },
+        {
+          "case": "negative",
+          "go": {
+            "exit": 2,
+            "outcome": "panic",
+            "stderr_first_line": "panic: runtime error: slice bounds out of range [:4101] with capacity 4096"
+          },
+          "allowed": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "buildos-intake: error: open pdf: malformed PDF: reading at offset -5: negative offset\n"
+          }
+        },
+        {
+          "case": "prev-self",
+          "go": {
+            "exit": null,
+            "outcome": "does not terminate (stopped after 15 s)",
+            "stderr_first_line": ""
+          },
+          "allowed": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "buildos-intake: error: pdf: the /Prev cross-reference chain exceeds the BuildOS input limit (1000 sections)\n"
+          }
+        },
+        {
+          "case": "deep",
+          "go": {
+            "exit": 2,
+            "outcome": "panic",
+            "stderr_first_line": "panic: unexpected keyword \"startxref\" parsing object"
+          },
+          "allowed": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "buildos-intake: error: pdf: the object nesting exceeds the BuildOS input limit (1000 levels)\n"
+          }
+        }
+      ]
+    },
+    {
+      "id": "PE-016",
+      "summary": "A legacy command name (buildos-intake, buildos-discovery, buildos-design) writes one stderr line first that names the new buildos <domain> command and says the old name goes away in 0.3.0; the Go tools write no such line. The project scripts .os/scripts/buildos-intake, buildos-discovery, and buildos-design and their .cmd forms write the same line first on stderr, once, and are removed in 0.3.0 together with the package legacy names (owner decision 2026-11-25, register Q-016).",
+      "reason": "PRD 20 Legacy Command Names: when BuildOS starts under a legacy name, it keeps the legacy output and exit behavior and writes one line to stderr that says the name is going away and names the new command. PRD 20 Output and Exit Contract: legacy-name notices go to stderr and never change stdout or the exit code. The line is the first stderr line of every run under a legacy name, before any output of the command. The harness (harness.ts stripLegacyNotice, used by test/golden/compare.test.ts and test/intake-edge.test.ts) requires exactly the line below for the invocation name of the run, removes it once, and compares the rest of stderr, stdout, the exit code, and the file tree byte for byte with the Go goldens. A missing or different line fails. A run under buildos has no line. No other difference is allowed. Owner decision 2026-11-25 (register Q-016, option A): the project scripts with the legacy names print the same line with the same words on the same stream (stderr), first and once, then run .os/scripts/buildos <domain> with the arguments unchanged; stdout and the exit code of the real command stay unchanged. test/wrappers.test.ts reads the lines below and checks each script, sh and .cmd.",
+      "owner_decision": "docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#owner-decisions (2026-11-24, PE-016 recorded as approved under the authority of PRD 20 Legacy Command Names and the owner approval of the W1 R7 legacy-name alias plan); 2026-11-25, the owner extended PE-016 to the project scripts with the legacy names (register Q-016, option A), see docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#owner-decisions-2026-11-25",
+      "golden": [],
+      "go_seed": [],
+      "legacy_notice": {
+        "buildos-intake": "Note: the command name \"buildos-intake\" goes away in BuildOS 0.3.0. Use \"buildos intake\" instead.\n",
+        "buildos-discovery": "Note: the command name \"buildos-discovery\" goes away in BuildOS 0.3.0. Use \"buildos discovery\" instead.\n",
+        "buildos-design": "Note: the command name \"buildos-design\" goes away in BuildOS 0.3.0. Use \"buildos design\" instead.\n"
+      }
+    },
+    {
+      "id": "PE-017",
+      "summary": "Make Docs 2.0.9 design inputs, the installed-root rule, and read bounds. The owner approved each of these differences from the Go tools: (1) buildos design promote with a Make Docs design input that is missing or empty, in a project with no legacy docs/assets/ layout, stops with exit 3 and a plain message (Go: exit 1, read design router ...: open ...); (2) a project with a complete Make Docs 2.0.9 layout (.make-docs/system/ bodies and docs/designs/AGENTS.md, no docs/assets/) promotes a finding (Go fails there with exit 1); (3) a mixed project, with a valid .make-docs/system/ body for an input and an empty or absent legacy docs/assets/ body, promotes a finding (Go fails on the legacy body); (4) every Make Docs design input, legacy ones too, is read inside the project only: a link to a regular file inside the root is read, a link that leads out of the root stops with exit 3 (outside-root), and a body larger than 4 MiB is not read (Go read any file through any link); (5) a root with a .os/ folder but not all of .os/, assets/, docs/, playbooks/, and workspace/ (a project made by buildos init --skip-make-docs has no docs/) is an installed project in every domain, unless system/.os/ is a folder too and .os/manifest.json is not a file (Go read such a root as a source checkout and failed with exit 1 at its first system/... read); (6) every file read has a size bound (128 MiB for data and indexes, 64 MiB for discovery and design documents, 4 MiB for Make Docs inputs, 512 MiB for intake files): a larger file fails with exit 1 or the domain's own read diagnostic and the text read <path>: file too large: BuildOS reads at most <bound> from one such file (Go read any size). Output equals Go byte for byte only for a project that uses the legacy docs/assets/ inputs with no link at them, with all five Go folders or a source layout, and files within the bounds: every design, discovery, intake, and entities golden is such a case.",
+      "reason": "W1 R7 P7 review round 1 (P7-R1-05, register R-009): Make Docs 2.0.9 keeps the design workflow, contract, template, and prompts under .make-docs/system/, so a project set up by buildos init --make-docs has no docs/assets/ inputs. The orchestrator directed: a valid local .make-docs/system/ body first, then the legacy location with Go's error text, else a clear stop (PRD 20 exit code 3: a required input cannot be loaded). Review round 2: the stop distinguishes three cases from the same rules buildos init uses (P7-R2-03); Make Docs inputs are read inside the root and bounded (P7-R2-02; PE-012 approves contained content reads for writes' domains, but not the in-root link rule or the bound); PRD 05 Installed Project Paths makes docs/ optional, so the five-folder Go rule misread a supported project (P7-R2-01); every read is bounded (P7-R2-02, SECURITY.md Read Safety). No golden case covers these inputs, so the goldens stay unchanged. test/design.test.ts, test/installed-layout.test.ts, and test/fs-port.test.ts pin the exact results.",
+      "owner_decision": "docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#owner-decisions (2026-11-24, the owner approved PE-017 with the full six-behavior scope recorded here; approver: the owner, relayed by the orchestrating maintainer chat)",
+      "golden": [],
+      "go_seed": []
+    },
+    {
+      "id": "PE-018",
+      "summary": "HTML images: intake convert reads a local image an HTML document names only when its real path is inside the folder that holds the HTML file (for an HTML folder source, the selected folder) or inside the project root. Any other image is not read and not copied; the twin keeps Go's [Uncopied image: <alt>](<src>) link, stderr gets one line buildos-intake: warning: did not copy image <src> from <document>: <reason>, and the command exits 0. An image over 512 MiB gets the same treatment with the bound as the reason. W1 R7 P7 review round 4 (P7-R4-03): the image address is percent-decoded once before that check (my%20image.png names my image.png), so an encoded ../ is refused like a plain one; when no file has the decoded name, the address as written is tried, as Go read it; an address with an invalid escape is used as written; an address that decodes to a zero byte is not read (a warning, exit 0). The warning ends: The converted file has an \"Uncopied image\" marker with the address as the document gives it; that address is relative to the document, not to the converted file. Go read any path (absolute, ../ out of every folder, or through a link) and copied its bytes into the project, and did not decode an address, so an in-tree image whose address held a percent escape was left uncopied.",
+      "reason": "W1 R7 P7 review round 3 (P7-R3-02, P7-R3-06): an imported HTML export could pull any readable local file into a shareable project. Go's readImageSource (toolkits/buildos-intake/internal/intake/html.go) joins the src to the HTML file's folder or takes an absolute path as given, reads it with os.ReadFile, and copies it; http(s) and data: sources and any src with :// (file:// too) are handled as before. Established from the Go source (Go is not installed here; the committed binary was not run for this case). A real export case that now differs: a document outside the project that names ../shared/img.png one level above its own folder (the image is outside both allowed folders). Images in the document's own folder tree (the export's _files folder) and anywhere in the project are byte for byte as in Go, and so is every golden (intake-convert-html unchanged). --allow-outside-root does not widen the read. test/review-round-3.test.ts (P7-R3-02) pins the results. Review round 4 (P7-R4-03) added the decoding: Go's readImageSource reads the address as written (os.ReadFile, no unescaping), so decoding is a change for in-tree images too; it is covered here, in this exception's intent (read the image the document names, and only inside the allowed folders), with the literal fallback keeping every image Go copied. No golden names an encoded address (intake-convert-html unchanged). test/review-round-4.test.ts (P7-R4-03) pins it.",
+      "owner_decision": "docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#owner-decisions (2026-11-24, the owner approved PE-018, answer \"A, A\", item 1; the round 4 decoding was added in the same round; approver: the owner, relayed by the orchestrating maintainer chat)",
+      "golden": [],
+      "go_seed": []
+    },
+    {
+      "id": "PE-019",
+      "summary": "Explicit paths and read-back sizes: (1) a relative path the user names (intake --source, a non-default --assets-root, --output, or --playbooks-root; discovery --evidence, --raw-finding, --confirmation-test, --confirmation-evidence) is used as written in an installed project that has an entry named system at its root; Go dropped the leading system/ there too, so system/inputs/report.csv read inputs/report.csv. In an installed project with no system entry, the legacy system/ spelling is still dropped, as in Go; BuildOS-owned defaults (--assets-root system/assets and the default index paths) keep Go's translation in every installed project. (2) A write of a file BuildOS reads back (the discovery runs and findings indexes and run and finding records, the findings index and finding record of a promotion, the intake playbooks and references indexes and converted twins, the canonical datasets and the entity-resolution index of entities) that would be larger than that file's read bound stops before any write with exit 4 (file_too_large_to_read_back), the dry run too; and (review round 4, P7-R4-02) a JSONL row that its reader could not read stops the same way (exit 4, row_too_long_to_read_back): a new or rewritten row of .os/data/runs.jsonl or .os/data/findings.jsonl of 64 KiB or more (discovery run, discovery qualify, design promote, entities consolidate; discovery and design read these files line by line with Go's 64 KiB bufio.Scanner token), and a rewritten row of any other governed dataset of 16 MiB or more (entities consolidate; the entity graph's line limit). Go wrote it, and the next command failed (exit 1, bufio.Scanner: token too long). (3) Final check (P7-F-04): when discovery run or discovery qualify adds a row to .os/data/runs.jsonl or .os/data/findings.jsonl and the file does not end in a line feed, a line feed goes before the new row; Go appended the row directly (os.O_APPEND, toolkits/buildos-discovery/internal/discovery/discovery.go appendJSONL), so the new row joined the last row on one line and the next command failed (exit 1); with a valid 65,000-byte last row Go wrote one 66,392-byte line. The read-back checks of (2) run on the exact bytes of the append, separator included, before dry-run success or any write.",
+      "reason": "W1 R7 P7 review round 3 (P7-R3-01, P7-R3-04). (1) Go's resolvePath and resolveRepoPath (toolkits/buildos-intake/internal/intake/convert.go, toolkits/buildos-discovery/internal/discovery/discovery.go) apply installedRootRel to every relative path in a five-folder project, explicit ones included, so a user-owned system/ folder was silently remapped; the port's installed-root rule (PE-017 behavior 5) made this reach a project from buildos init --skip-make-docs too. No golden case names a system/ path in an installed project, so every golden is unchanged. (2) PE-017 behavior 6 bounds every read; without a write check, a run index at exactly 128 MiB took one more row and the next command failed (exit 1). test/review-round-3.test.ts pins both. Review round 4 (P7-R4-02): a readable 65,534-byte findings row passed a promotion dry run, promotion grew it to 65,561 bytes, and the next promotion exited 1; every JSONL writer now checks each row it writes against its reader's line limit. test/review-round-4.test.ts pins it.",
+      "owner_decision": "docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#owner-decisions (2026-11-24, the owner approved PE-019, answer \"A, A\", item 2; the round 4 row limit was added in the same round; approver: the owner, relayed by the orchestrating maintainer chat)",
+      "golden": [],
+      "go_seed": []
+    },
+    {
+      "id": "PE-020",
+      "summary": "Make Docs 2.0.9 design text: in a project whose design template resolves from the Make Docs 2.0.9 layout (.make-docs/system/templates/design.md), buildos design promote finding writes the design in the 2.0.9 form, built from that template and checked against the project's design contract; a project whose template resolves from the legacy docs/assets/ layout keeps the Go bytes exactly.",
+      "reason": "W1 R7 P7 Stage 6 (t20, t21; register R-009, owner option B). The Go text has no frontmatter, no ## Human Experience Intent section, a Next Prompt link ../assets/prompts/<prompt> that does not resolve in a 2.0.9 project, and the source path system/docs/designs/ in its text, so every design promoted in a standard 2.0.9 project broke the Make Docs 2.0.9 design contract. Scope, exactly: (1) the form follows the design template promotion read: a template from .make-docs/system/ (the 2.0.9 layout) gives the 2.0.9 form, a template from docs/assets/templates/ gives Go's bytes; (2) the 2.0.9 form is the template's frontmatter with title, route, prompt file, why, and coordinate handoff filled and its comment lines left out, then # <title>, then every ## section of the template in the template's order: Purpose, Context, Decision, Alternatives Considered, Consequences, and Intended Follow-On carry the Go text (the router named as docs/designs/), every other section (Human Experience Intent, Performance Evidence Candidates) is the template's own text, unfilled, for the planner; (3) the Next Prompt line is the template's line with a relative link to the prompt file promotion read (so it resolves) and the make-docs://system/prompt/<prompt> URI; (4) a template or contract of a form this version does not know stops the promotion with exit 3 (make_docs_design_form_unknown) before any write. The findings index and the finding record are byte for byte the same as in Go's form; PE-014 rollback holds. No golden case has a 2.0.9 template, so every golden is unchanged; test/design.test.ts (Stage 6) pins the form, the link and URI resolution against the committed 2.0.9 companion fixture, the fail-safe cases, and the rollback. Review round 4 (P7-R4-04, P7-R4-05), inside the same form: the template's frontmatter must be the 2.0.9 lines exactly (each filled value double-quoted) and the contract's required headings the 2.0.9 list in its order, held by the template in that order, or the promotion stops with exit 3 before any write; placeholders are checked on the template before any value is put in, and values are put in once; the frontmatter title is a YAML double-quoted scalar with every non-printable character escaped; the # title line is one line (line breaks as spaces, a leading # escaped); in each section BuildOS fills, a line start that Markdown reads as a heading, setext underline, code fence, or HTML block is escaped with a backslash (final check, P7-F-06: a balanced fenced code block in finding text is kept byte for byte, and only a fence with no closing fence is escaped); final check, P7-F-05: every template placeholder must be a 2.0.9 placeholder in its 2.0.9 section and the Next Prompt line must be the 2.0.9 line exactly, or the promotion stops with exit 3 before any write, and the rendered Next Prompt line is checked to be the relative link; the result is read back (the YAML subset reader, a strict double-quoted reader, and the heading list) and a failure writes nothing (exit 3, design_self_check_failed). A design for an ordinary title and finding is unchanged.",
+      "owner_decision": "docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#owner-decisions (2026-11-24, the owner chose option B for register R-009: write the Make Docs 2.0.9 form in the 2.0.9 layout only, with a parity exception; approver: the owner, relayed by the orchestrating maintainer chat; built in P7 Stage 6)",
+      "golden": [],
+      "go_seed": []
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "ok": false,
+  "command": "buildos version",
+  "version": "dev",
+  "source_revision": "unknown",
+  "root": "",
+  "mode": "",
+  "write_status": "not_requested",
+  "result": null,
+  "diagnostics": [
+    {
+      "code": "usage_error",
+      "severity": "error",
+      "message": "flag provided but not defined: -bad",
+      "correction": "Run buildos help for command syntax."
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "ok": false,
+  "command": "entities.rebuild-index",
+  "version": "dev",
+  "source_revision": "unknown",
+  "root": "{ROOT}/root",
+  "mode": "strict",
+  "write_status": "not_requested",
+  "result": {
+    "before": {
+      "state": "missing",
+      "current": false,
+      "diagnostic_code": "index_stale",
+      "message": "entity-resolution index is missing",
+      "expected_sha256": "941c43d958ae76c8aa3b5b6775883675dc230f8776c806ee4a9afcb49c5061e9",
+      "remediation_command": "buildos entities rebuild-index --root \"{ROOT}/root\" --mode strict --apply"
+    },
+    "after": {
+      "state": "missing",
+      "current": false,
+      "diagnostic_code": "index_stale",
+      "message": "entity-resolution index is missing",
+      "expected_sha256": "941c43d958ae76c8aa3b5b6775883675dc230f8776c806ee4a9afcb49c5061e9",
+      "remediation_command": "buildos entities rebuild-index --root \"{ROOT}/root\" --mode strict --apply"
+    }
+  },
+  "diagnostics": [
+    {
+      "code": "index_stale",
+      "severity": "error",
+      "message": "entity-resolution index is missing",
+      "correction": "buildos entities rebuild-index --root \"{ROOT}/root\" --mode strict --apply"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "id": "intake-convert-csv-dry-run",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert",
+    "--source",
+    "inputs/team-roster.csv",
+    "--dry-run"
+  ],
+  "exit": 0,
+  "stdout_sha256": "dcf1c1efcdce5cc301a8c24fc6abf896cc729728f8c4afa7bab34cd7634c74e2",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

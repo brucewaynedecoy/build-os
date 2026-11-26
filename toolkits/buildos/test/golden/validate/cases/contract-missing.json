@@ -1,0 +1,7 @@
+{
+  "case": "contract-missing",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/contracts/config-contract.md:contract: config contract file is missing\nFAIL: 1 validation error(s)\n",
+  "crashed": false
+}

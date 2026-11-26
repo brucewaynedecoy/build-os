@@ -1,0 +1,27 @@
+{
+  "id": "discovery-qualify-missing-anchor",
+  "tool": "buildos-discovery",
+  "invocation": "buildos-discovery",
+  "args": [
+    "qualify",
+    "finding",
+    "--run-id",
+    "RUN-001",
+    "--raw-finding-ref",
+    "#raw-finding-9",
+    "--outcome",
+    "positive",
+    "--confirmation-test",
+    "tests/confirm-cart-total.spec.ts",
+    "--confirmation-evidence",
+    "evidence/confirmation-run.txt"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "0b8a180fb0fff5db61306b91beb453d04ed274468e24f2f80acd82431c69bac3",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

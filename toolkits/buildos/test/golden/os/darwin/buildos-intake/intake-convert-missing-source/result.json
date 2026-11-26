@@ -1,0 +1,18 @@
+{
+  "id": "intake-convert-missing-source",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert",
+    "--source",
+    "inputs/absent.csv"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "5cd5db16f1c4666fd7a2ade90efcf19df9e83bf1a24eb4f8bc72678189f05e21",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

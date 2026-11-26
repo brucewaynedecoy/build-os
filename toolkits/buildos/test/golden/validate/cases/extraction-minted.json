@@ -1,0 +1,7 @@
+{
+  "case": "extraction-minted",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/data/extractions.jsonl:line 1.minted: must be a list of registered entity IDs\n.os/data/extractions.jsonl:line 2.minted: must be a list of registered entity IDs\n.os/data/extractions.jsonl:line 3.minted[0]: must use a registered entity ID prefix\n.os/data/extractions.jsonl:line 3.minted[1]: must be a registered entity ID\n.os/data/extractions.jsonl:line 3.minted[2]: must be a registered entity ID\n.os/data/extractions.jsonl:line 3.minted[3]: must use a registered entity ID prefix\nFAIL: 6 validation error(s)\n",
+  "crashed": false
+}

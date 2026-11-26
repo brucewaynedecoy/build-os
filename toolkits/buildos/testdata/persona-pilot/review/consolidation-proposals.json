@@ -1,0 +1,162 @@
+{
+  "schema_version": "buildos-entity-consolidation-proposal/v1",
+  "run_id": "persona-pilot-20260721-sanitized-001",
+  "created_at": "2026-07-21T12:30:00Z",
+  "environment": {
+    "installed_root": "root/",
+    "installed_version": "dev-fixture",
+    "source_clone_root": "not-recorded/sanitized-source-clone",
+    "source_revision": "SANITIZED_REVISION",
+    "workspace_root": "not-recorded/sanitized-workspace"
+  },
+  "contract_observed": {
+    "path": "system/.os/contracts/entity-consolidation-contract.md",
+    "checksum": "87a6fdf3fc13eda085c1cce4be168a692a48dc56c0f31e73fc21cc6623088e31",
+    "supports_canonical_resolution": true
+  },
+  "proposal_only": true,
+  "canonical_mutations": 0,
+  "dataset": ".os/data/personas.jsonl",
+  "dataset_sha256": "7c81bb787b1e415be241c73b747009df1f645da5e1bc493c47c072750e1cd521",
+  "proposals": [
+    {
+      "proposal_id": "EC-0001",
+      "entity_type": "persona",
+      "winner_id": "PER-001",
+      "loser_ids": [
+        "PER-004"
+      ],
+      "evidence_class": "exact_identity",
+      "confidence": "high",
+      "proposed_action": "deduplicate_after_upgrade",
+      "evidence": [
+        {
+          "kind": "provenance",
+          "source": "root/system/docs/research/persona-pilot.md#procurement-decision-maker",
+          "summary": "Reviewed synthetic source evidence describes the same procurement owner under decision-maker language."
+        },
+        {
+          "kind": "attribute",
+          "source": "root/.os/data/personas.jsonl#PER-004",
+          "summary": "Goals and decision authority align with the canonical procurement manager in PER-001."
+        }
+      ],
+      "counter_evidence": [],
+      "affected_references": [
+        {
+          "source": "root/.os/data/extractions.jsonl#EXT-001",
+          "reference_kind": "stable_id",
+          "observed_value": "PER-004"
+        }
+      ],
+      "open_questions": [],
+      "review": {
+        "status": "approved",
+        "reviewer": "fixture-review-board",
+        "reviewed_at": "2026-07-21T12:00:00Z",
+        "notes": "Approved for the sanitized copied-root rehearsal only; not approval for live data."
+      }
+    },
+    {
+      "proposal_id": "EC-0002",
+      "entity_type": "persona",
+      "winner_id": "PER-001",
+      "loser_ids": [
+        "PER-005"
+      ],
+      "evidence_class": "attribute_overlap",
+      "confidence": "high",
+      "proposed_action": "consolidate_after_upgrade",
+      "evidence": [
+        {
+          "kind": "attribute",
+          "source": "root/.os/data/personas.jsonl#PER-005",
+          "summary": "Sourcing and purchasing responsibilities overlap the broader canonical procurement persona."
+        },
+        {
+          "kind": "provenance",
+          "source": "root/system/docs/research/persona-pilot.md#sourcing-and-procurement-owner",
+          "summary": "Reviewers intentionally selected one shared operating profile for the overlapping responsibilities."
+        }
+      ],
+      "counter_evidence": [],
+      "affected_references": [],
+      "open_questions": [],
+      "review": {
+        "status": "approved",
+        "reviewer": "fixture-review-board",
+        "reviewed_at": "2026-07-21T12:05:00Z",
+        "notes": "Approved as an intentional consolidation in the sanitized copied-root rehearsal only."
+      }
+    },
+    {
+      "proposal_id": "EC-0003",
+      "entity_type": "persona",
+      "winner_id": "PER-007",
+      "loser_ids": [
+        "PER-006"
+      ],
+      "evidence_class": "reviewed_replacement",
+      "confidence": "high",
+      "proposed_action": "replace_after_upgrade",
+      "evidence": [
+        {
+          "kind": "provenance",
+          "source": "root/system/docs/research/persona-pilot.md#workflow-approval-owner",
+          "summary": "The policy-automation owner is the reviewed successor to the retired email-routing coordinator."
+        },
+        {
+          "kind": "attribute",
+          "source": "root/.os/data/personas.jsonl#PER-006",
+          "summary": "The source persona explicitly records a retired workflow and a need for a successor."
+        }
+      ],
+      "counter_evidence": [],
+      "affected_references": [],
+      "open_questions": [],
+      "review": {
+        "status": "approved",
+        "reviewer": "fixture-review-board",
+        "reviewed_at": "2026-07-21T12:10:00Z",
+        "notes": "Approved as a replacement in the sanitized copied-root rehearsal only."
+      }
+    },
+    {
+      "proposal_id": "EC-0004",
+      "entity_type": "persona",
+      "winner_id": null,
+      "loser_ids": [],
+      "candidate_ids": [
+        "PER-008",
+        "PER-009"
+      ],
+      "evidence_class": "similarity_only",
+      "confidence": "low",
+      "proposed_action": "defer_for_review",
+      "evidence": [
+        {
+          "kind": "similarity",
+          "source": "root/.os/data/personas.jsonl#PER-008",
+          "summary": "Both records use customer-operations language and have similar display titles."
+        }
+      ],
+      "counter_evidence": [
+        {
+          "kind": "attribute",
+          "source": "root/system/docs/research/persona-pilot.md#ambiguous-lookalikes",
+          "summary": "PER-008 owns support staffing while PER-009 coordinates transformation programs, so authority and context differ."
+        }
+      ],
+      "affected_references": [],
+      "open_questions": [
+        "Do future reviewed sources establish shared identity despite the distinct authority contexts?"
+      ],
+      "review": {
+        "status": "needs_review",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": "No winner or loser is proposed; both personas remain active and absent from every apply manifest."
+      }
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+---
+source: "inputs/pdf/intake-with-scan.pdf"
+sha256: "04354fd97d57bbd7a0c49d5a632db71aac3620a64e3e352eb28cbcfdf8ffd7d5"
+converter: "buildos-intake/0.1.0"
+timestamp: "{TIMESTAMP}"
+type: "text"
+status: "converted"
+---
+
+Intake form summary
+The second page is a scanned signature sheet.

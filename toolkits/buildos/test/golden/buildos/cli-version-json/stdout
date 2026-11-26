@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "command": "version",
+  "version": "dev",
+  "source_revision": "unknown",
+  "root": "not_applicable",
+  "mode": "not_applicable",
+  "write_status": "not_requested",
+  "result": {
+    "version": "dev",
+    "source_revision": "unknown"
+  },
+  "diagnostics": []
+}

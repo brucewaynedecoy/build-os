@@ -1,0 +1,13 @@
+---
+source: "inputs/team-roster.csv"
+sha256: "a175861466e4a125479f80fbcceaf3c69cbbe36204f9b60642c005b18786de5c"
+converter: "buildos-intake/0.1.0"
+timestamp: "{TIMESTAMP}"
+type: "csv"
+status: "converted"
+---
+role,shift,notes
+desk volunteer,Saturday AM,"Opens the front door, greets members"
+repair volunteer,Saturday PM,"Brings a ""spare"" soldering iron"
+coordinator,weekdays,"Two-line note:
+checks the loan log"

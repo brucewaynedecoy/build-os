@@ -1,0 +1,22 @@
+{
+  "id": "entities-validate-malformed-row-json",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "entities",
+    "validate",
+    "--root",
+    "root",
+    "--mode",
+    "strict",
+    "--json"
+  ],
+  "exit": 3,
+  "stdout_sha256": "def0c841123e6d05f8d7f50614209c3d2a7c283b74b58904f75e04760e7845af",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

@@ -1,0 +1,15 @@
+{
+  "$comment": "Written by test/golden/validate/capture.ts. The legacy validator's result for each validate fixture case, captured on a maintainer machine. CI never runs Python.",
+  "script": "system/.os/scripts/validate_config.py",
+  "script_revision": "0560ba1",
+  "script_sha256": "20350b47ccde83df980e7b8b42b0c30262226ccd8b48809184afc72c6dbf905c",
+  "python": "Python 3.14.10",
+  "capture_os": "darwin arm64",
+  "node": "v26.13.1",
+  "cases": 85,
+  "command": "<python> -I validate_config.py --repo-root <tmp> --config <tmp>/system/.os/config/instance.yaml --contract <tmp>/system/.os/contracts/config-contract.md --data-dir <tmp>/system/.os/data",
+  "normalizations": {
+    "N1": "The temporary folder is removed from every path. A leading system/ is removed from each finding path, and \\ in it becomes /. A crash keeps only its last stderr line.",
+    "N2": "The case runs in the source layout: the project files under system/, and each saved doc_anchor under docs/ and source_anchor under assets/ spelled system/docs/ and system/assets/, as the source checkout spells them (register D-004)."
+  }
+}

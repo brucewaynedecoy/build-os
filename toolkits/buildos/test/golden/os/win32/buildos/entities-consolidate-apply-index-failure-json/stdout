@@ -1,0 +1,58 @@
+{
+  "ok": false,
+  "command": "entities.consolidate",
+  "version": "dev",
+  "source_revision": "unknown",
+  "root": "{ROOT}\\root",
+  "mode": "strict",
+  "write_status": "canonical_applied_index_failed",
+  "result": {
+    "consolidation": {
+      "manifest_version": 1,
+      "mapping_count": 3,
+      "change_count": 3,
+      "no_op_count": 0,
+      "affected_files": [
+        "personas.jsonl"
+      ],
+      "changes": [
+        {
+          "source_id": "PER-004",
+          "target_id": "PER-001",
+          "dataset": "personas.jsonl",
+          "action": "supersede"
+        },
+        {
+          "source_id": "PER-005",
+          "target_id": "PER-001",
+          "dataset": "personas.jsonl",
+          "action": "supersede"
+        },
+        {
+          "source_id": "PER-006",
+          "target_id": "PER-007",
+          "dataset": "personas.jsonl",
+          "action": "supersede"
+        }
+      ],
+      "applied": true
+    },
+    "index": {
+      "state": "missing",
+      "current": false,
+      "diagnostic_code": "index_stale",
+      "message": "entity-resolution index is missing",
+      "expected_sha256": "afe1935e3ed50c416498f912bd09150a3f8fe625a8f6c1007d3749d3198853cd",
+      "remediation_command": "buildos entities rebuild-index --root \"{ROOT}\\\\root\" --mode strict --apply"
+    },
+    "recovery_command": "buildos entities rebuild-index --root \"{ROOT}\\\\root\" --mode strict --apply"
+  },
+  "diagnostics": [
+    {
+      "code": "index_stale",
+      "severity": "error",
+      "message": "canonical entity data was applied, but index completion failed: create entity-resolution index directory \"{ROOT}\\\\root\\\\.os\\\\indexes\": mkdir {ROOT}\\root\\.os\\indexes: The system cannot find the path specified.",
+      "correction": "buildos entities rebuild-index --root \"{ROOT}\\\\root\" --mode strict --apply"
+    }
+  ]
+}

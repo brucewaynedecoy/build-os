@@ -1,0 +1,36 @@
+@@ section: Title and attendance @@
+# Maintenance Committee Minutes
+
+Date: 14 October 2026. Location: the common room.
+
+Present: chair, treasurer, two volunteers, and the operations manager. Apologies: the secretary.
+@@ section: Agenda @@
+## Agenda
+
+- Review of open repair requests
+- Winter heating check
+- Contractor list
+@@ section: Open Repair Requests @@
+## 1. Open Repair Requests
+
+Seven requests are open. Two are high priority: the dead outlet in the annex and the radiator in the south building, which is fixed now.
+@@ section: Winter Heating Check @@
+## 2. Winter Heating Check
+
+The heating contractor will service both boilers in the first week of November. Members get two days’ notice before each visit.
+
+| Decision | Owner | Due |
+| --- | --- | --- |
+| Approve the boiler service quote | Treasurer | 31 Oct 2026 |
+| Send the visit notice to members | Operations manager | 3 Nov 2026 |
+@@ section: Contractor List @@
+## 3. Contractor List
+
+The list has eleven contractors. The committee removed one roofing firm after two missed visits.
+@@ section: Actions @@
+## Actions
+
+1. Treasurer to sign the boiler quote.
+1. Operations manager to update the contractor list.
+
+Next meeting: 11 November 2026.

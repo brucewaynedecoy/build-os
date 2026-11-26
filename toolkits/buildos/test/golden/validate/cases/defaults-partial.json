@@ -1,0 +1,7 @@
+{
+  "case": "defaults-partial",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/config/instance.yaml:defaults.environments: must be a list\n.os/config/instance.yaml:defaults.owners: must be a list\nFAIL: 2 validation error(s)\n",
+  "crashed": false
+}

@@ -1,0 +1,325 @@
+{
+  "version": 1,
+  "files": [
+    {
+      "id": "csv-maintenance-requests",
+      "format": "csv",
+      "source": "inputs/csv/maintenance-requests.csv",
+      "reference": "references/csv-maintenance-requests.txt",
+      "twin": "csv",
+      "expect": "text",
+      "sections": [
+        "Header row",
+        "Closed requests",
+        "Open requests"
+      ],
+      "parts": [
+        "maintenance-requests.csv"
+      ],
+      "covers": [
+        "CRLF line endings",
+        "quoted fields with commas, quotes, and a line break",
+        "empty cells",
+        "non-ASCII text (en dash, degree sign, é)"
+      ],
+      "outOfScope": []
+    },
+    {
+      "id": "docx-operations-handbook",
+      "format": "docx",
+      "source": "inputs/docx/operations-handbook.docx",
+      "reference": "references/docx-operations-handbook.txt",
+      "twin": "markdown",
+      "expect": "text",
+      "sections": [
+        "Title and introduction",
+        "Roles and Responsibilities",
+        "Board",
+        "Maintenance Committee",
+        "Membership Committee",
+        "Handling a Repair Request",
+        "Emergency Contacts",
+        "Spending Limits",
+        "Records",
+        "Embedded assets"
+      ],
+      "parts": [
+        "operations-handbook.md"
+      ],
+      "covers": [
+        "Title and Heading 1 and 2 styles",
+        "numbered list with a lettered second level",
+        "bullet list",
+        "bold and underlined pseudo-heading",
+        "tab and line break",
+        "a word split across runs with spelling marks",
+        "table with a two-paragraph cell",
+        "embedded image"
+      ],
+      "outOfScope": []
+    },
+    {
+      "id": "docx-committee-minutes",
+      "format": "docx",
+      "source": "inputs/docx/committee-minutes.docx",
+      "reference": "references/docx-committee-minutes.txt",
+      "twin": "markdown",
+      "expect": "text",
+      "sections": [
+        "Title and attendance",
+        "Agenda",
+        "Open Repair Requests",
+        "Winter Heating Check",
+        "Contractor List",
+        "Actions"
+      ],
+      "parts": [
+        "committee-minutes.md"
+      ],
+      "covers": [
+        "typed bullet characters instead of list numbering",
+        "mixed bold and plain runs",
+        "curly apostrophe",
+        "decision table",
+        "numbered action list"
+      ],
+      "outOfScope": []
+    },
+    {
+      "id": "xlsx-annual-budget",
+      "format": "xlsx",
+      "source": "inputs/xlsx/annual-budget.xlsx",
+      "reference": "references/xlsx-annual-budget.txt",
+      "twin": "csv",
+      "expect": "text",
+      "sections": [
+        "Sheet: Summary",
+        "Sheet: Q3 Expenses",
+        "Sheet: Vendors",
+        "Sheet: Notes"
+      ],
+      "parts": [
+        "annual-budget-summary.csv",
+        "annual-budget-q3-expenses.csv",
+        "annual-budget-vendors.csv",
+        "annual-budget-notes.csv"
+      ],
+      "covers": [
+        "four sheets, one CSV twin each",
+        "formulas with cached values",
+        "skipped rows and sparse columns",
+        "rich-text cell",
+        "cell with a line break, quotes, and leading space",
+        "embedded chart image"
+      ],
+      "outOfScope": []
+    },
+    {
+      "id": "html-visitor-policy",
+      "format": "html",
+      "source": "inputs/html/visitor-policy.html",
+      "reference": "references/html-visitor-policy.txt",
+      "twin": "markdown",
+      "expect": "text",
+      "sections": [
+        "Site name",
+        "Visitor and Guest Policy",
+        "Day Visitors",
+        "Overnight Guests",
+        "Approval Steps",
+        "Callout note",
+        "Shared Spaces",
+        "Ground floor plan and diagram",
+        "Questions",
+        "Footer"
+      ],
+      "parts": [
+        "visitor-policy.md"
+      ],
+      "covers": [
+        "head, style, and script content that must not appear",
+        "inline links and a mailto link",
+        "nested bullet list",
+        "ordered list",
+        "text in a div callout",
+        "table with thead and tbody",
+        "line break inside a paragraph",
+        "data-URI image",
+        "Mermaid diagram"
+      ],
+      "outOfScope": []
+    },
+    {
+      "id": "html-dir-help-center",
+      "format": "html-dir",
+      "source": "inputs/html-dir/help-center",
+      "reference": "references/html-dir-help-center.txt",
+      "twin": "markdown",
+      "expect": "text",
+      "sections": [
+        "faq.htm",
+        "guides/getting-started.html",
+        "guides/paying-charges.html",
+        "index.html"
+      ],
+      "parts": [
+        "faq.md",
+        "guides-getting-started.md",
+        "guides-paying-charges.md",
+        "index.md"
+      ],
+      "covers": [
+        "four pages in two folders, one Markdown twin each",
+        "an .htm page",
+        "local image",
+        "table without thead",
+        "non-HTML files that are skipped"
+      ],
+      "outOfScope": [
+        "Each page starts with a one-link breadcrumb (\"Help Center\") in a nav element. The reference treats it as site navigation, not page content, and leaves it out. Change this if you disagree."
+      ]
+    },
+    {
+      "id": "pdf-annual-report",
+      "format": "pdf",
+      "source": "inputs/pdf/annual-report-summary.pdf",
+      "reference": "references/pdf-annual-report.txt",
+      "twin": "text",
+      "expect": "text",
+      "sections": [
+        "Title",
+        "Overview",
+        "Membership",
+        "Finances",
+        "Looking Ahead"
+      ],
+      "parts": [
+        "annual-report-summary.txt"
+      ],
+      "covers": [
+        "plain text over two pages",
+        "compressed content streams",
+        "bold headings",
+        "WinAnsi characters (en dash, euro, curly apostrophe)",
+        "one paragraph set with kerning gaps and no space characters"
+      ],
+      "outOfScope": []
+    },
+    {
+      "id": "pdf-newsletter-columns",
+      "format": "pdf",
+      "source": "inputs/pdf/newsletter-two-columns.pdf",
+      "reference": "references/pdf-newsletter-columns.txt",
+      "twin": "text",
+      "expect": "text",
+      "sections": [
+        "Masthead",
+        "Roof Works Start in May",
+        "Bike Store Plans",
+        "New Members Welcome Evening",
+        "Garden Volunteers Needed",
+        "Footer"
+      ],
+      "parts": [
+        "newsletter-two-columns.txt"
+      ],
+      "covers": [
+        "two text columns read left column first",
+        "masthead across both columns",
+        "footer"
+      ],
+      "outOfScope": []
+    },
+    {
+      "id": "pdf-rates-table",
+      "format": "pdf",
+      "source": "inputs/pdf/room-rates-table.pdf",
+      "reference": "references/pdf-rates-table.txt",
+      "twin": "text",
+      "expect": "text",
+      "sections": [
+        "Title and introduction",
+        "Rate table",
+        "Notes"
+      ],
+      "parts": [
+        "room-rates-table.txt"
+      ],
+      "covers": [
+        "ruled table with a bold header row",
+        "right-aligned money columns",
+        "text before and after the table"
+      ],
+      "outOfScope": []
+    },
+    {
+      "id": "pdf-pet-policy-headers",
+      "format": "pdf",
+      "source": "inputs/pdf/pet-policy.pdf",
+      "reference": "references/pdf-pet-policy-headers.txt",
+      "twin": "text",
+      "expect": "text",
+      "sections": [
+        "Page 1 header",
+        "Pet Policy",
+        "Pets Allowed",
+        "Page 1 footer",
+        "Page 2 header",
+        "Registration",
+        "Shared Spaces",
+        "Page 2 footer",
+        "Page 3 header",
+        "Complaints",
+        "Review",
+        "Page 3 footer"
+      ],
+      "parts": [
+        "pet-policy.txt"
+      ],
+      "covers": [
+        "running header on three pages",
+        "footer with left and right text on one line",
+        "page numbers"
+      ],
+      "outOfScope": []
+    },
+    {
+      "id": "pdf-signup-with-scan",
+      "format": "pdf",
+      "source": "inputs/pdf/volunteer-signup-with-scan.pdf",
+      "reference": "references/pdf-signup-with-scan.txt",
+      "twin": "text",
+      "expect": "text",
+      "sections": [
+        "Volunteer Day Sign-Up",
+        "How to Sign Up"
+      ],
+      "parts": [
+        "volunteer-signup-with-scan.txt"
+      ],
+      "covers": [
+        "page 1 has a text layer",
+        "page 2 is a scanned image with no text layer"
+      ],
+      "outOfScope": [
+        "Page 2 is a scanned sign-in sheet. Its text is only in the image. Reading it needs OCR, which is out of scope (PRD 07), so the reference leaves it out. A converter that returns page 2 text fails the similarity gate."
+      ]
+    },
+    {
+      "id": "pdf-scanned-notice",
+      "format": "pdf",
+      "source": "inputs/pdf/scanned-repair-notice.pdf",
+      "reference": "references/pdf-scanned-notice.txt",
+      "twin": "text",
+      "expect": "no-text",
+      "sections": [],
+      "parts": [],
+      "covers": [
+        "a scan-only PDF with no text layer"
+      ],
+      "outOfScope": [
+        "The whole page is a scanned image. OCR is out of scope (PRD 07). The converter must report that it found no usable text, as the Go golden intake-convert-pdf-scanned-only shows. It must not write a twin."
+      ]
+    }
+  ]
+}

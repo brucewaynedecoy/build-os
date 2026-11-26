@@ -1,0 +1,7 @@
+{
+  "case": "instance-fields",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/config/instance.yaml:instance.name: must be a string\n.os/config/instance.yaml:instance.id: must be a stable slug: lowercase letters, digits, and hyphens\nFAIL: 2 validation error(s)\n",
+  "crashed": false
+}

@@ -1,0 +1,16 @@
+{
+  "id": "cli-help",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "help"
+  ],
+  "exit": 0,
+  "stdout_sha256": "ec3a2b2f60b940d2a4588d255d9d617edf3769ccd225e5b87f665eba0a0855d7",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

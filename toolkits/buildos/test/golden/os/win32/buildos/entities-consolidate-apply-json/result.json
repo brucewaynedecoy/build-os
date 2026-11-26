@@ -1,0 +1,41 @@
+{
+  "id": "entities-consolidate-apply-json",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "entities",
+    "consolidate",
+    "--root",
+    "root",
+    "--mode",
+    "strict",
+    "--manifest",
+    "manifests/approved-persona-consolidations-v1.json",
+    "--apply",
+    "--json"
+  ],
+  "exit": 0,
+  "stdout_sha256": "16ccc63cd42d405cde464cb7755efbc6b848735e22b41ce071e00912ed295759",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [
+    {
+      "path": "root/.os/data/personas.jsonl",
+      "kind": "file"
+    },
+    {
+      "path": "root/.os/indexes/entity-resolution.json",
+      "kind": "file"
+    }
+  ],
+  "removed": [],
+  "files": {
+    "root/.os/data/personas.jsonl": "f61575c1a8751c8df4b7bb3cae4bbf1e0d7f37eb98dc50072d09718f0d8699c3",
+    "root/.os/indexes/entity-resolution.json": "afe1935e3ed50c416498f912bd09150a3f8fe625a8f6c1007d3749d3198853cd"
+  },
+  "derived": {
+    "exception": "PE-005",
+    "source": "os/linux/buildos/entities-consolidate-apply-json",
+    "source_sha256": "6954ca4d21ad0771d5b2a463c998f607e4d691b827de4a3740d7f72fd6d6272d"
+  }
+}

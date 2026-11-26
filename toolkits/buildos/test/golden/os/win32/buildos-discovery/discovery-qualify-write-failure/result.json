@@ -1,0 +1,26 @@
+{
+  "id": "discovery-qualify-write-failure",
+  "tool": "buildos-discovery",
+  "invocation": "buildos-discovery",
+  "args": [
+    "qualify",
+    "finding",
+    "--run-id",
+    "RUN-001",
+    "--raw-finding-ref",
+    "#raw-finding-1",
+    "--outcome",
+    "positive",
+    "--confirmation-test",
+    "tests/confirm-cart-total.spec.ts",
+    "--confirmation-evidence",
+    "evidence/confirmation-run.txt"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "7683426bc40fe6717ca03ec2da111b1951db7fec99209dddb6fe63a4e9e945a9",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {}
+}

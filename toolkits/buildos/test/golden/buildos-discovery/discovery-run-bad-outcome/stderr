@@ -1,0 +1,1 @@
+buildos-discovery: error: run discovery requires --outcome positive, negative, or inconclusive

@@ -1,0 +1,16 @@
+{
+  "id": "intake-index-references-duplicate-id",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "index",
+    "references"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "b695f7394bfeab736112d6e942de6f2b9194db4ed06bbcf4e8a4b62900d382fb",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {}
+}

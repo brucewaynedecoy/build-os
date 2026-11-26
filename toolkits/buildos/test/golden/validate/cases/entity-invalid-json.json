@@ -1,0 +1,7 @@
+{
+  "case": "entity-invalid-json",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/data/requirements.jsonl:line 2: invalid JSON: Expecting property name enclosed in double quotes\nFAIL: 1 validation error(s)\n",
+  "crashed": false
+}

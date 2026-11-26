@@ -1,0 +1,7 @@
+{
+  "case": "defaults-not-list",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/config/instance.yaml:defaults.systems: must be a list\nFAIL: 1 validation error(s)\n",
+  "crashed": false
+}

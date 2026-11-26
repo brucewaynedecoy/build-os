@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "playbooks": [
+    {
+      "id": "PB-002",
+      "path": "system/playbooks/regression/archive-audit.md",
+      "title": "Archive audit",
+      "category": "regression",
+      "execution_mode": "scripted",
+      "state_nature": "stateless",
+      "status": "draft",
+      "audience": "maintainer",
+      "harness": [],
+      "systems": [
+        "sample-archive",
+        "sample-shop"
+      ],
+      "environments": [],
+      "owners": [],
+      "targets": [],
+      "produces": [],
+      "source_anchor": "docs/archive.md#audit",
+      "version": "0.1.0",
+      "related": [
+        "PB-010"
+      ]
+    },
+    {
+      "id": "PB-010",
+      "path": "system/playbooks/discovery/checkout-review.md",
+      "title": "Checkout review",
+      "category": "discovery",
+      "execution_mode": "guided-objective",
+      "state_nature": "stateful",
+      "status": "active",
+      "audience": "both",
+      "harness": [
+        "computer-use"
+      ],
+      "systems": [
+        "sample-shop"
+      ],
+      "environments": [
+        "baseline"
+      ],
+      "owners": [
+        "fixture-team"
+      ],
+      "targets": [
+        "REQ-001"
+      ],
+      "produces": [
+        "finding"
+      ],
+      "source_anchor": null,
+      "version": "1.0.0",
+      "related": []
+    }
+  ],
+  "runnable_playbooks": [
+    {
+      "id": "PB-010",
+      "path": "system/playbooks/discovery/checkout-review.md",
+      "title": "Checkout review",
+      "category": "discovery",
+      "execution_mode": "guided-objective",
+      "state_nature": "stateful",
+      "status": "active",
+      "audience": "both",
+      "harness": [
+        "computer-use"
+      ],
+      "systems": [
+        "sample-shop"
+      ],
+      "environments": [
+        "baseline"
+      ],
+      "owners": [
+        "fixture-team"
+      ],
+      "targets": [
+        "REQ-001"
+      ],
+      "produces": [
+        "finding"
+      ],
+      "source_anchor": null,
+      "version": "1.0.0",
+      "related": []
+    }
+  ]
+}

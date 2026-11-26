@@ -1,0 +1,23 @@
+{
+  "id": "entities-rebuild-apply-current-json",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "entities",
+    "rebuild-index",
+    "--root",
+    "root",
+    "--mode",
+    "strict",
+    "--apply",
+    "--json"
+  ],
+  "exit": 0,
+  "stdout_sha256": "6fb6fa0f0d143f45eef9ce0a9cd033458808e6885c4af33215fc70dfe536d99e",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

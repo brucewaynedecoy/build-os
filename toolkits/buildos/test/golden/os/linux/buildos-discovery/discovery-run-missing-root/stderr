@@ -1,0 +1,1 @@
+buildos-discovery: error: read playbook index: open {ROOT}/absent/system/.os/indexes/playbooks.json: no such file or directory

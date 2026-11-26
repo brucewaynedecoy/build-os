@@ -1,0 +1,83 @@
+{
+  "id": "discovery-run",
+  "tool": "buildos-discovery",
+  "invocation": "buildos-discovery",
+  "args": [
+    "run",
+    "discovery",
+    "--playbook-id",
+    "PB-010",
+    "--outcome",
+    "positive",
+    "--title",
+    "Coupon checkout probe",
+    "--target",
+    "REQ-002",
+    "--target",
+    "CAP-001",
+    "--target",
+    "REQ-001",
+    "--dataset-ref",
+    "system/workspace/datasets/cart-sample.csv",
+    "--evidence",
+    "inputs/evidence/checkout-notes.txt",
+    "--evidence",
+    "inputs/evidence/Cart Export (v2).csv",
+    "--raw-finding",
+    "inputs/raw/raw-1.md",
+    "--raw-finding",
+    "inputs/raw/raw-2.md"
+  ],
+  "exit": 0,
+  "stdout_sha256": "5ff2f5068f832a79348d1c404db977e621fa8a093eb17b4ca57aaaf10d38ff1e",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [
+    {
+      "path": "system/workspace/runs/RUN-003",
+      "kind": "dir"
+    },
+    {
+      "path": "system/workspace/runs/RUN-003/evidence",
+      "kind": "dir"
+    },
+    {
+      "path": "system/workspace/runs/RUN-003/evidence/001-checkout-notes.txt",
+      "kind": "file"
+    },
+    {
+      "path": "system/workspace/runs/RUN-003/evidence/002-cart-export--v2-.csv",
+      "kind": "file"
+    },
+    {
+      "path": "system/workspace/runs/RUN-003/raw-findings.md",
+      "kind": "file"
+    },
+    {
+      "path": "system/workspace/runs/RUN-003/run.md",
+      "kind": "file"
+    }
+  ],
+  "changed": [
+    {
+      "path": "system/.os/data/runs.jsonl",
+      "kind": "file"
+    }
+  ],
+  "removed": [],
+  "files": {
+    "system/.os/data/runs.jsonl": "c6b364975ea39062668ed83177a4e17fe9dbb91d8523dd758d4e4b0c759859ee",
+    "system/workspace/runs/RUN-003/evidence/001-checkout-notes.txt": "4bc66976beed99065b5642f4a223cb1002504489be7e949c402fb9124491190e",
+    "system/workspace/runs/RUN-003/evidence/002-cart-export--v2-.csv": "6a38f4ca323d92f25ba55346d767834c1bbf1c481e46b2fa37c7bd485c5b6440",
+    "system/workspace/runs/RUN-003/raw-findings.md": "28e81f4e85f4d39c80f18f6912502b9e5e593392624315820f9faba8b31c1c23",
+    "system/workspace/runs/RUN-003/run.md": "157f87d484a3b67f0e539fd3d8b46c20c601b198bb2213b2a5fbe09c67510ac9"
+  },
+  "modes": {
+    "system/.os/data/runs.jsonl": "0644",
+    "system/workspace/runs/RUN-003": "0755",
+    "system/workspace/runs/RUN-003/evidence": "0755",
+    "system/workspace/runs/RUN-003/evidence/001-checkout-notes.txt": "0644",
+    "system/workspace/runs/RUN-003/evidence/002-cart-export--v2-.csv": "0644",
+    "system/workspace/runs/RUN-003/raw-findings.md": "0644",
+    "system/workspace/runs/RUN-003/run.md": "0644"
+  }
+}

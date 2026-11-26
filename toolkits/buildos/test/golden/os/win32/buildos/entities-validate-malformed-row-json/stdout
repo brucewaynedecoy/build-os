@@ -1,0 +1,29 @@
+{
+  "ok": false,
+  "command": "entities.validate",
+  "version": "dev",
+  "source_revision": "unknown",
+  "root": "{ROOT}\\root",
+  "mode": "strict",
+  "write_status": "not_requested",
+  "result": {
+    "valid": false,
+    "record_count": 19,
+    "index": {
+      "state": "",
+      "current": false,
+      "message": "",
+      "expected_sha256": ""
+    }
+  },
+  "diagnostics": [
+    {
+      "code": "input_contract",
+      "severity": "error",
+      "message": "invalid JSON object: invalid character 'n' looking for beginning of object key string",
+      "dataset": "capabilities.jsonl",
+      "line": 2,
+      "correction": "replace the row with one complete JSON object"
+    }
+  ]
+}

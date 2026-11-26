@@ -1,0 +1,7 @@
+{
+  "case": "defaults-unknown",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/config/instance.yaml:defaults.environments[0]: unknown configured ID 'missing-environment'\n.os/config/instance.yaml:defaults.owners[0]: unknown configured ID 'missing-owner'\n.os/config/instance.yaml:defaults.owners[1]: must be a string configured ID\nFAIL: 3 validation error(s)\n",
+  "crashed": false
+}

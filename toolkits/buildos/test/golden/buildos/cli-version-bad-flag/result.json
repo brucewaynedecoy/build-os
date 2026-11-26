@@ -1,0 +1,17 @@
+{
+  "id": "cli-version-bad-flag",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "version",
+    "--bad"
+  ],
+  "exit": 2,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "d03d8b20dbbe050007a7a6c4899f862a7ac75b26ef53ed36635632e7f1b83f70",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

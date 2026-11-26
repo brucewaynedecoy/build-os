@@ -1,0 +1,7 @@
+{
+  "case": "entity-duplicate-id",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/data/requirements.jsonl:line 2.id: duplicates line 1.id\nFAIL: 1 validation error(s)\n",
+  "crashed": false
+}

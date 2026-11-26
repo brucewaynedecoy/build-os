@@ -1,0 +1,1 @@
+{"id":"FIND-001","type":"finding","status":"qualified","source_anchor":"workspace/findings/FIND-001/raw.md#finding-1","doc_anchor":"docs/notes/sample.md#finding-qualification","systems":["primary-system"],"environments":["baseline"],"owners":["sample-team"]}

@@ -1,0 +1,21 @@
+{
+  "id": "entities-validate-missing-root-json",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "entities",
+    "validate",
+    "--root",
+    "absent",
+    "--mode",
+    "strict",
+    "--json"
+  ],
+  "exit": 3,
+  "stdout_sha256": "eb8d800b74dc22ca7b3e0c0ea5efa3738bbd554c7a232282cf3e2bfaf11b4cd0",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {}
+}

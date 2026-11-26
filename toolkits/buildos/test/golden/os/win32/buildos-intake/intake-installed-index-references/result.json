@@ -1,0 +1,27 @@
+{
+  "id": "intake-installed-index-references",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "index",
+    "references"
+  ],
+  "exit": 0,
+  "stdout_sha256": "63a33a34a24c2e8d04617425661cfe0cd53465da75dc5e355300036996e335fd",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [
+    {
+      "path": ".os/indexes",
+      "kind": "dir"
+    },
+    {
+      "path": ".os/indexes/references.json",
+      "kind": "file"
+    }
+  ],
+  "changed": [],
+  "removed": [],
+  "files": {
+    ".os/indexes/references.json": "56bd47771ca90a70cd18a516aae2af7edb049dfbd693e0e32bc23ac7273806e9"
+  }
+}

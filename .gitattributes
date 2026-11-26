@@ -1,0 +1,15 @@
+# Check out the BuildOS workflow files with LF line endings on every OS.
+# toolkits/buildos tests read them. Other repository files keep git defaults.
+.github/workflows/buildos-*.yml text eol=lf
+# The system/ package content ships in the BuildOS npm package and buildos
+# init copies it into projects byte for byte, so it checks out the same on
+# every OS: LF line endings, and CRLF for the Windows .cmd wrappers.
+system/** text=auto eol=lf
+system/.os/scripts/*.cmd text eol=crlf
+# The Azure Boards export goldens are CSV files with CRLF record ends, as the
+# skill's emitter writes them; the skill compares them byte for byte, so git
+# keeps their bytes (W1 R7 P7).
+system/.os/skills/buildos-export-azure-boards/assets/**/*-golden-example.csv -text -whitespace
+# The vendored CycloneDX schemas are checked by SHA-256 (W1 R7 P8 review
+# round 1), so git keeps their bytes as they are on every OS.
+toolkits/buildos/scripts/schemas/** -text

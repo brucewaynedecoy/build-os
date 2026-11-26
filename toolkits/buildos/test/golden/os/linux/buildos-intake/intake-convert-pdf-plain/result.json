@@ -1,0 +1,32 @@
+{
+  "id": "intake-convert-pdf-plain",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert",
+    "--source",
+    "inputs/pdf/repair-cafe-handbook.pdf"
+  ],
+  "exit": 0,
+  "stdout_sha256": "19992f5796c631759baae9a7f3d6b00e7590fbd091d7a0be7686a4d9df62b14c",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [
+    {
+      "path": "system/assets/repair-cafe-handbook",
+      "kind": "dir"
+    },
+    {
+      "path": "system/assets/repair-cafe-handbook/repair-cafe-handbook.txt",
+      "kind": "file"
+    }
+  ],
+  "changed": [],
+  "removed": [],
+  "files": {
+    "system/assets/repair-cafe-handbook/repair-cafe-handbook.txt": "3d0469ad5705243e51abbae79e34e5a77f956ea6994eb94d50246c67dc44fbb2"
+  },
+  "modes": {
+    "system/assets/repair-cafe-handbook": "0755",
+    "system/assets/repair-cafe-handbook/repair-cafe-handbook.txt": "0644"
+  }
+}

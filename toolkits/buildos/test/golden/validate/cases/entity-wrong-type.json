@@ -1,0 +1,7 @@
+{
+  "case": "entity-wrong-type",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/data/requirements.jsonl:line 1.type: must be 'requirement' for this file\n.os/data/requirements.jsonl:line 2.type: must be 'requirement' for this file\nFAIL: 2 validation error(s)\n",
+  "crashed": false
+}

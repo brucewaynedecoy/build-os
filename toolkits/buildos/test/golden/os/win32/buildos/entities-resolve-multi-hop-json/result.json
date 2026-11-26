@@ -1,0 +1,23 @@
+{
+  "id": "entities-resolve-multi-hop-json",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "entities",
+    "resolve",
+    "--root",
+    "root",
+    "--mode",
+    "strict",
+    "--id",
+    "PER-003",
+    "--json"
+  ],
+  "exit": 0,
+  "stdout_sha256": "dd152a44f6840e81f500aeec9c4075c23780f1667803662c1fc3a5247e8e1535",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {}
+}

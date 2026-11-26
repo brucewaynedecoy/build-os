@@ -1,0 +1,28 @@
+{
+  "id": "intake-convert-pdf-with-scanned-page",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert",
+    "--source",
+    "inputs/pdf/intake-with-scan.pdf"
+  ],
+  "exit": 0,
+  "stdout_sha256": "9604291633ac951cf13afe0c35ea148aba11580a12484e2e0cc44e658219ae29",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [
+    {
+      "path": "system/assets/intake-with-scan",
+      "kind": "dir"
+    },
+    {
+      "path": "system/assets/intake-with-scan/intake-with-scan.txt",
+      "kind": "file"
+    }
+  ],
+  "changed": [],
+  "removed": [],
+  "files": {
+    "system/assets/intake-with-scan/intake-with-scan.txt": "ae2fa6093bfb66740f932f163c7a455e7dc1638a7547ac55ceed4d5f123c8dae"
+  }
+}

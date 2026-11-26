@@ -1,0 +1,32 @@
+{
+  "id": "intake-installed-convert-csv",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert",
+    "--source",
+    "inputs/stock.csv"
+  ],
+  "exit": 0,
+  "stdout_sha256": "1b347096b9cb10615f9f1d8ef49f66d9a7fb00bc50b8eff6c33171ac39ac6cca",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [
+    {
+      "path": "assets/stock",
+      "kind": "dir"
+    },
+    {
+      "path": "assets/stock/stock.csv",
+      "kind": "file"
+    }
+  ],
+  "changed": [],
+  "removed": [],
+  "files": {
+    "assets/stock/stock.csv": "7ccbde5751cd4870cacfa008be5a0e8308dff36159282e81c1f80a4b37389312"
+  },
+  "modes": {
+    "assets/stock": "0755",
+    "assets/stock/stock.csv": "0644"
+  }
+}

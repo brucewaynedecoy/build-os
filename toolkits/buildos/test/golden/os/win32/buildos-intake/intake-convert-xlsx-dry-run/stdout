@@ -1,0 +1,4 @@
+would write {ROOT}\system\assets\inventory\inventory-stock-levels.csv
+would write {ROOT}\system\assets\inventory\inventory-suppliers-terms.csv
+would write {ROOT}\system\assets\inventory\inventory-notes.csv
+would write side artifact {ROOT}\system\assets\inventory\media\image1.png

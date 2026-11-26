@@ -1,0 +1,8 @@
+entities.resolve: error
+root: {ROOT}/root
+mode: strict
+version: dev
+source revision: unknown
+write status: not_requested
+ERROR [entity_not_found]: requested entity PER-999 does not exist
+  action: use an existing governed entity ID or restore the missing canonical row

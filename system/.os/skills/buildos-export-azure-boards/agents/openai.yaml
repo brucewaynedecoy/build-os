@@ -1,0 +1,4 @@
+interface:
+  display_name: "BuildOS Azure Boards Export"
+  short_description: "Turn Build OS work into Azure Boards CSV"
+  default_prompt: "Use $buildos-export-azure-boards to convert the selected Build OS docs/work backlog into an Azure Boards import-ready CSV."

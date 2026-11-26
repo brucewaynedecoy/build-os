@@ -1,0 +1,25 @@
+{
+  "id": "entities-consolidate-conflict-json",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "entities",
+    "consolidate",
+    "--root",
+    "root",
+    "--mode",
+    "strict",
+    "--manifest",
+    "manifests/intentionally-conflicting-remap-v1.json",
+    "--apply",
+    "--json"
+  ],
+  "exit": 4,
+  "stdout_sha256": "4449b1cba7678534e3e81f48a3aba7c8598569974c5c5841e018ab654154e907",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

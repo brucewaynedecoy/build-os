@@ -1,0 +1,7 @@
+{
+  "case": "config-empty-key",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/config/instance.yaml:config: .os/config/instance.yaml:4: empty key\nplaybooks/sample/check-sample.md:systems[0]: unknown configured ID 'primary-system'\nplaybooks/sample/check-sample.md:environments[0]: unknown configured ID 'baseline'\n.os/data/requirements.jsonl:line 1.systems[0]: unknown configured ID 'primary-system'\n.os/data/requirements.jsonl:line 1.environments[0]: unknown configured ID 'baseline'\n.os/data/requirements.jsonl:line 1.owners[0]: unknown configured ID 'sample-team'\nFAIL: 6 validation error(s)\n",
+  "crashed": false
+}

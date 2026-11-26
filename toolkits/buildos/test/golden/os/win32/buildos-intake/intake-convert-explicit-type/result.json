@@ -1,0 +1,30 @@
+{
+  "id": "intake-convert-explicit-type",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert",
+    "--source",
+    "inputs/notes.txt",
+    "--type",
+    "csv"
+  ],
+  "exit": 0,
+  "stdout_sha256": "72f171ea3ef50a3785fb9d803fa2bbd706b87332780189ba9435d67be1a33287",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [
+    {
+      "path": "system/assets/notes",
+      "kind": "dir"
+    },
+    {
+      "path": "system/assets/notes/notes.csv",
+      "kind": "file"
+    }
+  ],
+  "changed": [],
+  "removed": [],
+  "files": {
+    "system/assets/notes/notes.csv": "0e26224ea9c7c7becfdcb14e6b7fed704d5fd15213ba0c827b9ed51da0f47e04"
+  }
+}

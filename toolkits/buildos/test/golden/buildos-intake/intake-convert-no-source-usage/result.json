@@ -1,0 +1,16 @@
+{
+  "id": "intake-convert-no-source-usage",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "5bf6479b94390dd534ae586378d8f6cc2ebf0143a48da7b2991af2b6d13fa9aa",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

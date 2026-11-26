@@ -1,0 +1,5047 @@
+# BuildOS Node and TypeScript CLI Rewrite Evidence
+
+This report keeps acceptance, review, and performance evidence for the [W1 R7 backlog](./00-index.md). Each phase adds its own sections. Paths are relative to the repository root unless a link says otherwise.
+
+## Owner Decisions
+
+| Date | Decision | Scope | Source |
+| --- | --- | --- | --- |
+| 2026-11-23 | The owner approved the W1 R7 PRD maintenance and this backlog for execution. | W1 R7 P1 entry gate, conditions one and two | Owner approval relayed to the implementing agent by the orchestrating maintainer chat |
+| 2026-11-23 | `D-005` is closed. `make-docs run prd authority validate --target-root .` exits 0. | W1 R7 P1 entry gate, condition three | [W1 R8 backlog](../2026-11-23-w1-r8-prd-set-authority-cleanup/00-index.md); [`D-005`](../../prd/03-open-questions-and-risk-register.md#d-005-legacy-editorial-prds-fail-prd-authority-validation) |
+| 2026-11-23 | Replace Vitest with Node's built-in test runner `node:test` and `node:assert/strict`. Vitest's dependency tree held 12 MPL-2.0 `lightningcss` packages that PRD 20 Supply Chain does not allow, and PRD 20 prefers Node built-ins. The dev dependency set becomes `typescript`, `esbuild`, and `@types/node`. | W1 R7 P1 t1, t2, t12; PRD 20 `## Runtime and Package`; later port phases' test tasks | Owner decision relayed by the orchestrating maintainer chat |
+| 2026-11-23 | No push in P1. The three-OS CI run waits for a separate owner approval to push. | A8 and A9 | Owner instruction relayed by the orchestrating maintainer chat |
+| 2026-11-23 | esbuild may declare an install script, under a closed exception. Exactly one package, `esbuild` 0.28.2, may declare its `postinstall` script. It never runs, because every install uses `--ignore-scripts` and `toolkits/buildos/.npmrc` sets `ignore-scripts=true`. No other package may declare an install script. Any change to the exception needs a new owner decision recorded in PRD 20. The owner's condition: it "must not become a precedent" ("camel's nose in the tent"). | PRD 20 `## Supply Chain` rule 5 and `## Requirement History`; `toolkits/buildos/.npmrc`; `scripts/dependency-policy.ts`; CI; `SECURITY.md` | Owner decision relayed by the orchestrating maintainer chat |
+| 2026-11-23 | The owner approved parity exceptions PE-001, PE-002, and PE-003 ("Approve all three"). PE-001: root help lists the registered TypeScript domains, not the seed's fixed text. PE-002: `help <domain>` prints that domain's help, not root help. PE-003: `version --help`, `-h`, and `help` print version help with exit 0, not the seed's usage error. | W1 R7 P1 Go seed parity; [Parity Exceptions](#parity-exceptions); `toolkits/buildos/test/go-parity.test.ts` | Owner approval relayed by the orchestrating maintainer chat |
+| 2026-11-23 | Orchestrator implementation decision, consistent with PRD 20 Command Surface (not an owner decision): core (`src/core/**`) may not load `fs`, `fs/promises`, or any other module that can write to a file descriptor or a stream (`net`, `tls`, `tty`, `child_process`, `worker_threads`, `stream`, `readline`, `http`, `vm`, `util`, and the rest), in any import form. The boundary check enforces this as a structural rule and no longer follows file-descriptor values. Core still owns every authoritative read and write, through a small filesystem port (`src/core/shared/fs-port.ts`) that the CLI passes in; `src/adapters/node-fs.ts` implements it with `node:fs` and refuses at run time any target that is not a string path inside the real root, a numeric file descriptor, and device or special paths. PRD 02 `## Module Map` does not say core uses `fs` directly, so no PRD text changed. | W1 R7 P1 t4 and A3; `toolkits/buildos/test/boundary-rules.ts`; `src/core/shared/fs-port.ts`; `src/adapters/node-fs.ts`; later domain ports | Orchestrator design decision in the final review fix round, relayed by the orchestrating maintainer chat |
+| 2026-11-23 | Replace `node:util` `parseArgs` with a small built-in parser that follows Go's `flag` package rules. `parseArgs` splits Go `flag`-style spellings such as `-json` into short flags, and Go output parity requires them. No CLI framework or outside parsing package is used. | PRD 20 `## Runtime and Package` and `## Requirement History`; W1 R7 P1 t3; `toolkits/buildos/src/cli/parse.ts` | Owner decision relayed by the orchestrating maintainer chat |
+| 2026-11-23 | Orchestrator implementation decision, consistent with PRD 20 (not an owner decision): on Windows, `///dev/stdout`, `///proc/self`, and `//sys` are not device paths. They have no UNC share, so Windows reads each as rooted on the current drive (for example `C:\dev\stdout`), an ordinary Windows path. The port does not classify them as `device-path`; root containment refuses them when they are outside the root (`outside-root`) and allows them only when they are genuinely inside it. Reason: Windows has no `\dev`, `\proc`, or `\sys` device tree, so refusing these as devices would refuse real folders, and containment already keeps every write inside the root. | `src/adapters/node-fs.ts` `classifyPathText`; `test/fs-port.test.ts` (`path.win32` unit test and Windows-only adapter test) | Orchestrator decision in the path-port fix round, relayed by the orchestrating maintainer chat |
+| 2026-11-23 | Orchestrator implementation decision, consistent with PRD 20 (not an owner decision): a target spelled through an absolute alias outside the root (a symlink outside the root) whose real path is inside the root is allowed; a target whose real path is outside the root is refused (`outside-root`). Reason: PRD 20 requires writes to land inside the project root, and the port checks containment on the real path the OS resolves, which is where the write lands. The spelling of the path is not what PRD 20 restricts. | `src/adapters/node-fs.ts` `check`; `test/fs-port.test.ts` | Orchestrator decision in the path-port fix round, relayed by the orchestrating maintainer chat |
+| 2026-11-23 | Orchestrator implementation decision, consistent with PRD 20 (not an owner decision): on Windows, the UNC server and share of a path (`\\server\share\`) are not checked for device names, so the hosts `aux.example.org`, `con.example.org`, `dev`, and `nul`, and a share named `CON`, are allowed as text. Every component below the share is checked, and a device name there is refused (`device-path`). The `\\.\` and `\\?\` device namespaces stay refused. Reason: the Win32 path parser never reads a UNC server or share as a device name (a share named `CON` is the remote share `CON`), and BuildOS never creates the server or share. Below the share, the BuildOS rule refuses device names in any folder on every platform. Root containment still refuses a UNC path outside the root before it touches the network. | `src/adapters/node-fs.ts` `classifyPathText`; `test/fs-port.test.ts` | Orchestrator decision in the path-port fix round, relayed by the orchestrating maintainer chat |
+| 2026-11-23 | Orchestrator implementation decision, required by PRD 20 Compatibility (Go output parity; not an owner decision): every envelope and error reports the root as the Go seed spells it, Go's `filepath.Abs` (absolute against the current folder, then `filepath.Clean`: lexical `.` and `..` folding and separator cleanup, no symlink resolution). On Windows this includes volume names, UNC shares, rooted and drive-relative paths, and the `GetFullPathNameW` trailing dot and space trim. `--root ../../..` is reported as the folded absolute path, and a root ending in `link/..` is reported as the folder that holds `link`, as in Go, even though the OS opens the parent of the link's target. The root is never empty, also for device, dangling, and FIFO roots. Containment and every refusal still use the real path the OS resolves, unchanged. This replaces the earlier path-port fix-round rule that joined the root as text with no folding. | `toolkits/buildos/src/core/shared/go-path.ts`; `src/core/shared/root.ts` `rootAsGiven`; `test/root.test.ts`; `test/fixtures/go-seed/root-spelling.json` (Go 1.24.1 goldens); P3 `entities` parity | Orchestrator decision in the root spelling fix round, relayed by the orchestrating maintainer chat |
+| 2026-11-23 | The owner approved parity exception PE-004. When a given root cannot be loaded (`EACCES`, `ENOTDIR`, `ELOOP`, `ENAMETOOLONG`, or a missing folder), the TypeScript CLI exits 3, names the given root in Go's `filepath.Abs` form in the envelope, and uses the typed diagnostic codes `root_unreadable`, `path_refused`, or `root_not_found`, not the seed's empty root and `internal_error`. A target that cannot be read exits 3 (`path_unreadable`), and a write that cannot land exits 5 (`write_failed`), each with the given root. | W1 R7 P1 Go seed parity; [Parity Exceptions](#parity-exceptions); P3 `entities` parity, t11 | Owner approval relayed by the orchestrating maintainer chat |
+| 2026-11-23 | Orchestrator implementation decision, consistent with PRD 20 Compatibility (not an owner decision): golden cases whose Go output differs by operating system get per-OS goldens captured from the real Go tools on each system, not per-case parity exceptions. The Go tools' own output on each operating system is the parity target. The 66 cases that print an absolute path inside the fixture copy (`OSD-1`, 49 cases) or an operating system file error (`OSD-2`, 17 cases) are marked `os_dependent` in `cases.json` and have no shared golden. Each case uses the golden for the running operating system (`test/golden/os/<platform>/`) when one exists, else the shared golden; an OS-dependent case with no golden for the running system is `missing-golden`, which fails an enforced domain. A manual workflow captures the `linux`, `win32`, and `darwin` sets; a maintainer commits its artifacts. | W1 R7 P2 t6 and the [P2 Open Items](#p2-open-items) Windows item; `toolkits/buildos/test/golden/`; `.github/workflows/buildos-golden-capture.yml`; P3 to P5 domain enforcement | Orchestrator decision relayed by the orchestrating maintainer chat |
+| 2026-11-23 | Orchestrator decision (not an owner decision): the golden capture workflow runs on a push to a branch named `golden-capture/**`, and keeps `workflow_dispatch`. Reason: GitHub runs `workflow_dispatch` only for workflows on the default branch, and the working branch `rewrite/ts-cli` will not merge into it now. The workflow keeps `permissions: contents: read` and never commits or pushes. Capture flow: push the commit to capture to `golden-capture/<short-sha>`, wait for the run, download the artifacts, verify each with `capture.mjs --verify-artifact`, commit them to the working branch, then delete the capture branch. | W1 R7 P2 per-OS capture; `.github/workflows/buildos-golden-capture.yml`; `toolkits/buildos/test/golden/CAPTURE.md` | Orchestrator decision in the P2 review fix round, relayed by the orchestrating maintainer chat |
+| 2026-11-23 | The owner chose option A of [P2 Windows Go Behavior](#p2-windows-go-behavior) and approved parity exception PE-005, "Go Windows directory-sync defect": "on Windows, the parity target for the six cases where Go 1.24.1 fails its post-rename parent-directory sync (\"Access is denied\") is the Go behavior on Linux and macOS." The six cases: `entities-rebuild-apply-missing-json`, `entities-consolidate-apply-json`, `entities-consolidate-apply-index-failure-json`, `design-promote-baseline`, `design-promote-change-redirected`, `design-installed-promote`. "The TypeScript CLI must not reproduce the defect." | W1 R7 P2 win32 goldens ([PE-005 Derived Goldens](#pe-005-derived-goldens)); `toolkits/buildos/test/golden/parity-exceptions.json` PE-005; `capture.mjs`; P3 t14 and P5 t11 (Windows directory sync in the TypeScript atomic writes) | Owner decision relayed by the orchestrating maintainer chat |
+| 2026-11-23 | The owner extended the scope of parity exception PE-004 (choice 1 of "A, A, A"). A root folder that exists without a `.os/data/` folder also gives exit 3, `root_not_found` (`root <root> has no .os/data/ folder`), and the given root in Go's `filepath.Abs` form. The Go seed gives exit 3, an empty root, and `internal_error` (`resolve root "<root>": expected .os/data: stat <root>/.os/data: no such file or directory`). Only stdout differs. | W1 R7 P3 `entities` parity; `toolkits/buildos/test/golden/parity-exceptions.json` PE-004 `edge`; edge golden `root-without-os-data` | Owner answer "A, A, A" to the three P3 open items, relayed by the orchestrating maintainer chat |
+| 2026-11-23 | The owner approved parity exception PE-006 (choice 2 of "A, A, A"). An `entities consolidate` dry run writes nothing. The Go seed creates a temporary preflight folder `.os/.buildos-consolidation-preflight-<n>` and copies the eight datasets into it, on a dry run too. Output is equal when Go's copy succeeds. They differ when `.os/` cannot be written (Go: exit 5, `create prospective graph directory: mkdir ...: permission denied`; TypeScript: exit 0 with the plan; only exit and stdout differ) and when the disk fills during the preflight copy (Go: exit 5, `write prospective input ...: no space left on device`; TypeScript: exit 0). No other difference is allowed. | W1 R7 P3 `entities consolidate`; `parity-exceptions.json` PE-006 `edge`; edge golden `consolidate-dry-run-os-read-only` (the full-disk case has no golden) | Owner answer "A, A, A" to the three P3 open items, relayed by the orchestrating maintainer chat |
+| 2026-11-23 | The owner approved parity exception PE-007 (choice 3 of "A, A, A"). A dataset symlink that points to a file outside the root is refused: exit 3, `path_refused` (`.os/data/<name> resolves outside the root <root>`), and nothing changes. The Go seed reads the outside file, replaces the link with a regular file, and writes the index (exit 0). Only exit, stdout, and the file tree differ. This replaces the earlier P3 containment note, which called it an orchestrator decision. | W1 R7 P3 `entities consolidate --apply`; `parity-exceptions.json` PE-007 `edge`; edge golden `dataset-link-outside-root` | Owner answer "A, A, A" to the three P3 open items, relayed by the orchestrating maintainer chat |
+| 2026-11-23 | The owner reviewed all 12 conversion eval reference texts in `review.html` and approved them all without changes ("All 12 approved"). Reviewer "Tyler (project owner)", date 2026-11-23, approved yes for each file. | W1 R7 P4 t3 and A25; `toolkits/buildos/test/conversion-eval/REVIEW.md` | Owner decision relayed by the orchestrating maintainer chat |
+| 2026-11-23 | The owner approved parity exception PE-008: the TypeScript converter keeps text inside `div` boxes (the HTML callout case) where Go 1.24.1 drops it, because PRD 07 requires that no section is lost. The harness must accept only exactly that difference. | W1 R7 P4 t12; `toolkits/buildos/test/golden/parity-exceptions.json` PE-008 `eval`; `test/intake-eval-parity.test.ts`; `src/core/intake/convert/html.ts` | Owner decision relayed by the orchestrating maintainer chat |
+| 2026-11-23 | The owner chose a package for ZIP reading, `fflate`, over own code on `node:zlib`. | W1 R7 P4 t7; `toolkits/buildos/SECURITY.md` Bundled npm Packages | Owner decision relayed by the orchestrating maintainer chat |
+| 2026-11-23 | The owner approved parity exception PE-009: the port's PDF text may differ from Go's only by spaces between words that Go ran together, at the pinned positions (made a class check in review round 2; see the PE-009 ruling below). Affected: eval file `pdf-annual-report` (28 spaces) and the test fixture `pdf-minutes-two-lines` (1 space); no golden case. | W1 R7 P4 t12; `toolkits/buildos/test/golden/parity-exceptions.json` PE-009 `pdf`; `harness.ts` `pdfWordGapProblems`; `test/intake-eval-parity.test.ts`; `test/intake-hostile.test.ts` | Owner decision relayed by the orchestrating maintainer chat |
+| 2026-11-23 | The owner approved parity exception PE-010 with an addition. By default the port refuses a write target outside `--repo-root` (exit 3). A new opt-in flag `--allow-outside-root` allows it, so the Go tool's capability stays available. The flag relaxes only root containment for write targets the user named or that a link reaches. It does not relax device-path, file-descriptor, special-file, hostile-archive, or read rules. PRD 20 now states: "A write that would land outside the project root is refused (exit 3) unless the command is given `--allow-outside-root`; a link at the written file itself is replaced, never followed." | W1 R7 P4 `buildos intake convert`, `index references`, `index playbooks`; PRD 20 `## Output and Exit Contract` and `## Requirement History`; `parity-exceptions.json` PE-010 `intake_edge`; [PE-010 and `--allow-outside-root`](#pe-010-and---allow-outside-root) | Owner decision relayed by the orchestrating maintainer chat |
+| 2026-11-23 | Orchestrator decision (not an owner decision): remove `@xmldom/xmldom` and keep the port of Go's `encoding/xml` reader. Reasons: one package fewer, and Go's exact errors for malformed XML. The Go BSD-3-Clause notice covers the ported reader (`src/encoding/xml/xml.go`, `src/encoding/xml/read.go`). | W1 R7 P4 t7, A28; `package.json`; `package-lock.json`; `SECURITY.md`; `THIRD_PARTY_NOTICES.md`; `test/notices.test.ts`; [Converter Choice](#converter-choice-t7-a27-a28) | Orchestrator confirmation relayed by the orchestrating maintainer chat |
+| 2026-11-23 | Orchestrator ruling on PE-009 (review round 2), relayed as the owner's intent: PE-009 is an owner-approved class exception ("the port's PDF text may differ from Go's only by spaces between words that Go ran together"), not a list of cases. The class rule applies to every PDF comparison with Go: after white-space normalization of both texts, the two texts must be identical after removing, from the port's text, only single spaces that sit at positions where Go has two adjacent non-space characters that the PDF renders as separate words; no other character may differ, and the port must never drop a space Go has. The PDF renders two characters as separate words when pdf.js puts a space between them inside one text run, or when they end and start two runs and the second run starts a new line, a new page, or more than 0.15 of its font size to the right of the first. The port's text must equal the PDF's runs with one space at each such run boundary. The earlier pinned cases stay as regression fixtures, with the reviewer's `Quarterly Staff meeting` case added. | W1 R7 P4 t12; `parity-exceptions.json` PE-009; `harness.ts` `pdfSeparations`, `pdfWordGapClass`, `pdfWordGapProblems`; `test/golden/compare.test.ts`; `test/intake-eval-parity.test.ts`; `test/intake-hostile.test.ts` | Orchestrator ruling relayed by the orchestrating maintainer chat |
+| 2026-11-23 | Orchestrator instruction (not an owner decision): the proposed exception for side artifacts written after validation is renumbered from PE-011 to PE-013, because P5 uses PE-011 and PE-012. PE-013 stays pending an owner decision. | `test/golden/proposed-exceptions.json` PE-013; [P4 Open Items](#p4-open-items) | Orchestrator instruction relayed by the orchestrating maintainer chat |
+| 2026-11-23 | Implementation choice under PE-010 (not an owner decision), aligned with the P5 branch for a simple merge: `--allow-outside-root` is the third argument when a filesystem port is opened (`FsPortOptions.allowOutsideRoot`, also on the in-place writer), and the intake command recognizes it only as a whole argument in flag position with Go `flag` rules. As in P5, the option lets a path that is inside the root as spelled resolve outside through a link. For a target the user names outside the root (an absolute `--assets-root` or `--output`), the intake file layer opens a second port bound to that target's volume, with the same option, so the device, file-descriptor, and special-file checks still run. Two choices differ from P5 and need a look at merge time: the intake refusal message adds `; pass --allow-outside-root to allow a write outside the repository root`, and a typed port refusal in intake exits 3 (the central exit code; before, intake used exit 1). | `src/core/shared/fs-port.ts`; `src/adapters/node-fs.ts`; `src/core/intake/io.ts`; `src/cli/commands/intake.ts`; `src/cli/run.ts` | Implementing agent, under the owner's PE-010 decision |
+| 2026-11-23 | The owner approved parity exception PE-013: "A failed convert leaves no files behind." The port reads and checks the whole source before it writes any side artifact. On `intake-convert-xlsx-escaping-target`, Go writes `system/assets/escaping-sheet/media/image1.png` and then fails; the port fails with the same message and writes nothing. The harness must accept only exactly that difference (the `tree` field of that one golden case). | W1 R7 P4 t12; `toolkits/buildos/test/golden/parity-exceptions.json` PE-013 `golden`; `toolkits/buildos/test/intake-hostile.test.ts` | Owner decision relayed by the orchestrating maintainer chat |
+| 2026-11-23 | The owner approved parity exception PE-015: "where the Go tool crashes (exit 2) or does not terminate on a malformed PDF, the port exits 1 with a clean diagnostic; no files written." It covers exactly six hostile cases (`past-eof`, `huge-int`, `nothing`, `negative`, `prev-self`, `deep`), each with its exact port exit code, stdout, and stderr. No golden case is affected. It moved from `proposed-exceptions.json` to `parity-exceptions.json`; no exception is pending. | W1 R7 P4 t12; `toolkits/buildos/test/golden/parity-exceptions.json` PE-015 `hostile`; `toolkits/buildos/test/intake-hostile.test.ts`; [P4 Open Items](#p4-open-items) | Owner decision relayed by the orchestrating maintainer chat |
+| 2026-11-23 | The owner approved parity exception PE-011. `--json` works on the discovery and design commands (`buildos discovery`, `buildos design`, and the legacy names), though the Go tools reject it (`flag provided but not defined: -json`, exit 1). Scope: exactly a whole `--json` argument in flag position, with Go `flag` rules (before the first non-flag argument and before `--`, never as a flag value). Every other spelling behaves as in Go. The earlier proposal called it PE-008; P4 uses PE-008 to PE-010. | W1 R7 P5 review round 1, finding 1; [P5 Review Fix Round 1](#p5-review-fix-round-1); `toolkits/buildos/test/golden/parity-exceptions.json` PE-011 | Owner decision relayed to the implementing agent by the orchestrating maintainer chat |
+| 2026-11-23 | The owner approved parity exception PE-012. A discovery or design write that would really land outside the project root through a link (for example a symlinked folder that leads outside) is refused by default (exit 3), and allowed with the new opt-in flag `--allow-outside-root`, the same flag P4 adds for intake, so one rule holds and Go's capability stays available. A symlink at the written file itself is replaced, never followed, as Go's `os.Rename` does, so it is not a refusal. Every write destination is checked before the first write, and a refusal or failure after a write rolls back as in Go. The earlier proposal called it PE-009. | W1 R7 P5 review round 1, finding 2; [P5 Review Fix Round 1](#p5-review-fix-round-1); `toolkits/buildos/test/golden/parity-exceptions.json` PE-012; PRD 20 sentence listed in the P5 merge notes | Owner decision relayed to the implementing agent by the orchestrating maintainer chat |
+| 2026-11-23 | Orchestrator-approved safety improvement (not a parity exception; no effect on the output of one command alone): discovery reserves the run or finding folder with an exclusive `mkdir` before it writes there. Two concurrent commands that pick the same next ID no longer write the same immutable folder: the second fails with Go's own `<noun> artifact <path> already exists` and changes nothing. When a step after the reservation fails, the command removes what it created, so a retry works (Go leaves a partial folder). | W1 R7 P5 review round 1, findings 3 and 4 | Orchestrator decision relayed to the implementing agent |
+| 2026-11-23 | The owner approved parity exception PE-014, "A failed promotion is fully undone". After any promotion failure, the port restores the start state (each replaced entry has its original bytes and mode, or its original link text and link mode; no design file and no temporary file remain), where Go can leave changed bytes or a changed link type (five of the six injected failures). A symlink at the discovery index (`runs.jsonl` or `findings.jsonl`), inside or outside the root, is replaced, never followed, where Go appends through the link (P5 edge goldens `discovery-runs-index-link-outside`, `discovery-runs-index-link-outside-allowed`, `discovery-runs-index-link-inside`: only the tree differs). | W1 R7 P5 review rounds 2 and 3; [P5 Review Fix Round 3](#p5-review-fix-round-3); `toolkits/buildos/test/golden/parity-exceptions.json` PE-014 (`p5_edge` and `design_rollback`) | Owner decision relayed to the implementing agent by the orchestrating maintainer chat |
+| 2026-11-24 | Parity exception PE-016 is recorded as approved, under the authority of PRD 20 Legacy Command Names (a legacy name "writes one line to stderr that says the name is going away and names the new command") and the owner's earlier approval of the W1 R7 legacy-name alias plan; no separate owner answer was asked. Under a legacy name, the first stderr line is exactly `Note: the command name "<name>" goes away in BuildOS 0.3.0. Use "buildos <domain>" instead.` The harness removes exactly that line and compares everything else byte for byte. | W1 R7 P6 t3, t4, A38, A39; `toolkits/buildos/test/golden/parity-exceptions.json` PE-016 `legacy_notice`; `harness.ts` `stripLegacyNotice` | Orchestrator brief for P6, under PRD 20 |
+| 2026-11-24 | Question 1 (P6 open items 1 and 3): `buildos init` stopped on a clash in almost every existing project, because the root `AGENTS.md`, `CLAUDE.md`, and `.gitignore` are almost always there, and Make Docs 2.0.9 refused setup after BuildOS wrote its root `AGENTS.md` and `CLAUDE.md`. Options: (A) treat those three files as shared: BuildOS adds its own marked section and never changes a line outside it, and Make Docs runs before BuildOS writes; (B) keep the clash and the order, and wait for a Make Docs companion mode. Choice: A. Details set by the owner: markers `<!-- buildos:begin -->` and `<!-- buildos:end -->` (`# buildos:begin` and `# buildos:end` in `.gitignore`); a closed list of three files; a missing file is created with only the section; a run again replaces the section in place; malformed markers stop before any write with the clash exit class; line breaks, a BOM, and the final line break outside the section stay; a link is never followed out of the root; the hostile-input size rule applies; every check before the first write of any kind; a failure restores each file's exact bytes. | PRD 20 `## Project Initialization and Adoption`, `## Make Docs Companion Setup`, `## Requirement History`; `src/core/init/shared-files.ts`, `plan.ts`, `apply.ts`, `init.ts`; `src/cli/commands/init.ts`; `test/init.test.ts`; register `R-001`; [P6 Shared Files and Make Docs Order](#p6-shared-files-and-make-docs-order) | Owner decision relayed to the implementing agent by the orchestrating maintainer chat |
+| 2026-11-24 | Question 2 (P6 open item 2): on Windows, npm's `.cmd` and `.ps1` shims start all four `bin` names through the same JS file, so the program could not tell which legacy name was used, and the legacy names failed there. Options: (A) one small entry file per legacy name that passes the name to the same program explicitly (no `argv[1]` sniffing), with the `bin` entries pointing at them; (B) keep one entry file and accept that legacy names do not work from an npm install on Windows. Choice: A. esbuild stays the only bundler; no new dependency; legacy names are kept until `0.3.0`, as decided. | PRD 20 `## Legacy Command Names`, `## Requirement History`; `package.json` `bin` and `files`; `scripts/build.ts`; `src/cli/invocation.ts`, `main.ts`; `test/package.test.ts`, `go-tool-cli.test.ts`, `intake-edge.test.ts`; `test/golden/harness.ts`; [P6 Legacy Entry Files](#p6-legacy-entry-files) | Owner decision relayed to the implementing agent by the orchestrating maintainer chat |
+| 2026-11-24 | `D-007` item 2 (P7 open item P7-O3, VD-06): the legacy validator rejected a `qualified` finding and a `running`, `closed`, or `aborted` run; PRD 13, 08, and 17 allow them. Options: (A) follow PRD 13 (form a: the parity fixtures and divergence VD-06 keep the PRD rules); (B) keep the legacy rule. Choice: A. A closed or running run and a qualified finding pass `buildos validate`; PRD 13 wins over the Python script. Item 2 is closed. | Register `D-007` item 2; PRD 13 `## Contracts and Data`; `test/golden/validate/divergences.json` VD-06; parity case `type-specific-status` | Owner decision ("A, A, A", answer 1) relayed by the orchestrating maintainer chat |
+| 2026-11-24 | `D-006` item 1 (P7-O3, VD-03): the legacy validator rejected a config with no `defaults` section, or with only some `defaults` lists. Options: (A) follow PRD 13 and the config contract (`defaults` and each of its lists are optional); (B) keep the legacy rule. Choice: A. A config with no `defaults` section passes. Item 1 is closed. | Register `D-006` item 1; PRD 13; config contract; VD-03; parity cases `defaults-absent`, `defaults-partial` | Owner decision ("A, A, A", answer 2) relayed by the orchestrating maintainer chat |
+| 2026-11-24 | `D-007` item 1 (P7-O3, VD-08): the legacy validator treated `"dataset_refs": null` as an absent field. Options: (A) follow PRD 13 (`null` fails: when the field is present, its value is a list); (B) keep the legacy rule. Choice: A. `dataset_refs: null` fails. Item 1 is closed. Follow-up noted by the orchestrator: when Stage 1 imports the adopter skills, check whether any skill writes `dataset_refs: null`; if one does, return to the owner. | Register `D-007` item 1; PRD 13 Extraction rows; VD-08; parity case `dataset-refs-null`; open item P7-O10 | Owner decision ("A, A, A", answer 3) relayed by the orchestrating maintainer chat |
+| 2026-11-24 | P7 t1 is met. The owner supplied the 21 adopter skills in the repository `https://github.com/brucewaynedecoy/build-os-skills`, folder `skills/`, commit `ef12985`, as a read-only copy. | W1 R7 P7 t1 to t4; [P7 Stages 1 to 3](#p7-stages-1-to-3) | Owner input relayed by the orchestrating maintainer chat |
+| 2026-11-24 | The owner approved parity exception PE-017 (answer "B, A", item 1) with the full six-behavior scope that review round 2 recorded: the Make Docs 2.0.9 design inputs, the mixed layout, contained and bounded input reads, the installed-root rule, and the read bounds. It moved from `proposed-exceptions.json` to `parity-exceptions.json`; no exception is pending. | W1 R7 P7 review rounds 1 and 2; `toolkits/buildos/test/golden/parity-exceptions.json` PE-017; register R-009; open item P7-O9 (closed) | Owner decision relayed to the implementing agent by the orchestrating maintainer chat |
+| 2026-11-24 | R-009 design write format (answer "B, A", item 2): option B. In a Make Docs 2.0.9 project only, a promoted design is written in the 2.0.9 form: the 2.0.9 frontmatter, an empty `## Human Experience Intent` section for the planner to fill in, a next-prompt link that resolves, and no `system/docs/` wording. A project with the old layout keeps the exact Go bytes. This needs a new parity exception. Recorded only; it is not built yet. | Register R-009; P7 Stage 6 (t20, t21); open item P7-O8 | Owner decision relayed to the implementing agent by the orchestrating maintainer chat |
+| 2026-11-24 | Parity exception PE-020 is recorded as approved under the option B decision above (no separate owner answer was asked): in a project whose design template resolves from the Make Docs 2.0.9 layout, the design is written in the 2.0.9 form, built from the project's template and contract; a legacy-layout project keeps the Go bytes. Built in P7 Stage 6. | `test/golden/parity-exceptions.json` PE-020; [P7 Stage 6](#p7-stage-6) | Owner decision (option B) relayed by the orchestrating maintainer chat; the implementing agent recorded the exception |
+| 2026-11-24 | The owner approved parity exceptions PE-018 and PE-019 (answer "A, A"). PE-018: an HTML image is read only from the HTML file's own folder tree or from the project; any other is skipped with a warning, exit 0. PE-019: (1) a typed source path is not remapped when the project has its own `system` entry; (2) writers stop with exit 4 before a write that would exceed the file's own read limit. Both moved from `proposed-exceptions.json` to `parity-exceptions.json`; no exception is pending. Review round 4 widened both in the same round: PE-018 decodes an image address once before the containment check (P7-R4-03), and PE-019 (2) covers each JSONL row against its reader's line limit (P7-R4-02); the exact scope is in [P7 Review Round 4](#p7-review-round-4-closing-check). | W1 R7 P7 review rounds 3 and 4; `toolkits/buildos/test/golden/parity-exceptions.json` PE-018, PE-019; open items P7-O18 and P7-O19 (closed) | Owner decision relayed to the implementing agent by the orchestrating maintainer chat |
+| 2026-11-24 | The owner made the GitHub repository private (it had been public, with 0 forks) and chose to leave git history as it is for now. A history rewrite and the visibility question return before the P8 release, because npm provenance needs a public repository. | Repository settings; [P8 Open Items From P7](#p8-open-items-from-p7); W1 R7 P8 entry gate | Owner decision relayed by the orchestrating maintainer chat (P7 skills review round 1) |
+| 2026-11-24 | Informed, veto open. The orchestrator told the owner about two P7 changes that sit inside approved parity exceptions but change behavior: PE-019 part (3), a JSONL append adds the missing final line break before the new row (Go joined the new row to the last one; a change from Go), and the PE-018 extension that decodes an HTML image address once before the containment check. No objection was received at closeout time. Both stay as built; the owner may still veto either. | W1 R7 P7 final check (P7-F-04) and review round 4 (P7-R4-03); `toolkits/buildos/test/golden/parity-exceptions.json` PE-018, PE-019; [P7 Closeout](#p7-closeout) | Orchestrator note to the owner, relayed to the implementing agent by the orchestrating maintainer chat |
+| 2026-11-24 | First publication: option A. The maintainer first stages and approves, by hand, a reserved-name placeholder (`0.0.0-reserved.0`, dist-tag `reserved`) so the package exists; then configures npm trusted publishing for the release workflow, staging only; then `0.1.0` goes through the full workflow with provenance. | W1 R7 P8 t1; PRD 20 Release | Owner answer "A, A" (first answer), relayed by the orchestrating maintainer chat; [P8 Review Round 1](#p8-review-round-1) |
+| 2026-11-24 | Repository: option A. The orchestrator prepares a git-history rewrite on a copy (removing the removed client text and the two deleted Go binaries from old commits); the owner reviews it; then force-push; the owner makes the repository public before the release, so provenance works. | W1 R7 P8 entry gate | Owner answer "A, A" (second answer), relayed by the orchestrating maintainer chat; [P8 Review Round 1](#p8-review-round-1) |
+| 2026-11-25 | Release flow confirmed (option A): draft release, then prepare run, then the maintainer publishes the release, then a required reviewer approves the environment `buildos-npm-stage`, then `npm stage publish`, then the maintainer approves on npm with 2FA. No code change. | P8 release flow; PRD 20 Release | Owner decision relayed by the orchestrating maintainer chat; [Owner Decisions 2026-11-25](#owner-decisions-2026-11-25) |
+| 2026-11-25 | `Q-015` closed: pin-first (option A). A project wrapper always runs the version pinned in `.os/manifest.json`; a `buildos` on `PATH` runs only when it reports exactly that version, else the pinned version runs through `npx`. Every earlier wrapper safety rule stays. | P8; PRD 06 wrapper resolution; F-P8-S2-01 | Owner decision relayed by the orchestrating maintainer chat; [Owner Decisions 2026-11-25](#owner-decisions-2026-11-25) |
+| 2026-11-25 | `Q-016` closed (option A): the project scripts `.os/scripts/buildos-intake`, `buildos-discovery`, `buildos-design` and their `.cmd` forms print the package's legacy-name notice (PE-016, extended) and are removed in `0.3.0` with the package legacy names. | P8; PRD 20 Legacy Command Names; PE-016; F-P8-S2-02 | Owner decision relayed by the orchestrating maintainer chat; [Owner Decisions 2026-11-25](#owner-decisions-2026-11-25) |
+| 2026-11-25 | `D-010` decided (option A): `intake` gets the `--json` envelope in `0.2.0`. Not on the `0.1.0` branch; the register entry is edited on the `0.2.0` branch. | `0.2.0` | Owner decision relayed by the orchestrating maintainer chat; [Owner Decisions 2026-11-25](#owner-decisions-2026-11-25) |
+| 2026-11-25 | Startup cost (option A): ship `0.1.0` as it is; plan the lazy load of the PDF reader for a later release, with a new `PERF-001` recheck (follow-up F-P8-06). | `PERF-001`; later release | Owner decision relayed by the orchestrating maintainer chat; [Owner Decisions 2026-11-25](#owner-decisions-2026-11-25) |
+| 2026-11-25 | Git history (option A): before the repository becomes public, it starts fresh with one clean commit; the old history stays in a private archive. This replaces the history rewrite of the 2026-11-24 repository decision above. The orchestrator prepares it. | Repository; owner checklist step 2; F-P8-02 | Owner decision relayed by the orchestrating maintainer chat; [Owner Decisions 2026-11-25](#owner-decisions-2026-11-25) |
+| 2026-11-25 | Git history, exact method: the current repository is renamed to `build-os-archive` and stays private for good (a force-push in place would leave old commits reachable by hash); a new repository `brucewaynedecoy/build-os` starts with one clean commit of the release tree, prepared by the orchestrator on a copy and reviewed by the owner before the first push; the real-list deny-list check runs on that tree before the push; the new repository becomes public before the release; every repository setting of the release checklist is made on the new repository. | `SECURITY.md` Owner Settings for Releases steps 1 to 13; F-P8-02 | Owner decision relayed by the orchestrator; [Pin-First Wrappers Review Round 1](#pin-first-wrappers-review-round-1) |
+| 2026-11-25 | Answer 7: parity exception PE-021 approved. `.xlsx` parity is checked by workbook content, not by file bytes. Built on the `0.2.0` branch `rewrite/ts-cli-p9`. | `0.2.0` (`fitgap` workbook output) | Owner decision relayed by the orchestrating maintainer chat; [Owner Decisions 2026-11-25](#owner-decisions-2026-11-25) |
+| 2026-11-25 | Answer 8: SD-04 accepted. `fitgap` and `export azure-boards` read only files inside the project. Built on the `0.2.0` branch `rewrite/ts-cli-p9`. | `0.2.0` (`fitgap`, `export azure-boards`) | Owner decision relayed by the orchestrating maintainer chat; [Owner Decisions 2026-11-25](#owner-decisions-2026-11-25) |
+| 2026-11-25 | Orchestrator design decision (pin-first review round 1): the wrappers stop starting the program on `PATH` to learn its version. They accept only an npm install of exactly the pinned version, found from its `package.json`, and run its bin file with the same Node.js; any other layout runs the pinned version through `npx`. | PRD 06 wrapper resolution; `Q-015` | Orchestrator decision; [Pin-First Wrappers Review Round 1](#pin-first-wrappers-review-round-1) |
+
+## P1 TypeScript Package Foundation
+
+Phase: [W1 R7 P1](./01-typescript-package-foundation.md). All local checks ran on 2026-11-23 on one Apple M2 Pro macOS arm64 machine with Node 24.22.3 and npm 11.19.1 (the official Node 24 darwin-arm64 release, checksum verified, unpacked in a scratch folder because only Node 26 was installed). After the owner-approved push, [CI run 45282558470](https://github.com/brucewaynedecoy/build-os/actions/runs/45282558470) on `f505935` passed on macOS, Linux, and Windows; see [CI Run](#ci-run).
+
+### Acceptance Criteria
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| A1 | Pass on macOS (local) | In `toolkits/buildos/`, from an empty `node_modules/`: `npm ci --ignore-scripts` exit 0 (6 packages installed on macOS arm64, 0 vulnerabilities); `npm run typecheck` exit 0, test files included; `npm test` (`node --test "test/*.test.ts"`, Node 24 built-in type stripping) exit 0 (11 files, 18 suites, 648 tests: 637 pass, 11 skipped, 0 fail, after the final review fix round; 545 tests after review round 4; the 11 skipped are Go seed `entities` goldens that wait for P3); `npm run build` exit 0. The final review fix round and review round 4 each reran `npm ci --ignore-scripts` from an empty `node_modules/`, then typecheck, test, and build. Linux and Windows passed in CI run 45282558470 (A8). |
+| A2 | Pass | `package.json` has `"engines": { "node": ">=24.0.0" }`, `"license": "Apache-2.0"`, no `dependencies` field, and three exact dev versions: `@types/node` 24.19.2, `esbuild` 0.28.2, `typescript` 7.0.2. `npm run check:deps` prints `dependency policy: ok (lockfile and .npmrc)`, and `npm run check:deps:installed` prints `dependency policy: ok (lockfile, .npmrc, and installed manifests)`. `LICENSE` (the Apache-2.0 text from apache.org, SHA-256 `cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30`) is at the repository root and at `toolkits/buildos/LICENSE`; the two files are byte-identical. |
+| A3 | Pass | A planted `src/core/shared/planted.ts` with `process.stdout.write("planted\n")` made `node --test test/boundary.test.ts` fail (exit 1; "passes on the real source tree" failed and named `src/core/shared/planted.ts`). After the file was removed, the same run exited 0. The suite also keeps in-memory plant cases for `process.stdout`, `process.stderr`, `console`, `process.exit`, `process.exitCode`, static and dynamic imports from `src/cli/`, and, for `src/cli/`, `child_process` imports and `spawn` or `exec` calls. After review round 3, the checker no longer reads text. It parses each file with the TypeScript compiler API (`typescript/unstable/sync` from the `typescript` 7.0.2 dev dependency, in one virtual project) and walks the syntax nodes, so strings, templates, regex literals, and comments never count, and casts, parentheses, non-null assertions, `satisfies`, and optional chaining never hide a use. Round 3 regressions: `process.getBuiltinModule("node:process").stdout` and `(globalThis as typeof globalThis).process.stdout` now fail, and an inert string holding `import { run } from '../cli/run.ts'` now passes. Earlier rounds used a small comment- and literal-aware lexer. New plant cases cover side-effect, type-only, re-export, and `require` imports from the CLI layer (including the reviewer's `import "../../cli/run.ts"`); named, namespace, default, `require`, and dynamic imports of `process` or `node:process` (including the reviewer's `import { stdout } from "node:process"`); `globalThis.process`, computed `globalThis["process"]`, destructuring, aliasing, passing `process` as a value, computed members, and template expressions; and `console` through an alias, destructuring, `globalThis`, computed `global["console"]`, and `node:console` imports. Seven allow cases show that rule names in strings, templates, other objects' `process` properties, `processed` identifiers, `process.env`, non-CLI imports, and regex literals with quotes do not count. Round 3 adds 34 violation cases (among them bare and member `getBuiltinModule`, cast, non-null, `satisfies`, angle-bracket, and nested global access, a global object alias or argument, `import x = require()`, `module.require`, `node:module`, computed `require()` and `import()` specifiers, `eval` and `new Function`, `typeof import()` of the CLI, a parameter or shorthand property named `process`, `process.stdin`, and computed `process["env"]`), 13 allow cases (inert strings, templates, regex literals, and comments with import or `process` text, a static `globalThis` member, keys and members named `process` or `console`, `typeof globalThis`, `NodeJS.process`, `process.platform`, and a plain call with a `"node:process"` argument), and AST checks for `src/cli/` (`child_process` by import, `require`, or `import()`; `spawn` or `exec` by name or member; inert text passes). The only `process` use core may make is a static read of `env`, `platform`, `arch`, or `versions`. Review round 4: the reviewer's `import { writeSync } from "node:fs"; writeSync(1, "review probe")` passed the checker. Now core may not write to a standard stream through `fs`, `node:fs`, `fs/promises`, or `node:fs/promises`. The checker resolves namespace, default, named, `promises`, `require()`, `import()`, destructured, and inline-`require` bindings. It fails a write API (`write`, `writeSync`, `writev`, `writevSync`, `writeFile`, `writeFileSync`, `appendFile`, `appendFileSync`, `fsync`, `fsyncSync`, and the `fdatasync` and `ftruncate` forms) given fd 0, 1, or 2 as a literal (`1`, `0x1`, `-0`, a cast) or a `const` bound to one, and `createWriteStream` or `new WriteStream` with `{ fd: 0 | 1 | 2 }`. It fails any string or template text that names a device or console path: `/dev/...`, `/proc/...` (normalized, so `/tmp/../dev/stdout` counts), `file:///dev/...`, `\\.\` and `\\?\` paths, and `CON`, `CONIN$`, `CONOUT$` in any case; so `open("/dev/stdout")` for a `FileHandle` and `promises.writeFile("/dev/stderr")` fail. It fails, as needing review, an fd write API with an fd it cannot see (`writeSync(fd, ...)`, `fs.write(fd, ...)`, any `writeSync` method call), an fs write API used as a value (`const w = fs.writeSync`, `fs.writeSync.call`, `Reflect.apply(writeSync, ...)`), and a `createWriteStream` `fd` option it cannot read. Round 4 adds 43 violation cases and 8 allow cases: `writeFileSync(path, text)`, `writeFile` and `appendFile` from `fs/promises` on project paths, a `FileHandle` from `open(path)`, `createWriteStream(path, { flags })`, fs reads, a stream write of text, project paths that contain `dev`, and words that start with `con` still pass. Final review fix round: three more fd-tracking escapes passed the round 4 checker with no violation (a reproduction against the round 4 checker printed `[]`): a reassigned fd variable (`let fd = 3; fd = 1; writeSync(fd, ...)`), `writeFileSync(fd, ...)` with a parameter defaulting to `1`, and a stream-options spread that overrides `fd` (`{ fd: 3, ...base }`). By the orchestrator decision in [Owner Decisions](#owner-decisions), the checker no longer follows fd values. Core may not load an I/O module (`CORE_IO_MODULES`) in any form (static, side-effect, type-only, re-export, `import x = require()`, `require()`, `import()`, `getBuiltinModule()`, `globalThis.require()`, or an `import()` type); any other bare module must be on `CORE_ALLOWED_MODULES` (`path`, `url`, `buffer`, `string_decoder`, `crypto`); a relative import may not leave `src/core/` (so no core file reaches `src/adapters/`); an fs write API name (`writeSync`, `writeFileSync`, `createWriteStream`, and the like) on any object fails; `require` or `getBuiltinModule` taken as a value, the CommonJS `module` object, and a `constructor` member (the Function constructor) fail; the device-path text rule stays. A core file that re-exports fs fails by itself, so a chain of core re-exports cannot hide it. The only core `fs` user, `src/core/shared/root.ts`, now reads through the port. All 43 round 4 violation cases still fail, now on the import (and the device cases on both rules); the 5 round 4 allow cases that wrote project files through `fs` are now violation cases; the three new escapes fail; 28 more cases cover every load form of fs, `net`, `tty`, `child_process`, `worker_threads`, `stream`, `stream/promises`, `readline`, `http`, `util`, `vm`, `dgram`, an npm package, `node:os`, the adapter, and a test helper. Allow cases now include writes and reads through the port and the allowlisted built-ins. `src/adapters/` gets the CLI spawn rule. 185 boundary tests pass. `test/fs-port.test.ts` (45 tests) proves the port's refusals: fd 0, 1, 2, 3, and `1n` in every call; a Buffer, URL, empty string, NUL byte, or `undefined`; 20 device or special paths (`/dev/stdout`, `/dev/fd/1`, `/proc/self/fd/1`, `/sys/...`, `/tmp/../dev/stdout`, `file:///dev/stdout`, `\\.\CON`, `CON`, `con.txt`, `NUL`, `sub/aux.md`, `COM1`, `LPT9.log`, `CONOUT$`, and others); paths that leave the root, relative or absolute; a symlink inside the root to `/dev/stdout` or `/dev/fd/1`; a symlink to a folder outside the root; a FIFO; and a device root. Each refusal is a `PathRefusedError` (`path_refused`), exit code 3. A child process that aims the port at fd 1, fd 2, `/dev/stdout`, `/dev/fd/1`, and a `/dev/stdout` symlink writes nothing to stdout. Symlink, FIFO, and `/dev` cases skip on Windows. |
+| A4 | Pass | `npm pack --dry-run` lists exactly `LICENSE`, `README.md`, `SECURITY.md`, `THIRD_PARTY_NOTICES.md`, `dist/buildos.js`, and `package.json`. No `.go` file, `go.mod`, `system/docs/`, or `system/.make-docs/` path. |
+| A5 | Pass | `node dist/buildos.js version` prints `version: dev` and `source revision: unknown` and exits 0. `node dist/buildos.js version --json` prints an envelope with the nine fields `ok`, `command`, `version`, `source_revision`, `root`, `mode`, `write_status`, `result`, and `diagnostics`, in that order. `test/bundle.test.ts` builds a second bundle with an esbuild define and shows that it reports the injected version and revision. |
+| A6 | Pass | `test/exit-codes.test.ts` drives codes 0, 1, 2, 3, 4, 5, 6, and 10 through a test-only `probe` domain and the real dispatcher, in human and JSON mode. Code 10 comes only from `NeedsOperatorReviewError`; plain errors, strings, `null`, and look-alike objects with `kind: "needs-operator-review"` all map to other codes. An injected `TypeError` with a stack-like message exits 1 and prints exactly `buildos: internal error: boom happened` on one stderr line, with no stack trace. |
+| A7 | Pass | `test/root.test.ts` creates a temporary project with `.os/data/` and a nested `workspace/runs/deep/` folder. From the nested folder, the default-root model returns the nested folder with `hasOsFolder: false`; it does not use the parent's `.os/`. The entity-root model refuses the nested folder with `root_not_found` (exit code 3) and does not infer the parent. Since the final review fix round, both models read the disk through the filesystem port and return the port bound to the resolved root. |
+| A8 | Pass | [CI run 45282558470](https://github.com/brucewaynedecoy/build-os/actions/runs/45282558470) on `f505935` (2026-11-23) is green: `test (macos-latest, Node 24)`, `test (ubuntu-latest, Node 24)`, `test (windows-latest, Node 24)`, and `OSV scan of package-lock.json` all `success`. See [CI Run](#ci-run). Earlier runs 45270840446 and 45281077505 failed and were fixed (see [P1 Review](#p1-review)). Before the push, every `test` job step also ran locally on macOS and exited 0. |
+| A9 | Pass | The workflow shows `npm ci --ignore-scripts`, the `npm audit --audit-level=high` step, and the OSV job: a gate self-check (`node --test test/osv-gate.test.ts`), the `osv-scanner` 2.7.1 Linux binary checked against a pinned SHA-256, then `scripts/osv-gate.ts --exit-code <scanner exit code>`. In [CI run 45282558470](https://github.com/brucewaynedecoy/build-os/actions/runs/45282558470) each step ran: `npm audit` found 0 vulnerabilities on all three operating systems; the scanner binary checksum printed `OK`; the gate self-check passed, including its cases where real `osv-scanner` 2.7.1 high findings and an unreachable API fail the gate; the scan found 50 packages, and the gate printed `scanner exit 0, 0 finding(s), 0 blocking: pass`. Departure from the criterion: no separate test branch with a known high finding was pushed, so no failing-job run link exists. The negative control is the CI gate self-check above plus the local controls that follow. Local controls: a scratch project that pins `lodash` 4.17.20 made `npm audit --audit-level=high` exit 1 with a high advisory. The real `osv-scanner` 2.7.1 (darwin-arm64, release checksum verified) on the lodash control exited 1 with scores 5.3, 6.9, 7.2, and 8.1, and the gate failed (2 blocking). On `package-lock.json` it exited 0 and the gate passed. With the OSV API unreachable it exited 127 with `{"results": []}`, byte-identical to the clean output, and the gate failed. |
+| A10 | Pass | See [Security Document Review](#security-document-review). `SECURITY.md` agrees with `npm ls --all`, the lockfile, and the CI scan output of run 45282558470: 50 packages, no package missing, no version, license, or scan-status disagreement. One stale line is recorded there as a follow-up. |
+| A11 | Pass | The `PERF-001` profile was appended to the P1 work file before pass 1. Its version 1 digest is recorded in the [execution packet](#execution-packet). |
+| A12 | Pass | One pass, no correction attempt, one review, 0 USD spend, and a stated decision. See [Startup Baseline (PERF-001)](#startup-baseline-perf-001). |
+
+### Security Document Review
+
+- Scope: `toolkits/buildos/SECURITY.md` against `package-lock.json`, `npm ls --all --json`, `npm audit`, and the OSV API scan record.
+- Method: a script parsed the inventory table and the Build-Time Tools table. It compared each lockfile package's name, version, license, and install-script flag with its row, and checked every installed package from `npm ls --all` against the inventory.
+- Result: 50 lockfile packages and 50 inventory rows. No package is missing. No version, license, install-script, or scan-status value disagrees. Every lockfile license is MIT or Apache-2.0. All 6 installed packages from `npm ls --all` are in the inventory with the same version. Every scan status reads `clean`, which matches `npm audit` (0 vulnerabilities) and the OSV API query (0 advisories for lockfile packages; a `lodash` 4.17.20 control returned 4).
+- Human Experience Review: a reviewer can find every package, its version, license, reason, transitive count, and scan status in one document without reading code. The document states its readers, the admission rules, the bundling rule, the CI checks, the P8 items, how to report a vulnerability, and an admission checklist. It states the closed esbuild [install-script exception](#install-script-exception), why it is safe, how CI enforces it, and that only an owner decision in PRD 20 can change it.
+- Final review fix round: the generated Go Unicode tables (`src/cli/go-isprint.ts`, from Go 1.24.1 `src/strconv/isprint.go`, with the `IsPrint` lookup ported from `src/strconv/quote.go`) ship in `dist/buildos.js`, but `SECURITY.md` said the bundle held only BuildOS code and `THIRD_PARTY_NOTICES.md` was empty. `SECURITY.md` Bundled Runtime Code now lists the Go tables (no npm package, BSD-3-Clause, allowed by rule 2). `THIRD_PARTY_NOTICES.md` holds the Go copyright notice and the full BSD-3-Clause text, byte for byte the Go 1.24.1 `LICENSE` file (SHA-256 `911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad`), and cites the source files. `src/cli/go-isprint.ts` and its generator carry a `/*! ... @license BSD-3-Clause */` header, so esbuild keeps the notice in the bundle. `test/notices.test.ts` (6 tests) fails when `go-isprint.ts` exists without the notice entry, the exact license text, the `SECURITY.md` row, or its license header; `test/bundle.test.ts` checks that the built bundle keeps the notice. Regenerating `go-isprint.ts` from Go 1.24.1 gives a byte-identical file.
+- CI scan comparison (run 45282558470, read with `gh run view 45282558470 --log`): `npm audit` printed `found 0 vulnerabilities` in the install step and the audit step on macOS, Linux, and Windows. `osv-scanner` 2.7.1 printed `Scanned .../toolkits/buildos/package-lock.json file and found 50 packages`, and the gate printed `osv gate: scanner exit 0, 0 finding(s), 0 blocking: pass`. That matches the 50 inventory rows and every `clean` scan status in `SECURITY.md`. The dependency guard printed `dependency policy: ok` before and after install on all three operating systems.
+- Stale line: the `SECURITY.md` Scan Record row for "`osv-scanner` 2.7.1 through the CI OSV job" still reads `Pending` and "Not run yet". It disagrees with the run, but with no package, version, license, or scan status. This closeout changes only backlog files, so the row stays as is. Follow-up: update the row with run 45282558470 at the next `SECURITY.md` change, at the latest in P8. Done in P2: the row now records CI run 45282558470 (OSV job passed: gate self-check passed, 50 packages scanned, `scanner exit 0, 0 finding(s), 0 blocking: pass`). See [P2 Golden Capture](#p2-golden-capture).
+- Conclusion: the document agrees with the lockfile, the local scans, and the CI scan output, except the stale Scan Record row.
+- Limits: the CI comparison read the job logs, not a downloaded scan report file. The first review used an OSV API query; the review fix round added a local `osv-scanner` 2.7.1 run, which agrees (0 findings). The review is by the implementing agent. Licenses come from lockfile metadata, not from reading each package's license file.
+
+### Supply-Chain Finding, Resolved
+
+PRD 20 Supply Chain rule 2 lists MIT, Apache-2.0, BSD, and ISC. The first lockfile held 12 MPL-2.0 `lightningcss` packages under the test runner's tree. The owner resolved this on 2026-11-23 by choosing Node's built-in `node:test` (see [Owner Decisions](#owner-decisions)). The test runner removal took the lockfile from 117 to 50 packages. Every remaining package is MIT or Apache-2.0. The 7 test files keep all 75 tests and their assertions, ported to `node:test` and `node:assert/strict`. PRD 20 `## Runtime and Package` now names `node:test`, with a `## Requirement History` entry. The `PERF-001` pass 1 ran before this change; the bundle it measured is unchanged (12,810 bytes), because test tooling is not bundled.
+
+### Install-Script Exception
+
+The owner decision of 2026-11-23 is in [Owner Decisions](#owner-decisions). PRD 20 `## Supply Chain` states the closed exception as a current requirement, with a `## Requirement History` entry.
+
+- `toolkits/buildos/.npmrc` holds only `ignore-scripts=true` and two comment lines. `npm config get ignore-scripts` in `toolkits/buildos/` prints `true`. Since review round 3, the guard checks this itself: `.npmrc` must set `ignore-scripts=true` exactly once, at top level before any INI `[section]`, with no other spelling of the key (case, `_`, `[]`, a bare key), no quotes, and no inline comment. Then `check-dependencies.ts` runs npm's own `npm config get ignore-scripts` from `toolkits/buildos/` (as `node npm-cli.js` beside the running Node, with an empty scratch user config, a scratch cache, and no log files, so the user's npm config is not read or changed) and fails unless npm prints `true`. With `npm_config_ignore_scripts=false` in the environment, the guard exits 1. npm never packs `.npmrc`; `npm pack --dry-run` still lists the same 6 files.
+- `scripts/dependency-policy.ts` replaces the old general accepted-scripts map with `INSTALL_SCRIPT_EXCEPTION`, a frozen list of one entry: `esbuild` 0.28.2, script `postinstall`, command `node install.js`. A test checks that this version equals the lockfile's esbuild version. Since review round 3, the installed esbuild 0.28.2 fails the guard when it declares any lifecycle script other than `postinstall` (`preinstall`, `install`, `preprepare`, `prepare`, `postprepare`, `prepublish`, or `dependencies`), or when its `postinstall` runs another command. Other installed packages are checked against the same wider lifecycle list. Review round 4: the root `package.json` check covered only `preinstall`, `install`, and `postinstall`, and neither check covered `predependencies` or `postdependencies`. Both checks now use one list, `INSTALL_LIFECYCLE_SCRIPTS`, of every script that npm 11 `install` or `ci` can run (read from npm 11.19.1 `lib/commands/install.js`, `lib/commands/ci.js`, and `@npmcli/arborist` reify and rebuild): `preinstall`, `install`, `postinstall`, `prepublish`, `preprepare`, `prepare`, `postprepare`, `predependencies`, `dependencies`, and `postdependencies`. The root package may declare none of them; installed esbuild 0.28.2 may declare only `postinstall` = `node install.js`. An installed package with a `binding.gyp` and no `preinstall` or `install` script (and no `gypfile: false`) counts as declaring `install`, because npm runs `node-gyp rebuild` for it. `SECURITY.md` states the same list. PRD 20 `## Supply Chain` and its Requirement History entry now name `0.28.2` and "only its `postinstall` script" literally; this restates the approved exception and is not a new decision.
+- Final review fix round: a `binding.gyp` at the package root passed both guard modes (reproduced: both `check-dependencies.ts` runs exited 0 with a planted root `binding.gyp`). npm runs `node-gyp rebuild` as an implicit `install` for the root too. Now both modes fail when the root has a `binding.gyp` (even with `"gypfile": false`), when `package.json` sets `"gypfile": true`, when the lockfile root entry has `hasInstallScript`, and when `package.json` declares `workspaces` (workspace packages install as links that the installed check does not walk, so the guard allows only the one root package). Regression tests: 10 in-process cases (5 rules in each mode) and 2 runs of the real `check-dependencies.ts`, without and with `--installed`, on a scratch copy of the package root: each passes clean and exits 1 with a root `binding.gyp`.
+- `scripts/check-dependencies.ts` runs before install (package.json, lockfile, `.npmrc`, root `binding.gyp`) and with `--installed` after install (adds every installed `package.json`). CI runs it in both places. The second run comes before typecheck, test, build, smoke, and audit.
+- Guard tests in `test/supply-chain.test.ts`. Each failure case fails, and the pass cases pass:
+  - pass: the real package.json, lockfile, `.npmrc`, and installed manifests; a minimal lockfile with only the allowed esbuild; the installed esbuild manifest at 0.28.2;
+  - fail: another lockfile package with `hasInstallScript`, top-level or nested and scoped;
+  - fail: an installed manifest other than esbuild with any of the 10 install lifecycle scripts (10 cases, review round 4), or with a `binding.gyp` (implicit `node-gyp rebuild`); pass: `gypfile: false`;
+  - fail: `package.json` itself with any of the 10 install lifecycle scripts, in the pre-install mode and in the `--installed` mode (20 cases, review round 4; 3 cases before);
+  - fail: esbuild at another version in the lockfile; a second esbuild copy at another version; the installed esbuild at another version;
+  - fail: the exception with two entries, or with zero entries (then even esbuild is refused);
+  - fail: the exception names a package that is not in the lockfile;
+  - fail: `.npmrc` missing, empty, commented out (`#` or `;`), `false`, `1`, `TRUE`, `${VAR}`, set to `true` and then overridden by `false`, set under an INI `[section]`, or spelled `IGNORE-SCRIPTS` or `ignore_scripts` (13 cases); a cross-check runs npm 11.19.1 on each of the 13 texts and confirms that npm does not read any of them as `true`;
+  - fail, strict: texts npm reads as `true` but a reader could misread: `false` then `true`, quoted `"true"`, an inline comment, a bare key, an `ignore-scripts[]` key, and a top-level `true` repeated as `false` under a section (6 cases);
+  - pass: `ignore-scripts=true` with spaces, CRLF, a UTF-8 BOM, or comment and section lines after it; npm reads the real `.npmrc` as `true`;
+  - fail: the installed esbuild 0.28.2 with any install lifecycle script other than `postinstall` beside `postinstall` (9 cases after review round 4, 7 before), with only `install`, or with a `postinstall` other than `node install.js`; another installed package with `prepare`.
+- Planted cases through the real guard command, on a scratch copy of `toolkits/buildos/` (lockfile, scripts, `.npmrc`, and `node_modules/`), `node scripts/check-dependencies.ts --installed`: `hasInstallScript` on `undici-types`, esbuild 0.28.3 in the lockfile, a second allow-list entry, `.npmrc` removed, `ignore-scripts=false`, a `postinstall` in the installed `undici-types` manifest, a `preinstall` in `package.json`, and `--installed` with no `node_modules/` each exited 1 with a named problem. The unchanged copy exited 0. Review round 4, on a new scratch copy: `prepare`, `predependencies`, and `postdependencies` in `package.json` each exited 1 without and with `--installed`; `postdependencies` in the installed `undici-types` manifest, and a `binding.gyp` in its folder, each exited 1 with `--installed`; the unchanged copy exited 0.
+- A fresh scratch install in CI order (guard, `npm ci --ignore-scripts --offline`, guard `--installed`, build, `version`) exited 0 at each step.
+- Release re-check: P1 has no release checklist. `SECURITY.md` listed the step (under "Coming in P8", now [Release Checks](../../../toolkits/buildos/SECURITY.md#release-checks)) "check again whether the esbuild install-script exception is still needed" for the P8 release checklist.
+
+### Check Results
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm test` | exit 0; `node:test`, 11 files, 18 suites, 648 tests (637 pass, 11 skipped for P3, 0 fail), after the final review fix round (545 after review round 4, 435 after review round 3, 219 tests after the install-script exception round, 195 before) |
+| `npm run build` | exit 0; `dist/buildos.js` 26,436 bytes after the final review fix round (20,340 after review round 4, 16,252 after review round 3, 15,748 after the first review fix round; 12,810 bytes at `PERF-001` pass 1; see [Review Fix Round Note](#review-fix-round-note)) |
+| `node toolkits/buildos/dist/buildos.js version` | exit 0; prints `dev` and `unknown` |
+| Bundle smoke against the Go seed binary | `version -json`, `version --json=true`, `version --bad`, `version -json --bad`, and `version x`: stdout, stderr, and exit code identical; `help` and `version --help` exit 0 (parity exceptions below). Round 3: `node dist/buildos.js version`, `version --json`, and `help` exit 0; `version --json=constructor` exits 2 with the Go usage error. Round 4: the bundle and the rebuilt Go seed give identical stdout, stderr, and exit 2 for `version --json=🫩` (both print `"\U0001fae9"`), `🫩`, `version --json=e\u0301\u200b`, and `version --json=\ud800` sent through `spawnSync`. Final review fix round: `version`, `version -json`, `version --json=true`, `version --bad`, `version -json --bad`, `version x`, `version --json=constructor`, `version --json=🫩`, and `🫩`: stdout, stderr, and exit code identical to the Go seed (9 of 9); `help` and `version --help` exit 0 |
+| `npm run check:deps` and `npm run check:deps:installed` (dependency guard) | both exit 0 on the real files, including npm's effective `ignore-scripts` (`true`), after the final review fix round, before and after a fresh `npm ci --ignore-scripts` (6 packages, 0 vulnerabilities); a root `binding.gyp` fails both; planted cases fail as intended (see [Install-Script Exception](#install-script-exception)) |
+| Boundary test with a planted `process.stdout.write` | fails as intended; passes after removal. Round 3: 95 boundary tests pass with the TypeScript compiler API checker. Round 4: 146 boundary tests pass, with the standard-stream `fs` rules. Final review fix round: 185 boundary tests and 45 filesystem-port tests pass, with the structural no-I/O-module rule (see A3) |
+| `npm audit --audit-level=high` | exit 0; 0 vulnerabilities (rerun in the final review fix round) |
+| OSV gate self-check, `node --test test/osv-gate.test.ts` | exit 0; 140 tests after review round 4 and after the final review fix round (125 after review round 3, 30 before): above threshold fails, below threshold passes, unreachable API (exit 127, empty results) fails, clean passes, plus malformed, missing, and inconsistent outputs and other exit codes fail. Round 3 makes the gate validate the whole report shape (every result, package record, group, and vulnerability is a well-formed object; every group ID names a reported vulnerability), parse `max_severity` strictly as a complete CVSS score from 0 to 10, and block any vulnerability that no group names. Regressions: the reviewer's three reports (exit 0 with `packages: [false]`, exit 1 with `"5.3garbage"`, exit 1 with an ungrouped vulnerability among low groups) now fail, in-process and through the script; 31 malformed shapes fail at exit 0 and exit 1 (62 cases); 25 severity strings (for example `" 5.3"`, `"5e0"`, `"NaN"`, `"10.1"`, `"06.9"`, a CVSS vector) are checked. Round 4: the reviewer's exit-1 report with `max_severity: "6.99"` passed the gate. A score must now have at most one decimal place, as CVSS writes it: `0.0` to `10.0`. `6.99`, `6.95`, `6.90`, `0.00`, `10.00`, `-0.0`, `07.0`, `" 7.0"`, `"7.0 "`, `"6.9\n"`, `7e0`, `7.0e0`, `6.9E0`, and `69e-1` now count as no score and fail; `6.9` passes; `7.0`, `7`, and `10.0` fail as high; `10.1` fails. Through the script, the `6.99` report exits 1 |
+| `osv-scanner` 2.7.1, local darwin-arm64 | `package-lock.json`: exit 0, 50 packages, 0 findings, gate pass. `lodash` 4.17.20 control: exit 1, 4 findings, gate fail. API unreachable: exit 127, gate fail. The CI OSV job agrees; see [CI Run](#ci-run). |
+| OSV API `querybatch` (stand-in, not the tool) | 0 advisories for 50 lockfile packages; the `lodash` 4.17.20 control returned 4 |
+| `npm pack --dry-run` | six files, as in A4 (rerun in the final review fix round) |
+| Workflow YAML parse (Ruby Psych) | parses; `actionlint` and `yamllint` not installed; GitHub Actions ran the workflow in run 45282558470 |
+| `make-docs project path-hygiene validate` | valid, 0 failing findings (rerun in the final review fix round) |
+| `make-docs run prd authority validate --target-root . --json` | `passed`, 0 findings (rerun in the final review fix round) |
+| `make-docs run performance evidence validate --target-root .` | `passed`; `PERF-001` version 1.1 `valid`, result `pass`; 0 errors; 11 `PERF-VAL-014` warnings across W1 R1, W1 R7, and W1 R8 work files. Agent review of the three W1 R7 P1 lines (the t19 task text, the A8 row, and the check table) found the numbers are pass, step, and test counts, not performance criteria. The other W1 R7 warnings are in later phases and the index, for example the 98% conversion-similarity gate, which is an accuracy gate. |
+
+### CI Run
+
+[CI run 45282558470](https://github.com/brucewaynedecoy/build-os/actions/runs/45282558470), workflow `.github/workflows/buildos-ci.yml`, head `f505935`, started 2026-11-23 22:44 UTC. Conclusion: `success`. Read with `gh run view 45282558470` and its `--log`.
+
+| Job | Result | Notes from the log |
+| --- | --- | --- |
+| `test (macos-latest, Node 24)` | success | Guard before install: `dependency policy: ok`. `npm ci --ignore-scripts`: 6 packages, 0 vulnerabilities. Guard with `--installed`: ok. Typecheck and build pass. Test: 687 tests, 22 suites, 673 pass, 0 fail, 14 skipped. Smoke run of `node dist/buildos.js version`: `dev` and `unknown`. `npm audit --audit-level=high`: 0 vulnerabilities. |
+| `test (ubuntu-latest, Node 24)` | success | Same steps. Test: 687 tests, 673 pass, 0 fail, 14 skipped. `npm audit`: 0 vulnerabilities. |
+| `test (windows-latest, Node 24)` | success | Same steps. Test: 687 tests, 653 pass, 0 fail, 34 skipped (the 11 `entities` goldens and 23 POSIX-only symlink, FIFO, `/dev`, and folder-permission cases). The Windows-only native comparison "matches GetFullPathNameW, then Go's Clean, on Windows" passed, with 38 cases. Smoke run: `dev` and `unknown`. `npm audit`: 0 vulnerabilities. |
+| `OSV scan of package-lock.json` | success | Node 24.22.3, npm 11.19.1. Gate self-check passed. `osv-scanner` 2.7.1 checksum `OK`. Scan found 50 packages. Gate: `scanner exit 0, 0 finding(s), 0 blocking: pass`. |
+
+The 14 skips on macOS are the 11 Go seed `entities` goldens that wait for P3 and 3 Windows-only tests (UNC containment, drive-rooted containment, and the native `GetFullPathNameW` comparison). Linux has the same count.
+
+### Go Seed Parity
+
+The Go seed (`toolkits/buildos/cmd/buildos`, unchanged at `8e1846b`) was built with Go 1.24.1 (official darwin-arm64 release, checksum verified, in a scratch folder). `node scripts/capture-go-goldens.ts <binary>` captured 88 cases (75 before review round 4) into `toolkits/buildos/test/fixtures/go-seed/cli-goldens.json`. `test/go-parity.test.ts` runs each case through the TypeScript CLI and compares stdout, stderr, and the exit code byte for byte.
+
+- Match: 66 cases (53 before review round 4), including `version`, `version -json`, `version --json`, `version -json=true`, `version --json=true`, `=false`, `=1`, `=T`, `=0`, `--json=` and `--json=maybe` errors, `version --bad`, `-bad`, `--bad --json` (human), `--json --bad` (JSON), `x`, `-`, `--`, `-- x`, `---json`, `--=x`, `-=x`, `-help`, unknown commands with and without `--json`, and `Version`. Review round 3 added 17 cases with `Object.prototype` keys: `version --json=constructor`, `--json=toString`, `-json=__proto__`, `--json=hasOwnProperty`, `--json=valueOf`, `--json --json=toString`, the flags `--constructor`, `-toString`, `--__proto__`, `--hasOwnProperty`, `--valueOf`, `-constructor=1`, `--__proto__=x`, `--json --__proto__`, and the commands `constructor`, `__proto__`, and `toString --json`. Go exits 2 with a usage error for each; the TypeScript CLI now matches byte for byte. Before the fix, `version --json=<key>` exited 0. The 58 earlier goldens were recaptured unchanged. Review round 4 added 13 cases for Go `strconv.Quote` escaping: `version --json=` with U+1FAE9 (emoji, Unicode 16), U+1F600, U+0897 (Unicode 16, BMP), unassigned U+0378, U+E0001 (format, astral), control characters with `\x` and letter escapes, `e` plus a combining acute accent, no-break space, soft hyphen, zero-width space and joiner, line separator, U+FFFD, and a quote plus backslash, and the unknown commands U+1FAE9 and `bogus` plus a combining mark and U+200B. Go 1.24.1 printed `\U0001fae9` where the TypeScript CLI printed the glyph: Go's `strconv.IsPrint` uses fixed Unicode 15.0.0 tables, and Node's Unicode data is newer. `goQuote` now uses Go's own tables: `scripts/generate-go-isprint.ts <GOROOT>` copies `src/strconv/isprint.go` from Go 1.24.1 (424, 133, 508, and 112 entries) into `src/cli/go-isprint.ts`, and `goIsPrint` ports Go's lookup. For all 1,114,112 code points, `goIsPrint` and Go 1.24.1 `strconv.IsPrint` agree (148,998 printable); a test pins that count and the SHA-256 of the list. A lone surrogate cannot reach either CLI: spawning with `\ud800` sends the UTF-8 bytes of U+FFFD, so it is the U+FFFD case. The 75 earlier goldens were recaptured unchanged.
+- Recorded parity exceptions: 11 cases, listed under [Parity Exceptions](#parity-exceptions). The test asserts that each still differs, so a fixed exception must be removed from the list.
+- Pending: 11 `entities` cases (`entities`, `--help`, `-h`, `help`, and seven usage errors). They are skipped until P3 ports the domain.
+
+The shared parser is `toolkits/buildos/src/cli/parse.ts` (`parseGoFlags`, `parseCommandFlags`, `goQuote`). It follows the Go `flag` package: one or two dashes, inline `=` values, Go `ParseBool` values, next-argument string values, stop at the first non-flag, `-`, or `--`, last value wins, stop at the first error, and Go error text. Since review round 3, flag names and boolean values match own entries only (a `Map` for `ParseBool` values, `Object.hasOwn` for the spec, own-property writes for values), and an invalid boolean value sets the flag to `false` before the error, as Go `boolValue.Set` does; so `version --json --json=toString` reports the error as text, like the seed. The caller picks the JSON form of a usage error: `version` uses the `-json` value parsed before the error, like the seed's `runVersion`; later domains can use the literal `--json` rule (`wantsJson`), like the seed's `containsJSON`.
+
+### Parity Exceptions
+
+PE-001 to PE-004 are approved. The owner approved them on 2026-11-23 (see [Owner Decisions](#owner-decisions)). PE-005 to PE-007 and the PE-004 scope extension came later; see [Owner Decisions](#owner-decisions) and `toolkits/buildos/test/golden/parity-exceptions.json`. PRD 20 Compatibility says a difference without a recorded exception is a defect.
+
+| ID | Cases | TypeScript output | Go seed output | Reason | Status |
+| --- | --- | --- | --- | --- | --- |
+| PE-001 | `buildos`, `help`, `--help`, `-h`, `help --json`, `help x` | Root help built from the registered domains (`help`, `version` in P1). Exit 0. | Fixed root help text that lists `entities` and its four commands. Exit 0. | The TypeScript root help lists the domains that exist. It cannot match the seed now, because `entities` is not ported until P3, and it will list more domains than the seed after the later ports. | Approved: root help may differ from the seed. Owner approval: 2026-11-23. |
+| PE-002 | `help version`, `help help` | That domain's help. Exit 0. | Root help; the seed ignores arguments after `help`. Exit 0. | PRD 20 Command Surface says `buildos help` prints help "for the CLI or a domain". | Approved: `help <domain>` prints that domain's help. Owner approval: 2026-11-23. |
+| PE-003 | `version --help`, `version -h`, `version help` | Version help on stdout. Exit 0. | Usage error on stderr (`flag: help requested`, or `version accepts only --json` for `help`). Exit 2. | PRD 20 Output and Exit Contract says help behaves the same in every domain, and the seed's `entities` prints help for these spellings. The seed's `version` does not. | Approved: uniform domain help, including `version`. Owner approval: 2026-11-23. |
+| PE-004 | `entities <command> --root <r> --json` where `<r>` cannot be loaded: a folder without search permission above it (`EACCES`), a path below a file (`ENOTDIR`), a symlink loop (`ELOOP`), a name too long (`ENAMETOOLONG`), or a missing folder | Exit 3. `root` is the given root as Go's `filepath.Abs` spells it. Diagnostic `root_unreadable` (`the filesystem root <r> cannot be opened: permission denied (EACCES)`), `path_refused` (symlink loop), or `root_not_found` (`ENOTDIR`, missing). | Exit 3. `root` is `""`. Diagnostic `internal_error` with Go's `resolve root "<r>": stat <r>: <reason>` text (checked with the Go 1.24.1 seed binary for `EACCES`, `ENOTDIR`, `ELOOP`, and a missing folder). | The exit code matches the seed and PRD 20 (`3`: the root cannot be loaded). The orchestrator's root spelling decision (see [Owner Decisions](#owner-decisions)) says the root is never empty once a root was given, so the envelope names it; the seed leaves it empty because it returns before it sets the root. The typed diagnostic codes follow the TypeScript core's error model. A target that cannot be read gives exit 3 (`path_unreadable`) and a write that cannot land gives exit 5 (`write_failed`), each with the given root; the seed has no matching P1 case. P1 evidence for these cases is dispatcher-level only: `test/root.test.ts` checks them through a test-only domain and the real dispatcher, because `entities` is not registered until P3. P3 t11 repeats the root checks for `entities` through the packaged binary. | Approved: typed root-error envelopes that name the given root. Owner approval: 2026-11-23. Recorded in the filesystem error fix round. |
+| PE-006 | `entities consolidate` dry run (edge golden `consolidate-dry-run-os-read-only`) | Writes nothing; loads the prospective datasets from memory. Exit 0 with `.os/` read-only. | Copies the datasets into `.os/.buildos-consolidation-preflight-<n>`. Exit 5 when `.os/` cannot be written or the disk fills. | A dry run writes nothing (PRD 20: dry run by default). | Approved 2026-11-23 ("A, A, A"). Allowed edge fields: exit, stdout. |
+| PE-007 | `entities consolidate --apply` with a dataset symlink to a file outside the root (edge golden `dataset-link-outside-root`) | Exit 3, `path_refused`; the link and the outside file stay. | Reads the outside file, replaces the link with a regular file, exit 0. | PRD 20: reads and writes stay inside the project root. | Approved 2026-11-23 ("A, A, A"). Allowed edge fields: exit, stdout, tree. |
+
+Other P1 behavior changed to match the seed in this round: `help <unknown>` and `help` with extra arguments now print root help with exit 0 (before: usage error, exit 2), and an unknown command never writes a JSON envelope, even with `--json`.
+
+### Review Fix Round Note
+
+- `PERF-001` line label: the profile's Correctness row says "the full Vitest suite passes on the measured build". That statement is pass 1 history: pass 1 ran while the suite used Vitest, before the owner's `node:test` decision. It is labeled here, outside the hashed range, because a label inside the profile would change the version 1.1 digest. Digest check command, from the repository root: `sed -n '/^## PERF-001 Profile$/,/^| Support Links |/p' docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/01-typescript-package-foundation.md | shasum -a 256`. It prints `67de4a287df0a5f6d7cd648181c8751ff2a26ecb73aa3b3bde09363b79c00761`, the recorded version 1.1 digest.
+- Bundle after the parity fix: the shared Go-rules flag parser replaced `node:util` `parseArgs` and grew `dist/buildos.js` from 12,810 to 15,748 bytes. `PERF-001` pass 1 stays bound to its recorded 12,810-byte build. The change is not one of the profile's material change triggers, so the baseline is not re-run here; the P8 recheck measures the current bundle. Review round 3 grew it again to 16,252 bytes (own-property parser lookups), for the same reason without a re-run. Review round 4 grew it to 20,340 bytes (Go's `IsPrint` tables, decoded only when a usage error quotes a value), again without a `PERF-001` re-run. The final review fix round grew it to 26,436 bytes (the `node:fs` port adapter, which the dispatcher passes to domains, and the Go license comment), again without a `PERF-001` re-run.
+- Root spelling fix round: see the root spelling decision in [Owner Decisions](#owner-decisions). Goldens: `toolkits/buildos/test/fixtures/go-seed/root-spelling.json`. Results are in the fix-round report to the orchestrating chat.
+- UTF-16 and filesystem error fix round: `go-path.ts` split the joined Windows path by code point in the `GetFullPathNameW` port, but measured the UNC volume end in UTF-16 code units, so `\\files\📁\a\..\reports` became `\\files\📁\areports` (Go: `\\files\📁\reports`). Every index in `go-path.ts` is now a UTF-16 code unit. Go 1.24.1 goldens added to `root-spelling.json`: 13 `posixAbs` and 21 `windowsClean` cases with astral characters (emoji, U+1D518 and similar) in the server, share, and components, mixed with `..`, `.`, and repeated separators, and a new `windowsAbsolute` list of 12 already-absolute UNC and drive paths, where Go's Windows `Abs` equals `Clean`. A filesystem error while opening the root or a target now leaves the adapter as a typed error with the given root (exit 3; a failed write, exit 5), and the dispatcher names the given root in every failure envelope after a domain opens a root. See PE-004 in [Parity Exceptions](#parity-exceptions).
+- Root-error evidence scope: the P1 evidence for `EACCES`, `ENOTDIR`, `ELOOP`, and `ENAMETOOLONG` roots, an unreadable file, and a failed write is dispatcher-level only. `test/root.test.ts` verifies it through a test-only domain (`load`, `escape`) and the real dispatcher, because `entities` is not registered until P3. It does not prove the `entities` commands or the packaged binary. [P3](./03-entities-port.md) t11 repeats these checks for `entities` through the packaged binary.
+
+## Startup Baseline (PERF-001)
+
+### Execution Packet
+
+Rendered from the [`PERF-001` profile](./01-typescript-package-foundation.md#perf-001-profile) before the first pass. The profile is the only authority; this packet binds the run to it. After pass 1, the profile moved to version 1.1 for structure only, and its canonical fingerprint, ledger, and [result record](./01-typescript-package-foundation.md#result-record) now sit in the profile. This section keeps the packet as rendered, the raw samples, and the review.
+
+- Profile binding: `PERF-001`, version `1`, source digest `sha256:e575bbdd60205f94b4a409bef909ac039d6efb11ccd23f615beaf3cedc4bc69b`. The digest covers the `## PERF-001 Profile` section of the P1 work file, from its heading to the end of the file.
+- Budget event: `PERF-001-P1-B1`.
+- Run command, from `toolkits/buildos/` with Node 24 first on `PATH`: `npm run build`, then `node scripts/measure-startup.ts --warmup 5 --repetitions 50`.
+- Workloads: Node control, `buildos version`, `buildos help`, `buildos version --json`.
+- Decision rule from the profile: BuildOS overhead is the difference of medians against the Node control. Overhead counts as distinguishable from noise only when the workload's median interval lies wholly above the control's median interval. No target is set.
+
+#### Evidence Fingerprint
+
+- Profile ID, version, and digest: `PERF-001` v1, `sha256:e575bbdd60205f94b4a409bef909ac039d6efb11ccd23f615beaf3cedc4bc69b`.
+- Product build and relevant code state: source build of `dist/buildos.js`, 12,810 bytes, `sha256:0f75779837acd7fbd32b0251d32412c661e22d89aa716d59c5204dfbc638bf5d`; P1 working tree on top of commit `8e1846b`; `src/` tree digest `sha256:03da754d6dd1e48a09a24fbefb2ccab3dde6972f09fa9f6681f4c3301000776e` (SHA-256 of the sorted per-file SHA-256 list).
+- Dependency and configuration state: `package-lock.json` `sha256:027b20e986a77358648aa4a43decedc99a9f1daa94827beb97ca0c7f26d37e94`; esbuild 0.28.2; default build with no release define.
+- Qualified environment: Apple M2 Pro, 10 cores, 16 GiB, macOS 27.2 (Darwin 27.2.0) arm64, AC power, normal desktop load; Node 24.22.3 (official darwin-arm64 release, checksum verified).
+- Workload and fixture or dataset: the four workloads above; no fixture.
+- Instrument version: `toolkits/buildos/scripts/measure-startup.ts`, `sha256:688d7030efd3f7a40c2ae1ff172bfa853c2565cf0fb766900c1db07f923c7fd2`.
+- Analysis method: median, p90, IQR, and the order-statistic 95% median interval, as the instrument computes them.
+- Comparability result and reasons: `not-comparable` with the runtime-selection proof, because the workload, build, and instrument differ. Within-pass comparison with the Node control only.
+
+#### Budget Ledger
+
+- Authorizing scope and budget event: [W1 R7 P1 Stage 5](./01-typescript-package-foundation.md#stage-5---perf-001-startup-baseline), `PERF-001-P1-B1`.
+- Requalification authorization: none.
+- Declared limits: 2 passes, 1 correction attempt, 1 review cycle, one working day, one maintainer machine plus the CI matrix, no external spend.
+- Materially distinct attempts: pass 1 only (2026-11-23, 19:42:09 to 19:42:16 UTC). No correction attempt.
+- Affected checks: all four workloads in pass 1.
+- Time, compute, and external spend: under one hour of investigation, one maintainer machine, no CI use, no external spend.
+- Review cycles used: 1 (the agent review below).
+- Remaining budget: 1 pass, 1 correction attempt, 0 review cycles.
+- Unchanged evidence reused: none.
+- Stop reason and escalation: diminishing return. A second pass on the same fingerprint would be a reuse case, not a new run, and no result it could give would change the decision. No escalation.
+
+### Pass 1 Result
+
+- Result ID: `PERF-001-P1-R1`.
+- Exact profile binding: `PERF-001` v1, `sha256:e575bbdd60205f94b4a409bef909ac039d6efb11ccd23f615beaf3cedc4bc69b`.
+- Build and evidence fingerprint: as in the packet above. The instrument reported the same bundle and instrument digests.
+- Environment and workload: as in the packet above.
+
+| Workload | n | Excluded | Min | p25 | Median | p75 | p90 | Max | IQR | Median 95% interval |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Node control | 50 | 0 | 27.00 | 27.86 | 28.74 | 29.44 | 30.20 | 34.85 | 1.59 | 28.09 to 29.06 |
+| `buildos version` | 50 | 0 | 28.58 | 29.32 | 30.40 | 31.41 | 31.97 | 32.37 | 2.09 | 29.60 to 30.87 |
+| `buildos help` | 50 | 0 | 27.83 | 29.05 | 30.11 | 31.09 | 32.09 | 35.59 | 2.04 | 29.74 to 30.62 |
+| `buildos version --json` | 50 | 0 | 28.57 | 29.40 | 29.99 | 31.03 | 32.47 | 42.58 | 1.63 | 29.52 to 30.63 |
+
+All times are milliseconds of wall-clock time, from spawn to exit.
+
+- Observed distribution: BuildOS overhead over the Node control, as a difference of medians, is 1.66 ms for `version`, 1.37 ms for `help`, and 1.25 ms for `version --json`. That is about 4% to 6% of the total time. Node startup itself is about 29 ms of each run.
+- Uncertainty and exclusions: each BuildOS median interval lies wholly above the control interval, so the overhead is distinguishable from noise under the profile rule. The difference is about the size of one IQR, so its exact size is uncertain to about 1 ms. No run was excluded. One `version --json` run took 42.58 ms; no trimming was applied.
+- Budget ledger: above.
+- Outcome: `pass`
+- Outcome reason: the baseline exists for every workload, with no exclusion, and every non-sacrificable constraint held. The Vitest suite passed on the measured build, the dependency guard passed, and no network call was made.
+- Findings: none.
+- Owner or reviewer disposition: agent review, below. Owner review is still open through the phase closeout.
+- Supported-scope limit: the three commands from the bundle, Node 24.22.3, this one Apple M2 Pro macOS arm64 machine, warm file cache. It says nothing about Linux, Windows, x64, cold start, `npx`, or ported domain commands.
+- Expiry: at the P8 recheck, or sooner at any material change trigger in the profile.
+- Later result: none yet.
+
+### Decision
+
+No lazy-load or bundling change is needed before `0.1.0` on the current evidence. Almost all of the time is Node's own startup, which a BuildOS bundling change cannot reduce. The bundle adds about 1.3 to 1.7 ms. The P8 recheck must repeat this pass after the domain ports land, because ported domains will make the bundle much larger. If P8 then finds overhead that is a large share of the run, the change to consider is lazy loading per domain through dynamic `import()` inside the one bundle. P8 owns that decision.
+
+### Agent Review
+
+- Deterministic method: `make-docs run performance evidence validate --target-root .` returned `passed`, with the `PERF-001` version 1.1 profile `valid` and result `pass`. See [Check Results](#check-results).
+- Profile version check: reversing the nine version 1.1 edits on the current profile text gives back the version 1 digest `sha256:e575bbdd60205f94b4a409bef909ac039d6efb11ccd23f615beaf3cedc4bc69b`, so version 1.1 differs from the profile that governed pass 1 only by the edits named in its Supersession Reason.
+- Agent method, `PERF-RULE-015`: `characterize-now` fits. The startup path is stable and a P8 decision needs a baseline. Maturity is pre-release; a single-machine baseline is proportionate.
+- Agent method, `PERF-RULE-016`: the environment supports only a within-pass comparison with the Node control on this machine. It does not support comparison with the runtime-selection proof (`not-comparable`), and it does not support any claim about other operating systems.
+- Agent method, `PERF-RULE-017`: impact is minor, no finding, no waiver. Supported scope stays as the profile states it.
+- Limits: the review is by the implementing agent, not an independent reviewer. It certifies no other proof mode.
+
+### Raw Samples
+
+Samples in milliseconds, rounded to 0.01 ms. `null` marks an excluded run (none in this pass).
+
+```json
+{"node":"v24.22.3","platform":"darwin 27.2.0 arm64","cpu":"Apple M2 Pro","cpu_count":10,"memory_gib":16,"bundle_bytes":12810,"bundle_sha256":"0f75779837acd7fbd32b0251d32412c661e22d89aa716d59c5204dfbc638bf5d","instrument_sha256":"688d7030efd3f7a40c2ae1ff172bfa853c2565cf0fb766900c1db07f923c7fd2","warmup":5,"repetitions":50,"warmup_samples_ms":{"node-control":[30.61,30.87,29.92,30.44,29.99],"buildos-version":[32.73,31.81,30.55,31.8,31.73],"buildos-help":[31.55,31.03,31.17,30.84,31.74],"buildos-version-json":[32.63,34.21,30.68,32.43,30.72]},"samples_ms":{"node-control":[29.05,30.32,29.13,27.37,27.85,28.77,27.79,29.34,27,28.12,27.94,27.8,27.11,28.41,28.54,29.55,30.18,29.06,28.79,34.85,31.41,27.89,28.8,30.04,28.79,30.39,28.71,29.46,29.4,28.09,27.29,29.63,29.17,27.29,29.72,27.82,28.49,27.52,28.78,28.33,27,30.3,29.99,27.84,28.92,30.19,28.37,28.01,27.92,27.63],"buildos-version":[30.73,31.3,30.56,29.12,28.73,29.88,29.15,29.16,29.6,30.09,28.94,29.29,29.38,31.46,30.95,28.96,31.75,30.42,30.87,31.76,31.95,29.55,30.94,29.26,30.44,29.38,32.26,30.24,31.18,32.16,28.58,29.09,29.75,32.07,31.45,28.6,32.37,29.32,30.38,31.8,29.65,31.47,31.76,30.67,28.67,30.72,30.66,30.34,29.33,32.06],"buildos-help":[32.21,31.68,30.51,30.13,28.93,30.04,28.66,28.76,28.96,30.35,30.62,29.74,29.02,28.55,28.92,31.56,30.96,30.27,35.59,32.07,29.88,30.8,32.01,29.8,30.29,31.23,30.33,29.65,29.39,28.56,30.92,29.15,30.7,29.16,30.56,28.92,28.93,30.09,28.42,30.06,30.08,34.21,31.32,29.79,28.73,31.13,31.18,32.4,27.83,32.65],"buildos-version-json":[29.97,31.02,29.98,29.52,28.57,31.67,28.93,29.15,30.01,30.63,29.34,29.43,28.75,29.73,29.06,34.1,32.5,32.27,31.76,30.26,30.57,30.8,29.68,30.33,29.14,30.54,30.66,29.89,29.42,29.43,33.99,29.76,30.37,29.41,29.36,30.08,28.95,30.66,28.57,28.94,33.26,42.58,31.67,28.91,31.04,31.63,29.72,32.47,29.4,31.47]}}
+```
+
+## P2 Golden Capture
+
+Phase: [W1 R7 P2](./02-golden-capture.md). All work ran on 2026-11-23 on one Apple M2 Pro macOS arm64 machine (Darwin 27.2.0), in the `rewrite/ts-cli` worktree at `83cc9b6`. Tools came from scratch folders: Node 24.22.3 (`node-v24.22.3-darwin-arm64.tar.gz`, SHA-256 `ff6e17d4874b76d272212b908cc020d6e815fba5a6c7eaaa06add725840307fd`, equal to the nodejs.org `SHASUMS256.txt` line) and Go 1.24.1 (`go1.24.1.darwin-arm64.tar.gz`, SHA-256 `295581b5619acc92f5106e5bcb05c51869337eb19742fdfa6c8346c18e78ff88`, equal to the go.dev release list), each unpacked fresh. The Go module cache was a scratch folder. `go mod download` for `buildos-intake` ran outside the command sandbox, because the sandbox blocks the macOS keychain and Go could not check the proxy's TLS certificate; `go mod verify` printed `all modules verified` against `go.sum`.
+
+### P1 Follow-Up
+
+`toolkits/buildos/SECURITY.md` Scan Record: the CI OSV job row read `Pending` and "Not run yet". It now records [CI run 45282558470](https://github.com/brucewaynedecoy/build-os/actions/runs/45282558470) on `f505935`: the OSV job passed, the gate self-check passed, the scan found 50 packages, and the gate printed `scanner exit 0, 0 finding(s), 0 blocking: pass`. No package, version, license, or scan status changed.
+
+### Fixtures (t1)
+
+- Location: `toolkits/buildos/test/fixtures/golden/`, 114 files, about 48 KB. Six projects: `intake`, `discovery`, and `design` in the repository layout (`system/...`), and `intake-installed`, `discovery-installed`, and `design-installed` in the installed layout (`.os/`, `assets/`, `docs/`, `playbooks/`, `workspace/`). Entity cases reuse `toolkits/buildos/testdata/persona-pilot/` in place, not as a copy.
+- Intake inputs: CSV (quoted commas, doubled quotes, an embedded line break); DOCX (title, headings, ordered and bullet numbering with levels, a literal bullet, a bold and underlined pseudo-heading, a tab, a table with a pipe and a two-paragraph cell, two embedded images); a second DOCX with an undefined numbering ID; a file named `.docx` that is not a ZIP; a three-sheet XLSX (shared strings with rich-text runs, sparse cells, a `str` cell with a line break, an absolute relationship target, an embedded image); an XLSX whose relationship escapes the package; PDFs with plain text over two pages, two columns, a ruled table, headers and footers over two pages, a text page plus a scanned (image-only) page, and a scanned page alone; an HTML file (link, list, ordered list, table with a short row, line break, local image with a query string, data-URI image, remote image, missing image, malformed data URI, inline SVG, a Mermaid block, an empty Mermaid block); an HTML folder with a nested `.htm` page and an image; a folder with no HTML; a `.txt` file; an existing converted twin; a references index with a removed ID; and playbooks (active, draft, and a router without front matter).
+- Discovery and design: a playbook index with active, draft, wrong-category, unversioned, and archived playbooks; governed JSONL datasets with superseded requirement, run, and finding redirects; raw-finding files with anchors; evidence files, one with spaces and parentheses in its name; a confirmation test and evidence; qualified, active, anchorless, and title-less findings, one with an unknown `x_review_note` field; and the design router inputs.
+- Generation: `toolkits/buildos/test/golden/generate-fixtures.ts` writes the 15 binary and generated files (DOCX, XLSX, PDF, PNG, and the HTML file that embeds a PNG data URI) with Node built-ins only. ZIP entries are stored with a fixed 1980-01-01 date, PNG data uses stored deflate blocks, and PDF objects and offsets are written in a fixed order, so no zlib version, clock, or locale changes a byte. Two runs into different folders gave identical bytes. `test/golden/fixtures.test.ts` regenerates in memory and compares every committed binary fixture. Text fixtures are plain committed files.
+- Departure: the instruction preferred Go for generation. The generator is TypeScript on Node built-ins instead. Reasons: it adds no dependency, it never runs Go or Python in tests or CI, CI can check it on every run, and it keeps working after P8 removes the Go code. It runs only in the maintainer flow, as the rule asks.
+- Git: `test/fixtures/golden/.gitattributes` and `test/golden/.gitattributes` set `* -text`, so git never converts line endings or other bytes on any operating system. `git check-attr text` reports `unset` for a DOCX, a CSV, and a golden `stdout`; `fixtures.test.ts` checks this and that no text fixture holds a carriage return.
+
+### Case Manifest (t2, t3)
+
+`toolkits/buildos/test/golden/cases.json` has 158 cases (150 before the [P2 review fix round](#p2-review-fix-round)). Each names an ID, the Go tool, the domain, the invocation name, arguments, the fixture, optional prepare steps (write, remove, or make a path in the fixture copy), the kind, and the exit code.
+
+| Go tool | Cases | Kinds |
+| --- | --- | --- |
+| `buildos` (`cli` and `entities`) | 35 | success 10, version 2, help 3, dry run 2, usage error 6, missing root 3, invalid input 6, conflict 1, write failure 1, index failure 1 |
+| `buildos-intake` | 55 | success 26, dry run 4, help 3, version 1, usage error 6, missing root 2, invalid input 7, conflict 1, write failure 3, index failure 2 |
+| `buildos-discovery` | 43 | success 8, dry run 2, help 3, version 1, usage error 11, missing root 1, invalid input 12, conflict 2, write failure 2, index failure 1 |
+| `buildos-design` | 25 | success 3, dry run 1, help 3, version 1, usage error 8, missing root 1, invalid input 6, conflict 1, write failure 1 |
+
+- Legacy names: every wrapper in `system/.os/scripts/` passes its arguments to `buildos-intake`, `buildos-discovery`, or `buildos-design`. The skills and docs call `convert`, `index references`, `index playbooks`, `help`, `run discovery`, `qualify finding`, and `promote finding`. Each has cases under its legacy invocation name.
+- Version: the three legacy tools have no `version` command. Their `version` cases record Go's real answer: usage on stderr, `unknown command "version"`, exit 1.
+- Write failure: every command that writes has a write-failure case. Since the review fix round, `buildos-design` has one too (a regular file at `system/docs/designs`, so the design target check fails), and both intake index commands have one. The optional POSIX-only dangling-symlink case for the exclusive create was not added: the prepare steps have no symlink step, and the portable case covers the write-failure path on every system.
+- JSON mode (t3): the manifest `commands` table marks `buildos version` and the `buildos entities` commands as having a Go JSON mode, with golden coverage. Every `buildos-intake`, `buildos-discovery`, and `buildos-design` command, and `buildos help`, had no JSON mode in Go; their `--json` envelope is covered by the P1 contract tests, not by goldens.
+
+### Capture (t4 to t6)
+
+- `toolkits/buildos/test/golden/capture.mjs` builds the four tools with `go build -trimpath` (`GOFLAGS=-mod=readonly`, `GOTOOLCHAIN=local`, `CGO_ENABLED=0`) into a fresh temporary folder. It refuses to run when a Go file, `go.mod`, or `go.sum` under `toolkits/` has uncommitted changes. Each case runs in a fresh copy of its fixture with `PWD` set and `TZ=UTC`. It stores `stdout`, `stderr`, `result.json` (exit code, added, changed, and removed files and folders, and SHA-256 values), and `files/<path>` for every added or changed file under `toolkits/buildos/test/golden/<tool>/<case-id>/`.
+- Capture record (`CAPTURE.md`): repository commit `83cc9b624c255fc85dd94d55fd5f84375407f7f2`; last commit that changed the Go sources `263f5ca76082b42ed9a3fb43bab67929889010ed`; `go version go1.24.1 darwin/arm64`; `darwin 27.2.0 arm64`; 150 cases. The goldens hold 84 written files and about 200 KB.
+- The manifest exit code was checked against Go for every case. One guess was wrong (`buildos version --help` exits 2 in Go, which is PE-003) and was corrected.
+- Normalizations, listed in `cases.json` with reasons: N1 `{ROOT}` for every spelling of the temporary fixture copy; N2 `{TIMESTAMP}` for RFC 3339 UTC time stamps inside the run window only (intake front matter, discovery run and finding times, design `updated_at`), so fixture time stamps stay exact; N3 `designs/{DATE}-` for the run date in a promoted design file name. A search of the goldens found no temporary path, user name, or capture date outside these tokens.
+- Operating systems: 66 goldens print an operating system path or error text (`{ROOT}/`, `no such file or directory`, `not a directory`): entities 24, intake 34, discovery 5, design 3. Go on Windows prints `\` and Windows error text there. They now use per-OS goldens; see [Per-OS Goldens](#per-os-goldens).
+
+### Harness (t7 to t12)
+
+- `toolkits/buildos/test/golden/compare.test.ts` bundles the CLI into a temporary folder, runs each case under its invocation name (`buildos` runs the bundle; a legacy name runs a copy named `<name>.mjs`, the seam P6 replaces), and compares the exit code, stdout (the JSON output for JSON cases), stderr, the file tree, and every written file byte for byte. PDF text cases compare the body of each written `.txt` file after whitespace and line-break normalization; the front matter and everything else stay exact. Shared code is in `harness.ts`.
+- `toolkits/buildos/test/golden/parity-exceptions.json` is now the one list of approved exceptions. `test/go-parity.test.ts` reads its `go_seed` lists instead of its own map, and checks that they hold the 11 P1 seed exceptions. A golden entry names the case, the field, and the exact allowed TypeScript value; the harness fails on a difference without an entry, on a value that is not the allowed one, and on an entry with no real difference.
+- Domain states: `cli` (`buildos version` and `help`, 8 cases) is `enforced`, because P1 brought it to parity. `entities` (P3), `intake` (P4), `discovery` (P5), and `design` (P5) are `pending`: their cases run and the summary lists them, but they do not fail CI. Local summary: `cli: enforced: 8/8 cases match, 5 recorded exception field(s)`; `entities` 0/27, `intake` 0/49, `discovery` 0/42, `design` 0/24, as expected before the ports.
+- CI (t12): `.github/workflows/buildos-ci.yml` runs `node --test --test-reporter=spec "test/golden/*.test.ts"` as its own step, "Golden parity harness", in the `test` job on macOS, Linux, and Windows. `npm test` runs it too. The workflow parses (Ruby Psych). The CI run waits for the owner-approved push.
+- Refresh rule: `CAPTURE.md` says goldens change only by a new capture from the Go tools with a recorded reason, never by copying the TypeScript output or editing by hand.
+
+### Per-OS Goldens
+
+Orchestrator decision: see [Owner Decisions](#owner-decisions), the per-OS goldens row.
+
+- Layout: the shared set stays at `test/golden/<tool>/<case-id>/` (84 cases). Each operating system's set is at `test/golden/os/<platform>/<tool>/<case-id>/` (`darwin`, `linux`, `win32`), with `capture-record.json` (operating system, runner image, CI run, commit, Go version, OS golden count, drift, exit-code mismatches). `CAPTURE.md` lists every record in a table that `capture.mjs` writes.
+- Manifest: `cases.json` has `os_dependent_groups` and marks 66 cases `os_dependent` (73 after the [P2 review fix round](#p2-review-fix-round): `OSD-1` 53, `OSD-2` 20; entities 24, intake 40, discovery 5, design 4). `OSD-1` (49 cases: entities 18, intake 31): the output prints an absolute path inside the fixture copy, joined with the system separator. `OSD-2` (17 cases: entities 6, intake 3, discovery 5, design 3): the output prints an operating system file error (`no such file or directory`, `not a directory`) next to such a path. Each group has its reason. The groups were found by a search of every golden file for `{ROOT}/` and the two error texts. Relative paths such as `system/workspace/runs/RUN-003/` were not marked; if Go prints them differently on Windows, the capture reports them as drift (next item).
+- Harness (`harness.ts` `selectGolden`): a case uses the running operating system's golden when one exists, else the shared golden. An OS-dependent case never falls back to the shared set; with no golden for the running system it is `missing-golden`. `compare.test.ts` fails a `missing-golden` case in an enforced domain and lists it in a pending domain; the summary counts OS goldens and `missing-golden` cases per domain. The manifest test requires a shared golden for every other case, no shared golden for an OS-dependent case, at least one golden for every case, the manifest exit code in every golden, a known group for every OS-dependent case, and a `CAPTURE.md` row for every capture record. The normalization list did not change: the darwin recapture showed no new run-to-run value.
+- Capture (`capture.mjs`): an OS-dependent case is written to `os/<platform>/`. Any other case is compared with the shared golden. When the bytes match, no OS golden is kept. When they differ, the script writes an OS golden, lists the case as drift, and exits 1 (`--report` records it and exits 0). Only `--write-shared` writes the shared set. `--check` compares a fresh capture with the goldens the running system uses. `--record` rewrites the `CAPTURE.md` tables. A planted test (one shared `stdout` byte changed, capture run, file restored, capture run again) showed the drift report, the OS golden, and its removal after the restore.
+- Local darwin set: `node test/golden/capture.mjs` then `--write-shared` with Go 1.24.1 on macOS moved the 66 OS-dependent goldens to `os/darwin/` and removed their shared copies; the 294 shared golden files are byte-identical before and after (SHA-1 list compared). No drift, no exit-code mismatch. `--check`: `every darwin golden is byte-identical to a fresh capture`.
+- Workflow (`.github/workflows/buildos-golden-capture.yml`): `workflow_dispatch` with a `ref` input; `permissions: contents: read`; jobs on `ubuntu-latest`, `windows-latest`, and `macos-latest`. Each job turns off `core.autocrlf`, checks out the ref with full history and no stored credentials, sets up Node 24, and installs Go 1.24.1 from go.dev with a pinned SHA-256 per archive (from the go.dev release list; the darwin value equals the local download) after it checks the runner architecture. It runs `capture.mjs --report` and `capture.mjs --check`, uploads `test/golden/os/<platform>/` as `buildos-goldens-<platform>`, and then fails when the record lists drift or an exit-code mismatch. Actions are pinned by commit SHA: `actions/checkout` v7.0.1 and `actions/setup-node` v7.1.0 (as in CI), and `actions/upload-artifact` v7.0.2 (`cf430e030ddbb5b0abf93d22962f4752f3646cd9`, tag read from the GitHub API). It never commits or pushes; it installs no npm packages.
+- Workflow checks: `actionlint` 1.7.12 (release binary, checksum checked against the release checksum file) passed both workflows, with shellcheck not installed; Ruby Psych parsed the file. The install and gate snippets ran locally (the hash snippet gave the pinned darwin SHA-256, and the gate passed on the darwin record). The workflow itself has not run: it needs the push.
+- Tests: `test/golden/selection.test.ts` (7 tests): shared golden when the system has none; the system's golden over the shared one; another system's golden never counts; `missing-golden` for an OS-dependent case without the system's golden, even with a shared golden; `missing-golden` with no golden; and, end to end through the real harness on a planted copy, `missing-golden` fails enforced `cli-version` (exit 1, message `golden case cli-version: missing-golden: OS-dependent case (OSD-1) has no golden for darwin ...`) and only lists pending `entities-validate-strict-json` (exit 0). The planted-difference self-test still passes (7 tests); its comparator plants read whichever golden of a case exists.
+- Linux and Windows view: with no `linux` or `win32` set yet, those runs will list 66 `missing-golden` cases, all in pending domains, and pass. A local run with the per-OS sets removed showed the same per-domain counts (entities 24, intake 34, discovery 5, design 3).
+
+### Parity Exceptions Carried
+
+| ID | Golden entries | Seed entries | Owner decision |
+| --- | --- | --- | --- |
+| PE-001 | `cli-help` stdout, exact TypeScript root help | 6 | [Owner Decisions](#owner-decisions), 2026-11-23 |
+| PE-002 | `cli-help-version` stdout, exact version help | 2 | [Owner Decisions](#owner-decisions), 2026-11-23 |
+| PE-003 | `cli-version-help` exit `0`, stdout, and stderr `""` | 3 | [Owner Decisions](#owner-decisions), 2026-11-23 |
+| PE-004 | `entities-validate-missing-root-json` and `entities-validate-root-is-file-json` stdout, `entities-validate-missing-root-human` stderr; exact values set by P3 | 0 | [Owner Decisions](#owner-decisions), 2026-11-23 |
+
+PE-001 is exact text, so each port phase that adds a domain to root help updates that value.
+
+### Acceptance Criteria
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| A13 | Pass | Each Go tool has success and error-exit cases (table above). Each invocation name has help and version cases: `buildos` (`cli-help`, `cli-version`, and more), and `help`, `-h`, `--help`, and `version` for each legacy name. A manifest test in `compare.test.ts` checks this. |
+| A14 | Pass | Scan: every capitalized word or phrase in the text fixtures, the DOCX and XLSX XML, the PDF text, the generator, and `testdata/persona-pilot/` was listed and read. It holds generic roles and places (for example "Sample Tool Library", "Sample Garden Club", "Procurement Lead", "desk volunteer") and no real client, person, or organization name. Reviewer: the implementing agent. |
+| A15 | Pass | A golden exists for all 150 cases: 84 shared and 66 in the `darwin` set; the manifest test fails a case without one. The `linux` and `win32` sets wait for the capture workflow. `CAPTURE.md` names the commit, the Go version, and the operating system. Update: all three OS sets are now committed (158 cases: 85 shared; `darwin` and `linux` 73 each; `win32` 70 captured and 3 PE-005 derived). See [P2 Windows Goldens Import](#p2-windows-goldens-import). |
+| A16 | Pass | A second `node test/golden/capture.mjs` gave the same files, and `node test/golden/capture.mjs --check` printed `every golden is byte-identical to a fresh capture`. |
+| A17 | Pass (local) | `test/golden/self-test.test.ts`, 7 tests pass. End to end, it plants one changed byte in a copy of the goldens for the stdout of `cli-version`, the stderr of `cli-version-bad-flag`, and the exit code of `cli-version-json`, runs the real `compare.test.ts` against the copy, and asserts exit 1 and each message; the unplanted `cli-help`, with its exception, still passes. At the comparator it fails a one-byte change in a written file (`intake-convert-csv`) and a changed file tree, passes a whitespace-only change to PDF text (spaces, tabs, CR, and extra line breaks), fails a changed PDF word (`bicycles` to `bicycler`) and a changed PDF front matter, fails the same whitespace change in a case that is not PDF text, and checks the exception rules (exact value, wrong value, pending `null`, and stale). |
+| A18 | Pass | [CI run 45298341110](https://github.com/brucewaynedecoy/build-os/actions/runs/45298341110) (`buildos-ci`) on `733e428` (2026-11-24 UTC) is green: `test (macos-latest, Node 24)`, `test (ubuntu-latest, Node 24)`, `test (windows-latest, Node 24)`, and `OSV scan of package-lock.json` all `success`. On each operating system the golden harness summary lists every domain: `cli` enforced (8/8 cases match), and `entities`, `intake`, `discovery`, and `design` `pending`. That run came before the win32 import, so its Windows summary shows 3 win32 goldens and 70 `missing-golden`; see [P2 Windows Goldens Import](#p2-windows-goldens-import). |
+| A19 | Pass | Messages from the end-to-end plant: `golden case cli-version, field stdout: first difference at line 4, byte offset 63: expected "version: eev", actual "version: dev"`; `golden case cli-version-bad-flag, field stderr: first difference at line 5, byte offset 115: expected "ERROR [usage_error]: flag qrovided but not defined: -bad", actual "ERROR [usage_error]: flag provided but not defined: -bad"`; `golden case cli-version-json, field exit: expected exit 1, actual exit 0`. |
+
+### Check Results
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0. `tsconfig.json` now excludes `test/fixtures/**` and the golden data folders, whose `.spec.ts` fixture files are data, not project code. |
+| `npm test` | exit 0; 863 tests, 29 suites, 849 pass, 0 fail, 14 skipped (the same 11 P1 `entities` seed goldens and 3 Windows-only tests). The script now runs `test/*.test.ts` and `test/golden/*.test.ts`. Counts after the per-OS change. |
+| `npm run build` | exit 0; `dist/buildos.js` 40,626 bytes. No `src/` file changed in P2. |
+| Smoke, `node dist/buildos.js version` | exit 0; `dev` and `unknown` |
+| `npm run check:deps` and `npm run check:deps:installed` | both `dependency policy: ok`. No dependency changed. |
+| `npm audit --audit-level=high` | exit 0; 0 vulnerabilities |
+| `npm pack --dry-run` | 6 files: `LICENSE`, `README.md`, `SECURITY.md`, `THIRD_PARTY_NOTICES.md`, `dist/buildos.js`, `package.json`. No fixture or golden. |
+| `node test/golden/capture.mjs --check` | exit 0; `every darwin golden is byte-identical to a fresh capture` (84 shared and 66 darwin goldens) |
+| `actionlint` 1.7.12 on both workflows | exit 0 (shellcheck not installed) |
+| `make-docs project path-hygiene validate` | valid, 0 failing findings |
+| `make-docs run prd authority validate --target-root . --json` | `passed` |
+| CI run on three operating systems | Pass: [CI run 45298341110](https://github.com/brucewaynedecoy/build-os/actions/runs/45298341110) on `733e428`; see A18 |
+
+### P2 Open Items
+
+- Per-OS goldens: decided (Option A), built, and closed: the `linux` set came from run 45293367433 and the `win32` set from run 45298345720 (see [P2 Windows Goldens Import](#p2-windows-goldens-import)); the local `darwin` set equals the CI one byte for byte and stays. Original open item: the orchestrator pushes the commit to capture to `golden-capture/<short-sha>`, waits for `buildos-golden-capture`, verifies and commits the `linux` and `win32` artifacts (and may replace the local `darwin` set with the CI one), and deletes the capture branch (see `CAPTURE.md`). Any drift it reports needs an `os_dependent` mark with a reason before commit.
+- Exceptions on OS-dependent cases: PE-004 names three OS-dependent `entities` cases. An exception entry holds one exact value, so if the TypeScript value differs by operating system, P3 needs a per-OS entry form.
+- Legacy-name notice: PRD 20 Legacy Command Names says a legacy name writes one extra stderr line that names the new command. Every legacy-name case's stderr will then differ from Go. P6 must add that line as a parity exception with its exact text, or as a harness rule approved by the owner.
+- `testdata/persona-pilot/` holds the entity fixtures. P8 removes the Go code; it must keep or move this folder.
+
+### P2 Review Fix Round
+
+The independent review of P2 returned two blockers and four major findings. Each was reproduced first, then fixed with regression tests in `toolkits/buildos/test/golden/review-fixes.test.ts` (27 tests) and `test/go-parity.test.ts`. The goldens were captured again from Go 1.24.1 built from source at `83cc9b6`.
+
+- Finding 1 (blocker), root normalization. Reproduced: a Windows root in JSON (`C:\\Users\\...`) stayed unreplaced, and output with the literal text `{ROOT}` normalized the same as the real root. Fix in `harness.ts`: `rootSpellings` and `spellingVariants` list the given path, its real path, and its native real path (8.3 short and long forms on Windows), each with `/` and on Windows `\` separators and both drive-letter cases; `rootEncodings` adds each one raw, Go `encoding/json` escaped, `JSON.stringify` escaped, and Go-quoted (`goQuote`, as `%q`). Only the root is replaced, so the separators and the relative suffix stay. N3 now also matches `designs\` and `designs\\`. Before any substitution, literal `{ROOT}`, `{TIMESTAMP}`, `{DATE}`, and `{!` become `{!...}`; the escape is one-to-one, so the comparator compares the escaped bytes, and `unescapeTokens` gives the display form. Tests use `path.win32` short and long roots for raw, `/`, JSON, `%q`, and drive-letter case, a POSIX root and its real path, a root with `&<>`, N3 separators, and literal tokens (including the comparator failing a planted literal `{ROOT}`).
+- Finding 2 (blocker), artifact upload. Reproduced: 20 golden files sit under `.os/` folders, and the upload step had no `include-hidden-files`. Fix: the upload sets `include-hidden-files: true`. `capture-record.json` now holds `golden_files`, the SHA-256 of every file in the set (265 for `darwin`, hidden files included). `capture.mjs --verify-artifact <dir>` checks a set against it: same file list, same hashes, a known platform, and a golden for every OS-dependent case. The capture job verifies its set before upload, and a new `verify artifacts` job downloads all three artifacts (`actions/download-artifact` v8.0.2, `9000827ccba6bdab643e8b6fd33ac0654aef8333`, tag read from the GitHub API) and verifies each. Tests: the darwin set verifies (in process and through the real script, exit 0), and a changed byte in a hidden `.os` file, a missing hidden file, an extra hidden file, and a missing record each exit 1 with the named problem.
+- Finding 3 (major), drift hidden by `--report`. Reproduced with real Go: one line planted in the darwin `intake-convert-csv` stdout; `capture.mjs --report` replaced it and recorded no drift. Fix: `planCapture` compares the fresh capture with every existing golden before replacement or removal and lists `changed-os-golden`, `changed-shared-golden`, `removed-os-golden`, and `shared-drift`; the record has `golden_changes`; any of them makes the run exit 1 unless `--report`. `checkCapture` makes `--check` fail on a differing golden and on shared drift. Real-Go recheck: the same plant made `--check` exit 1 (`fresh capture differs from the darwin golden`), `--report` exit 0 with `golden_changes: [{ case: 'intake-convert-csv', kind: 'changed-os-golden' }]`, a plain capture exit 1, and a planted shared `discovery-help` byte made `--check` report `shared-drift`. Tests plant the same changes in a copy and check `planCapture` and `checkCapture`, and check that a Windows capture ignores only the `modes` field against a POSIX shared golden.
+- Finding 4a (major), permission bits. Fix: on POSIX the snapshot records the mode of every entry; a mode change counts as a change; `result.json` has `modes` for every added or changed file and folder; the comparator reports `mode:<path>`. Cases run under umask `022`. Windows neither records nor compares modes, and `--write-shared` refuses to run there. Tests: every POSIX-captured golden that writes has a mode for each written path; a planted `0644` to `0600` fails; a real run that writes the same bytes with mode `0600` against `0644` fails on `mode:out.txt`.
+- Finding 4b (major), exceptions not exact. Reproduced: `go-parity.test.ts` asserted only `notDeepEqual`, so adding stderr or changing the exit code of `-h` still passed. Fix: each `go_seed` entry in `parity-exceptions.json` names its arguments and, in `allowed`, the exact value of each field that may differ; `seedExceptionProblems` requires each allowed field to equal its value and still differ from Go, and every other field to equal Go. A test checks that the seed values equal the golden-harness values of PE-001 to PE-003. Tests: extra stderr, a changed exit code, a changed allowed stdout, and a stale allowed field each fail; in the golden harness, extra stderr or a changed exit on `cli-help` (stdout-only exception) and a wrong exit on `cli-version-help` are unexplained.
+- Finding 5 (major), coverage. Added 8 cases: `intake-index-references-repo-root` (from `inputs/`, `--repo-root ..`), `intake-index-references-assets-root`, `intake-index-references-write-failure` (an empty, read-only `references.json`: `open ...: permission denied`), `intake-index-playbooks-repo-root`, `intake-index-playbooks-output`, `intake-index-playbooks-write-failure` (a file at the output folder: `mkdir ...: not a directory`), `discovery-qualify-repo-root`, and `design-promote-write-failure` (a file at `system/docs/designs`: `stat ...: not a directory`). A `chmod` prepare step was added. Seven are OS-dependent (`OSD-1` 4, `OSD-2` 3); `discovery-qualify-repo-root` is shared. Tests: every Go flag of every legacy command appears in a case, and every command that writes has a write-failure case. The optional dangling-symlink case was not added (see [Case Manifest](#case-manifest-t2-t3)).
+- Finding 6, workflow trigger: see [Owner Decisions](#owner-decisions). The workflow runs on a push to `golden-capture/**` and keeps `workflow_dispatch`; checkout and concurrency use `inputs.ref || github.sha`. `CAPTURE.md` gives the push, wait, download, verify, commit, and delete-branch steps.
+- Recapture: `capture.mjs --write-shared --report` recorded the format change (`modes`) as changed goldens; a script check showed every old golden kept the same bytes apart from the new `modes` field. A second `capture.mjs --write-shared` then exited 0 with no drift, no changed golden, and no exit mismatch. Result: 158 cases, 85 shared and 73 `darwin` goldens.
+
+Review fix round checks, on macOS with Node 24.22.3:
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm test` | exit 0; 900 tests, 36 suites, 886 pass, 0 fail, 14 skipped |
+| `npm run build` | exit 0; `dist/buildos.js` 40,626 bytes, unchanged |
+| Smoke, `node dist/buildos.js version` | exit 0; `dev` and `unknown` |
+| `npm run check:deps` and `npm run check:deps:installed` | both `dependency policy: ok` |
+| `npm audit --audit-level=high` | exit 0; 0 vulnerabilities |
+| `npm pack --dry-run` (scratch npm cache, because the command sandbox blocks the user npm cache) | 6 files, as before |
+| `node test/golden/capture.mjs --check` | exit 0; `every darwin golden is byte-identical to a fresh capture, with no shared-golden drift` (158 cases) |
+| `node test/golden/capture.mjs --verify-artifact test/golden/os/darwin` | exit 0; 265 files match the manifest |
+| Golden summary | `cli` enforced 8/8; `entities` 0/27 (24 darwin), `intake` 0/55 (40 darwin), `discovery` 0/43 (5 darwin), `design` 0/25 (4 darwin), all pending |
+| `actionlint` 1.7.12 on both workflows | exit 0 |
+| `make-docs project path-hygiene validate` | valid, 0 failing findings |
+| `make-docs run prd authority validate --target-root . --json` | `passed` |
+
+### P2 Review Fix Round 2
+
+The re-review returned four findings in `toolkits/buildos/test/golden/harness.ts`. Each was reproduced first with a scratch test that ran the old harness, then fixed. Regression tests are in `toolkits/buildos/test/golden/review-fixes-2.test.ts` (13 tests). `CAPTURE.md` describes the new rules.
+
+- Finding 1, a root in `%q` inside JSON. Reproduced: for `entities-validate-missing-root-json`, a simulated Windows short or long root inside the Go-quoted path of the JSON `message` stayed unreplaced, because `%q` and then JSON doubled each `\` twice. Malformed JSON with the root's raw backslashes normalized to the same bytes as valid JSON. Fix: `normalizeJsonText` requires one valid JSON document, decodes each string token, normalizes the decoded text, and encodes it again with the escaping the token used (Go `encoding/json` or `JSON.stringify`). Bytes outside a substituted value stay as printed. `normalizeText` also finds a root under any depth of nested `%q` or JSON quoting. For a JSON case, stdout that does not parse sets `stdoutJsonError`. The comparator then reports `stdout:json`, and `capture.mjs` exits 1. Tests: short and long Windows roots at nesting depths 1 to 4, with Go and `JSON.stringify` escaping; a POSIX root; malformed JSON; and a real run that prints invalid JSON.
+- Finding 2, `--report` replaced an incomplete golden. Reproduced: an existing darwin golden with no `result.json` and a changed `stderr` gave no drift. Fix: `planCapture` counts any existing golden folder, complete or not, so the change is listed in `golden_changes`. `checkCapture` names an incomplete folder. Tests: an incomplete darwin golden is `changed-os-golden` and fails `--check`; an incomplete shared golden is `changed-shared-golden` or `shared-drift`.
+- Finding 3, the fixture root's own mode. Reproduced: a run that set the root to `0777` matched a run that did not. Fix: the snapshot records the root as entry `.` with its mode. Test: a root changed to `0777` fails (`changed dir .`, mode `0777`).
+- Finding 4, a symbolic link accepted for a file. Reproduced: a generated PNG replaced by a link to the source matched a real copy. Fix: the snapshot uses `lstat`, records the entry type (`file`, `dir`, `symlink`, `other`), and records a link's target text. `result.json` holds `links` only when a case writes a link. Tests: the PNG link fails on the tree; a link to another target fails on `link:link`; an absolute target is stored under `{ROOT}`.
+- Goldens: no existing golden holds a link or a root mode change, and every JSON golden already parsed, so the stored format did not change. No recapture ran. `capture.mjs --check` with Go 1.24.1 built from source at `83cc9b6` confirmed that every darwin golden is byte-identical to a fresh capture. The capture record and manifest did not change.
+
+Review fix round 2 checks, on macOS with Node 24.22.3:
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm test` | exit 0; 913 tests, 39 suites, 899 pass, 0 fail, 14 skipped |
+| `npm run build` | exit 0; `dist/buildos.js` 40,626 bytes, unchanged |
+| Smoke, `node dist/buildos.js version` | exit 0; `dev` and `unknown` |
+| `npm run check:deps` and `npm run check:deps:installed` | both `dependency policy: ok` |
+| `npm audit --audit-level=high` | exit 0; 0 vulnerabilities |
+| `npm pack --dry-run` (scratch npm cache) | 6 files, as before |
+| `node test/golden/capture.mjs --check` | exit 0; `every darwin golden is byte-identical to a fresh capture, with no shared-golden drift` (158 cases) |
+| `node test/golden/capture.mjs --verify-artifact test/golden/os/darwin` | exit 0; 265 files match the manifest |
+| Golden summary | `cli` enforced 8/8; `entities` 0/27 (24 darwin), `intake` 0/55 (40 darwin), `discovery` 0/43 (5 darwin), `design` 0/25 (4 darwin), all pending |
+| `actionlint` 1.7.12 on both workflows | exit 0 |
+| `make-docs project path-hygiene validate` | valid, 0 failing findings |
+| `make-docs run prd authority validate --target-root . --json` | `passed` |
+
+### P2 Stale Golden Fix
+
+The reviewer found that a stale golden folder passed `capture.mjs --check` and that `--report` removed it without a record. Before the fix, a shared golden of an OS-dependent case was ignored by `--check` (exit 0) and silently removed by `--report` (`golden_changes: []`).
+
+- Reproduced with Go 1.24.1 built from source at `83cc9b6`, on a backup copy of the goldens: a planted shared golden of `entities-validate-missing-root-json` with different stdout, an incomplete shared golden (no `result.json`) of `entities-validate-compat`, a linux golden of the shared case `discovery-help`, and `buildos/no-such-case`.
+- Fix in `toolkits/buildos/test/golden/harness.ts`: `findStaleGoldens` lists every stale folder, complete or not, in all four golden sets: a shared golden of an OS-dependent case, a per-OS golden of a shared case, and a folder of a case not in `cases.json`. `--check` fails and names each folder with its path and reason (`staleGoldenProblems`). A capture, with or without `--report`, removes each one through `removeStaleGoldens`, which returns a `removed-stale` entry with `path` and `reason` for `golden_changes`. `planCapture` no longer removes the shared golden of an OS-dependent case on its own. This system's golden of a shared case stays with `planCapture` (`removed-os-golden` or drift). The old unrecorded removal in `capture.mjs` is gone.
+- After the fix, on the same planted state: `--check` exited 1 and named all four folders; `--report` exited 0 and recorded four `removed-stale` entries with their paths. The goldens were then restored from the backup.
+- Regression tests: `toolkits/buildos/test/golden/stale-goldens.test.ts` (6 tests) covers all three stale kinds in both modes, this system's own golden of a shared case, and `planCapture` that no longer removes a shared golden. `CAPTURE.md` describes the rules.
+
+Stale golden fix checks, on macOS with Node 24.22.3:
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm test` | exit 0; 919 tests, 40 suites, 905 pass, 0 fail, 14 skipped |
+| `node test/golden/capture.mjs --check` | exit 0; `every darwin golden is byte-identical to a fresh capture, with no shared-golden drift and no stale golden folder` (158 cases) |
+| `node test/golden/capture.mjs --verify-artifact test/golden/os/darwin` | exit 0; 265 files match the manifest |
+| `make-docs project path-hygiene validate` | valid, 0 failing findings |
+
+### P2 Windows Go Behavior
+
+Capture run [45293367433](https://github.com/brucewaynedecoy/build-os/actions/runs/45293367433) (branch `golden-capture/8be0b70`, commit `8be0b7089a3daaac60e878d40597f4ff9083949e`). The darwin and linux jobs passed. The win32 job (`go version go1.24.1 windows/amd64`, runner `win25-vs2026 20261116.315.1`) failed at `capture.mjs --check` with six exit-code mismatches. Three of them are shared cases, so they also showed as `shared_drift`. The win32 artifact (`buildos-goldens-win32`) was uploaded. The quoted output below comes from it, after the harness normalized the root to `{ROOT}`.
+
+Root cause, the same in all six cases: after Go renames the temporary file over the target, it opens the parent folder with `os.Open` and calls `(*os.File).Sync()` on it to make the rename durable. That is the POSIX directory `fsync` pattern. On Windows, `os.Open` gives a read-only folder handle, and `Sync` calls `FlushFileBuffers`, which needs write access. Windows returns `ERROR_ACCESS_DENIED` (`Access is denied.`). Windows has no directory flush, so this call cannot succeed there. It is not a separator, open-handle, or `os.Rename` problem: the rename itself succeeds, and the new file is already in place when the error is returned. So Go reports a failure after the write has committed.
+
+The three sync sites:
+
+- `toolkits/buildos/internal/entities/index.go:331-338` (`writeIndexAtomic`): `sync entity-resolution index directory`.
+- `toolkits/buildos/internal/entities/consolidate.go:419-425` (`writeCanonicalAtomic`): `sync canonical directory`.
+- `toolkits/buildos-design/internal/design/promotion.go:534` and `:572-578` (`replaceExistingFile` calls `syncDirectory`); the caller wraps it as `replace findings index` at `promotion.go:178-179`.
+
+| Case | Manifest exit (Go on darwin and linux) | Go exit on win32 | Go output on win32 | Files on win32 | Class |
+| --- | --- | --- | --- | --- | --- |
+| `entities-rebuild-apply-missing-json` | `0` | `5` | stdout JSON: `"ok": false`, `"write_status": "not_requested"`, `before` and `after` both `"state": "missing"`, diagnostic `internal_error`: `sync entity-resolution index directory: sync {ROOT}\root\.os\indexes: Access is denied.`; stderr empty | `root/.os/indexes/entity-resolution.json` added, SHA-256 `941c43d9…` (the same bytes as the darwin golden) | (a) |
+| `entities-consolidate-apply-json` | `0` | `5` | stdout JSON: `"ok": false`, `"write_status": "not_requested"`, `"applied": false`, diagnostic `internal_error`: `sync canonical directory: sync {ROOT}\root\.os\data: Access is denied.`; stderr empty | `root/.os/data/personas.jsonl` changed, SHA-256 `f61575c1…` (the same bytes as darwin); the index was not rebuilt (darwin also changes `entity-resolution.json`) | (a) |
+| `entities-consolidate-apply-index-failure-json` | `6` | `5` | Same stdout as the case above (stdout SHA-256 `59b01786…` for both). It stops at the canonical folder sync, before it reaches the planted index failure. No `canonical_applied_index_failed` status and no recovery command | `root/.os/data/personas.jsonl` changed, SHA-256 `f61575c1…` | (a) |
+| `design-promote-baseline` | `0` | `1` | stdout empty; stderr: `buildos-design: error: replace findings index: sync {ROOT}\system\.os\data: Access is denied.` | Only `system/.os/data/findings.jsonl` changed (SHA-256 `e609acb7…`, the same as the shared golden). `workspace/findings/FIND-001/finding.md` not changed; no design file | (a) |
+| `design-promote-change-redirected` | `0` | `1` | stdout empty; stderr: `buildos-design: error: replace findings index: sync {ROOT}\system\.os\data: Access is denied.` | Only `system/.os/data/findings.jsonl` changed (SHA-256 `cc78386f…`, the same as the shared golden); no record change, no design file | (a) |
+| `design-installed-promote` | `0` | `1` | stdout empty; stderr: `buildos-design: error: replace findings index: sync {ROOT}\.os\data: Access is denied.` | Only `.os/data/findings.jsonl` changed (SHA-256 `4dfeb800…`, the same as the shared golden); no record change, no design file | (a) |
+
+Classification: (a) is a Go defect on Windows that contradicts current requirements. (b) is legitimate OS-specific behavior. All six are (a). None is (b): the only OS-specific part is the error text, and the behavior around it is wrong on its own terms.
+
+- Entity cases (PRD 17 and PRD 20). [PRD 20](../../prd/20-buildos-cli-and-distribution.md) supports Windows and says exit `5` means a failure "stopped a valid write from committing". On Windows the write did commit, but Go exits `5` and reports `write_status: not_requested` and `applied: false`. [PRD 17 Atomic Writes](../../prd/17-entity-identity-and-canonical-resolution.md#atomic-writes) says `consolidate --apply` rebuilds the derived index after the canonical write, and when the canonical write commits but the index step fails, it reports the recovery command with exit `6`. On Windows the canonical JSONL changes, the index is left stale, and no recovery command is given.
+- Design cases (PRD 11 and PRD 20). [PRD 11](../../prd/11-flow-c-integration.md) defines `buildos design promote` as writing the design and updating the finding. On Windows every promotion fails, and it leaves a half-done promotion: the findings index row is updated, but the finding record and the design file are not written. Go's own rollback code covers only the later steps, so the index change stays. PRD 20 supports Windows, so a command that can never succeed there and leaves a partial write is a defect.
+
+Policy options (owner decides; no golden or exception was changed):
+
+- Option A: Windows parity target is the Go behavior on Linux and macOS. Record one approved parity-exception class, "Go directory sync fails on Windows", for these six cases: `entities-rebuild-apply-missing-json`, `entities-consolidate-apply-json`, `entities-consolidate-apply-index-failure-json`, `design-promote-baseline`, `design-promote-change-redirected`, `design-installed-promote`. On Windows the TypeScript CLI skips the directory flush (or ignores its failure) and gives the darwin and linux result. The three design cases are shared cases, so on Windows they read the shared golden. The three entity cases are `os_dependent` (`OSD-1`, `\` separators), so they need a reviewed win32 golden: the linux result with Windows path spelling. `capture.mjs` and the workflow gate then need an allow-list for these exit mismatches, so the win32 capture can pass and the other 152 win32 goldens can be committed.
+- Option B: capture Go's Windows behavior as the win32 golden. The TypeScript CLI reproduces the defect on Windows: it fails after the rename with `Access is denied.`, exits `5` or `1`, skips the index rebuild, and leaves the half-done promotion. The three design cases get a new `os_dependent` group. This needs no new exception mechanism, but it ships a known data-integrity defect to Windows users on purpose.
+
+Recommendation: Option A. Option B keeps a bug that reports a committed write as not applied and leaves partial promotions.
+
+Decision: the owner chose option A on 2026-11-23 ([Owner Decisions](#owner-decisions), parity exception PE-005). The implementation is in [PE-005 Derived Goldens](#pe-005-derived-goldens).
+
+### P2 CI Follow-Up
+
+- CRLF test failure (CI run 45293363855, Windows): `test/golden/review-fixes.test.ts` read `.github/workflows/buildos-golden-capture.yml` with CRLF line endings, because the package `.gitattributes` does not cover `.github/`. Fix: the test now replaces `\r\n` with `\n` before its line-based assertions, and a new root `.gitattributes` holds one rule, `.github/workflows/buildos-*.yml text eol=lf`. It changes no other file. `git ls-files --eol` shows `attr/text eol=lf` on both BuildOS workflow files. Local proof: with the workflow file converted to CRLF (213 carriage returns), the `capture workflow` suite passed; the file was then restored byte for byte.
+- Linux goldens: `buildos-goldens-linux` from run 45293367433 (`linux 7.0.0-1020-azure x64`, runner `ubuntu26 20261116.202.1`, `go version go1.24.1 linux/amd64`, commit `8be0b70`, 73 OS goldens, empty `shared_drift`, `golden_changes`, and `exit_mismatches`). `--verify-artifact` on the download: 265 files match. Copied to `toolkits/buildos/test/golden/os/linux/` with its `capture-record.json`; `--verify-artifact` on the copy: 265 files match. `capture.mjs --record` wrote the linux row in `CAPTURE.md`. No runner path in the set.
+- Darwin check: `buildos-goldens-darwin` from the same run passed `--verify-artifact` (265 files). Its `golden_files` map is identical to the committed `os/darwin/capture-record.json`, and every golden file is byte-identical. Only the record metadata differs (CI run, OS version `25.6.0`, runner image, commit, `shared_set_written`). The committed darwin set was kept.
+- Win32: no goldens added. The policy above comes first.
+
+P2 CI follow-up checks, on macOS with Node 24.22.3 and Go 1.24.1:
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm test` | exit 0; 919 tests, 40 suites, 905 pass, 0 fail, 14 skipped |
+| `node test/golden/capture.mjs --check` | exit 0; `every darwin golden is byte-identical to a fresh capture, with no shared-golden drift and no stale golden folder` (158 cases) |
+| `node test/golden/capture.mjs --verify-artifact test/golden/os/darwin` | exit 0; 265 files match the manifest |
+| `node test/golden/capture.mjs --verify-artifact test/golden/os/linux` | exit 0; 265 files match the manifest |
+| `make-docs project path-hygiene validate` | valid, 0 failing findings |
+
+### PE-005 Derived Goldens
+
+Parity exception PE-005, "Go Windows directory-sync defect", is in `toolkits/buildos/test/golden/parity-exceptions.json`. It is a platform exception class: `platform` `win32`, the root cause, the rule, the [owner decision](#owner-decisions), and `cases`, the six cases with Go's win32 defect exit code and text (`go_exit`, `go_stream`, `go_text`) and the golden Windows uses (`win32_golden`). Each `go_text` and `go_exit` was checked against the Go win32 artifact of run [45293367433](https://github.com/brucewaynedecoy/build-os/actions/runs/45293367433): all six match.
+
+Tooling (`toolkits/buildos/test/golden/`):
+
+- `capture.mjs` on win32: the only allow-list is PE-005's `cases`. A listed case whose Go output has the recorded exit code and text is not written or compared and is not an exit mismatch. The record lists it in `parity_exception_skips` as `pe-005-skipped`, with the golden Windows uses. Any other output of a listed case, and every other case, gets the normal rules and fails on mismatch or drift. The record also lists `derived_goldens` (case, path, `derived: PE-005`, source, source SHA-256, SHA-256). The CAPTURE.md table shows both.
+- `capture.mjs --derive` (runs no Go) writes the derived goldens (`harness.ts` `deriveGolden`). `capture.mjs`, `--check`, and `compare.test.ts` fail when a derived golden is missing, differs from a fresh derivation, or is not allowed (`derivedGoldenProblems`).
+- The harness accepts a derived golden only for a case that PE-005 lists for that platform and source (`selectGolden` gives `missing-golden` otherwise). `--verify-artifact` refuses a derived golden that PE-005 does not allow for the set's platform.
+- Stale-golden fix: when a capture removes this system's own golden of a shared case (in `planCapture`, the fresh capture equals the shared golden, or `--write-shared`), it records `removed-stale` with `path` and `reason` `os-golden-for-shared-case`. The `removed-os-golden` kind is gone. `test/golden/stale-goldens.test.ts` and `test/golden/review-fixes.test.ts` expect the full record.
+
+Derived goldens: the three entity cases are `os_dependent`, so each has a derived golden in `os/win32/buildos/<case-id>/`, made from its linux golden (byte-identical to the darwin golden). The three design cases are shared cases and use the shared golden on Windows, because a per-OS golden of a shared case is a stale folder. The transformation is in [CAPTURE.md](../../../toolkits/buildos/test/golden/CAPTURE.md#platform-exception-classes-pe-005).
+
+| Case | Source | Source SHA-256 (folder) | Derived difference from the source |
+| --- | --- | --- | --- |
+| `entities-rebuild-apply-missing-json` | `os/linux/buildos/entities-rebuild-apply-missing-json` | `0a628192…` | `root` and `remediation_command` paths use `\`; no `modes` |
+| `entities-consolidate-apply-json` | `os/linux/buildos/entities-consolidate-apply-json` | `6954ca4d…` | `root` path uses `\`; no `modes` |
+| `entities-consolidate-apply-index-failure-json` | `os/linux/buildos/entities-consolidate-apply-index-failure-json` | `e55ebdd9…` | Paths use `\`; the Windows index-step error text; the `index` object Go adds; no `modes` |
+
+Hand review against the Go source (what correct Windows output prints, with the directory sync fixed):
+
+- Root and path spelling. `layout.Resolve` (`toolkits/buildos/internal/layout/layout.go`) reports `filepath.Abs` of `--root`, so `root` is `{ROOT}\root` on Windows. `rebuildCommand` (`toolkits/buildos/internal/cli/domain.go:206`) formats the root with `%q`, which doubles each `\`. The Go win32 capture of `entities-rebuild-apply-write-failure-json` prints exactly these spellings (`"root": "{ROOT}\\root"` and `--root \"{ROOT}\\\\root\"` in JSON). No other path text is in these outputs.
+- `entities-rebuild-apply-missing-json`. With the sync fixed, `writeIndexAtomic` (`internal/entities/index.go:297`) returns nil after the rename, so `RebuildIndex` (`internal/cli/domain.go:153-161`) runs the after check and reports `write_status` `applied`, before `missing`, after `current`, exit 0. The written index has the same bytes on win32 as on darwin (SHA-256 `941c43d9…`, from the win32 artifact). The derived golden is the linux golden with Windows path spelling.
+- `entities-consolidate-apply-json`. With the sync fixed, `writeCanonicalAtomic` (`internal/entities/consolidate.go:392`) returns nil, so `Consolidate` (`internal/cli/domain.go:63-111`) rebuilds the index and reports `applied`, exit 0. The canonical JSONL has the same bytes on win32 (`f61575c1…`). The derived golden is the linux golden with Windows path spelling.
+- `entities-consolidate-apply-index-failure-json`. With the canonical sync fixed, the run reaches the planted index failure (`.os/indexes` is a file). On Linux and macOS, `CheckIndex` fails reading the index with `not a directory`. On Windows, the read fails with `ERROR_PATH_NOT_FOUND`, which Go treats as `os.ErrNotExist`, so `CheckIndex` reports the index missing and `ApplyIndex` fails in `writeIndexAtomic` at `os.MkdirAll`: `create entity-resolution index directory "{ROOT}\\root\\.os\\indexes": mkdir {ROOT}\root\.os\indexes: The system cannot find the path specified.` (decoded; Go's `%q` doubles the `\` inside the quotes). Go 1.24.1 on Windows prints exactly this text and the missing-index check for the same planted file in `entities-rebuild-apply-write-failure-json` (run 45293367433), through the same `CheckIndex` and `ApplyIndex` calls. Because the failure is at the apply step, `Consolidate` sets `payload.Index = &before` (`domain.go:101-104`) before `failedAfterCanonical`, so the result holds an `index` object: state `missing`, `diagnostic_code` `index_stale`, `expected_sha256` `afe1935e…` (the consolidated graph's index, as in `entities-consolidate-apply-json`), and the recovery command. `failedAfterCanonical` keeps `write_status` `canonical_applied_index_failed`, the `recovery_command`, the `index_stale` diagnostic with the Windows cause, and exit 6, as PRD 17 Atomic Writes requires. The file tree is the linux one: only `personas.jsonl` changes. Both differences are PE-005 `windows_text` entries with this evidence.
+- Design cases. `toolkits/buildos-design/internal/design/promotion.go` builds every printed and written path with `filepath.ToSlash` (lines 121, 141, 208, 352 to 355, 394, 434), and `main.go` prints the slash path (`wrote system/docs/designs/...`). With `syncDirectory` (`promotion.go:572-578`) fixed, `replaceExistingFile` returns nil, so the promotion writes the finding record and the design file and exits 0. The win32 artifact already shows `findings.jsonl` with the shared golden's bytes. So the correct Windows output is the shared golden.
+
+Later phases:
+
+- P3 [t14](./03-entities-port.md) and P5 [t11](./05-discovery-and-design-port.md): the TypeScript atomic writes of `entities` and `design promote` must sync the parent folder in a way that works on Windows (for example, skip the folder sync on Windows or open the folder with the right flags). A Windows CI test must prove that a successful apply exits 0 and leaves no half-applied state. The [backlog Change History](./00-index.md#change-history) records both tasks.
+- The orchestrator commits this work, pushes a new `golden-capture/<short-sha>` branch, and imports the win32 artifact. That set keeps the three derived goldens and lists the six skips. See [PE-005 Review Fix Round](#pe-005-review-fix-round): the win32 artifact of run 45296349916 was not imported.
+
+PE-005 checks, on macOS with Node 24.22.3 and Go 1.24.1:
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm test` | exit 0; 944 tests, 45 suites, 930 pass, 0 fail, 14 skipped |
+| `node test/golden/capture.mjs --derive` | exit 0; wrote the three derived goldens; no derived-golden problem |
+| `node test/golden/capture.mjs --check` | exit 0; `every darwin golden is byte-identical to a fresh capture, with no shared-golden drift and no stale golden folder` (158 cases) |
+| `node test/golden/capture.mjs --verify-artifact test/golden/os/darwin` | exit 0; 265 files match the manifest |
+| `node test/golden/capture.mjs --verify-artifact test/golden/os/linux` | exit 0; 265 files match the manifest |
+| `test/golden/pe-005.test.ts` (simulated win32) | pass: the entity cases select their derived goldens and the design cases the shared golden; Go's defect output is `pe-005-skipped` and nothing else is; a derived golden of an unlisted case, in another set, without PE-005, changed, or missing is refused |
+| `make-docs project path-hygiene validate` | valid, 0 failing findings |
+| `make-docs run prd authority validate --target-root .` | exit 0, no diagnostics |
+
+### PE-005 Review Fix Round
+
+Two review findings on commit `bd67f5e`. Each was reproduced first with a scratch script against the committed harness.
+
+- Finding 1, capture skip. Reproduced: `parityExceptionSkip` checked only the exit code and a substring of one stream. The real `design-promote-baseline` defect with a second, different error appended to stderr still returned `pe-005-skipped`. Fix: each PE-005 case records `go_observation_sha256`, the `observationDigest` of the complete normalized Go defect observation (exit code, SHA-256 of the full normalized stdout and stderr, and the normalized filesystem snapshot of changes: added, changed, and removed entries, file SHA-256 values, links, and modes), and `go_observation_evidence`. A case is skipped only on an exact digest match. Any other observation of a listed case is a parity exception mismatch: the record lists it in `parity_exception_mismatches`, and the capture fails, even with `--report`. The capture workflow's last step fails on it too. `derivedGoldenProblems` fails a missing or all-zero digest.
+- Finding 2, `--verify-artifact`. Reproduced: a win32 set with an all-zero derived `source_sha256`, and with the failing Windows `design-promote-baseline` output marked as derived from `shared`, gave no problem. Fix: `verifyGoldenSet` now requires exactly the three derived goldens that PE-005 lists, each with its PE-005 mark and exactly one matching `derived_goldens` entry. It recomputes each derived folder's SHA-256 and its committed source golden's SHA-256, and compares them with the record and the `result.json` mark. It compares each derived folder with a fresh derivation. It rejects any folder (derived or captured) for the three shared design cases, and any derived folder or `derived_goldens` entry of a case that PE-005 does not list. It requires exactly the six PE-005 skips, each with the PE-005 kind, exit codes, golden, and an `observation_sha256` equal to `go_observation_sha256`.
+
+Digest source. The six digests come from the real win32 observations in the `buildos-goldens-win32` artifact of capture run [45293367433](https://github.com/brucewaynedecoy/build-os/actions/runs/45293367433) (commit `8be0b70`). That run came before the skip existed, so it wrote Go's defect output as goldens. The artifact passed its own SHA-256 manifest check. Each folder holds the `go_exit` and `go_text` that PE-005 describes. Copies are committed unchanged at `toolkits/buildos/test/golden/evidence/pe-005-win32/`, and `pe-005.test.ts` recomputes each digest from them. Capture run [45296349916](https://github.com/brucewaynedecoy/build-os/actions/runs/45296349916) (commit `bd67f5e`) confirms them. It has the same Go source commit (`263f5ca`), Go version, and runner image. Its record lists the same six cases as `pe-005-skipped` with the same exit codes, in both its capture and its `--check` run. Between `8be0b70` and `bd67f5e`, no fixture, case, or normalization code changed.
+
+| Case | `go_observation_sha256` |
+| --- | --- |
+| `entities-rebuild-apply-missing-json` | `d023bcb1…` |
+| `entities-consolidate-apply-json` | `20bddd09…` |
+| `entities-consolidate-apply-index-failure-json` | `20bddd09…` (the same observation: the planted file does not change, and Go stops before the index step) |
+| `design-promote-baseline` | `d5ea9c66…` |
+| `design-promote-change-redirected` | `ae7e4e68…` |
+| `design-installed-promote` | `d47fc5bd…` |
+
+Win32 import. The fixed `--verify-artifact` on the `buildos-goldens-win32` artifact of run 45296349916 fails with six problems, all of one kind: `parity_exception_skips entry has no observation_sha256 (captured before the PE-005 digest rule); run a fresh capture`. Every other rule passes: the file manifest, the three derived goldens with their recomputed and source SHA-256 values, the fresh derivations, no design-case folder, and the six skips' kinds and exit codes. The artifact was not imported. A fresh capture is needed: commit this work, then push a new `golden-capture/<short-sha>` branch.
+
+Regression tests (`toolkits/buildos/test/golden/pe-005.test.ts`, on the real evidence):
+
+- Capture skip: each recorded digest equals the real observation's digest, and that observation is skipped. Refused, with a mismatch: a second, different error appended (the reviewer's plant, for the design and entity cases), a changed filesystem effect (changed file bytes, an extra added file, no file change, or permission bits), and a different stderr or stdout, or another exit code. A zero, empty, or missing digest skips nothing.
+- `--verify-artifact`: a valid simulated win32 set passes. Refused: an all-zero derived source SHA-256 (in `result.json` and in the record), a wrong derived folder hash, a derived golden that differs from a fresh derivation in a consistent artifact, a changed committed source golden, a win32 override of each shared design case (the failing Windows output marked derived from `shared`, and a captured golden), a derived entry or folder that PE-005 does not list, a missing or captured authorized derived golden, a missing `derived_goldens` entry, a skip with no or a wrong `observation_sha256`, and a missing or extra skip. The committed darwin and linux sets pass.
+
+Checks, on macOS with Node 24.22.3 and Go 1.24.1:
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm test` | exit 0; 961 tests, 46 suites, 947 pass, 0 fail, 14 skipped |
+| `node test/golden/capture.mjs --check` | exit 0; `every darwin golden is byte-identical to a fresh capture, with no shared-golden drift and no stale golden folder` (158 cases) |
+| `node test/golden/capture.mjs --derive` | exit 0; no change to the committed derived goldens |
+| `node test/golden/capture.mjs --record` | exit 0; no change to the Capture Record tables |
+| `node test/golden/capture.mjs --verify-artifact test/golden/os/darwin` | exit 0; 265 files match the manifest |
+| `node test/golden/capture.mjs --verify-artifact test/golden/os/linux` | exit 0; 265 files match the manifest |
+| `node test/golden/capture.mjs --verify-artifact <run 45296349916>/buildos-goldens-win32` | exit 1; only the six missing `observation_sha256` fields; not imported |
+| `make-docs project path-hygiene validate` | valid, 0 failing findings |
+| `make-docs run prd authority validate --target-root .` | exit 0, no diagnostics |
+
+### P2 Windows Goldens Import
+
+Two review findings on commit `733e428`. Each was reproduced first.
+
+- Finding 1, `--verify-artifact`. Reproduced: a copy of the real win32 artifact with an extra folder `buildos/unlisted-derived-case` (a copy of a derived golden), with `golden_files` resealed, passed with exit 0 (`269 file(s) match the win32 manifest`). `verifyGoldenSet` checked only the folders of manifest cases. Fix: it now reads every entry in the set. A top-level entry other than the four tool folders and `capture-record.json` is refused, and so is a loose file in a tool folder. A case folder is refused when it names no case in `cases.json` for that tool, when its case is not OS-dependent (the three PE-005 shared design cases keep their own message), or when `parity_exception_skips` lists its case and `derived_goldens` does not. Every other folder must be a derived golden (checked as before) or a capture result, and the number of captured folders must equal the record's `os_goldens`.
+- Finding 2, capture workflow. The last step of the capture job, `Fail on drift, changed goldens, exit-code mismatches, or exception mismatches`, had no `if:`, so GitHub skipped it after `capture.mjs --report` failed, and the log showed no mismatch report. Fix: the step has `if: ${{ failure() || success() }}`, so it runs after a failed step and not on cancel; it still exits 1 on any issue, and the job still fails. The workflow keeps `permissions: contents: read` and SHA-pinned actions. `actionlint` passes.
+
+Win32 import. The `buildos-goldens-win32` artifact of capture run [45298345720](https://github.com/brucewaynedecoy/build-os/actions/runs/45298345720) (branch `golden-capture/733e428`, commit `733e428`, runner image `win25-vs2026 20261116.315.1`, `go version go1.24.1 windows/amd64`, Go source commit `263f5ca`) passed the fixed `--verify-artifact` (265 files match the manifest) and was placed unchanged at `toolkits/buildos/test/golden/os/win32/` with its `capture-record.json`. The set has 266 files (265 golden files and the record) in 73 case folders: 70 captured goldens (`os_goldens` 70; entities 21, intake 40, discovery 5, design 4) and the 3 PE-005 derived goldens. The 3 derived goldens are byte-identical to the committed ones, and the record's `derived_goldens` entries are kept as recorded. The record lists exactly the six PE-005 skips (`entities-rebuild-apply-missing-json`, `entities-consolidate-apply-json`, `entities-consolidate-apply-index-failure-json`, `design-promote-baseline`, `design-promote-change-redirected`, `design-installed-promote`), each with the recorded `observation_sha256`, and no shared drift, golden change, exit mismatch, or parity exception mismatch. `capture.mjs --record` wrote the win32 row of the Capture Record table in `CAPTURE.md`.
+
+Darwin and linux. The `buildos-goldens-darwin` and `buildos-goldens-linux` artifacts of the same run equal the committed sets byte for byte in all 265 golden files each. Only `capture-record.json` differs: the CI records name run 45298345720, commit `733e428`, and their runner, and add empty `parity_exception_skips`, `parity_exception_mismatches`, and `derived_goldens` lists; the committed darwin record is a local capture at `83cc9b6` with `shared_set_written` true, and the committed linux record is from run 45293367433 at `8be0b70`. The committed sets were not replaced.
+
+Regression tests (`toolkits/buildos/test/golden/review-fixes-3.test.ts`, on a copy of the committed win32 set): the committed set passes; refused: the reviewer's unlisted derived-looking folder (also through `capture.mjs --verify-artifact`, exit 1), the same plant with a matching `derived_goldens` entry, a case folder under the wrong tool, an OS golden of a shared case, a stray top-level folder or file and a loose file in a tool folder, a wrong `os_goldens`, and a skipped case's folder outside `derived_goldens`. Workflow: the last capture step runs on failure or success and exits 1 on an issue; the upload keeps `!cancelled()`; contents stay read-only; every action is SHA-pinned. `pe-005.test.ts` now uses the committed win32 record and checks its six skip digests.
+
+Checks, on macOS with Node 24.22.3 and Go 1.24.1:
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm test` | exit 0; 972 tests, 958 pass, 0 fail, 14 skipped (11 P3 `entities` seed goldens, 3 Windows-only) |
+| `node test/golden/capture.mjs --check` | exit 0; `every darwin golden is byte-identical to a fresh capture, with no shared-golden drift and no stale golden folder` (158 cases) |
+| `node test/golden/capture.mjs --verify-artifact test/golden/os/darwin` | exit 0; 265 files match the manifest |
+| `node test/golden/capture.mjs --verify-artifact test/golden/os/linux` | exit 0; 265 files match the manifest |
+| `node test/golden/capture.mjs --verify-artifact test/golden/os/win32` | exit 0; 265 files match the manifest |
+| `actionlint` on both workflows | exit 0 |
+| `make-docs project path-hygiene validate` | valid, 0 failing findings |
+| `make-docs run prd authority validate --target-root .` | exit 0, no diagnostics |
+
+## P3 Entities Port
+
+Phase: [W1 R7 P3](./03-entities-port.md). All work ran on 2026-11-23 on one Apple M2 Pro macOS arm64 machine (Darwin 27.2.0), in the `rewrite/ts-cli` worktree at `e35686a`, with Node 24.22.3 and Go 1.24.1 from the P2 scratch folders. Nothing was staged, committed, or pushed. The Linux and Windows results wait for the next CI run.
+
+### Port Map
+
+| Go seed | TypeScript |
+| --- | --- |
+| `internal/entities/graph_loader.go` (`Load`, `decodeRecord`, `decodeRedirect`, duplicate IDs, `sortDiagnostics`) | `src/core/entities/graph.ts` (`loadGraph`, `loadFromSources`) |
+| `internal/entities/resolver.go`, `trace` and `canonicalCycle` in `validator.go` | `src/core/entities/resolve.ts` (`resolveEntity`, `trace`, `canonicalCycle`) |
+| `internal/entities/validator.go` (`Validate`, `validateChains`, `CheckRedirect`), `lifecycle.go` | `src/core/entities/validate.ts`, lifecycle rules in `src/core/entities/types.ts` |
+| `internal/entities/index.go` (`BuildIndex`, `MarshalIndex`, `CheckIndex`, `ApplyIndex`, `writeIndexAtomic`) | `src/core/entities/index.ts`, `mkdirAll` and `writeAtomic` in `src/core/entities/io.ts` |
+| `internal/entities/consolidate.go` (`ConsolidateWithWriter`, manifest rules, `updateJSONLRows`, `writeCanonicalAtomic`) | `src/core/entities/consolidate.ts` |
+| `internal/cli/domain.go` (`Resolve`, `Validate`, `Consolidate`, `RebuildIndex`, `openValidatedRoot`, `failedAfterCanonical`, `rebuildCommand`) | `src/core/entities/commands.ts` |
+| `internal/cli/cli.go` (`runEntities`, `parseEntityOptions`, write status), `output.go` (`writeHuman`), `help.go` (`entitiesHelp`) | `src/cli/commands/entities.ts`, registered in `src/cli/run.ts` |
+| `encoding/json`, `time.Parse(time.RFC3339)`, `syscall` error text (Go standard library behavior the seed prints) | `src/core/shared/go-json.ts`, `rfc3339Offset` in `consolidate.ts`, `src/core/shared/go-os-error.ts` |
+
+- The CLI adapter parses the Go flags with the P1 Go-rules parser (`--root`, `--mode`, `--id`, `--manifest`, `--check`, `--apply`, `--json`), requires `--root` and `--mode`, and prints the envelope as `runEntities` does: JSON on stdout; else the human form on stdout, or on stderr for a failure, with the diagnostics before the result and the result as `json.MarshalIndent` (HTML escaped). A failure keeps its result payload, mode, and Go write status. The dispatcher gained one hook for this: a `CommandOutcome` may carry `rendered` output and an exit code from `exitCodeFor`.
+- Core stays free of `fs`: every read and write goes through the port. The port gained `writeFileAtomic` options (mode by `fchmod`, temporary-name prefix and suffix, parent-folder sync), a non-recursive `mkdir`, the permission bits in `stat`, and typed `FsReadFailure` and `FsWriteFailure` errors that carry the OS error code and the failed write step, so core spells each failure as Go does. The refusal rules are unchanged except as the [P3 Review Fix Round](#p3-review-fix-round) records (finding 2: a symlink at a write target, a dangling symlink, and a symlink loop below the root). The manifest, which can be outside the root, is read through a second port bound to its volume root (`/`, or `C:\` or the UNC share on Windows) and exposed to core as read-only (`readBytes` only).
+- `goQuote` and `goIsPrint` moved from `src/cli/parse.ts` to `src/core/shared/go-quote.ts`, and the generated tables from `src/cli/go-isprint.ts` to `src/core/shared/go-isprint.ts` (generator, notices test, `SECURITY.md`, and `THIRD_PARTY_NOTICES.md` updated; the regenerated tables are byte-identical), because core quotes values as Go's `%q`. `SECURITY.md` and `THIRD_PARTY_NOTICES.md` now also list the Go standard library code ports (`encoding/json`, `time`, `syscall` text, and the P1 `path/filepath` port) under the Go BSD-3-Clause notice.
+- Go JSON fidelity: `test/fixtures/go-seed/entity-json.json` holds 145 Go 1.24.1 answers (124 before the review fix round) (syntax errors, `json.Decoder` with `DisallowUnknownFields` for the manifest and index types, `map[string]json.RawMessage` decode and re-marshal, and `time.Parse(time.RFC3339)` zone offsets), captured by `scripts/capture-entity-json-goldens.ts`. The port matches all 145.
+
+### Entities Gate (t8)
+
+- `cases.json`: `entities` is `enforced`. Local summary: `golden domain entities: enforced: 27/27 cases match, 3 recorded exception field(s), 24 darwin golden(s)`. `cli` stays 8/8.
+- Goldens: the darwin and linux entity goldens are byte-identical, so the linux run uses the same bytes. On win32 the harness uses the 21 captured goldens and the three PE-005 derived goldens. Linux and win32 enforcement are pending the CI run.
+- `test/go-parity.test.ts`: the 11 `entities` seed goldens (`entities`, `--help`, `-h`, `help`, and seven usage errors) are no longer skipped, and all 11 match byte for byte.
+- Parity exceptions: no new entry. PE-001: the exact root help value now lists `entities` (`help`, `entities`, `version`), as its rule says each port phase does; the reason text no longer says `entities` waits for P3. PE-004: the three golden entries hold exact values, one entry per operating system because the cases are OS-dependent (new optional `platform` field; `judge` filters by it). The darwin and linux values are equal; the win32 value spells the root with `\`. The differences from Go are only `root` (the given root, not `""`) and the diagnostic (`root_not_found`, `root <root> has no .os/data/ folder`, not `internal_error`); the result payload, mode, and write status equal Go's.
+- `test/golden/selection.test.ts` used `entities-validate-strict-json` as its pending example; it now uses `intake-convert-csv`.
+- `capture.mjs --check` with Go 1.24.1: every darwin golden is byte-identical to a fresh capture (158 cases); `--verify-artifact` passes for darwin, linux, and win32 (265 files each); `--derive` leaves the derived goldens unchanged.
+- t10: the Go seed (`toolkits/buildos/cmd/`, `internal/`, `pkg/`) is unchanged. Go removal waits for P8, because the Go discovery and design modules import it.
+
+### Root Errors, `$PWD`, and UNC Spelling (t11 to t13)
+
+- t11: `test/entities-bundle.test.ts` bundles the CLI with esbuild and runs `resolve`, `validate`, `consolidate`, and `rebuild-index` with an `EACCES`, `ENOTDIR`, `ELOOP`, and `ENAMETOOLONG` root (16 runs). Each exits 3, writes no stderr, and its JSON envelope names the given root, the command, and the mode, with `root_unreadable`, `root_not_found`, `path_refused`, and `root_unreadable` (on Windows, `ENAMETOOLONG` reads as missing: `root_not_found`). All pass on macOS. `EACCES` skips as root and on Windows; `ELOOP` skips on Windows.
+- t12: `processIo` now reads its current folder with `goGetwd` (`src/adapters/node-fs.ts`), Go's `os.Getwd` on POSIX: `$PWD` when it is absolute and names the same device and inode as `.`, else the OS current folder. Windows ignores `$PWD`, as Go does. Go goldens: `scripts/capture-pwd-goldens.ts` ran the Go 1.24.1 seed built from `toolkits/buildos/cmd/buildos` on five cases (`$PWD` through a symlink, through a symlink with `../work/root`, naming another folder, relative, and unset) into `test/fixtures/go-seed/pwd-goldens.json`. The bundle matches all five byte for byte. With the old `process.cwd()`, the two symlink cases fail.
+- t13: `canonicalSeparators` and `uncRootEnd` in `src/core/shared/go-path.ts` now read the UNC server and the share, which can be empty, before they collapse separators. `//foo//bar/..` is spelled `\\foo\` and `//foo/bar/..` stays `\\foo\bar`; the documented `///` and `////LOCALHOST` cases are unchanged. Both new cases are in the Windows native `GetFullPathNameW` comparison (pending CI) and in a new unit test.
+
+### Windows Atomic Writes (t14)
+
+- `writeFileAtomic` flushes the parent folder after the rename on POSIX (open read-only, `fsync`, as Go does) and skips it on Windows, where Windows has no folder flush and Go 1.24.1 fails there (PE-005). NTFS journals the rename. A failed step is reported with Go's text for that step.
+- `test/entities-cli.test.ts`, "atomic apply leaves no half-applied state": on every operating system, `rebuild-index --apply` over a missing index and `consolidate --apply` over the existing canonical file and index exit 0 and report `applied`; no temporary file is left; and afterwards `rebuild-index --check --mode strict` reports `current` and `validate --mode strict` exits 0. A Windows-only test repeats this and replaces an existing, non-canonical index with `rebuild-index --apply`. On macOS the Windows-only body was run once with its skip removed, and it passed; in CI it runs on the Windows job.
+
+### Ported Tests (t6)
+
+- `test/entities-core.test.ts`: every test of `internal/entities/graph_test.go`, `lifecycle_test.go`, `index_test.go`, and `consolidate_test.go`, by the Go name, on the contract fixtures in `system/.os/contracts/examples/entity-resolution/`, plus Go error text for malformed indexes and manifests, the rewritten-row bytes, and the Go JSON and time goldens.
+- `test/entities-cli.test.ts`: the `internal/cli` domain tests (strict gate, dry run, exit 6 with the exact recovery command for injected derive, inspect, apply, and post-write check failures, exit 5 for a canonical write failure, exit 3 for a malformed row, write status of plan and check), help, human layout, and HTML escaping in the human result only.
+
+### Check Results
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm test` | exit 0; 1,097 tests, 1,093 pass, 0 fail, 4 skipped (Windows-only) (after the review fix round; 1,055 before) |
+| `npm run build` | exit 0; `dist/buildos.js` 156,841 bytes after the review fix round (143,621 before it; 40,626 before P3) |
+| Smoke | `node dist/buildos.js version` exit 0 (`dev`, `unknown`); `entities resolve --root root --mode strict --id PER-003 --json` in a copy of `testdata/persona-pilot` exit 0, chain `PER-003`, `PER-002`, `PER-001` (rerun after the review fix round) |
+| Golden harness | `entities` enforced 27/27 (3 exception fields), `cli` enforced 8/8; intake, discovery, and design pending |
+| `node test/golden/capture.mjs --check` | exit 0 (158 cases, darwin) |
+| `capture.mjs --verify-artifact` | darwin, linux, and win32: 265 files each |
+| `npm run check:deps` and `npm run check:deps:installed` | both `dependency policy: ok`; no dependency changed |
+| `npm audit --audit-level=high` | 0 vulnerabilities |
+| `npm pack --dry-run` | 6 files, as before (`dist/buildos.js` 156.8 kB) |
+| `buildos-entities` or `buildos-lifecycle` (t9) | no such name in the change |
+| `make-docs project path-hygiene validate` | valid, 0 failing findings |
+| `make-docs run prd authority validate --target-root .` | exit 0, no diagnostics |
+| CI on three operating systems | Passed: [CI run 45312281279](https://github.com/brucewaynedecoy/build-os/actions/runs/45312281279) on `a227420`; see [P3 CI Run](#p3-ci-run) |
+
+### P3 Review Fix Round
+
+The independent review of the P3 change (fixture logs under the system temporary folder, `p3-independent.*`) found two blockers and five major findings. Each was reproduced against the Go 1.24.1 seed built from `toolkits/buildos/cmd/buildos` first. `scripts/capture-entity-edge-goldens.ts` ran that seed on 21 edge cases into `test/fixtures/go-seed/entity-edge-goldens.json`, and `test/entities-edge.test.ts` runs the bundle on the same cases and compares exit code, stdout, stderr, and the file tree (kind, mode, content digest, link target). The bundle matches all 21; the code before the fixes differs on findings 1 to 7. The review's own compare script, rerun on the fixed bundle, matches every case except PE-006 and PE-004 (below) once the random temporary-name digits are normalized.
+
+| Finding | Fix | Regression test |
+| --- | --- | --- |
+| 1, blocker: a symlink loop at the index after the canonical rename gave exit 3 and dropped the result and recovery command | After the canonical write returns (rename and folder sync done), `consolidateCommand` routes every failure of the index step through the after-canonical path (exit 6 with the recovery command): a Go error, and a typed port refusal or read failure (`isCoreError`). This does not cover a failure inside the canonical write after its rename: an `EIO` when the canonical folder is opened for sync leaves the dataset replaced, and both Go and the port return exit 5, `applied: false`, and no recovery command (the seed's `writeCanonicalAtomic` returns the error before `result.Applied = true`; matched, not changed; test "an EIO when the canonical folder is opened for sync after the rename" in `entities-cli.test.ts`). A typed error during the post-write reload does the same (`afterCommit` in `consolidate`). A symlink loop below the root is now the OS error `ELOOP` (as Go sees it), not a refusal, so the message is Go's `read entity-resolution index "<path>": open <path>: too many levels of symbolic links`. | Edge golden `index-loop-after-commit` (exit 6, `canonical_applied_index_failed`, exact recovery command); `entities-cli.test.ts` "inspect refusal" and "apply read failure" |
+| 2, blocker: with `personas.jsonl` a symlink to a sibling, the port wrote the sibling; Go replaces the link | `writeFileAtomic`, `mkdir`, and `rename` act on the target's folder entry (the real parent joined with the last name), as Go's `os.Rename` and `os.Mkdir`. The temporary file is created in that folder. Containment checks both that folder and the path the symlink resolves to. A dangling symlink below the root is followed to where it points (missing, so a read is `ENOENT`, and a write replaces the link, as in Go); one that points outside the root is still refused. The root keeps its refusals (PE-004). | Edge goldens `dataset-link-to-sibling`, `dataset-link-dangling`, `index-link-to-sibling`, `index-link-dangling`; `fs-port.test.ts` symlink to a sibling, temporary file in the folder as given, symlink and dangling symlink to outside (refused), dangling symlink inside, `ELOOP` |
+| 3, major: the caller's temporary prefix and suffix could hold path separators | The adapter owns the name: prefix and suffix must each be part of one file name (no `/`, `\`, `:`, NUL, control character, or `..`), and the name may not be a Windows device name (`not-a-path` or `device-path` refusal). The file is created only in the target's folder. | `fs-port.test.ts`, seven refusal cases and the name form |
+| 4, major: key matching used JavaScript case mapping, so `versıon` matched `version` | `goFoldName` uses Go's own fold result: `src/core/shared/go-fold.ts`, generated by `scripts/generate-go-fold.ts` from Go 1.24.1 `unicode.SimpleFold` through `encoding/json` `foldRune` (1,428 runes). Exact name first, then the first field by folded name, as `cachedTypeFields`. Notice: `THIRD_PARTY_NOTICES.md`, `SECURITY.md` row, `test/notices.test.ts`. | 15 new Go JSON goldens (`versıon`, `VERSİON`, `mappingſ`, Kelvin `K`, duplicates, exact before folded); edge goldens `manifest-key-*`, `index-key-*` |
+| 5, major: index maps went through JavaScript objects, so `"10"` and `"2"` were reordered | `goMarshalIndent` writes a `Map` in Go's map order (UTF-8 byte order) and `marshalIndex` passes both index maps as `Map`s. No other entity output serializes a map through an object; `goMarshalRawObject` already sorted. | Edge golden `index-integer-like-ids` (bytes and digest); Go JSON golden with integer-like, private-use, and astral keys; unit test |
+| 6, major: 8,000 levels of nesting exited 1; a trailing `1e999` read as "multiple JSON values" | `parseTree` keeps its own stack, so any depth the scanner accepts parses (Go's limit, 10000). A trailing value is decoded as Go's `Decode(&any)`: the first number that `ParseFloat` rejects gives `json: cannot unmarshal number <n> into Go value of type float64`. | Edge goldens `deep-row-compat`, `deep-row-10000`, `deep-row-10001`, `manifest-trailer-*`, `index-trailer-1e999`; Go JSON goldens for `1e999`, `-1e999`, `1e-999`, the float64 boundary, nested values, and 10000 and 10001 levels |
+| 7, major: a denied temporary file read `createtemp <dir>/<prefix>*<suffix>` | As Go's `os.CreateTemp`: `O_RDWR\|O_CREATE\|O_EXCL`, mode 0600, a random uint32 in decimal, a new name on `EEXIST` up to 10000 times. The error is `open <dir>/<name>: ...` with the name tried; only exhaustion gives `createtemp ...: file already exists`. | Edge goldens `index-temp-permission`, `canonical-temp-permission` |
+
+- Normalization: the edge goldens replace the scratch folder with `{ROOT}`, for Go and TypeScript alike. Since review round 3, `{RAND}` replaces only the random part of the temporary name in the diagnostic message of Go's `os.CreateTemp` permission error, when the whole message equals the case's template (see [P3 Review Fix Round 3](#p3-review-fix-round-3)). The golden harness (`cases.json`) is unchanged: no golden case prints a temporary name.
+- Tasks: t1 (loader nesting), t4 (index order), and t5 (atomic replace and the after-canonical path) were reopened for this round and re-ticked after the checks below. t6, t8, t11, t13, and t14 stay open for the three-OS CI run; the changed atomic write is part of the t14 Windows run.
+- Checks after the round, on macOS: `npm run typecheck` exit 0; `npm test` 1,097 tests, 1,093 pass, 0 fail, 4 skipped; `npm run build` 156,841 bytes; smoke as above; golden harness `entities` enforced 27/27 and `cli` 8/8; `capture.mjs --check` exit 0 (158 cases); `--verify-artifact` darwin, linux, and win32, 265 files each; `check:deps` and `check:deps:installed` ok; `npm audit --audit-level=high` 0 vulnerabilities; `npm pack --dry-run` 6 files; path hygiene and PRD authority as in [Check Results](#check-results-2).
+
+### P3 Review Fix Round 2
+
+The second review of P3 found two code findings and one evidence finding, and the owner answered the three open items ("A, A, A", 2026-11-23). Each code finding was reproduced against the Go 1.24.1 seed built from `toolkits/buildos/cmd/buildos` first. No behavior changed for item 3.
+
+| Finding | Fix | Regression test |
+| --- | --- | --- |
+| R2-1: three occurrences of `evidence_refs` (case-folded) with `["a","b"]`, `["c"]`, then `[null,null]`: Go applies `["c","b"]` and exits 0; the port exited 3 | `decodeSlice` in `src/core/shared/go-json.ts` follows Go 1.24.1 `decodeState.array`: element i decodes into slot i of the existing backing array, a slot between the old length and the capacity shows its old value again, the backing array grows with `reflect.Value.Grow(1)` only when i reaches the capacity (`runtime.nextslicecap` and `roundupsize` with Go's size classes and malloc header, element sizes on 64-bit), the length is truncated at the end, an empty array sets a new empty slice, and `null` sets nil. A `null` element leaves a string or struct slot as it is; a `{}` element merges into the struct in the slot. Maps already merged, and a map element already decoded from zero, as Go. | Go goldens (`entity-json.json`): 10 slice and struct reuse manifests, 5 index map merges, and the capacity of `[]string`, `[]main.ConsolidationMapping`, and `[]int` after 1 to 70 and 14 larger element counts; edge goldens through the bundle: `manifest-slice-reuse-folded` (exit 0), `manifest-slice-reuse-grown-zero`, `manifest-slice-reuse-empty-resets`, `manifest-struct-slot-revived`, `manifest-struct-merge`, `index-map-merge` |
+| R2-2: `{RAND}` accepted `999999999999` and could hide a difference between literal entity IDs | `normalizeEdge` replaces only the random part of Go's `os.CreateTemp` permission diagnostic: the exact words, the fixture folder (`.os/indexes/` or `.os/data/`), the prefix (`.entity-resolution-` or `.buildos-consolidation-`), a canonical decimal uint32 (`0`, or no leading zero and at most 4294967295), and `.tmp: permission denied`. Nothing else is replaced. | `entities-edge.test.ts` "edge normalization": out-of-range numbers, leading zeros and other spellings, literal entity IDs and other folders that look like a temporary name (kept), and the true diagnostic (normalized) |
+| R2-3: the finding 1 row claimed that every failure after the rename takes the exit-6 recovery path | The row is narrowed: an `EIO` when the canonical folder is opened for sync after the rename leaves the dataset replaced, and Go and the port both return exit 5, `applied: false`, and no recovery command (seed behavior, matched). An index-write failure after the canonical commit returns exit 6 with the recovery command. | `entities-cli.test.ts` "an EIO when the canonical folder is opened for sync after the rename" |
+
+- Owner decisions, recorded in [Owner Decisions](#owner-decisions) and in `toolkits/buildos/test/golden/parity-exceptions.json` with exact allowed values and approval links: PE-004 scope extended (edge golden `root-without-os-data`, stdout only), PE-006 (edge golden `consolidate-dry-run-os-read-only`, exit and stdout; the full-disk case has no golden), PE-007 (edge golden `dataset-link-outside-root`, exit, stdout, and tree). The PE-007 wording replaces the earlier "orchestrator decision" note.
+- Exception rule: each exception entry under `edge` names an edge case, a field, and the exact allowed value. `edgeExceptionProblems` (`test/golden/harness.ts`) fails a covered case on any other difference, on a value that is not the allowed one, on an entry whose field now equals Go (stale), and on a case whose `exception` does not match its entries. Every other edge case must equal Go in every field.
+- Edge goldens: 30 cases (21 before), captured with `GO_VERSION=go1.24.1 node scripts/capture-entity-edge-goldens.ts <seed>`. The 21 earlier cases are byte-identical to the previous capture. The Go golden of `consolidate-dry-run-os-read-only` holds Go's random preflight folder number, which is not normalized (it is not an `os.CreateTemp` diagnostic), so a recapture changes that one value.
+- Checks after the round, on macOS with Node 24.22.3 and Go 1.24.1 from scratch folders: `npm run typecheck` exit 0; `npm test` exit 0, 1,115 tests, 1,111 pass, 0 fail, 4 skipped (Windows-only); `npm run build` exit 0, `dist/buildos.js` 159,026 bytes; smoke: `version` exit 0, `entities resolve ... --id PER-003` exit 0, chain `PER-003`, `PER-002`, `PER-001`; golden harness `entities` enforced 27/27 (3 exception fields), `cli` 8/8; `capture.mjs --check` exit 0 (158 cases, darwin); `--verify-artifact` darwin, linux, and win32, 265 files each; edge goldens 30/30 (27 equal to Go, 3 with exactly their approved differences); `check:deps` and `check:deps:installed` ok; `npm audit --audit-level=high` 0 vulnerabilities; `npm pack --dry-run` 6 files (`dist/buildos.js` 159.0 kB); `make-docs project path-hygiene validate` valid, 0 failing findings; `make-docs run prd authority validate --target-root .` exit 0, no diagnostics.
+
+### P3 Review Fix Round 3
+
+The third review of P3 found three holes in the edge-golden harness (`scripts/capture-entity-edge-goldens.ts`, `test/entities-edge.test.ts`). Each planted regression was reproduced first: it passed the round 2 harness. After the fix, each one fails. No production code changed.
+
+| Finding | Fix | Regression test |
+| --- | --- | --- |
+| R3-1: `{RAND}` was a text replacement over the whole stream. Two envelopes that differed only in `result.requested_id` (a diagnostic-shaped ID with `47.tmp` against `48.tmp`) normalized to the same bytes, and a near miss ending in `permission denied by policy` was normalized | Only a case with a `temp` template (`index-temp-permission`, `canonical-temp-permission`) is normalized, and only in two places: the `message` of each entry of the envelope's top-level `diagnostics` array (when stdout is exactly the envelope as printed, two-space indented with a final newline), and a whole human line `ERROR [internal_error]: <message>` on stderr. The whole message must equal `<words>: open {ROOT}/root/<folder>/<prefix><n><suffix>: permission denied` for that case, with `<n>` a canonical decimal uint32. Every other field and line is compared byte for byte. The capture fails if Go does not print the diagnostic exactly once. | `entities-edge.test.ts` "edge normalization": `requested_id` with `47.tmp` against `48.tmp` (three ID shapes) stays different; a non-diagnostic `message` field is kept; nine near misses (`by policy`, other words, folder, prefix, suffix, root, a bare `open` text, the other case's template) are kept in stdout and stderr; partial, indented, or other-code human lines are kept; a case with no template, compact or duplicate-key JSON, and a missing final newline are kept |
+| R3-2: PE-006 (`consolidate-dry-run-os-read-only`): a run that changed `.os` from 0555 to 0775 passed, because the harness restored the mode before the snapshot | `runEdgeCase` takes the snapshot first, then restores the locked folder. The goldens now record the locked folder as `dir 555` (`.os`, `.os/indexes`, `.os/data`), so a changed mode fails the tree compare. | "harness plants": a wrapper runs the bundle, then changes the fixture. `.os` to 0775 (PE-006), `.os/indexes` to 0755, `.os/data` to 0755: each fails on `tree`, and passes with no plant |
+| R3-3: PE-007 (`dataset-link-outside-root`): appending bytes to the outside file through the dataset link after the refusal passed, because the snapshot recorded the link but not its target | `snapshot(root, work)` also records every other entry of the scratch folder as `../<name>` (kind, mode, digest): the outside target `../outside.jsonl` and the manifest `../manifest.json`. The PE-007 `tree` value in `parity-exceptions.json` adds both entries; no other exception value changed. | "harness plants": append through the link, and outside file to 0600 (PE-007), and a changed manifest (`manifest-key-upper`): each fails on `tree` |
+
+- Same patterns in the other edge cases: the three locked-folder cases share the snapshot-before-restore fix. Every case now covers the manifest outside the root. The other link targets (`personas.orig`, `sibling.json`, the dangling and loop targets) are inside the root and were already in the snapshot. `{ROOT}` stays a whole-stream replacement: it is the random scratch path, so no fixture text can match it. The Go preflight folder number in the PE-006 golden is not normalized; that case's stdout is judged only against the exact PE-006 value.
+- Edge goldens recaptured with `GO_VERSION=go1.24.1 node scripts/capture-entity-edge-goldens.ts <seed>` (Go 1.24.1 seed built from `toolkits/buildos/cmd/buildos`, byte-identical to the round 2 seed). Compared with the round 2 capture: exit, stdout, and stderr are the same in all 30 cases, except Go's random preflight folder number in `consolidate-dry-run-os-read-only`; the trees add `../manifest.json` in every case and `../outside.jsonl` in `dataset-link-outside-root`, and the three locked folders read `dir 555`.
+- Checks after the round, on macOS with Node 24.22.3 and Go 1.24.1 from scratch folders: `npm run typecheck` exit 0; `npm test` exit 0, 1,124 tests, 1,120 pass, 0 fail, 4 skipped (Windows-only); `npm run build` exit 0, `dist/buildos.js` 159,026 bytes (unchanged); edge goldens 30/30 (27 equal to Go, 3 with exactly their approved differences), plus 6 harness plants, 5 normalization tests, and 2 new golden shape checks; golden harness `entities` enforced 27/27, `cli` 8/8; `capture.mjs --check` exit 0 (158 cases, darwin); `make-docs project path-hygiene validate` valid, 0 failing findings.
+
+### P3 CI Fix Round
+
+CI run 45311343136 for `f1755e5` passed on macOS and OSV and failed in Test on Linux (1 test) and Windows (9 tests). No production code changed: the port matches Go in every case. Each fix is in a test or in the `$PWD` capture layout.
+
+| Failure | Root cause | Fix |
+| --- | --- | --- |
+| Linux: `pwd-through-symlink-dotdot` (t12) | Placeholder collision, not a `$PWD` defect. Go and the port both print `<base>/work/root` (`$PWD/../work/root`, cleaned). On macOS the temporary folder goes through `/var` to `/private/var`, so `{REAL}` and `{BASE}/work` differ as text. On Linux they are the same text, and the `{REAL}` replacement ran first. The port's `goGetwd` follows Go 1.24.1 `os.Getwd` (an absolute `$PWD` with the same device and inode as `.`, else `getcwd`). | `makePwdLayout` (`scripts/capture-pwd-goldens.ts`) makes `<base>` a symlink to a sibling folder, so the real path never equals `<base>/work` as text on any OS. The goldens are unchanged: a recapture with the Go 1.24.1 seed is byte-identical, also with `TMPDIR` set to a folder with no symlink in its path (the Linux shape). The old layout fails with that `TMPDIR` on macOS; the new one passes. |
+| Windows: `derive`, `inspect`, `apply`, `inspect refusal`, `apply read failure`, `TestCanonicalApplyPostWriteIndexCheckFailureUsesExitSixAndRecovery` | Test expectation. Go spells the root with `%q` (`internal/cli/domain.go`), so a Windows root's backslashes are doubled; the port does the same (`goQuote`, checked against `go run` on a Windows-shaped path). The test, like Go's `domain_test.go`, built the text with plain quotes, which holds only on POSIX. Exit 6, `canonical_applied_index_failed`, and the retained canonical write already passed on Windows. | `recoveryFor` in `test/entities-cli.test.ts` uses `goQuote`. On POSIX the text is the same as before. |
+| Windows: EIO when the canonical folder is opened for sync | POSIX-only fault. The port never opens the folder for sync on Windows (t14, PE-005), and Windows never reports Go's invented `syscall.EIO`, so Go has no single Windows text for it. | Windows checks the `open canonical directory for sync: open <dir>: ` prefix. POSIX keeps the full Go text. Exit 5, `applied: false`, no recovery, and the replaced dataset are checked on every OS. |
+| Windows: HTML escaping in the human result | NTFS refuses `<` and `>` in a file name (`mkdir` gave `ENOENT`). | On Windows the folder is `a&b-<n>` and the test checks `\u0026`; POSIX keeps `a&b<c>-<n>` and all three escapes. |
+
+- Checks after the round, on macOS with Node 24.22.3 and Go 1.24.1 from scratch folders: `npm run typecheck` exit 0; `npm test` exit 0, 1,124 tests, 1,120 pass, 0 fail, 4 skipped (Windows-only); `entities-bundle.test.ts` 22/22 also with `TMPDIR` on a symlink-free path; `npm run build` exit 0, `dist/buildos.js` 159,026 bytes (unchanged); edge goldens (`entities-edge.test.ts`) 48/48; golden harness `entities` enforced 27/27, `cli` 8/8; `capture.mjs --check` exit 0 (158 cases, darwin); `--verify-artifact` darwin, linux, and win32, 265 files each; `make-docs project path-hygiene validate` valid, 0 failing findings.
+- CI rerun: [CI run 45312281279](https://github.com/brucewaynedecoy/build-os/actions/runs/45312281279) on `a227420` passed on Linux and Windows. See [P3 CI Run](#p3-ci-run).
+
+### P3 CI Run
+
+[CI run 45312281279](https://github.com/brucewaynedecoy/build-os/actions/runs/45312281279), workflow `.github/workflows/buildos-ci.yml`, head `a227420`. Conclusion: `success`. All four jobs passed: `test` on macOS, Linux, and Windows with Node 24, and the OSV scan job.
+
+- A20 and t6: the ported Go unit tests pass on macOS, Linux, and Windows.
+- A22 and t8: the golden harness enforces the `entities` domain against the shared, darwin, linux, and win32 goldens. The win32 set uses the three PE-005 derived goldens.
+- t11: the bundled root-error checks pass, with the Windows PE-004 values.
+- t13: the Windows native `GetFullPathNameW` comparison passes, with `//foo//bar/..` and `//foo/bar/..`.
+- t14: the Windows-only atomic-apply test passes on the Windows job.
+- This closes the pending CI items in [P3 Open Items](#p3-open-items).
+
+### P3 Open Items
+
+- Owner decisions 1 and 2 are resolved: the owner approved PE-006 and the PE-004 scope extension on 2026-11-23 ("A, A, A"). See [Owner Decisions](#owner-decisions) and [P3 Review Fix Round 2](#p3-review-fix-round-2).
+- PERF-001 recheck (P8): the bundle grew from 40,626 bytes (P1 and P2) to 159,026 bytes in P3 (156,841 after review round 1). `PERF-001` was measured on the P1 build and was not re-run; the P8 recheck must measure the current bundle's startup.
+- Containment: a dataset or index symlink that resolves outside the root is refused (`outside-root`, exit 3); Go replaces such a link. This is parity exception PE-007, approved by the owner on 2026-11-23 ("A, A, A"), not an orchestrator decision. Edge golden `dataset-link-outside-root`.
+- Orchestrator note: Go walks Go maps in no fixed order in `decodeRecord`, `decodeRedirect`, and `validateIndexShape`, so a row with several field errors gets them in a random order from Go. The port uses one fixed order (`id`, `type`, `status`; the redirect fields in contract order; unknown fields in input order; index keys in lexical order), which is one of Go's possible outputs.
+- CI: resolved. [CI run 45312281279](https://github.com/brucewaynedecoy/build-os/actions/runs/45312281279) passed A20 (unit tests on three operating systems), A22 on Linux and Windows, the Windows-only atomic-apply test (t14), the Windows `GetFullPathNameW` comparison with the two new cases (t13), and the Windows PE-004 values. The edge goldens are POSIX-only (symlinks and folder permissions) and run on the macOS and Linux jobs.
+
+## P4 Intake Port
+
+Phase: [W1 R7 P4](./04-intake-port.md). All work ran on 2026-11-23 on one Apple M2 Pro macOS arm64 machine, in the `rewrite/ts-cli` worktree at `d29ea04`, with Node 24.22.3 and Go 1.24.1 from scratch folders. Nothing was staged, committed, or pushed. Part 1 covered t1, t2, t4, t5, and a preliminary t6. Part 2, after the owner's t3 review, covered the final t6, t7, and Stage 3 (t8 to t14). The Linux and Windows results were then proven in CI; see [P4 CI Run](#p4-ci-run).
+
+### Eval Set (t1, t2)
+
+- Location: `toolkits/buildos/test/conversion-eval/`. It is not in the npm package: `files` in `package.json` lists only `dist/buildos.js` and four documents, and `npm pack --dry-run` still shows 6 files.
+- `generate-eval.ts` writes every input, `manifest.json`, and `review.html` byte for byte. ZIP entries are stored with a fixed date (the P2 `zip` writer). PDF content streams, the scanned images, and the PNG data use stored deflate blocks, so no zlib version changes a byte. `generate.test.ts` regenerates in memory and compares every byte, checks that no stale input remains, checks that the review page has no script and no outside URL, and checks the `-text` attributes. `.gitattributes` in the folder sets `-text` on `inputs/**`, `references/**`, `manifest.json`, and `review.html`.
+- All content is invented. The sample organization is "the Sample Housing Cooperative"; people appear only as roles. The only address is `desk@example.org`.
+- 12 eval files, 71 named sections:
+
+| Eval file | Format | What it exercises | Sections |
+| --- | --- | --- | --- |
+| `csv-maintenance-requests` | CSV | CRLF, quoted commas, quotes, a line break, empty cells, non-ASCII | 3 |
+| `docx-operations-handbook` | DOCX | Title and heading styles, two-level numbered list, bullets, bold-underline pseudo-heading, tab and break, a word split across runs with spelling marks, table with a two-paragraph cell, embedded image | 10 |
+| `docx-committee-minutes` | DOCX | typed "•" bullets, mixed bold runs, curly apostrophe, table, numbered actions | 6 |
+| `xlsx-annual-budget` | XLSX, 4 sheets | formulas with cached values, skipped rows, sparse columns, a rich-text cell, a cell with a line break and quotes, a leading space, an embedded chart image | 4 |
+| `html-visitor-policy` | HTML | head, style, and script content; links; nested list; ordered list; text in a `div` callout; `thead` table; `br`; data-URI image; Mermaid | 10 |
+| `html-dir-help-center` | HTML directory, 4 pages | `.htm` page, sub-folder, local image, table without `thead`, skipped non-HTML files, breadcrumb `nav` | 4 |
+| `pdf-annual-report` | PDF, 2 pages | plain text, compressed streams, bold headings, WinAnsi characters, one paragraph set with TJ kerning gaps and no space characters | 5 |
+| `pdf-newsletter-columns` | PDF | masthead, two columns, footer | 6 |
+| `pdf-rates-table` | PDF | ruled table, bold header row, right-aligned money columns | 3 |
+| `pdf-pet-policy-headers` | PDF, 3 pages | running header, footer with left and right text, page numbers | 12 |
+| `pdf-signup-with-scan` | PDF, 2 pages | text page plus a 1-bit scanned page with no text layer (the golden's scanned-page case) | 2 |
+| `pdf-scanned-notice` | PDF | scan only; expected result is "no usable text" (the golden `intake-convert-pdf-scanned-only`) | 0 |
+
+- t2: one reference file per eval file in `references/<id>.txt`, split by `@@ section: <name> @@` markers. The references are the twin body a correct converter writes under the intake translation contract: Markdown for DOCX and HTML, CSV for CSV and XLSX, and plain text for PDF. The agent drafted the model-based ones from the generator's content with a one-off scratch script and wrote the two HTML ones by hand. The OCR cases leave the scanned text out on purpose: OCR is out of scope (PRD 07).
+- Review aid for t3: `REVIEW.md` holds the checklist (one row per file: source, reference, what to check, reviewer, date, approved, all blank). `review.html` is one self-contained page (138,603 bytes, a CSP of `default-src 'none'`, no script, no outside resource). For each file it shows the rendered source beside the reference sections: each PDF page drawn as an SVG from the same layout the generator writes into the PDF (scanned pages as their image), DOCX content from the generator's document model, each XLSX sheet as a grid with formula cells marked, CSV as a grid, and each HTML page body with its scripts removed plus the raw source.
+
+### Eval Runner (t4)
+
+- `test/conversion-eval/eval.test.ts` declares the method at the top, before any candidate runs: NFC, every white-space run becomes one space, ends trimmed; similarity is `1 - levenshtein / max length` over code points; a section is found when the smallest edit distance from its text to any substring of the output is at most 10% of its length; a file passes with no lost section and similarity of at least 0.98. A "no-text" file passes only when the converter reports no usable text.
+- The converter under test comes from `BUILDOS_EVAL_CONVERTER`; `BUILDOS_EVAL_FORMATS` limits formats and `BUILDOS_EVAL_REPORT` writes a JSON report. With no converter set, the gate test is skipped and the runner's own checks run in `npm test`.
+- A26: a planted reference with one extra section fails with that section lost; a planted output at 97% similarity (measured 0.9700) fails with no section lost; one at 98.5% (measured 0.9850) passes. An exact-reference converter scores 100% on all 12 files. A converter that returns text for the scan-only file fails.
+
+### Converter Comparison
+
+Formats Node built-ins cannot handle (t5):
+
+| Need | Node built-ins | Outside package needed? |
+| --- | --- | --- |
+| CSV | Enough. The port of Go `encoding/csv` uses only string code. | No |
+| DOCX and XLSX ZIP container | `node:zlib` inflates deflate data, but Node has no ZIP reader. A reader is about 100 lines of own code on `zlib.inflateRawSync`. Note: the core boundary rule does not allow `zlib` in `src/core/` today. | Optional. See the owner question below. |
+| DOCX and XLSX XML parts | No XML parser in Node. | Yes, or an own tokenizer |
+| HTML and HTML directory | No HTML parser in Node. | Yes |
+| PDF text | No PDF parser in Node. | Yes |
+
+Admission check per candidate, done before evaluation (PRD 20 Supply Chain rules 1 to 6). Each candidate was installed alone in a scratch project under `$TMPDIR` with `ignore-scripts=true`, `--ignore-scripts`, and `--omit=optional --omit=peer`. Downloads are npm's last-week count on 2026-11-23. OSV is the `api.osv.dev/v1/querybatch` result for every package in the scratch lockfile.
+
+| Need | Candidate (exact version) | 1 Used and maintained | 2 License | 3 Dependencies | 4 Exact pin | 5 Install scripts | 6 `npm audit`, OSV | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| PDF | `unpdf` 2.1.0 | 13.1M/week; release 2026-10-30; unjs project | MIT; bundles pdf.js (Apache-2.0), PDFium JBIG2 (BSD-3-Clause), OpenJPEG (BSD-2-Clause) | 0 (optional peers `pdfjs-dist` and `@napi-rs/canvas` not installed) | yes | none | 0 and 0 | Admitted |
+| PDF | `pdf2json` 4.1.1 | 657K/week; release 2026-11-06; one maintainer | Apache-2.0 | 0 | yes | none | 0 and 0 | Admitted |
+| ZIP | `fflate` 0.8.3 | 169M/week; release 2026-05-16 | MIT | 0 | yes | none | 0 and 0 | Admitted |
+| ZIP | `adm-zip` 0.6.1 | 32M/week; release 2026-09-11 | MIT | 0 | yes | none | 0 and 0 | Admitted |
+| XML | `@xmldom/xmldom` 0.9.12 | 94M/week; release 2026-08-21 | MIT | 0 | yes | none | 0 and 0 | Admitted |
+| XML | `txml` 6.0.3 | 386K/week; release 2026-08-30 | MIT | 0 | yes | none | 0 and 0 | Admitted |
+| HTML | `parse5` 8.1.1 | 255M/week; release 2026-11-07; five maintainers | MIT | 1 (`entities` 9.0.0, BSD-2-Clause) | yes | none | 0 and 0 | Admitted |
+| HTML | `htmlparser2` 12.0.0 | 148M/week; release 2026-03-20 | MIT | 5 (`domhandler` 6.0.1, `domutils` 4.0.2, `domelementtype` 3.0.0, `entities` 8.1.0, all BSD-2-Clause; `dom-serializer` 3.1.1, MIT) | yes | none | 0 and 0 | Admitted |
+
+Not admitted: `saxes` 6.0.0 (no release since 2021, rule 1), `fast-xml-parser` 5.12.1 (six dependencies, rule 3), `pdf-parse` 2.4.5 (hard dependency on `@napi-rs/canvas` native packages, rule 3), and `jszip` 3.10.2 (four dependencies and a dual MIT or GPL license, rules 2 and 3). Version choice: the newest version at least 14 days old. This is an agent precaution, not a PRD 20 rule. It matters only for `unpdf`, whose 2.2.2 came out on 2026-11-23 and 2.2.1 on 2026-11-15.
+
+### Final Eval Results (t6, A27)
+
+The full eval set ran again on 2026-11-23 with every admitted candidate against the owner-approved references (t3; no reference changed). The scores equal the part 1 run. Method of the prototypes: one scratch TypeScript port of the Go converter logic (`docx.go`, `xlsx.go`, `html.go`, `convert.go` CSV), with the parser swapped per candidate. For DOCX and XLSX, the ZIP candidates use `@xmldom/xmldom` and the XML candidates use `fflate`. PDF has no Go logic to port (Go calls `github.com/ledongthuc/pdf` `GetPlainText`); both PDF candidates share one line-assembly step (stream order, a new line when y moves, a space when the x gap is more than 0.15 em). The Go baseline is the real `buildos-intake` built from `toolkits/buildos-intake/` with Go 1.24.1. Each cell: similarity, sections found. "Same bytes as Go" compares each twin body with the Go body.
+
+| Eval file | Go baseline | `fflate` + `xmldom` | `adm-zip` + `xmldom` | `fflate` + `txml` | `parse5` | `htmlparser2` | `unpdf` | `pdf2json` | Built-ins (CSV) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `csv-maintenance-requests` | 100.00%, 3/3 | | | | | | | | 100.00%, 3/3, same bytes |
+| `docx-operations-handbook` | 100.00%, 10/10 | 100.00%, 10/10 | 100.00%, 10/10 | 100.00%, 10/10 | | | | | |
+| `docx-committee-minutes` | 100.00%, 6/6 | 100.00%, 6/6 | 100.00%, 6/6 | 100.00%, 6/6 | | | | | |
+| `xlsx-annual-budget` | 98.09%, 4/4 | 98.09%, 4/4 | 98.09%, 4/4 | **96.57%, 3/4, lost "Sheet: Vendors"** | | | | | |
+| `html-visitor-policy` | **93.37%, 9/10, lost "Callout note"** | | | | **93.37%, 9/10** | **93.37%, 9/10** | | | |
+| `html-dir-help-center` | 99.61%, 4/4 | | | | 99.61%, 4/4 | 99.61%, 4/4 | | | |
+| `pdf-annual-report` | **97.67%, 5/5** | | | | | | 100.00%, 5/5 | 100.00%, 5/5 | |
+| `pdf-newsletter-columns` | 100.00%, 6/6 | | | | | | 100.00%, 6/6 | 100.00%, 6/6 | |
+| `pdf-rates-table` | 100.00%, 3/3 | | | | | | 100.00%, 3/3 | 100.00%, 3/3 | |
+| `pdf-pet-policy-headers` | 100.00%, 12/12 | | | | | | 100.00%, 12/12 | 100.00%, 12/12 | |
+| `pdf-signup-with-scan` | 100.00%, 2/2 | | | | | | 100.00%, 2/2 | 100.00%, 2/2 | |
+| `pdf-scanned-notice` | no text (pass) | | | | | | no text (pass) | no text (pass) | |
+| Same bytes as Go | (target) | all 3 files | all 3 files | DOCX only | both files | both files | scan-only only; others equal after white-space normalization except `pdf-annual-report` | same as `unpdf` | yes |
+| Minified bundle (gzip) | | 5,664 B (2,865) plus 93,745 B (30,806) | 38,056 B (13,489) plus 93,745 B | 5,664 B plus 4,655 B (2,046) | 173,031 B (43,236) | 56,956 B (23,534) | 1,631,517 B (508,762) | 956,133 B (332,656) | 0 |
+| Transitive packages | | 0 and 0 | 0 and 0 | 0 and 0 | 1 | 5 | 0 | 0 | 0 |
+| License | | MIT, MIT | MIT, MIT | MIT, MIT | MIT (`entities` BSD-2-Clause) | MIT (4 BSD-2-Clause, 1 MIT) | MIT (pdf.js Apache-2.0) | Apache-2.0 | |
+| Scan (`npm audit`, OSV) | | 0, 0 | 0, 0 | 0, 0 | 0, 0 | 0, 0 | 0, 0 | 0, 0 | |
+
+Bundle sizes are esbuild 0.28.2 (`--bundle --minify --platform=node --format=esm`) of an entry that imports only the API the prototype uses. Both PDF bundles worked when copied alone to an empty folder.
+
+What the run shows:
+
+- Package-caused differences: `txml` does not decode XML entities, so `&quot;` stays in the Vendors sheet and the section is lost. `pdf2json` writes `Warning: Setting up fake worker.` to the console on every parse, and its bundle contains `new Function`. `unpdf` printed nothing.
+- Go-caused differences, the same in the Go tool and in every byte-parity port: the Go HTML converter drops text that is not inside a `p`, heading, `li`, or table (the callout; now PE-008), writes ordered lists as `-`, and flattens nested lists; the Go XLSX converter drops rich-text shared strings (the vendor name on the Vendors sheet; coverage 93.1%, file 98.09%). For PDF, Go loses word gaps that are drawn with TJ kerning instead of space characters (`TwonewmembersjoinedtheboardinMarch.`); both Node PDF candidates keep them.
+- The eval set does not separate the two HTML parsers or the two PDF engines: each pair scores the same on every file.
+
+### Converter Choice (t7, A27, A28)
+
+One package per format. Order of the reasons: eval results first; then fewer transitive packages, smaller bundle contribution, no runtime warnings, and maintenance.
+
+| Need | Chosen | Not chosen | Reason |
+| --- | --- | --- | --- |
+| ZIP (DOCX, XLSX) | `fflate` 0.8.3 | `adm-zip` 0.6.1 | Owner decision for a package over own `node:zlib` code. Eval tie (both give Go's bytes on all three files); both have 0 transitive packages; `fflate` adds less to the bundle. The adapter imports `fflate/browser`, which loads no Node module (the Node build loads `module` and `worker_threads`). |
+| XML (DOCX, XLSX parts) | Since the P4 review fix round: own port of Go 1.24.1 `encoding/xml` (`src/core/intake/convert/go-xml.ts`). First choice, removed: `@xmldom/xmldom` 0.9.12 | `txml` 6.0.3 | First choice: `txml` loses the Vendors section (96.57%); `@xmldom/xmldom` kept every section. Review round 1 showed `@xmldom/xmldom` accepts malformed XML that Go refuses (an undeclared `&nbsp;` converted with exit 0) and cannot give Go's error text, and it parses a DTD internal subset. The Go port gives Go's rules and text, never expands a DTD entity, is iterative and bounded, and keeps the eval gate at 12/12. `@xmldom/xmldom` was uninstalled (lockfile 55 to 54 packages). The orchestrating maintainer confirmed the removal on 2026-11-23 (fewer packages, Go's exact errors); see [Owner Decisions](#owner-decisions). See [P4 Review](#p4-review). |
+| HTML and HTML folder | `parse5` 8.1.1 | `htmlparser2` 12.0.0 | Eval tie. `parse5` has 1 transitive package against 5, and it builds the tree with the WHATWG algorithm that Go's `golang.org/x/net/html` follows, so malformed HTML gives the same tree as Go. Its bundle is larger. |
+| PDF text | `unpdf` 2.1.0 | `pdf2json` 4.1.1 | Eval tie; both 0 transitive packages. `pdf2json` is smaller but writes a console warning on every parse, which would change stdout or stderr parity, and holds `new Function`; `unpdf` prints nothing, and its bundled pdf.js holds no `eval` and no `new Function`. Larger bundle (see PERF-001 note below). |
+| CSV | Node built-ins (own port of Go `encoding/csv`) | none | No package needed. |
+
+- Pins: `toolkits/buildos/package.json` `devDependencies` (no `dependencies`, PRD 20) and `package-lock.json`, installed with `npm install --save-dev --save-exact --ignore-scripts`. The lockfile grew from 50 to 55 packages (the five above). `unpdf`'s optional peer `@napi-rs/canvas` is not installed.
+- `SECURITY.md`: new section Bundled npm Packages (version, license, reason, transitive packages, install script, scan status, and comparison summary per package), a Go port row for the intake ports, five lockfile inventory rows, and scan rows. `THIRD_PARTY_NOTICES.md`: the license file text of `fflate`, `@xmldom/xmldom`, `parse5`, `entities`, `unpdf`, and pdf.js (`unpdf/dist/licenses/LICENSE_PDFJS`), and the Go and `golang.org/x/net` port notes under the Go BSD-3-Clause notice. `test/notices.test.ts` now checks each bundled package's lockfile version and license, its license text in the notices, its `SECURITY.md` row, and that the esbuild metafile bundles exactly these five packages. The `unpdf` JBIG2 and OpenJPEG decoder files are not in the bundle.
+- Dependency guard: `check:deps` and `check:deps:installed` pass. No new package declares an install script; the esbuild exception is unchanged.
+
+### Port Map (t8 to t11)
+
+| Go intake tool | TypeScript |
+| --- | --- |
+| `internal/intake/convert.go` (`Convert`, paths, `detectType`, hashes, slugs, front matter, writes), `pdf.go` | `src/core/intake/convert/convert.ts`; PDF line assembly in `convert/pdf.ts` |
+| `convert.go` `convertCSV` (Go `encoding/csv`) | `src/core/intake/convert/csv.ts` (byte-level port of Go's reader and writer) |
+| `docx.go` | `src/core/intake/convert/docx.ts` |
+| `xlsx.go` | `src/core/intake/convert/xlsx.ts` (one CSV per sheet) |
+| `html.go`, Go `html.Render` | `src/core/intake/convert/html.ts` (plus the PE-008 `div` rule) |
+| `index.go` (`BuildReferencesIndex`, `loadPreviousReferences`, `refNumber`, `BuildPlaybooksIndex`, front matter reader) | `src/core/intake/index/index.ts`, `src/core/intake/index/frontmatter.ts` |
+| Go `os.Stat`, `os.ReadFile`, `os.ReadDir`, `os.MkdirAll`, `os.WriteFile` | `src/core/intake/io.ts` through the filesystem port; Go text helpers in `src/core/intake/go-text.ts` |
+| `cmd/buildos-intake/main.go` | `src/cli/commands/intake.ts` (`buildos intake convert`, `index references`, `index playbooks`; same flags, usage text, Go `flag` errors, and `buildos-intake: error:` lines), registered in `src/cli/run.ts` |
+| ZIP, XML, HTML, PDF libraries | `src/adapters/intake-parsers.ts` behind the parser port `src/core/intake/convert/parsers.ts` |
+
+- Core boundary: core loads none of the four packages. The packages sit behind an adapter because the core boundary rule allows only `path`, `url`, `buffer`, `string_decoder`, and `crypto` as bare modules, and `fflate`'s Node build loads `module` and `worker_threads`. The adapter takes bytes and returns plain data (ZIP entries, an XML element tree, an HTML node tree, PDF text runs); every read and write goes through the filesystem port. Reported as required by the task brief.
+- Filesystem port: three Go-shaped calls were added: `statStrict` (Go `os.Stat`, every failure typed, so `ENOTDIR` reads as Go prints it), `readDir` (Go `os.ReadDir` entry types), and `writeFile` (Go `os.WriteFile` in place). The in-place write is needed for parity: an atomic rename succeeds over a read-only index, where Go's `os.WriteFile` fails (`intake-index-references-write-failure`). Reads go through a read-only port bound to the volume that holds the path (as the entity manifest read); writes go through a port bound to the repository root. The Go-shaped port helpers moved from `src/core/entities/io.ts` to `src/core/shared/go-fs.ts` (entities re-exports them; no entity behavior changed).
+- Legacy name: the golden harness runs the bundle under the Go tool's name (`buildos-intake.mjs`). `src/cli/invocation.ts` maps only `buildos-intake <args>` to `buildos intake <args>`, with no stderr notice. P6 adds the other legacy names, the notice line, and its parity exception.
+- PE-001: the root help now lists `intake`; the exact values in `parity-exceptions.json` (one golden and six seed entries) were updated, as its rule says each port phase does.
+- Embedded media: DOCX `word/media/`, XLSX `xl/media/`, HTML images (local files and base64 data URIs), inline SVG (rendered as Go `html.Render`), and Mermaid blocks become side artifacts with Go's names and order, written as the converter meets them, and not on a dry run.
+- t11: `test/intake-core.test.ts` ports every test of `convert_test.go` (13 tests and their subtests), `index_test.go` (4), and `main_test.go` (2) by their Go names, and adds port checks: Go `encoding/csv` errors and quoting, Go `flag` usage, `strconv.Unquote`, the legacy name map, the in-place write on a read-only index, and the PE-008 rule.
+
+### Intake Gate (t12, A29)
+
+- `cases.json`: `intake` is `enforced`. Local summary: `golden domain intake: enforced: 55/55 cases match, 40 darwin golden(s)`. `cli` 8/8 (PE-001 values updated), `entities` 27/27. The 55 cases matched on the first enforced run; no fix to a golden or the harness was needed. PDF cases compare `.txt` bodies after white-space and line-break normalization only (`pdf_text`), front matter exact.
+- Parity exceptions: approved PE-001 to PE-010, PE-013, and PE-015. PE-013 has one golden field (`intake-convert-xlsx-escaping-target` `tree`) and four preflight hostile cases (review round 3); PE-015 has six hostile PDF cases and no golden case. No exception is pending. No golden case is affected by PE-008, PE-009, or PE-010: all 55 intake goldens, including `intake-convert-html`, `intake-convert-html-dry-run`, `intake-convert-html-dir`, and `intake-convert-html-dir-empty`, equal Go byte for byte, so PE-008 lists no golden entry.
+- PE-008 scope: one eval twin, `html-visitor-policy` part `visitor-policy.md`. `parity-exceptions.json` holds the exact TypeScript body and the one added block (`Note: Guests who stay longer than 30 nights in a year count as occupants under the lease.`). `test/intake-eval-parity.test.ts` compares every eval file with Go 1.24.1's bodies (`test/fixtures/go-seed/intake-eval-goldens.json`, captured by `scripts/capture-intake-eval-goldens.ts`): the PE-008 body must equal the allowed body exactly, must still differ from Go, and must equal Go's body with exactly that block removed. Every other CSV, DOCX, XLSX, and HTML eval twin equals Go byte for byte (10 twins), and every other PDF twin equals Go after white-space normalization (4 files), except `pdf-annual-report`, which differs only by the 28 spaces that PE-009 pins.
+- Linux and Windows enforcement passed in [CI run 45340971690](https://github.com/brucewaynedecoy/build-os/actions/runs/45340971690) (A29).
+
+### PE-010 and `--allow-outside-root`
+
+- Rule (PRD 20 Output and Exit Contract): a write that would land outside the project root is refused with exit 3 unless the command is given `--allow-outside-root`; a link at the written file itself is replaced, never followed.
+- Without the flag: an absolute `--assets-root` or `--output` outside `--repo-root`, or a folder link that leads out of it, ends with `buildos-intake: error: <path> resolves outside the root <root>; pass --allow-outside-root to allow a write outside the repository root` and exit 3. `convert` checks the folder of every side artifact and twin before its first write, so nothing changes.
+- With the flag: the same writes equal the Go tool byte for byte (exit, stdout, stderr, and the whole work-folder tree).
+- A symlink at a twin, side artifact, or index file is replaced by a regular file, with or without the flag. The file it points at keeps its bytes (inside or outside the root), and a dangling link's target is not created. Go's `os.WriteFile` writes through the link. Go's `--force` existence check still follows the link, as in Go. A link at the file to a device or special file stays refused.
+- The flag never relaxes the device refusal (`--output /dev/null` exits 3 with the flag) or the file-descriptor, special-file, hostile-archive, and read rules. It counts only as a whole argument in flag position: `--source --allow-outside-root` names a source, and the flag after `--` or after a non-flag argument is not a switch, as Go `flag` would read it. `--allow-outside-root=true` gives Go's `flag provided but not defined` error. It is not in the usage text.
+- Reads are not limited by the root, in both flag modes, as in Go: a `--source` file the user names outside the project is read, with or without `--allow-outside-root`, and its twin is written inside the project. `--allow-outside-root` concerns writes only. Edge cases `source-outside` and `source-outside-allowed` equal Go 1.24.1 byte for byte (review round 2).
+- Evidence: 25 intake edge cases (23 before review round 2; `scripts/capture-intake-edge-goldens.ts`, Go 1.24.1 goldens in `test/fixtures/go-seed/intake-edge-goldens.json`, test `test/intake-edge.test.ts`). 13 cases equal Go byte for byte: `source-outside`, `source-outside-allowed`, the five `*-allowed` cases with the flag, `twin-link-outside-exists`, `flag-as-source-value`, `flag-after-positional`, `flag-with-value`, `dry-run-outside`, and `missing-repo-root` (Go's `os.MkdirAll` creates a missing root, and so does the port). 12 cases differ exactly as `parity-exceptions.json` PE-010 `intake_edge` pins them: the refusals `assets-root-outside`, `docx-media-outside`, `references-output-outside`, `playbooks-output-outside`, `assets-link-outside`, and `flag-after-dashdash` (exit, stdout, stderr, tree); the link replacements `twin-link-outside-force`, `twin-link-outside-force-allowed`, `twin-link-inside-force`, `twin-link-dangling`, and `references-link-outside` (tree only); and `device-output-allowed` (exit, stdout, stderr). New unit tests: the flag scan (`test/intake-core.test.ts`), and the port and in-place writer options (`test/fs-port.test.ts`). POSIX only; Windows runs the unit tests.
+
+### Scanned-Page PDF (t13)
+
+- `intake-convert-pdf-with-scanned-page` writes only the text page, as the golden shows; `intake-convert-pdf-scanned-only` exits 1 with `buildos-intake: error: pdf text extraction produced no usable text`, byte for byte. Both match on macOS.
+- No OCR code and no Poppler: the PDF adapter reads pdf.js text runs only; no image is decoded for text, and no subprocess runs (the boundary test forbids a spawn in adapters). `unpdf`'s JBIG2 and OpenJPEG decoder files are not bundled.
+
+### Go Tool Kept (t14)
+
+- `toolkits/buildos-intake/` is unchanged. The intake parity gate passed (55/55 goldens, PDF after white-space normalization, PE-008 exact) on macOS, Linux, and Windows in [CI run 45340971690](https://github.com/brucewaynedecoy/build-os/actions/runs/45340971690). Go removal waits for P8.
+
+### Eval Gate With the Chosen Converters (A30)
+
+`npm test` now runs the gate with the in-package converter (`test/conversion-eval/package-converter.ts`, a dry run of the ported core with the bundled parsers).
+
+| Eval file | Similarity | Sections | Result |
+| --- | --- | --- | --- |
+| `csv-maintenance-requests` | 100.00% | 3/3 | pass |
+| `docx-operations-handbook` | 100.00% | 10/10 | pass |
+| `docx-committee-minutes` | 100.00% | 6/6 | pass |
+| `xlsx-annual-budget` | 98.09% | 4/4 | pass |
+| `html-visitor-policy` | 99.16% | 10/10 | pass (PE-008) |
+| `html-dir-help-center` | 99.61% | 4/4 | pass |
+| `pdf-annual-report` | 100.00% | 5/5 | pass |
+| `pdf-newsletter-columns` | 100.00% | 6/6 | pass |
+| `pdf-rates-table` | 100.00% | 3/3 | pass |
+| `pdf-pet-policy-headers` | 100.00% | 12/12 | pass |
+| `pdf-signup-with-scan` | 100.00% | 2/2 | pass |
+| `pdf-scanned-notice` | no text | 0/0 | pass |
+
+`eval.test.ts` also checks A25: `REVIEW.md` has a reviewer, a date, and "yes" for every eval file.
+
+### Human Experience Review (A31)
+
+The agent opened two converted twins beside their sources: `pdf-newsletter-columns` (a two-column PDF) and `docx-operations-handbook`.
+
+- Newsletter: the masthead comes first, then the whole left column (Roof Works, Bike Store), then the whole right column (New Members, Garden Volunteers), then the footer. Every heading starts its own line before its paragraph. Lines break where the PDF breaks them; that is expected in a plain-text twin.
+- Handbook: the title and the numbered headings keep their order and levels; the lettered sub-list is indented under step 2; the bold-underlined "Emergency Contacts" line is a level-2 heading; the table keeps all rows; the image is listed under Embedded Assets.
+- Conclusion: section order and headings read the same as the sources. Limits: two files, read by an agent, on macOS only; the PDF column order depends on the content-stream order the generator wrote, which a real-world PDF may not follow.
+
+### Check Results
+
+On macOS arm64 with Node 24.22.3 and Go 1.24.1 (scratch toolchains), after review round 3 and the PE-015 owner decision.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm test` | exit 0; 1,343 tests, 1,339 pass, 0 fail, 4 skipped (Windows-only) after review round 3 (1,332 after review round 2 ; 1,278 before it; 1,243 before the owner decision round; 1,190 before the review fix round) |
+| `npm run build` | exit 0; `dist/buildos.js` 3,028,756 bytes after review round 3 (3,025,045 after review round 2; 3,000,883 before it; 2,996,289 before the owner decision round; 3,187,594 before the review fix round; 159,026 before P4) |
+| Smoke | `node dist/buildos.js version` exit 0; the bundle copied alone to an empty folder as `buildos-intake.mjs` converts a PDF with a scanned page (exit 0), refuses the scan-only PDF (exit 1, Go text), plans a DOCX dry run with its two media side artifacts, converts the HTML handbook with four side artifacts and the XLSX inventory with three sheets and one media file, rebuilds the references index (5 references), and refuses `broken.docx` with `zip: not a valid zip file`. No console warning. Owner decision round: the bundle alone converts the eval PDF, DOCX, XLSX, and HTML files (the scan-only PDF exits 1 with Go's text), rebuilds the references index (11 references), refuses `--output` outside the root with exit 3 and the flag hint, and writes it with `--allow-outside-root` (exit 0); `buildos intake convert --allow-outside-root` works under the new name too. Review round 3: the bundle alone converts the 11 convertible eval sources (the scan-only PDF exits 1 with Go's text), rebuilds the references index (17 references), refuses `index references --output` outside the root with exit 3 and the flag hint and writes it with `--allow-outside-root`, and an HTML page with an image and a folder at its twin exits 1 with Go's `is a directory` text and writes no side artifact. |
+| Golden harness | `cli` enforced 8/8 (5 exception fields), `entities` enforced 27/27 (3), `intake` enforced 55/55, with `intake-convert-xlsx-escaping-target` `tree` allowed by approved PE-013; every PDF twin passes the PE-009 class check in both directions (review round 3); discovery and design pending |
+| `node test/golden/capture.mjs --check` | exit 0 (158 cases, darwin, Go 1.24.1) |
+| `capture.mjs --verify-artifact` | darwin, linux, and win32: 265 files each |
+| Eval gate | 12/12 files pass (similarity unchanged: `xlsx-annual-budget` 98.09%, `html-visitor-policy` 99.16%, `html-dir-help-center` 99.61%, every other file 100%) |
+| `test/intake-eval-parity.test.ts` | 15/15 (PE-008 exact; every PDF body under the PE-009 class check; `pdf-annual-report` finds exactly its 28 fixture spaces) |
+| `test/intake-edge.test.ts` | 31/31 after review round 2 and round 3: 25 edge cases against Go 1.24.1 (13 equal, 12 exactly as PE-010 pins) and 6 rule checks |
+| `test/intake-hostile.test.ts` | 96/96 after review round 3, with 9 new tests (41 before review round 2): the new tests are 4 PE-013 preflight cases with Go's exit code and text and no side artifact, 1 PE-013 case-list check, 3 golden-harness PE-009 probes (a port body equal to Go's joined words fails), 1 missing-separations check, and the PE-015 checks now read `parity-exceptions.json`; from round 2 the file holds 21 malformed PDF trailers with Go's text, 6 cases where Go crashes or hangs, 9 production-scale cases under a 1 GiB peak-memory cap, 2 preflight cases, 5 PE-009 class cases, and the Go XML comparison at 16/16 (10 malformed XML texts and 5 DOCX bodies, with the new U+FEFF case, plus the XLSX U+FEFF case) |
+| `test/fs-port.test.ts` | 88 tests (86 pass, 2 skipped on POSIX); includes 7 folder-swap race cases through `writeRaceHooks`, `checkInPlaceTarget` and `checkMkdir` in the refusal matrix, and the round 3 preflight probe test (`EISDIR`, `EACCES`, nothing changed) |
+| `npm run check:deps` and `check:deps:installed` | both `dependency policy: ok` |
+| `npm audit --audit-level=high` | 0 vulnerabilities (54 packages; no `@xmldom/xmldom`) |
+| `npm pack --dry-run` | 6 files (`dist/buildos.js` 3.0 MB, package 746.2 kB after review round 3); no eval file |
+| `git diff --check` | exit 0, also with the new files added to a scratch index (review round 2: `.gitattributes` sets `whitespace=-trailing-space` on `THIRD_PARTY_NOTICES.md` and `-whitespace` on the eval inputs; no license text changed) |
+| `make-docs project path-hygiene validate` | valid, 0 failing findings |
+| `make-docs run prd authority validate --target-root . --json` | `passed`, 16 PRD files, no diagnostics (after the PRD 20 update) |
+| CI on three operating systems | Pending at this round: needs a push. Passed later in [CI run 45340971690](https://github.com/brucewaynedecoy/build-os/actions/runs/45340971690); see [P4 CI Run](#p4-ci-run) |
+
+### P4 Closeout Numbers
+
+- PERF-001 note: the bundle grew from 159,026 bytes (P3) to 3,187,594 bytes at the first P4 closeout, and is 2,996,289 bytes after the review fix round (`@xmldom/xmldom`, about 0.22 MB, was replaced by the Go `encoding/xml` port). Most of it is the pdf.js build inside `unpdf` (about 2.41 MB), then `parse5` (0.26 MB), `entities` (0.05 MB), `fflate` (0.01 MB), and BuildOS code (esbuild metafile; the bundle is not minified). An informal local timing of `node dist/buildos.js version` gave a median of 78.8 ms over 15 runs at the first closeout. This is not a PERF-001 measurement.
+- Reviewer note for P8 (review round 1): PDF initialization is already deferred (pdf.js loads only when a PDF is converted, through `getResolvedPDFJS`). A minified build reduced the bundle from 3.19 MB to 2.04 MB. Benchmark the startup in the P8 `PERF-001` recheck, and decide minification there.
+
+### P4 CI Run
+
+[CI run 45340971690](https://github.com/brucewaynedecoy/build-os/actions/runs/45340971690), workflow `.github/workflows/buildos-ci.yml`, head `52655a0`. Conclusion: `success`. All four jobs passed: `test` on macOS, Linux, and Windows with Node 24 (unit tests; the golden harness with `cli`, `entities`, `intake`, `discovery`, and `design` enforced against the shared and per-OS goldens; the eval gate; the hostile tests; the dependency guards; `npm audit`), and the OSV scan job. Earlier runs [CI run 45336979268](https://github.com/brucewaynedecoy/build-os/actions/runs/45336979268) and [CI run 45339414591](https://github.com/brucewaynedecoy/build-os/actions/runs/45339414591) failed on Windows and are superseded; their fixes are in [P4-P5 Merge Fix Round](#p4-p5-merge-fix-round) and [P4-P5 Windows OS Error Text Round](#p4-p5-windows-os-error-text-round).
+
+- A29 and t12: every intake golden case passes on macOS, Linux, and Windows (55/55), byte for byte except PDF, and PDF after white-space normalization with the PE-009 class check.
+- A28: `npm audit` and the dependency guards pass on all three test jobs, and the OSV scan job passes.
+- A30: the eval gate passes on all three test jobs.
+- The hostile and edge intake tests run on every job (the edge goldens and symlink cases are POSIX-only, as before).
+- This closes the CI items in [P4 Open Items](#p4-open-items).
+
+### P4 Open Items
+
+- Decided on 2026-11-23: PE-009 and PE-010 are approved (see [Owner Decisions](#owner-decisions)). PE-009 lives in `parity-exceptions.json` with its pinned offsets. PE-010 lives there with its pinned intake edge goldens; see [PE-010 and `--allow-outside-root`](#pe-010-and---allow-outside-root).
+- Decided on 2026-11-23: PE-013 (was PE-011) is approved: "A failed convert leaves no files behind" (see [Owner Decisions](#owner-decisions)). It moved from `proposed-exceptions.json` to `parity-exceptions.json`, and the harness allows only the `tree` of `intake-convert-xlsx-escaping-target`, where Go writes `media/image1.png` and then fails, and the port writes nothing.
+- Decided on 2026-11-23: PE-015 is approved (see [Owner Decisions](#owner-decisions)). Where the Go tool crashes (panic, exit 2, with a stack trace) or does not terminate on a malformed PDF, the port exits 1 with one clean `buildos-intake: error:` line. Allowed difference: exit code and stderr only; stdout is empty and no file is written in either tool. The 21 other malformed-trailer cases equal Go's exit 1 and text. Affected cases (`test/intake-hostile.test.ts`), with Go 1.24.1 `buildos-intake` on macOS on 2026-11-23 (15 s timeout):
+
+  | Case | Go | Port (exit 1) |
+  | --- | --- | --- |
+  | `past-eof` (`startxref 99999999`) | exit 2, `panic: malformed PDF: reading at offset 99999999: EOF` | `open pdf: malformed PDF: reading at offset 99999999: EOF` |
+  | `huge-int` (`startxref 99999999999999999999`) | exit 2, `panic: invalid integer 99999999999999999999` | `open pdf: invalid integer 99999999999999999999` |
+  | `nothing` (no `startxref` operand) | exit 2, `panic: malformed PDF: reading at offset 845: EOF` | `open pdf: malformed PDF: reading at offset 845: EOF` |
+  | `negative` (`startxref -5`) | exit 2, `panic: runtime error: slice bounds out of range [:4101] with capacity 4096` | `open pdf: malformed PDF: reading at offset -5: negative offset` |
+  | `prev-self` (`/Prev` points at its own table) | does not terminate (stopped after 15 s) | `pdf: the /Prev cross-reference chain exceeds the BuildOS input limit (1000 sections)` |
+  | `deep` (1,001 nested arrays) | exit 2, `panic: unexpected keyword "startxref" parsing object` | `pdf: the object nesting exceeds the BuildOS input limit (1000 levels)` |
+
+  `test/golden/parity-exceptions.json` PE-015 `hostile` pins each exact port result, and `test/intake-hostile.test.ts` checks that its Go-crash cases are exactly these six and that each result equals the pinned one. No golden case is affected. `proposed-exceptions.json` now lists no exception.
+- Decided in review round 3: PE-013 also covers four preflight cases, where a condition at the twin exists before the convert and Go writes the side artifact and then fails (see [P4 Review](#p4-review), round 3). The port gives Go's exit code and text and writes nothing.
+- Merge note for P5: the intake refusal message names the flag and intake port refusals exit 3, where P5's do not name the flag; see the implementation choice row in [Owner Decisions](#owner-decisions). In this branch the atomic write still refuses a symlink at the target that resolves outside the root (P3 behavior; no byte lands there); the P5 branch replaces it, which the new PRD 20 sentence describes.
+- Known limits, no golden case: a corrupt deflate stream reports `zip: not a valid zip file`, where Go reports `flate: corrupt input before offset N`; a PDF that passes Go's `pdf.NewReader` cross-reference checks (now ported, review round 2) but that pdf.js cannot open reports `open pdf: <pdf.js message>`; the port does not decode `xref` stream data or check encryption as Go's reader does, so a PDF whose `xref` stream data or encryption dictionary Go refuses converts with pdf.js; where Go's PDF lexer panics (exit 2 and a stack trace: a `startxref` past the end of the file or negative, an integer out of range, a bad hex string or escape), the port exits 1 with `open pdf: <the panic message>`; where Go loops forever on a `/Prev` cycle, the port stops at the 1,000-section limit; Go inflates every XLSX entry and fails on a corrupt part the port never reads; non-UTF-8 bytes in HTML and front matter read as U+FFFD. A symlinked source folder is walked as a folder. Sources over an input limit fail where Go would convert or exhaust memory (see `SECURITY.md` Intake Input Limits).
+- Known limit (review round 2): pdf.js reads one text string of a content stream whole. A single string of tens of millions of characters (a small compressed PDF can hold one) exhausts a 256 MiB heap inside pdf.js before the text budget sees it. With Node's default heap, a 68 MB PDF with one 68-million-character string fails at the text budget with exit 1 after 16 s (macOS arm64). See `SECURITY.md` Intake Input Limits.
+- Note for P3 (out of P4 scope, not changed): `src/core/entities/graph.ts` `isNullLiteral` decodes with a default `TextDecoder`, which drops a leading U+FEFF, so a raw value of BOM + `null` reads as `null`, where Go's `bytes.TrimSpace` keeps the BOM. Recorded as follow-up task [P6 t29](./06-command-names-wrappers-and-initialization.md#stage-5---human-experience-review), with a Go golden. The intake decoders now keep U+FEFF (review round 2).
+- `buildos intake` has no `--json` form, as the Go tool had none; it prints the Go tool's usage text and `buildos-intake: error:` prefix under both names. P6 decides the legacy-name notice.
+- CI: resolved. [CI run 45340971690](https://github.com/brucewaynedecoy/build-os/actions/runs/45340971690) passed A29, the Windows and Linux intake goldens, and the OSV scan job. See [P4 CI Run](#p4-ci-run).
+- Follow-ups carried forward: see [P4-P5 Follow-ups](#p4-p5-follow-ups).
+
+## Phase Reviews
+
+### P1 Review
+
+- Reviewer: the independent reviewer agent (GPT 6.2 Astra). Implementer: the implementing agent (Opus 5.5). The orchestrating maintainer chat relayed owner decisions.
+- Round 1: CHANGES. Findings: the OSV gate could pass when the scanner failed; the esbuild install script ran without a recorded exception; Go `flag` and stderr parity gaps; boundary test gaps. Owner decisions in this round: replace Vitest with `node:test`; approve parity exceptions PE-001 to PE-003; approve a closed install-script exception for esbuild 0.28.2 only. See [Owner Decisions](#owner-decisions).
+- Round 2: CHANGES. Findings: malformed OSV reports passed the gate; the install-script exception was too broad; `Object.prototype` keys reached the parser; boundary evasions. Owner decision in this round: replace the `node:util` `parseArgs` requirement with a built-in parser that follows Go `flag` rules.
+- Round 3 (owner-approved extra round): CHANGES. Findings: CVSS scores with more than one decimal place; npm install lifecycle hooks outside the checked list; `writeSync(1, …)` from core; Go Unicode quoting.
+- Final review: CHANGES. Findings: a root `binding.gyp` passed the guard; the boundary checker followed fd dataflow and could be evaded; the bundled Go tables had no license notice. Fixes: root implicit-hook checks; a structural core boundary with a filesystem port (`toolkits/buildos/src/core/shared/fs-port.ts`, adapter `toolkits/buildos/src/adapters/node-fs.ts`); the Go BSD-3-Clause notice in `THIRD_PARTY_NOTICES.md`, `SECURITY.md`, and the bundle.
+- Final verification: PASS. One non-blocking follow-up: `SECURITY.md` named the notices test for the bundle-comment check; the commit step moved that attribution to `test/bundle.test.ts`.
+- Reviewer numbers at PASS: 648 tests (637 pass, 11 skipped for P3, 0 fail); `npm audit` 0 vulnerabilities; 140 OSV gate tests; `npm pack --dry-run` 6 files; 50 lockfile packages, all MIT or Apache-2.0; PRD authority validation 0 findings; path hygiene 0 failing findings.
+- CI fix rounds: CI run 45270840446 failed on the Linux and Windows test jobs. Fixes: Linux link classification when stdout is a pipe; Windows 8.3 short paths; Windows device spelling; CRLF line endings through `toolkits/buildos/.gitattributes`. The path port was redesigned to check containment on the path the OS resolves. UNC paths are parsed by server and share. Envelopes name the given root in Go `filepath.Abs` form (`src/core/shared/go-path.ts`, Go 1.24.1 goldens in `test/fixtures/go-seed/root-spelling.json`). Every index in `go-path.ts` is a UTF-16 code unit. Root and target errors give typed envelopes with exit 3, and a failed write gives exit 5. The orchestrator decisions from these rounds are in [Owner Decisions](#owner-decisions), and the owner approved PE-004. Review: PASS on the fixes, except the dispatcher-only label for the root-error evidence, now added under [Review Fix Round Note](#review-fix-round-note). Reviewer numbers at the final narrow review: 686 tests (672 pass, 14 skipped, 0 fail); 105 Go path goldens and 8 extra astral cases match Go 1.24.1; `npm audit` 0 vulnerabilities; `npm pack --dry-run` 6 files; guards and path hygiene pass.
+- CI fix round 2: CI run 45281077505 passed on macOS, Linux and OSV, and failed 3 Windows tests. Fixes: Windows path folding in `src/core/shared/go-path.ts` now follows the Win32 path normalization rules; a Windows-only test compares 37 cases with `GetFullPathNameW`, and 25 published-example cases are added; one fixture entry that real Windows output contradicts is removed from `test/fixtures/go-seed/root-spelling.json`; the ENAMETOOLONG and ENOTDIR expectations are now platform-aware on Windows. Local: 687 tests, 0 fail, 14 skipped; build, guards, `npm audit` 0, `npm pack` 6 files, path hygiene pass. Review and the Windows CI run were pending at commit time.
+- CI pass: [CI run 45282558470](https://github.com/brucewaynedecoy/build-os/actions/runs/45282558470) on `f505935` passed all four jobs: `test` on macOS, Linux, and Windows with Node 24 (typecheck, test, build, smoke, audit, and both dependency guards), and the OSV scan job. The Windows native `GetFullPathNameW` comparison ran 38 cases and passed. See [CI Run](#ci-run). This closes A8, A9, and A10, and t13 to t16 are done.
+- Review of `f505935`: the independent reviewer confirmed the Windows component rules, the removal of the contradicted fixture entry, and the platform-aware errno expectations. One non-blocking defect: on Windows, `//foo//bar/..` is spelled `\\foo\bar`, but `GetFullPathNameW` then Go's `Clean` give `\\foo\`. The port collapses the doubled separator before it identifies the UNC server and the share, which can be empty. The defect is display-only: containment uses the real path the OS resolves. Under the owner's stop rule for non-blocking findings, the orchestrator classified it as a follow-up.
+- Follow-up: [P3](./03-entities-port.md) t13 fixes the UNC root spelling for doubled separators (`//foo//bar/..` and `//foo/bar/..`) and adds both cases to the Windows native comparison. Recorded in the [backlog Change History](./00-index.md#change-history).
+- Follow-up: the `SECURITY.md` Scan Record row for the CI OSV job read `Pending`. Fixed in P2 with the run 45282558470 result; see [Security Document Review](#security-document-review).
+- Phase status: Done.
+
+### P2 Review
+
+- Reviewer: the independent reviewer agent (GPT 6.2 Astra). Implementer: the implementing agent (Opus 5.5). The orchestrating maintainer chat relayed owner decisions.
+- Round 1: CHANGES. Findings: Windows root normalization; hidden golden files left out of the artifact upload; drift hidden by `--report`; permission bits not compared, and parity exceptions not exact; coverage gaps. Orchestrator decisions in this round: per-OS goldens for OS-dependent cases, and a `golden-capture/**` push trigger for the capture workflow. Fixes: [P2 Review Fix Round](#p2-review-fix-round).
+- Round 2: CHANGES. Findings: a root in `%q` nested in JSON, and malformed JSON; an incomplete golden replaced with no record; the fixture root's own mode; a symbolic link accepted for a file. Fixes: [P2 Review Fix Round 2](#p2-review-fix-round-2).
+- Round 3: CHANGES. Finding: a stale shared golden of an OS-dependent case was deleted with no record. Fix: `removed-stale` entries in the capture report, and `--check` names each stale folder. Proven with Go 1.24.1 built from source and 6 regression tests. See [P2 Stale Golden Fix](#p2-stale-golden-fix).
+- Numbers at commit: 158 cases (85 shared, 73 `darwin`); `capture.mjs --check` passes; `capture.mjs --verify-artifact test/golden/os/darwin` matches 265 files; `npm test` 905 pass, 0 fail, 14 skipped.
+- Review of `bd67f5e`: CHANGES. Findings: the PE-005 capture skip did not check the full Go observation; `--verify-artifact` accepted a zero derived source SHA-256 and a design-case override. Fixes: [PE-005 Review Fix Round](#pe-005-review-fix-round).
+- Review of `733e428`: CHANGES. Findings: `--verify-artifact` accepted an extra case folder whose files `golden_files` listed; the capture workflow's mismatch report was skipped after `--report` failed. Fixes, the win32 import, and A18: [P2 Windows Goldens Import](#p2-windows-goldens-import).
+- Numbers at the win32 import commit: 158 cases (85 shared; 73 `darwin`, 73 `linux`, 70 captured and 3 derived `win32`); `capture.mjs --check` passes on darwin; `--verify-artifact` matches 265 files for each of the three sets; `npm test` 958 pass, 0 fail, 14 skipped; A18 passed with CI run 45298341110.
+- Pending at commit time: the reviewer's check of the `733e428` fixes and the win32 import, and the first CI run that uses the committed win32 set.
+- Phase status: Done.
+
+### P3 Review
+
+- Reviewer: the independent reviewer agent (GPT 6.2 Astra). Implementer: the implementing agent (Opus 5.5). The orchestrating maintainer chat relayed owner decisions.
+- Round 1: CHANGES. Findings: errors after the canonical rename and exit 6; replacement of a symlinked dataset; temporary-name validation; Go JSON key folding; index key byte order; deep nesting and a trailing `1e999`; temporary-file permission diagnostics. Fixes: [P3 Review Fix Round](#p3-review-fix-round).
+- Round 2: CHANGES. Findings: Go slice backing-array reuse on repeated keys; a `{RAND}` normalization that was too loose; an evidence claim that was too broad and is now narrowed. Owner decisions in this round ("A, A, A", 2026-11-23): the PE-004 scope extension, PE-006, and PE-007. See [Owner Decisions](#owner-decisions). Fixes: [P3 Review Fix Round 2](#p3-review-fix-round-2).
+- Round 3: CHANGES. Findings in the edge-golden harness: `{RAND}` must apply only to the diagnostic field; the snapshot must come before the permission restore; the snapshot must record symlink targets outside the root. Each is fixed with a regression test. See [P3 Review Fix Round 3](#p3-review-fix-round-3).
+- Reviewer fixtures: the production code matched Go 1.24.1 on all 67 reviewer fixtures: 57 byte-identical, 6 that differ only in the random temporary name, and 4 with an approved parity exception.
+- Numbers at commit, on macOS: `npm test` 1,120 pass, 0 fail, 4 skipped (Windows-only); edge goldens 30/30; golden harness `entities` enforced 27/27 and `cli` enforced 8/8; `capture.mjs --check` exit 0 (158 cases); `--verify-artifact` passes for the darwin, linux, and win32 sets; `dist/buildos.js` 159,026 bytes.
+- PERF-001: flagged for the P8 recheck. `PERF-001` was not re-run on the 159,026-byte bundle; see [P3 Open Items](#p3-open-items).
+- CI fix round: CI run 45311343136 for `f1755e5` failed 1 Linux test and 9 Windows tests. The fixes in `a227420` changed tests and the `$PWD` capture layout only; no production code changed. Review of `a227420`: PASS. See [P3 CI Fix Round](#p3-ci-fix-round).
+- CI pass: [CI run 45312281279](https://github.com/brucewaynedecoy/build-os/actions/runs/45312281279) on `a227420` passed all four jobs on macOS, Linux, and Windows with Node 24, plus OSV. This closes t6, t8, t11, t13, and t14 (A20, A22 on Linux and Windows, the Windows-only atomic-apply test, the Windows `GetFullPathNameW` comparison, and the Windows PE-004 values). See [P3 CI Run](#p3-ci-run).
+- Phase status: Done.
+
+### P4 Review
+
+- Reviewer: the independent reviewer agent (GPT 6.2 Astra). Implementer: the implementing agent (Opus 5.5). The orchestrating maintainer chat relayed the findings.
+- Round 1: CHANGES. Findings: unbounded parsing, the in-place writer, bundled notices, HTML side artifacts, malformed-input parity, `next_id` precision, PDF spacing. Fixes, each reproduced first, compared with the Go 1.24.1 seed, and kept as a regression test:
+  1. Unbounded parsing (blocker). `src/adapters/intake-parsers.ts` reads the ZIP central directory itself: entry count, unsafe names (`..`, absolute, drive letter, backslash, NUL), declared size, ratio, and total limits are checked before any entry is inflated; only the parts the converter uses are inflated, by `fflate`'s streaming `Inflate` in 1 KiB pushes, so the caps count real output, which also may not pass the declared size; CRC-32 is checked as Go does. XML is read by a port of Go's `encoding/xml` (no DTD entity expansion, no external entity, bounded depth and tree size, iterative); DOCX bodies, worksheets, and shared strings are streamed. HTML depth and node limits are checked in the parse5 tree adapter as each node is inserted. XLSX columns are bounded from the cell references before a row is allocated, rows and allocated cells are bounded, and each row is written to the CSV at once. PDF page count and extracted-text budgets. Limits: `src/core/intake/limits.ts` and `SECURITY.md` Intake Input Limits. Every limit failure is exit 1 with `<format>: <what> exceeds the BuildOS input limit (<limit>)`, and the whole source is checked before any side artifact is written. `test/intake-hostile.test.ts` runs 41 cases through the real CLI with a 256 MiB heap: a ZIP bomb with an honest and with a lying size, a ratio bomb, 10,001 entries, six unsafe names, a bad CRC, billion laughs, an external entity, XML 1,005 deep, HTML 100,000 deep, sparse cell references `XFE1` and `ZZZZZZZZZZZZ1`, 21 million allocated cells, and 5,001 PDF pages; each fails cleanly in under 1 s on macOS and writes nothing in or beside the project. A 2-million-cell sheet converts in the same 256 MiB heap.
+  2. In-place writer (blocker). `os.WriteFile`-style writes moved to a separate narrow port, `InPlaceWritePort` (`src/core/shared/fs-port.ts`), that only the intake command gets (`createNodeInPlaceWriter`); `FsPort` has no in-place write, so canonical data keeps atomic writes. The adapter opens the file without `O_TRUNC` (with `O_NOFOLLOW`), checks the opened file (a regular file, link count 1, and the same device and inode as the target's real path inside the root), and only then truncates and writes. `test/fs-port.test.ts` adds `statStrict`, `readDir`, and `writeFileInPlace` to the refusal matrix and shows a hard-linked outside file keeps its bytes.
+  3. Bundled notices (major). Inventory of `unpdf/dist/pdfjs.mjs` against pdf.js v6.4.299 `external/`: the Brotli decoder, the OpenJPEG, JBIG2, and qcms loaders, and the Emscripten and wasm-bindgen glue are inlined; the decoder modules, `bcmaps`, `iccs`, `quickjs`, and the standard fonts are not. Each inlined component now has its license text in `THIRD_PARTY_NOTICES.md` and a row in `SECURITY.md` Components Inside pdf.js. `test/notices.test.ts` builds the bundle, finds each component by a marker, and fails when its license text (file text or pinned SHA-256) or row is missing. The `ledongthuc/pdf` header-check port and the Go `encoding/xml` port are listed too.
+  4. HTML (major). An image, an SVG, a line break, or another part Go writes inside an inline element of a `div` keeps Go's handling and its side artifact; only the added text differs (PE-008). Regression: a `span` with an image and an SVG inside a `div` writes Go's two side artifacts and Go's body plus three added paragraphs.
+  5. Malformed input parity (major). XML well-formedness errors fail with Go's exact text and exit 1 (`&nbsp;`, mismatched and unclosed tags, a non-UTF-8 encoding declaration, bad names, control characters, invalid UTF-8, a missing semicolon, an unquoted attribute). An empty, garbage, or truncated PDF fails with Go's `ledongthuc/pdf` text. 15 failure cases and 4 well-formed edge cases (a DTD, two roots, CDATA and line endings, name spaces) equal Go byte for byte.
+  6. `next_id` precision (major). `next_id` decodes as an exact 64-bit integer (`bigint`), increments with Go's `int` wrap, and is written exactly. With `next_id` 9007199254740992 the two twins get `REF-9007199254740992` and `REF-9007199254740993`; at 9223372036854775807 the IDs and `next_id` wrap as in Go (pinned from the Go seed).
+  7. PDF spacing (major). Proposed PE-009 is now an exact class: see [P4 Open Items](#p4-open-items). Proposed PE-010 (outside-root refusal) and PE-011 (side artifacts after validation) are recorded there too, in `test/golden/proposed-exceptions.json`, not in `parity-exceptions.json`.
+  8. P8 note recorded in [P4 Closeout Numbers](#p4-closeout-numbers).
+- Checks after the fix round, on macOS (Node 24.22.3, Go 1.24.1): see [Check Results](#check-results-3).
+- Owner decision round (2026-11-23): PE-009 approved and moved to `parity-exceptions.json`; PE-010 approved with the new `--allow-outside-root` flag for `convert`, `index references`, and `index playbooks`, the PRD 20 rule, and 23 intake edge goldens; the `@xmldom/xmldom` removal confirmed and its records made consistent (`SECURITY.md` now says four bundled packages); the proposed side-artifact exception renumbered from PE-011 to PE-013 and kept pending. Checks: see [Check Results](#check-results-3).
+- Round 2: CHANGES. Findings: the in-place writer race, preflight, the PDF trailer, the PE-009 class, U+FEFF in CDATA, parsing budgets. Fixes, each reproduced first, compared with the Go 1.24.1 seed where Go applies, and kept as a regression test:
+  1. In-place writer race (blocker). Node has no `openat`. The in-place writer now opens with `O_NOFOLLOW` and never `O_TRUNC` (an existing file without `O_CREAT`, a new file with `O_CREAT | O_EXCL`), checks the descriptor with `fstat` (regular file, one link), then resolves the folder's real path again and requires the same path, device, and inode as before the open (and still allowed), and requires the name to still be the opened file. Only then does it truncate and write. A refused write removes a file it created. The atomic write checks its temporary file the same way after the create, again before the rename, and after the rename; a port rename checks both folders before and after. The port has no separate exclusive-create or stream-copy path in this branch (the temporary-file create is the exclusive create). `SECURITY.md` Write Safety states the time-of-check window that stays (a local attacker who swaps folders inside the project during a command is out of the threat model). Reproduced with a test-only hook (`writeRaceHooks.beforeOpen`) that swaps the folder for a link to an outside folder: with the new folder check off, 5 of 7 race tests fail (a file lands outside); with it on, all 7 pass.
+  2. Preflight (major). `checkWriteTargets` now runs `InPlaceWritePort.checkInPlaceTarget` on every destination before the first write (folder containment, and an existing entry's type, link count, and device-link rule). Reproduced: a twin that is a FIFO or has a second hard link was refused (exit 3) after `media/page-image-001.png` was written; now no new file is left.
+  3. PDF trailer (major). `src/core/intake/convert/go-pdf-xref.ts` ports the `pdf.NewReader` checks after the `startxref` line: the operand must be an integer, then the `xref` table (rows, trailer dictionary, `/Prev` chain, `/Size`) or the `xref` stream header (`/Type /XRef`, `/Size`, `/Index`, `/W`). 21 malformed trailers equal Go's text and exit 1 (for example `startxref` followed by `abc`, `12.5`, `/Name`, or `(12)`; `/Prev /X`; a missing `/Size`; `invalid W array [1 2]`). A signed operand still converts, as in Go. Where Go panics (exit 2) the port exits 1 with the panic text; on a `/Prev` loop, where Go hangs, the port stops at a new 1,000-section limit.
+  4. PDF spacing. PE-009 is now checked as the class the orchestrator ruled (see [Owner Decisions](#owner-decisions)) in the golden harness, the eval parity test, and the hostile tests. The two earlier pinned cases stay as fixtures, and two `Quarterly Staff meeting` fixtures (a `Td` gap and a `TJ` gap; Go 1.24.1 prints `QuarterlyStaff meeting`) are added.
+  5. U+FEFF in XML (major). The XML decoder's `TextDecoder` now keeps U+FEFF (`ignoreBOM: true`), and so does the ZIP name decoder. Go keeps U+FEFF in text, in CDATA, as `&#xFEFF;`, and in shared strings; a document-leading U+FEFF is character data outside the root, which the converters drop, as in Go.
+  6. Bounded parsing (major). Attributes are charged as the decoder reads each one: 10,000 per element, 16 MiB of names and values per element, and the parsed-part tree budget. A PDF page's text is read chunk by chunk (`streamTextContent`) and reading stops once the text budget is spent. New XLSX limits from the hostile tests: 2,000,000 shared strings, 64 Mi characters of shared string text, and a 128 MiB CSV per sheet (before, one 1 MiB shared string in 2,000 cells wrote a 2 GB twin with a 1.5 GiB peak). Nine production-scale hostile tests run under a 256 MiB heap and a 1 GiB peak-memory cap.
+  7. `git diff --check`: whitespace rules in `.gitattributes`; license texts unchanged.
+  8. Reads outside the root: recorded in [PE-010 and `--allow-outside-root`](#pe-010-and---allow-outside-root), with two new edge goldens.
+- Checks after round 2, on macOS (Node 24.22.3, Go 1.24.1): see [Check Results](#check-results-3). `capture.mjs --check` exit 0 (158 cases); eval gate 12/12; golden harness `intake` enforced 55/55 with PE-013 pending; dependency guards ok; path hygiene valid; PRD authority `passed`.
+- Round 3: CHANGES. Findings: preflight conditions; the PE-009 check in both directions. Both fixed, each reproduced first, compared with the Go 1.24.1 seed, and kept as a regression test:
+  1. Preflight conditions (major). Reproduced with an HTML page with one image: with a folder at the twin and `--force`, an existing twin without `--force`, or a read-only twin with `--force`, the port wrote `media/page-image-001.png` and then exited 1, as Go does. Fix: before the first write, `preflightWrites` (`src/core/intake/convert/convert.ts`) walks every side artifact and then every twin in Go's order, with a write plan (`IntakeFs.checkWrite`, `src/core/intake/io.ts`) that records the folders and files the earlier writes make. For each, it checks existence against `--force` (Go's `side artifact exists` and `output exists` texts, and Go's `stat` error for a twin), each folder `os.MkdirAll` would make (a file in the way, a parent that refuses a new entry, containment), and the entry: containment, type, link count, then the open the write would do as a probe. The in-place writer's `checkInPlaceTarget` (`src/adapters/node-fs.ts`) now opens an existing file or folder for writing with no `O_TRUNC`, no `O_CREAT`, and `O_NOFOLLOW`, and closes it at once (a folder fails with `EISDIR`, a read-only file with `EACCES`); a new name needs a folder that allows a new entry (POSIX `access(W_OK | X_OK)`; not asked on Windows, where a folder's read-only attribute does not stop a create). The new `checkMkdir` does the same for a folder. A condition Go reports gives Go's exit code (1) and text; a port refusal still gives exit 3. Eight conditions compared with Go 1.24.1: all eight give the same exit code and text. In four (a folder at the twin with `--force`, an existing twin without `--force`, a read-only twin with `--force`, and a read-only twin folder with `--force`), Go leaves `media/page-image-001.png` and the port writes nothing; these are PE-013's new `hostile` cases. In the other four (a file in the way of `media/`, an existing side artifact without `--force`, a read-only folder where `media/` must be made, and a clean run), both tools write the same files. Regression: 4 PE-013 cases and a case-list check in `test/intake-hostile.test.ts`, and a probe test in `test/fs-port.test.ts`; with the preflight call removed, the 4 cases and the 2 earlier preflight cases fail.
+  2. PE-009 in both directions (major). `compareObservations` (`test/golden/harness.ts`) skipped the class check when the normalized port text equaled Go's, so a port that kept Go's `QuarterlyStaff meeting` passed. Now, with `pdfClass` (the golden harness always sets it), every PDF twin of a `pdf_text` case runs `pdfWordGapClass` with the source PDF's separations, also when the texts are equal: the port's text must hold every word gap the PDF renders, and may differ from Go's only by those spaces. A missing separation string is a difference. The eval parity test already ran the check on every PDF body. Regression: the reviewer's three probes in `test/intake-hostile.test.ts` (a `Td` gap, a `TJ` gap, and a line move, each with a port body equal to Go's joined words) fail the harness, and the rendered gaps pass; with the old rule, all three probes pass, so the tests fail. All 5 PDF golden cases pass the new check.
+- Owner approvals in P4 (2026-11-23): PE-008; PE-009 (as a class, the orchestrator ruling of review round 2); PE-010 with the new `--allow-outside-root` flag; PE-013 ("A failed convert leaves no files behind"; its four review round 3 preflight cases are recorded under it); PE-015 (where Go crashes or does not terminate on a malformed PDF, the port exits 1 with a clean diagnostic; six cases). See [Owner Decisions](#owner-decisions). No exception is pending.
+- Checks after round 3 and the PE-015 decision, on macOS (Node 24.22.3, Go 1.24.1): see [Check Results](#check-results-3). `npm test` 1,343 tests, 1,339 pass, 0 fail, 4 skipped; golden harness `intake` enforced 55/55, `entities` 27/27, `cli` 8/8; eval gate 12/12; `capture.mjs --check` exit 0 (158 cases); `--verify-artifact` 265 files for darwin, linux, and win32; dependency guards ok; `npm audit` 0 vulnerabilities; path hygiene valid; PRD authority `passed`.
+- Pending at the P4 commit: the reviewer's check of the round 3 fixes, and the three-OS CI run (A29).
+- Merge review of the combined P4-P5 branch (`e1dc814`): CHANGES. Findings: cleanup ownership (discovery listed record names before their create), a failed stream close that kept the copied file, and the symlink rollback cleanup through a changed folder. Fixed in `65b7ee7`, with the Windows failures of [CI run 45336979268](https://github.com/brucewaynedecoy/build-os/actions/runs/45336979268). See [P4-P5 Merge Fix Round](#p4-p5-merge-fix-round).
+- Verification of `65b7ee7`: CHANGES. Findings: the cleanup naming when the folder changed, and two test pins (the `EIO` text and the evidence-read separator). Fixed in `52655a0`, with the Windows OS error operation names (`CreateFile`) behind the golden failures of [CI run 45339414591](https://github.com/brucewaynedecoy/build-os/actions/runs/45339414591). See [P4-P5 Windows OS Error Text Round](#p4-p5-windows-os-error-text-round).
+- CI: [CI run 45340971690](https://github.com/brucewaynedecoy/build-os/actions/runs/45340971690) on `52655a0` passed all four jobs. See [P4 CI Run](#p4-ci-run).
+- Phase status: Done. Follow-ups: [P4-P5 Follow-ups](#p4-p5-follow-ups).
+
+### P5 Review
+
+- Reviewer: the independent reviewer agent (GPT 6.2 Astra). Implementer: the implementing agent (Opus 5.5). The orchestrating maintainer chat relayed the findings and the owner decisions.
+- Rounds 1 to 3: CHANGES each time. Fixed in [P5 Review Fix Round 1](#p5-review-fix-round-1), [P5 Review Fix Round 2](#p5-review-fix-round-2), and [P5 Review Fix Round 3](#p5-review-fix-round-3), then [P5 Special Mode Bits Fix](#p5-special-mode-bits-fix). Owner approvals: PE-011, PE-012, and PE-014 (2026-11-23).
+- Merge review of the combined P4-P5 branch (`e1dc814`): CHANGES (cleanup ownership, failed stream close, symlink rollback cleanup). Fixed in `65b7ee7`. See [P4-P5 Merge Fix Round](#p4-p5-merge-fix-round).
+- Verification of `65b7ee7`: CHANGES (cleanup naming, test pins). Fixed in `52655a0`, with the Windows OS error operation names. See [P4-P5 Windows OS Error Text Round](#p4-p5-windows-os-error-text-round).
+- CI: [CI run 45340971690](https://github.com/brucewaynedecoy/build-os/actions/runs/45340971690) on `52655a0` passed all four jobs; [CI run 45336979268](https://github.com/brucewaynedecoy/build-os/actions/runs/45336979268) and [CI run 45339414591](https://github.com/brucewaynedecoy/build-os/actions/runs/45339414591) are superseded. See [P5 CI Run](#p5-ci-run).
+- Phase status: Done. `R-009` stays open. Follow-ups: [P4-P5 Follow-ups](#p4-p5-follow-ups).
+
+### P6 Review
+
+- Reviewer: the independent reviewer agent (GPT 6.2 Astra). Implementer: the implementing agent (Opus 5.5). The orchestrating maintainer chat relayed the findings, the owner decisions, and the orchestrator decisions.
+- Owner decisions (2026-11-24): question 1, option A (shared files with a marked BuildOS section, Make Docs before BuildOS writes; t31) and question 2, option A (one entry file per legacy name; t30). See [P6 Shared Files and Make Docs Order](#p6-shared-files-and-make-docs-order) and [P6 Legacy Entry Files](#p6-legacy-entry-files).
+- Round 1: CHANGES. 19 findings, 2 of them blockers. All fixed with tests. Orchestrator decision in this round: option A on the "set up Make Docs later" text (open item 9), recorded as an orchestrator decision that the owner may still veto. See [P6 Review Round 1](#p6-review-round-1).
+- Round 2: CHANGES. 17 findings, 3 of them blockers. All fixed with tests, with the 7 failures of [CI run 45412403531](https://github.com/brucewaynedecoy/build-os/actions/runs/45412403531) (the `.cmd` wrappers rewritten). F-P6-01 opened. See [P6 Review Round 2](#p6-review-round-2) and [P6 CI Run 45412403531](#p6-ci-run-45412403531).
+- Round 3: CHANGES. 17 findings, 3 of them blockers. All fixed with tests, with the 4 Windows failures of [CI run 45420565710](https://github.com/brucewaynedecoy/build-os/actions/runs/45420565710). F-P6-02 and F-P6-03 opened. See [P6 Review Round 3](#p6-review-round-3) and [P6 CI Run 45420565710](#p6-ci-run-45420565710).
+- [CI run 45429667932](https://github.com/brucewaynedecoy/build-os/actions/runs/45429667932) on `22d5970`: Linux and Windows green, the Windows installed-tarball golden step 167 of 167. F-P6-03 closed. See [P6 CI Run 45429667932](#p6-ci-run-45429667932).
+- Round 4 (closing check): 10 findings (3 majors, 7 minors), 0 blockers. All fixed with tests. F-P6-04 opened. The review loop is closed under the project stop rule. See [P6 Review Round 4 (closing check)](#p6-review-round-4-closing-check).
+- CI: [CI run 45433974561](https://github.com/brucewaynedecoy/build-os/actions/runs/45433974561) on `9e2f8a2` passed all five jobs. See [P6 CI Run 45433974561](#p6-ci-run-45433974561).
+- Phase status: Done. Every finding is fixed except the follow-ups in [P6 Follow-ups](#p6-follow-ups).
+
+### P7 Review
+
+- Reviewer: the independent reviewer agent (GPT 6.2 Astra). Implementer: the implementing agent (Opus 5.5). The orchestrating maintainer chat relayed the findings, the owner decisions, and the orchestrator decisions.
+- Stage order: Stages 4 and 5 ran first because t1 (the owner's copy of the skills) blocked Stages 1 to 3; a recorded departure. See [Stage Order Departure](#stage-order-departure).
+- Stages 4 and 5, round 1: CHANGES. 14 findings. All fixed with tests. See [P7 Review Round 1](#p7-review-round-1).
+- Stages 4 and 5, round 2: CHANGES. 10 findings. All fixed with tests. See [P7 Review Round 2](#p7-review-round-2).
+- Stages 4 and 5, round 3: CHANGES. 11 findings (7 blockers and majors, 4 minors). The 7 fixed with tests; the 4 minors tracked as F-P7-01 to F-P7-05. Stage 6 (R-009 option B, PE-020) built in the same pass. See [P7 Review Round 3](#p7-review-round-3) and [P7 Stage 6](#p7-stage-6).
+- Stages 1 to 3, skills round 1: CHANGES. 14 findings. All fixed with tests; CI run 45462792437's Windows router failure fixed. See [P7 Skills Review Round 1](#p7-skills-review-round-1).
+- Stages 1 to 3, skills round 2: CHANGES. 8 findings. All fixed with tests, with the deny-list failure of [CI run 45474800265](https://github.com/brucewaynedecoy/build-os/actions/runs/45474800265). See [P7 Skills Review Round 2](#p7-skills-review-round-2).
+- Stages 4 to 6, round 4 (closing check): 5 findings (1 blocker, 4 majors). All fixed with tests. Owner approvals: PE-018 and PE-019 (2026-11-24). See [P7 Review Round 4 (closing check)](#p7-review-round-4-closing-check).
+- Whole phase, final check of `d2e45e6`: 7 findings (4 blockers, 3 majors). All fixed with tests, with the Windows failure of [CI run 45483759496](https://github.com/brucewaynedecoy/build-os/actions/runs/45483759496). F-P7-06 and F-P7-07 opened. The review loop is closed under the project stop rule. See [P7 Final Check](#p7-final-check).
+- CI: [CI run 45489678572](https://github.com/brucewaynedecoy/build-os/actions/runs/45489678572) (`buildos-ci`) on `42b9782` passed all five jobs, and [deny-list run 45489679281](https://github.com/brucewaynedecoy/build-os/actions/runs/45489679281) (`buildos-deny-list`) on the same commit passed with the repository secret. See [P7 CI Runs 45489678572 and 45489679281](#p7-ci-runs-45489678572-and-45489679281).
+- Owner note: the orchestrator told the owner about PE-019 part (3) and the PE-018 decode-once extension; no objection at closeout time, veto open (see [Owner Decisions](#owner-decisions)).
+- Phase status: Done. Every finding is fixed except the follow-ups in [P7 Follow-ups](#p7-follow-ups). See [P7 Closeout](#p7-closeout).
+
+### P8 Review (Stages 1 to 3)
+
+- Reviewer: the independent reviewer agent (GPT 6.2 Astra). Implementer: the implementing agent (Opus 5.5). The orchestrating maintainer chat relayed the findings, the owner decisions, and the orchestrator decisions.
+- Stage order: Stage 3 (Go removal) ran before Stage 2 on the orchestrator's instruction; a recorded departure. See [P8 Release 0.1.0](#p8-release-010).
+- Owner decisions (2026-11-24): the repository made private and history left as it is for now; then option A for the first publish (a reserved-name placeholder, then trusted publishing) and option A for the repository (a history rewrite, then public). See [P8 Review Round 1](#p8-review-round-1).
+- Round 1 of `548f4ea`: CHANGES. 11 findings, 6 of them blockers. All fixed with tests. See [P8 Review Round 1](#p8-review-round-1).
+- Round 2 of `b3430d9`: CHANGES. 19 findings (9 in the release workflow, 10 in the documents). All fixed with tests or stated as owner questions, with the two failures of [CI run 45510596967](https://github.com/brucewaynedecoy/build-os/actions/runs/45510596967) and [deny-list run 45510597002](https://github.com/brucewaynedecoy/build-os/actions/runs/45510597002). See [P8 Review Round 2](#p8-review-round-2).
+- Round 3 of `6e8e226` and the final check: 8 findings, 2 of them blockers. All fixed with tests. The review loop is closed under the project stop rule. See [P8 Final Check for Stages 1 to 3](#p8-final-check-for-stages-1-to-3).
+- CI: [`buildos-ci` run 45525496472](https://github.com/brucewaynedecoy/build-os/actions/runs/45525496472) and [`buildos-deny-list` run 45525496513](https://github.com/brucewaynedecoy/build-os/actions/runs/45525496513) on `980b67a` passed; the [release dry run 45525499690](https://github.com/brucewaynedecoy/build-os/actions/runs/45525499690) and its [deny-list run 45525499656](https://github.com/brucewaynedecoy/build-os/actions/runs/45525499656) passed, with the privileged jobs skipped by design. See [P8 CI Runs and Dry Run on 980b67a](#p8-ci-runs-and-dry-run-on-980b67a).
+- Phase status: In progress. Stages 1 to 3 done except t1; Stages 4 and 5 wait on owner actions. Follow-ups: [P8 Follow-ups](#p8-follow-ups). See [P8 Stages 1 to 3 Closeout](#p8-stages-1-to-3-closeout).
+
+## P5 Discovery and Design Port
+
+Phase: [W1 R7 P5](./05-discovery-and-design-port.md). All work ran on 2026-11-23 on one Apple M2 Pro macOS arm64 machine (Darwin 27.2.0), in its own worktree from `d29ea04`, with Node 24.22.3 and Go 1.24.1 from scratch folders (tarball SHA-256 checked against `nodejs.org` `SHASUMS256.txt` and `go.dev/dl`). P4 ran at the same time in another worktree. The Linux and Windows results were then proven in CI; see [P5 CI Run](#p5-ci-run).
+
+### Port Map
+
+| Go tool | TypeScript |
+| --- | --- |
+| `buildos-discovery/internal/discovery/discovery.go` (`RecordDiscoveryRun`, `QualifyFinding`, `activeDiscoveryPlaybook`, `nextJSONLID`, `planCopiedArtifacts`, `rawFindingContent`, `copyFile`, `appendJSONL`, the record formatters, `normalizeRawFindingRef`, `validateRawFindingAnchor`, `readRunIndexRow`) | `src/core/discovery/discovery.ts` |
+| `buildos-design/internal/design/promotion.go` and `resolver.go` (`PromoteFinding`, `readFindingRows`, `marshalFindingRow`, `renderDesign`, `replaceDesignsSection`, `designSlug`, `atomicReplaceFile`, `syncNewFile`, rollback) | `src/core/design/promote.ts`; the atomic replace is `GoFiles.atomicReplace` in `src/core/shared/go-files.ts` |
+| `buildOSLayout`, `detectLayout`, `isInstalledSystemRoot`, `resolveRepoPath`, `cleanRepoRoot` (same in both tools) | `src/core/shared/buildos-layout.ts`, `GoFiles` in `src/core/shared/go-files.ts` |
+| `sharedentities.OpenRoot(root, ModeStrict)` and `graph.Resolve` (the Go entity seed) | `GoFiles.openEntityRoot` (`loadGraph` and `validateGraph` of the P3 core) and `resolveEntity`, in this process |
+| `cmd/buildos-discovery/main.go` and `cmd/buildos-design/main.go` (`run`, `printUsage`, the `flag.FlagSet`s, the output lines) | `src/cli/commands/discovery.ts` and `src/cli/commands/design.ts`, with `src/cli/go-flagset.ts` (Go `flag` with `ContinueOnError`, `failf`, and `PrintDefaults`) and `src/cli/commands/go-tool.ts` (output and `--json`) |
+| Go standard library behavior they print or write: `filepath.Rel` and `IsAbs`, `bufio.Scanner` line limits, `bytes.TrimSpace`, `strings.ToLower`, `json.Marshal` | `src/core/shared/go-text.ts` |
+
+- Command mapping: `buildos-discovery run discovery ...` is `buildos discovery run discovery ...`, `buildos-discovery qualify finding ...` is `buildos discovery qualify finding ...`, and `buildos-design promote finding ...` is `buildos design promote finding ...`, with the same flags, defaults, and positional rules. Both names print the Go tool's exact text (usage, `buildos-<tool>: error: <message>`, exit 1).
+- Legacy names: the golden harness runs each discovery and design case under its legacy name, so P5 adds `src/cli/invocation.ts`. It maps `buildos-intake`, `buildos-discovery`, and `buildos-design` (file name without `.js`, `.mjs`, `.cjs`, `.cmd`, or `.exe`) to `buildos <domain>`. This is part of P6 t2. P6 still owns the `bin` map, the stderr notice line, and its parity exception.
+- Core stays free of `fs`: every read and write goes through the port. The port gained four methods, appended at the end of `FsPort`: `statEntry` (Go `os.Stat`, which tells `ENOENT` from `ENOTDIR`), `writeNewFile` (`O_CREATE|O_EXCL`, with optional file and folder flush and removal on failure, Go `syncNewFile`), `writeFile` (Go `os.WriteFile`), and `appendFile` (Go `O_APPEND`). Reads use a read-only port bound to the volume, as the Go tools read any path a flag or an index names (the P3 manifest rule). Writes use a port bound to the repository root.
+- Folder mode fix: `mkdirAll` (P3 `src/core/entities/io.ts`) created folders with mode `0o777` minus the umask, and Go's `os.MkdirAll(dir, 0o755)` uses `0o755` minus the umask. Both give `0755` under the harness umask `022`. Under umask `002`, the Go discovery tool gave `0755` and the port `0775` (checked with both on a fixture copy). The port's `mkdir` now takes an optional `mode`, and `mkdirAll` passes `0o755`, so `entities`, discovery, and design all match Go. Regression test: "folder modes" in `test/discovery.test.ts` (POSIX only).
+- t10: `toolkits/buildos-discovery/` and `toolkits/buildos-design/` are unchanged. Their Go tests pass with Go 1.24.1 (`go test ./...` in both). Go removal waits for P8.
+
+### Discovery and Design Gates (t4, t8)
+
+- `cases.json`: `discovery` and `design` are `enforced`. Local summary: `golden domain discovery: enforced: 43/43 cases match, 5 darwin golden(s)` and `golden domain design: enforced: 25/25 cases match, 4 darwin golden(s)`. No parity exception field applies to either domain. `cli` 8/8 and `entities` 27/27 still match.
+- PE-001: the exact root help value now lists `discovery` and `design` (`help`, `entities`, `discovery`, `design`, `version`); 7 values and the reason text changed in `parity-exceptions.json`. When P4 merges, its `intake` row changes the column width, so that value must be regenerated from `rootHelp` once more.
+- Linux and win32: passed in [CI run 45340971690](https://github.com/brucewaynedecoy/build-os/actions/runs/45340971690). The win32 set holds 5 discovery and 4 design OS goldens, and the three PE-005 design cases use the shared golden on Windows.
+- Extra Go comparison: a scratch script ran 33 more edge cases with the Go 1.24.1 tools built from `toolkits/buildos-discovery` and `toolkits/buildos-design` and with the bundle, through the harness `runCase` and `compareObservations`. All 33 match: empty `--repo-root`, an absolute evidence path outside the root, HTML and U+2028 in a title, invalid UTF-8 and Unicode space in raw findings, empty list values, `RUN-0099`, a 70,000-byte JSONL line (`bufio.Scanner: token too long`), repeated targets and dataset refs, `-h` and `--help` after a subcommand, a bad boolean, a positional before flags, playbook-index type and syntax errors, a raw reference outside the root, an empty anchor, run-row type errors, a folder as the confirmation test, a negative qualification with a Unicode title, Unicode and `İ` in an evidence file name, a finding record with invalid UTF-8 and CRLF, a CRLF index with blank lines, a record without a `## Designs` section, an `id="..."` anchor, a Unicode title slug, a title with no slug, a relative `--repo-root ..`, padded `--finding-id` and `--route`, an empty router file, `-help`, and two promotions. One case shows Go's own temporary folder name above the fixture in its message; that is not normalized, so the text match was checked by eye. A read-only finding folder gave the same message, rollback, and file tree in both, apart from Go's random temporary-file number.
+
+### Windows Atomic Writes (t11)
+
+- The findings index and the finding record are replaced through the port's `writeFileAtomic` (temporary file `.<name>.tmp-<n>`, old mode, flush, rename). The parent folder flush is skipped on Windows, as in P3 t14. The design file is created with `writeNewFile` (`O_EXCL`, file flush, folder flush skipped on Windows, removed when a step fails), as Go's `syncNewFile`. A failed later step rolls back the index and the record, as in Go.
+- `test/design.test.ts`, "t11": on every OS, a promotion exits 0 and writes the design file, the finding record, and the findings index row, and leaves no temporary file and no index row without its design file. A Windows-only test does the same for `design-promote-baseline`, `design-promote-change-redirected`, and `design-installed-promote`. On macOS the Windows-only body was run once with its skip removed, and it passed. In CI it runs on the Windows job. The golden harness compares the three cases with the shared golden on Windows.
+
+### Ported Tests (t3, t7) and Acceptance Checks
+
+- `test/discovery.test.ts`: every test of `discovery_test.go` and `cmd/buildos-discovery/main_test.go`, by the Go name, plus `--json` (planned, applied, failure).
+- `test/design.test.ts`: every test of `promotion_test.go` and `cmd/buildos-design/main_test.go`, by the Go name. Go injects a rename failure; the port test makes the rename fail for real (a folder with content at the target) and checks that the original stays and no temporary file remains.
+- A33: `test/discovery.test.ts` replaces every `child_process` entry point with a function that throws, then records a run and qualifies a finding through a redirect. Both succeed, with no call. A static check confirms that `src/core/discovery/`, `src/core/design/`, and `go-files.ts` load no Node module and use the P3 entity core.
+- A35: a dry run writes nothing (file-tree compare) and reports `write_status` `planned`, `ok` true, and the target `design_path` in JSON mode; the human form prints `would write <path>` first.
+- A36: for the baseline and the redirected promotion of the golden fixture, with a `.make-docs/` folder added, the file-tree diff shows exactly one new file under `system/docs/` (the design), no other change under `docs/` or `.make-docs/`, and only `findings.jsonl` and `finding.md` changed elsewhere.
+- A37 and t9: the register shows `R-009` `Open`, and its follow-up still reads "Ask Make Docs for a public design-create operation, then move promotion onto it." No boundary fix was made.
+- `test/go-tool-cli.test.ts`: the legacy-name mapping and the Go flag set rules.
+
+### Check Results
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm test` | exit 0; 1,181 tests, 1,176 pass, 0 fail, 5 skipped (Windows-only and one POSIX-only) |
+| `npm run build` | exit 0; `dist/buildos.js` 238,646 bytes (159,026 after P3) |
+| Smoke | `node dist/buildos.js version` exit 0; in fixture copies, `discovery run discovery --playbook-id PB-010 --outcome positive --target REQ-002 --raw-finding inputs/raw/raw-1.md` exit 0 (`RUN-003`, `REQ-002 -> REQ-001`); `design promote finding --finding-id FIND-002 --route change-plan --slug keep-tax --dry-run` exit 0; the same with `--json` reports `planned` |
+| Golden harness | `cli` 8/8, `entities` 27/27, `discovery` 43/43, `design` 25/25, all enforced; `intake` pending (P4) |
+| `node test/golden/capture.mjs --check` | exit 0; 158 cases on darwin, every golden byte-identical to a fresh Go 1.24.1 capture |
+| `capture.mjs --verify-artifact` | darwin, linux, and win32: 265 files each |
+| `npm run check:deps` and `npm run check:deps:installed` | both `dependency policy: ok`; no dependency changed |
+| `npm audit --audit-level=high` | 0 vulnerabilities |
+| `npm pack --dry-run` | 6 files (`dist/buildos.js` 238.6 kB) |
+| `make-docs project path-hygiene validate` | valid, 0 failing findings |
+| `make-docs run prd authority validate --target-root . --json` | no diagnostics |
+
+### Parity Exceptions PE-011 and PE-012
+
+The owner approved both on 2026-11-23 (see [Owner Decisions](#owner-decisions)). They were proposed as PE-008 and PE-009; P4 uses PE-008 to PE-010 in its own worktree, so they are now PE-011 and PE-012. Both are in `toolkits/buildos/test/golden/parity-exceptions.json`, with the exact allowed values under `p5_edge` (P5 edge goldens, see [P5 Review Fix Round 1](#p5-review-fix-round-1)).
+
+| ID | Cases | TypeScript output | Go output |
+| --- | --- | --- | --- |
+| PE-011 | `buildos discovery ...`, `buildos design ...`, and the legacy names, with a whole `--json` argument in flag position (before the first non-flag argument and before `--`, never as a flag value) | The shared envelope on stdout (`discovery.run`, `discovery.qualify`, or `design.promote`; `write_status` `planned` for a dry run, `applied` for a write), nothing on stderr, the exit code of the human form. Every other spelling (`-json`, `--json=true`, `--title --json`, `-- --json`, `x --json`) behaves as in Go. | `flag provided but not defined: -json`, the flag usage, exit 1. |
+| PE-012 | A discovery or design write that would really land outside the repository root through a link (a symlinked finding, designs, or runs folder that leads outside) | Every write folder is checked before the first write. The refusal is `buildos-<tool>: error: <path> resolves outside the root <root>`, exit 3, and nothing changes. With `--allow-outside-root` (flag position, as PE-011), the write follows the link as in Go. A symlink at the written file itself is replaced, never followed (Go's `os.Rename`), so that is no refusal and equals Go for the design files. At the discovery index (`runs.jsonl`, `findings.jsonl`) the link is replaced too, with or without the flag, where Go appends through it; that is PE-014, approved (2026-11-23). | Go follows the link and writes outside the root, exit 0. |
+
+### P5 Review Fix Round 1
+
+The first review of P5 found two blockers and three major findings. Each was reproduced first against the Go 1.24.1 tools built from `toolkits/buildos-discovery` and `toolkits/buildos-design`. `scripts/capture-p5-edge-goldens.ts` ran those tools on 22 edge cases into `test/fixtures/go-seed/p5-edge-goldens.json`, and `test/p5-edge.test.ts` runs the bundle on the same cases and compares exit code, stdout, stderr, and the file tree inside and outside the root. All 22 match: 17 byte for byte, and 5 with exactly the PE-011 or PE-012 values. The bundle built from `a405a39` (before the fixes) fails 15 of them, among them every finding below.
+
+| Finding | Fix | Regression test |
+| --- | --- | --- |
+| 1, blocker: with `--title --json --dry-run`, Go takes `--json` as the title and previews; the port removed `--json`, took `--dry-run` as the title, and applied all three files | `goParseFlags` (`src/cli/go-flagset.ts`) takes `extras`: exact TypeScript-only switches (`--json`, `--allow-outside-root`, in `GO_TOOL_EXTRAS`, `go-tool.ts`) recognized only as a whole argument in flag position, with Go `flag` rules: never as a flag value, never after `--` or after the first non-flag argument, never in the usage text. A `GoFlagError` keeps the switches found before it. `splitJson` is gone. | Edge goldens `design-json-as-title-value`, `-after-terminator`, `-after-positional`, `-in-title-equals`, `-single-dash`, `-with-value`, `discovery-json-as-title-value`, `-after-terminator` (all equal to Go); `design-json-in-flag-position` and `discovery-json-in-flag-position` (PE-011); `go-tool-cli.test.ts` "TypeScript-only switches in flag position" |
+| 2, blocker: with `finding.md` a symlink to an outside file, the port updated `findings.jsonl`, exited 3, and left no design | The atomic write and `writeNewFile` act on the folder entry and never follow the last name, so only the folder must be inside the root (`entryOf(target, false)` in `node-fs.ts`): a symlink at the target is replaced (Go's `os.Rename`) or fails with `EEXIST` (`O_EXCL`), and no byte lands outside. `mkdir`, `rename`, `writeFile`, and `appendFile` still check the path the link resolves to. Promotion checks every write folder before the first write (`GoFiles.preflightWrites`), and a typed port refusal or failure after a write rolls back the earlier replacements as a Go error does, then is rethrown (exit 3). PE-012 applies only when the write would land outside: a symlinked folder. | Edge goldens `design-record-link-outside` and `design-index-link-outside` (equal to Go: the link becomes a file with the outside file's mode, the outside file is kept); `design-finding-folder-link-outside`, `design-designs-link-outside` (PE-012, no change) and their `-allowed` forms (equal to Go); `design.test.ts` "refusals roll back like Go errors"; `fs-port.test.ts` "replaces, never follows, a symlink to outside the root at an atomic-write target" |
+| 3, major: concurrent `run discovery` commands could overwrite the same immutable run folder | Orchestrator-approved safety improvement, no parity effect on one command alone. After the Go checks, the run (or finding) folder is reserved with an exclusive `mkdir` (mode 0755). A folder that another command made first gives Go's own `run artifact <path> already exists` (or `finding artifact ...`) and changes nothing. Any other `mkdir` error runs Go's own `MkdirAll(<folder>/evidence)` (or `confirmation-test`), so the error text is Go's. | `discovery.test.ts` "fails cleanly when another command creates the run folder after the ID is chosen", "... the finding folder ..."; all 43 discovery goldens unchanged |
+| 4, major: a 2 GiB evidence file failed with `ERR_FS_FILE_TOO_LARGE` and left an incomplete run folder | The port gains `openRead` (one check at open, then chunked reads) and `writeNewFile` takes an iterable of chunks, so `GoFiles.copyNewFile` copies as a stream (8 MiB chunks, Go's `io.Copy`), with `O_EXCL` and the same refusal rules; a failed copy removes its file. Go's error text is kept (`open <source>`, `read <source>`, or the target step). When a step after the reservation fails, the command removes what it created, last first (`FsPort.remove`: one file, link, or empty folder, never recursive, never through a link), so a retry works. Go leaves the partial folder. | Edge golden `discovery-run-evidence-2gib` (2 GiB plus 5 bytes, equal to Go, about 6 s; skipped with less than 8 GiB free); `discovery.test.ts` "removes what it created when a step after the reservation fails", "copies evidence as a stream"; `fs-port.test.ts` "streams a copy", "removes one file, link, or empty folder" |
+| 5, major: qualification accepted `1e400` in a run row's `inputs` and nested `-1e400` in `outputs`; Go exits 1 before writing | `go-json.ts` gains the Go type `interface {}` (`kind: "any"`): kept as raw bytes, but the first number at any depth that `strconv.ParseFloat(s, 64)` rejects saves Go's `json: cannot unmarshal number <n> into Go struct field runIndexRow.<field> of type float64`, in document order with the other decode errors. `runIndexRow.inputs` and `outputs` use it. | Edge goldens `discovery-qualify-inputs-1e400`, `discovery-qualify-outputs-nested-1e400`, `discovery-qualify-outputs-1e-400` (all equal to Go) |
+
+- `--allow-outside-root` (PE-012): `FsPortOptions.allowOutsideRoot`, a third optional argument of the port factory (`FsPortFactory(root, cwd, options)`, `src/core/shared/fs-port.ts`). `createNodeFsPort` relaxes only the real-path containment check, for a path that is inside the root as spelled (`..` folded as text); every other refusal stays (device and special paths, a path spelled outside the root). The CLI parses the flag in flag position (`GO_TOOL_EXTRAS`), core passes it through `GoFilesContext.allowOutsideRoot`, and `GoFiles` opens its root write port with it. `src/cli/run.ts` passes the options through its recording wrapper. Read ports are unchanged. Test: `fs-port.test.ts` "refuses a write through a symlinked folder that leads outside the root, unless allowOutsideRoot (PE-012)".
+- Edge-golden normalization: the golden harness rules (`normalizeText`): the scratch folder is `{ROOT}`, a time stamp from the run window is `{TIMESTAMP}`, and the run date in a design file name is `{DATE}`. The tree records every entry of the scratch folder (kind, mode, and the SHA-256 of the normalized content, or the link target). `tsArgs` (`--allow-outside-root`) go to the TypeScript run only; those cases must equal Go without the flag.
+- Shared P3 test changed: `fs-port.test.ts` "refuses a symlink at the target that resolves outside the root" now expects the atomic write to replace such a link (finding 2) and still expects `writeFile`, `appendFile`, `mkdir`, and reads to be refused. The P3 entity edge goldens, PE-007 included, still pass: `entities` reads the dataset through the root port first, so its refusal is unchanged.
+- Checks after the round, on macOS with Node 24.22.3 and Go 1.24.1 from scratch folders: `npm run typecheck` exit 0; `npm test` exit 0, 1,220 tests, 1,215 pass, 0 fail, 5 skipped (Windows-only and one POSIX-only); `npm run build` exit 0, `dist/buildos.js` 247,595 bytes; smoke: `version` exit 0, `discovery run discovery --playbook-id PB-010 --outcome positive --target REQ-002 --raw-finding inputs/raw/raw-1.md` exit 0 (`RUN-003`), `design promote finding --finding-id FIND-002 --route change-plan --slug keep-tax --dry-run` exit 0, with `--json` `planned`, with `--title --json --dry-run` the Go preview; golden harness `cli` 8/8, `entities` 27/27, `discovery` 43/43, `design` 25/25, all enforced; P5 edge goldens 22/22; entity edge goldens 30/30; `node test/golden/capture.mjs --check` exit 0 (158 cases, darwin); `check:deps` and `check:deps:installed` ok; `npm audit --audit-level=high` 0 vulnerabilities; `npm pack --dry-run` 6 files (`dist/buildos.js` 247.6 kB); `make-docs project path-hygiene validate` valid, 0 failing findings; `make-docs run prd authority validate --target-root . --json` no diagnostics.
+
+### P5 Review Fix Round 2
+
+The second review of P5 found two blockers and three major findings. Each was reproduced first on `7ddf54c` with a scratch script (all five showed the defect), and, where Go behavior applies, against the Go 1.24.1 tools built from `toolkits/buildos-discovery` and `toolkits/buildos-design`. The P5 edge goldens grew from 22 to 25 cases; a fresh Go capture left the 22 earlier cases byte-identical.
+
+| Finding | Fix | Regression test |
+| --- | --- | --- |
+| 1, blocker: a short append to `runs.jsonl` followed by `EIO` left invalid bytes in the index, the cleanup removed the run, and a retry failed; with `--allow-outside-root`, a symlink at `runs.jsonl` was followed and its outside target grew | `appendJsonl` (`discovery.ts`) builds the full new index (the bytes there now plus the new line, which is exactly what Go's append writes) and replaces the file entry atomically: a temporary file in the same folder, renamed over the entry (`GoFiles.replaceJsonl`). It runs inside the run or finding folder reservation, which serializes commands that would add the same ID. A failed step leaves the old bytes, and the temporary file never stays. An existing index keeps its mode; a new one is `0o644` before the umask, as Go's `OpenFile` (new `AtomicWriteOptions.createMode`). Go's append never flushes the folder, so neither does this, and nothing can fail after the rename. A symlink at the index is replaced, never followed, also with the flag (PE-012). The same path serves `findings.jsonl`. | `discovery.test.ts` "a short write and EIO on the index leave the old index bytes, the cleanup removes the run, and a retry succeeds" (a real short `writeSync` and `EIO` in the adapter), "adds Go's bytes ... and keeps the index mode", "replaces, never follows, a symlink at runs.jsonl, also with allowOutsideRoot"; edge goldens `discovery-runs-index-link-outside`, `-outside-allowed`, `-inside` (PE-012: only the tree differs; the new index holds exactly Go's bytes and the link target is kept); all 43 discovery goldens unchanged |
+| 2, blocker: a folder flush failure after the second rename left `finding.md` naming an absent design; with linked inputs, a failed design creation turned the original links into regular files | Before the first write, promotion records each entry it replaces: a symlink's target text (new `FsPort.readLink`), or a regular file's bytes. After any failure it checks which replacements landed (the entry is no longer the original, so a step that fails after its rename counts) and restores each one, last first: a symlink with its original text, atomically (new `FsPort.symlinkAtomic`), and a file with its bytes and mode. The design creation removes its own file, as Go's `syncNewFile`. The error text is Go's. | `design.test.ts` "a failed promotion restores every replaced entry as it was": the index flush, the record flush, and the design creation fail, on regular and on symlinked inputs (6 cases); each ends in the state before the command, links and outside files included, with no temporary file |
+| 3, major: `--allow-outside-root` let `readText` and `openRead` read an outside file through a linked parent | `check(target, forWrite)` in `node-fs.ts`: the option applies only to write destinations and the `stat` metadata a write needs (Go's `MkdirAll` checks each folder). `readText`, `readBytes`, `openRead`, `list`, and `readLink` stay inside the root in every mode. | `fs-port.test.ts` "refuses every content read through a symlinked folder that leads outside the root, with the option on" (also through a symlink at the target), and the refusal matrix (`callsWith`) now covers `openRead`, `readLink`, and `symlinkAtomic` |
+| 4, major: in a `qualify finding` race, the loser exited 3 with `goes through a symlink that does not resolve` | `realPathOf` (`node-fs.ts`): a missing part that is there on the next look, and is not a symlink, restarts the walk (at most 40 times). The loser then reserves the folder, gets `EEXIST`, and fails with Go's `finding artifact <path> already exists`, exit 1. | `discovery.test.ts` "a qualify finding that loses a race for a new folder fails with Go's already exists, not a refusal"; `fs-port.test.ts` "resolves again when a missing folder is created during the walk" (both plant the folder from `realpath`) |
+| 5, major: the edge harness hid a file change: a UTF-8 BOM added to `finding.md` during a PE-011 dry run gave the same observation | `digest` in `capture-p5-edge-goldens.ts` decodes with `ignoreBOM: true`, checks that the decode is lossless, and hashes the normalized bytes (else the raw bytes), so a BOM changes the digest. The other snapshot helpers were checked: the golden harness (`harness.ts`, `Buffer.toString`) and the entity edge capture (raw bytes) keep the BOM. | `p5-edge.test.ts` "a UTF-8 BOM added to finding.md during a run changes the observation" |
+
+- Go comparison for finding 2 (a scratch Go test in package `design` that wraps `replaceExistingFile` and `createExclusiveFile`, on `test/fixtures/golden/design`): when the index flush fails after its rename, Go keeps the new index; when the record flush fails after its rename, Go restores the index and keeps the new record, which names a design that does not exist; when the design creation fails, Go restores both, and with symlinked inputs it writes regular files (mode 640) in place of the links. The port ends every case in the state before the command, which is also Go's end state for a design creation failure on regular files.
+- PE-012 now also covers the discovery index link (three edge goldens, tree only). This follows the round 2 brief ("a link at the file is replaced, never followed"); the owner approved PE-012 for writes outside the root, and the inside-the-root case (`discovery-runs-index-link-inside`) is a new difference the owner should confirm. The owner approved it as PE-014 (2026-11-23), and the three cases moved from PE-012 to PE-014.
+- Port surface added in this round, appended at the end of `FsPort`: `readLink` and `symlinkAtomic`; `AtomicWriteOptions.createMode`. `GoFiles` gains `linkText`, `restoreLink`, and `replaceJsonl`.
+- Checks after the round, on macOS with Node 24.22.3 and Go 1.24.1 from scratch folders: `npm run typecheck` exit 0; `npm test` exit 0, 1,237 tests, 1,232 pass, 0 fail, 5 skipped (Windows-only and one POSIX-only); `npm run build` exit 0, `dist/buildos.js` 253,733 bytes; smoke: `version` exit 0, `discovery run discovery --playbook-id PB-010 --outcome positive --target REQ-002 --raw-finding inputs/raw/raw-1.md` exit 0 (`RUN-003`), `design promote finding --finding-id FIND-002 --route change-plan --slug keep-tax --dry-run` exit 0, with `--json` `ok: true`; golden harness `cli` 8/8, `entities` 27/27, `discovery` 43/43, `design` 25/25, all enforced; P5 edge test 29/29 (25 goldens); entity edge test 48/48; `node test/golden/capture.mjs --check` exit 0 (158 cases, darwin); `check:deps` and `check:deps:installed` ok; `npm audit --audit-level=high` 0 vulnerabilities; `npm pack --dry-run` 6 files (`dist/buildos.js` 253.7 kB); `make-docs project path-hygiene validate` valid, 0 failing findings; `make-docs run prd authority validate --target-root . --json` no diagnostics.
+
+### P5 Review Fix Round 3
+
+The third review of P5 found two defects. Each was reproduced first on `2ceccce`, and the reviewer's Go observations below are recorded as given: the first with the new rollback tests (all 6 symlinked cases of the 12 failed; the 6 regular cases passed), the second with a scratch script and the Go 1.24.1 `buildos-discovery` tool built from `toolkits/buildos-discovery`. The P5 edge goldens grew from 25 to 27 cases; a fresh Go capture left the 24 earlier cases that run here byte-identical (the 2 GiB case was not recaptured).
+
+| Finding | Fix | Regression test |
+| --- | --- | --- |
+| 1: a promotion rollback changed symlink permissions: links made under umask 077 (mode 0700 on macOS) came back as 0755 under umask 022 | `FsPort.readLink` now returns the link's text and its own mode (`lstat`). `symlinkAtomic` takes an optional `mode` and sets it on the temporary link with `lchmod` before the rename, where the OS keeps link modes (macOS). On Linux a link's mode is always 0777 and cannot be set, so the step is skipped (`lchmodSync` is read from the module object, so its absence is no load error). Promotion passes the original mode to `GoFiles.restoreLink`. A restored regular file gets its mode back through the replace's `fchmod`, which the umask does not change; folders are never changed. | `design.test.ts` "a rollback keeps every original mode whatever the umask": entries made under umask 077 and rolled back under 022, and the other way round, for the first folder flush, the second folder flush, and the design creation, on regular and symlinked inputs, with odd file modes (0604, 0600) and folder modes (0750, 0711) (12 cases; every entry's kind, own mode, and bytes or link text equal the start); `fs-port.test.ts` "puts a symlink back with its own mode whatever the umask" |
+| 2: discovery replaced a read-only index: with a regular 0444 `runs.jsonl` or `findings.jsonl` in a writable folder, Go exits 1 with `open <path>: permission denied` and keeps the bytes; the port exited 0 and replaced the file | New `FsPort.checkWritable`: for a regular file it opens the entry for writing (`O_WRONLY\|O_APPEND\|O_NOFOLLOW`) and closes it at once, with no write, so the OS makes Go's permission check (mode bits; root passes; on Windows the read-only attribute gives `EPERM`, Go's `Access is denied.`). A missing entry or a symlink is not checked. `GoFiles.replaceJsonl` runs it before the temporary file is made and fails with Go's `open <path>: <reason>`, exit 1; the bytes and mode stay. The run or finding folder that Go leaves is removed by the approved cleanup of review round 1. | Edge goldens `discovery-runs-index-readonly` and `discovery-findings-index-readonly`: exit, stdout, stderr, and the tree equal Go's, except the run or finding folder Go leaves (new `removesCreated` field: only the entries under that folder are left out of the comparison); skipped when the tests run as root; `fs-port.test.ts` "checks that a regular file is writable with no change" |
+
+- Other places where the port replaces a file that Go writes in place: none. The Go `os.OpenFile` and `os.WriteFile` calls in `toolkits/buildos`, `toolkits/buildos-discovery`, and `toolkits/buildos-design` were listed. Discovery's `appendJSONL` (`runs.jsonl`, `findings.jsonl`) is the only in-place open of an existing file that the port turned into a replace; it is fixed above. Discovery's `os.WriteFile` of `run.md`, `raw-findings.md`, `finding.md`, and `qualification.md` is in place in the port too (`GoFiles.writeFile`, `O_TRUNC`), inside a folder the command has just reserved; `copyFile` and the design file use `O_EXCL` in both. The entities index and consolidation (`index.go`, `consolidate.go`) and the promotion's `atomicReplaceFile` rename a temporary file in Go too, so a 0444 target is replaced in both.
+- PE-014, approved (2026-11-23): across the six Go failure injections of the promotion rollback (the first folder flush, the second folder flush, and the design creation, each on regular and on symlinked inputs), four keep changed bytes (the new index after the first flush failure, the new record after the second, each on regular and on symlinked inputs), and a fifth changes a link type (after the design creation fails with symlinked inputs, Go writes regular files in place of the links). Only the sixth (design creation on regular files) ends in the start state. The port restores the start state in all six. Also PE-014, approved (2026-11-23): the replacement of a symlink at the discovery index (`discovery-runs-index-link-outside`, `-outside-allowed`, `-inside`), where Go appends through the link. In `parity-exceptions.json`, those three cases moved from PE-012 to PE-014 (`p5_edge`, tree only), and PE-014 `design_rollback` lists the five rollback cases where Go's end state differs, with Go's end state. `test/p5-edge.test.ts` passes the three cases only with exactly the PE-014 tree values, and `test/design.test.ts` checks the start state in all six rollback cases and that `design_rollback` names exactly the five where Go differs.
+- Port surface changed in this round: `FsPort.readLink` returns `FsLink { target, mode }` (it was a string); `symlinkAtomic` takes `options.mode`; `checkWritable` is appended at the end of `FsPort`. `GoFiles` gains `link` and a `mode` argument on `restoreLink`.
+- Checks after the round, on macOS with Node 24.22.3 and Go 1.24.1 from scratch folders: `npm run typecheck` exit 0; `npm test` exit 0, 1,253 tests, 1,248 pass, 0 fail, 5 skipped; `npm run build` exit 0, `dist/buildos.js` 255,523 bytes; smoke: `version` exit 0, `discovery run discovery --playbook-id PB-010 --outcome positive --target REQ-002 --raw-finding inputs/raw/raw-1.md` exit 0 (`RUN-003`), `design promote finding --finding-id FIND-002 --route change-plan --slug keep-tax --dry-run` exit 0, with `--json` `ok: true`; golden harness `cli` 8/8, `entities` 27/27, `discovery` 43/43, `design` 25/25, all enforced; P5 edge test 31/31 (27 goldens) and entity edge test 48/48 (79 tests together); `node test/golden/capture.mjs --check` exit 0 (158 cases, darwin); `check:deps` and `check:deps:installed` ok; `npm audit --audit-level=high` 0 vulnerabilities; `npm pack --dry-run` 6 files (`dist/buildos.js` 255.5 kB); `make-docs project path-hygiene validate` valid, 0 failing findings; `make-docs run prd authority validate --target-root . --json` no diagnostics.
+
+### P5 Special Mode Bits Fix
+
+The review found that a failed promotion lost the special mode bits: a findings index at `01604` came back as `0604`, and a finding record at `01640` as `0640`. The rollback snapshot masked the mode with `0o777`. Go 1.24.1 was checked in each place where the port keeps a file's mode, with `buildos-discovery` and `buildos-design` built from `toolkits/buildos-discovery` and `toolkits/buildos-design` (the binaries are byte-identical to the round 3 builds) and a scratch Go program:
+
+| Place | Go 1.24.1 | Port after the fix |
+| --- | --- | --- |
+| Promotion replace (`atomicReplaceFile`), entities index and consolidation | `temp.Chmod(info.Mode().Perm())`: the new file has the `0o777` bits only. A promotion with the index at `01604` and the record at `01640` leaves `0604` and `0640`. | Unchanged: `FsStat.mode` is still `mode & 0o777`. No special bit is granted or kept that Go drops. |
+| Promotion rollback | Go's rollback uses the same replace, so it drops the special bits too. | PE-014 restores the start state: promotion records each file's full mode (`FsStat.fullMode`, `mode & 0o7777`) before the first write, and the rollback replace sets it on the temporary file before and again after the write (`AtomicWriteOptions.exactMode`), because a write clears setuid and setgid. |
+| Discovery index append (`appendJSONL`) | Opens the file in place: a sticky index (`01640`) stays `01640`. The macOS kernel clears setuid on the write (`04640` becomes `0640`); setgid follows the same OS rule. | The replace gets the old file's full mode, then writes, so the same OS rule applies: sticky stays, setuid and setgid end as Go's write in place leaves them. |
+| Stream copy (`copyFile`) and new files | `O_CREATE\|O_EXCL` with `0o644`: no special bits. | Unchanged: `0o644`. |
+
+Folders are never replaced or chmodded by these commands, so a sticky or setgid folder keeps its bits in both.
+
+| Test | What it checks |
+| --- | --- |
+| `design.test.ts` "a rollback keeps the setuid, setgid, and sticky bits" | Sticky (`01604`, `01640`, folders `01750`, `01711`, `01755`) and setgid (`02604`, `02640`, folders `02750`, `02711`, `02755`) inputs at the three promotion failure points (the index folder flush, the record folder flush, and the design creation): every entry's kind, full mode, and bytes equal the start. A successful promotion leaves the files at the `0o777` bits only, as Go, and the folders unchanged. A variant is skipped where the OS or user does not keep the bit (setgid needs the folder's group; the command sandbox drops it). |
+| `discovery.test.ts` "keeps the index's special bits as Go's append in place does" | Index modes `01640`, `01604`, `02640`, `02670`, `04640`, `06754`: after a run, the index mode equals what an append in place does to a probe file with the same mode, and the sticky bit stays. |
+
+Known difference, recorded under PE-014 (orchestrator ruling, 2026-11-23; covered by the owner-approved index-replacement rule): with a writable `0644` discovery index inside a folder the user cannot write (`0555`), Go opens the index in place, appends, and exits 0. The port replaces the index atomically, which needs a temporary file in that folder, so it exits 1 with `buildos-discovery: error: open <index>: permission denied`, keeps the old index bytes, and removes the run folder it created. New P5 edge golden `discovery-runs-index-folder-readonly` (Go 1.24.1 captured for this case only; the earlier goldens are unchanged): PE-014 `p5_edge` lists the exact exit, stdout, stderr, and tree. **The owner is informed of this consequence:** a project that keeps its `.os/data/` folder read-only and its index files writable can record discovery runs with Go but not with the port.
+
+- Port surface: `FsStat.fullMode` and `AtomicWriteOptions.exactMode` are new. `GoFiles.atomicReplace` and the `replaceExistingFile` hook take an optional `restoreMode`. A test fake that builds `FsStat` itself needs `fullMode`.
+- Checks, on macOS with Node 24.22.3 and Go 1.24.1 from scratch folders: `npm run typecheck` exit 0; `npm test` exit 0, 1,264 tests, 1,259 pass, 0 fail, 5 skipped (Windows-only); golden harness and `compare.test.ts` pass; P5 edge test (28 goldens) and entity edge test pass; `npm run build` exit 0, `dist/buildos.js` 256,631 bytes; `make-docs project path-hygiene validate` valid.
+
+### P5 Merge Notes
+
+- PE numbers: P5 uses PE-011, PE-012, and PE-014; PE-008, PE-009, PE-010, and PE-013 come from the P4 checkout. In `parity-exceptions.json`, keep the entries in ID order after the merge, and make the list in `test/golden/self-test.test.ts` "keeps every real exception on a real difference" read `PE-001` to `PE-014`. The `$comment` gained one sentence about `p5_edge` and one about `design_rollback` (PE-014). `ParityException` in `test/golden/harness.ts` gained the optional `design_rollback` field.
+- `--allow-outside-root`: one flag for intake, discovery, and design. P5's shape is `FsPortOptions { allowOutsideRoot?: boolean }` as the third optional argument of `FsPortFactory` and `createNodeFsPort`, passed by the wrapper in `src/cli/run.ts`. If P4 chose another shape, keep one: the port option name and the factory argument are the only shared surface. In `node-fs.ts`, the option is read in one place (`check`).
+- Port surface added in this round, appended at the end of `FsPort`: `openRead` and `remove`, the `FsReadStream` and `FsPortOptions` types, and an iterable `data` for `writeNewFile`. `node-fs.ts` splits `check` into `checkText` and `check`, and `entryOf` takes `followsName`; the atomic write and `writeNewFile` pass `false`. If P4 also changed `entryOf` or `check`, merge by hand and rerun `fs-port.test.ts`, `entities-edge.test.ts`, and `p5-edge.test.ts`.
+- PRD 20 (the orchestrator updates it once, at merge): add to the Command Surface or Compatibility rule on writes inside the project root: "A write that would land outside the project root through a link is refused (exit 3) unless the command is given `--allow-outside-root`; a link at the written file itself is replaced, never followed." Also name `--json` for the discovery and design commands (PE-011) where PRD 20 lists the `--json` commands.
+- Still from the first P5 round: regenerate the PE-001 root help value from `rootHelp` after `intake` joins `BUILTIN_DOMAINS`, and keep one `src/cli/invocation.ts`.
+- Review round 2, `--allow-outside-root`: the option now applies only to write destinations and `stat` metadata (`check(target, forWrite)` in `node-fs.ts`); content reads stay inside the root in every mode. If P4's intake reads input files through a port opened with the option, those reads stay contained: check that intake reads outside inputs through its own read port, and rerun `fs-port.test.ts` and the intake tests.
+- Review round 2, port surface: `FsPort.readLink` and `FsPort.symlinkAtomic` are appended at the end of `FsPort`, and `AtomicWriteOptions.createMode` at the end of its type. `realPathOf` in `node-fs.ts` gained a retry when a missing part appears. Any other `FsPort` implementation (a test fake that does not spread a real port) needs the two methods. If P4 changed `realPathOf` or `check`, merge by hand.
+- Review round 2, PE-012: longer `summary` and `reason` text; keep it when the exception list is merged. The three `discovery-runs-index-link-*` `p5_edge` entries moved to PE-014 after the owner approved it (2026-11-23).
+- Review round 3, port surface: `FsPort.readLink` now returns `FsLink { target, mode }`, `symlinkAtomic` takes `options.mode`, and `checkWritable` is appended at the end of `FsPort`. A test fake that does not spread a real port needs `checkWritable`. `node-fs.ts` adds `import * as nodeFs from "node:fs"` for `lchmodSync`. P4 writes no index in place, so intake is not affected.
+- Review round 3, edge goldens: `P5EdgeCase.removesCreated` (in `capture-p5-edge-goldens.ts`) leaves the folder that the approved discovery cleanup removes out of the tree comparison; no `parity-exceptions.json` change.
+
+### P5 CI Run
+
+[CI run 45340971690](https://github.com/brucewaynedecoy/build-os/actions/runs/45340971690), workflow `.github/workflows/buildos-ci.yml`, head `52655a0`. Conclusion: `success`. All four jobs passed: `test` on macOS, Linux, and Windows with Node 24 (unit tests; the golden harness with `cli`, `entities`, `intake`, `discovery`, and `design` enforced against the shared and per-OS goldens; the eval gate; the hostile tests; the dependency guards; `npm audit`), and the OSV scan job. Earlier runs [CI run 45336979268](https://github.com/brucewaynedecoy/build-os/actions/runs/45336979268) and [CI run 45339414591](https://github.com/brucewaynedecoy/build-os/actions/runs/45339414591) failed on Windows and are superseded; their fixes are in [P4-P5 Merge Fix Round](#p4-p5-merge-fix-round) and [P4-P5 Windows OS Error Text Round](#p4-p5-windows-os-error-text-round).
+
+- A32 and t4: the golden harness enforces `discovery` (43/43) against the shared, darwin, linux, and win32 goldens.
+- A34 and t8: the golden harness enforces `design` (25/25), including the written design file; on Windows the three PE-005 design cases match the shared golden.
+- t3 and t7: `test/discovery.test.ts` and `test/design.test.ts` pass on macOS, Linux, and Windows.
+- t11: the t11 test passes on every job, and the Windows-only test passes on the Windows job.
+- This closes the CI items in [P5 Open Items](#p5-open-items).
+
+### P5 Open Items
+
+- CI: resolved. [CI run 45340971690](https://github.com/brucewaynedecoy/build-os/actions/runs/45340971690) passed t3, t4, t7, t8, and t11 (A32, A34, the Windows t11 test, and the win32 goldens). `test/p5-edge.test.ts` is POSIX-only, as the entity edge test. See [P5 CI Run](#p5-ci-run).
+- Follow-ups carried forward: see [P4-P5 Follow-ups](#p4-p5-follow-ups).
+- Merge with P4: see [P5 Merge Notes](#p5-merge-notes).
+- PE-014, approved (2026-11-23): the promotion rollback restores the start state where Go keeps changed bytes or changes a link type, and discovery replaces a symlink at the index, inside or outside the root, where Go appends through it (see [P5 Review Fix Round 3](#p5-review-fix-round-3)).
+- PE-014 consequence, owner informed (2026-11-23): a writable discovery index in a read-only folder fails with the port (exit 1, cleaned up), where Go appends and succeeds (see [P5 Special Mode Bits Fix](#p5-special-mode-bits-fix)).
+- PERF-001 recheck (P8): the bundle is 253,733 bytes in P5, and 3,127,995 bytes after the P4-P5 merge at `52655a0`.
+- Orchestrator note: `buildos discovery` and `buildos design` print the Go tool names (`buildos-discovery`, `buildos-design`) in their usage and error text, under both names, for parity. P6 may decide otherwise for the `buildos <domain>` names with a parity exception.
+
+## P4-P5 Merge
+
+On 2026-11-23, `t3/w1-r7-p5-discovery-design-port` (`807518e`) was merged with `--no-ff` into `rewrite/ts-cli` at `2b06e3b` (P4). Both branched from `d29ea04`. Checks ran on macOS arm64 with Node 24.22.3 and Go 1.24.1 from scratch folders. Inputs: [P4 Open Items](#p4-open-items) (merge note) and [P5 Merge Notes](#p5-merge-notes).
+
+### Conflicted Files
+
+| File | Resolution |
+| --- | --- |
+| `toolkits/buildos/src/core/shared/fs-port.ts` | Both surfaces kept. P4's `statStrict` and P5's `statEntry` were the same Go `os.Stat`; they are one method, `statStrict`, with P5's metadata rule (`allowOutsideRoot` applies, as for `stat`) and P5's `fullMode`. P4's `readDir`, `InPlaceWritePort`, and `InPlaceWritePortFactory` and P5's `writeNewFile`, `openRead`, `remove`, `readLink`, `symlinkAtomic`, `checkWritable`, `FsLink`, `FsReadStream`, and `NewFileOptions` all stay. One `FsPortOptions` (P4's text plus P5's rule that a content read stays inside the root). P5's `writeFile` and `appendFile` are removed: see the behavior changes below. |
+| `toolkits/buildos/src/adapters/node-fs.ts` | P4's `openNodeFs` factory, in-place writer, preflight checks, `writeRaceHooks`, and after-open folder and entry checks, with P5's `checkText` and `check(target, forWrite)` split, `entryOf(target, followsName)`, `realPathOf` retry, `lchmodSync`, `createMode`, `exactMode`, and the folder `mode`. The atomic write uses `entryOf(target, false)` and P4's `folderId` checks, so a link at the written file is replaced, never followed, also when it points outside the root (PRD 20). The in-place writer's folder checks pass `forWrite`. P4's after-open rule now also covers P5's writes: `writeNewFile` opens with `O_NOFOLLOW` and checks the opened file (regular, one link, still the entry) and its folder, and removes its own file on a refusal; `symlinkAtomic` checks its folder before and after the rename; `remove` checks its folder before it unlinks. |
+| `toolkits/buildos/src/core/entities/io.ts` | P4's re-export of `src/core/shared/go-fs.ts`. P5's folder mode fix (`mkdirAll` makes folders with `0o755`, not `0o777`, before the umask) moved into `go-fs.ts`, so entities, intake, discovery, and design all get it. |
+| `toolkits/buildos/src/cli/invocation.ts` (add/add) | One file: P5's `LEGACY_NAMES` map (`buildos-intake`, `buildos-discovery`, `buildos-design`) and `invocationArgs`, with P4's `.ps1` shim name. P4's `mapInvocation` is gone; `test/intake-core.test.ts` uses `invocationArgs`. No deprecation line (P6). |
+| `toolkits/buildos/src/cli/main.ts` | P5's single `invocationArgs` call. |
+| `toolkits/buildos/src/cli/run.ts` | One dispatcher with `entities`, `intake`, `discovery`, `design`, and `version`, in that order. |
+| `toolkits/buildos/test/fs-port.test.ts` | Both import lists and both refusal-matrix rows. Updated for the merged rules: a read through a linked folder with `allowOutsideRoot` is `outside-root` (contained), and the special-file case is checked with `stat`; the PE-012 folder test compares the outside folder with its own start listing (P4 tests share it) and checks the in-place writer instead of the removed `writeFile`. Two new race cases: the exclusive create and the atomic symlink with a folder swapped after the checks. |
+| `toolkits/buildos/test/golden/parity-exceptions.json` | Merged as JSON: PE-001 to PE-015, each once, in ID order; P4's `$comment` plus P5's `p5_edge` and `design_rollback` sentences. PE-001's 7 exact root-help values were regenerated from the merged bundle's `buildos help`, and its reason lists all six domains. PE-012's three refusal `p5_edge` stderr values and its reason now carry the shared flag hint. `proposed-exceptions.json` lists none. |
+| `toolkits/buildos/test/golden/self-test.test.ts` | The approved-ID list is `PE-001` to `PE-015`. |
+| `toolkits/buildos/SECURITY.md` | Both Other Bundled Code rows (P4 intake ports, then P5 discovery and design ports). Write Safety now states the one outside-root rule for every domain, the link-at-file rule, the after-open checks of the exclusive create, symlink put, and remove, and that only intake output gets the in-place writer. |
+| `toolkits/buildos/THIRD_PARTY_NOTICES.md` | Both "Also ships" lines (P4, then P5); the intake `PrintDefaults` port now names `src/cli/go-flagset.ts`. |
+| `docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md` | Rebuilt from both sides: P4's Owner Decisions rows, then P5's; then P4's sections and Phase Reviews (with P4 Review); then the P5 section; then this section. |
+
+### Other Merge Edits
+
+- One `--allow-outside-root`: the intake command now parses its flags with P5's Go `flag` port (`goParseFlags` with `extras: ["--allow-outside-root"]`), so flag position, `--`, values, and `--allow-outside-root=true` follow one implementation. P4's `takeAllowOutsideRoot` and `goFlagUsage` are removed. `ALLOW_OUTSIDE_ROOT` and `refusalMessage` live in `src/cli/commands/go-tool.ts`. One wording for intake, discovery, and design: `<path> resolves outside the root <root>; pass --allow-outside-root to allow a write outside the repository root`, exit 3, only when the flag was not given.
+- `src/core/discovery/discovery.ts`: the four record files (`run.md`, `raw-findings.md`, `finding.md`, `qualification.md`) are created with `writeNewFile` (`O_EXCL`, mode `0o644`) in the folder the command just reserved. `GoFiles.writeFile` and `GoFiles.appendFile` are removed. `test/discovery.test.ts` hooks `writeNewFile`.
+- `src/core/intake/io.ts`: the planned stat gains `fullMode`.
+- `test/golden/selection.test.ts`: every domain is enforced, so the planted copy marks `discovery` pending to test the pending path.
+- `test/intake-core.test.ts`: new test "creates folders as Go's MkdirAll(dir, 0o755) under umask 002". It fails without the `go-fs.ts` fix.
+- PRD 20: the single outside-root sentence is unchanged; its one Requirement History entry now says the rule covers intake, discovery, and design and cites both phases.
+- `cases.json`: `cli`, `entities`, `intake`, `discovery`, and `design` are `enforced` (auto-merged).
+
+### Behavior Changes
+
+| Change | Versus | Why | Go comparison |
+| --- | --- | --- | --- |
+| Discovery and design refusals outside the root add `; pass --allow-outside-root to allow a write outside the repository root` | P5 | One diagnostic that names the flag | Exit, stdout, and tree unchanged; PE-012 stderr pinned values updated (3 `p5_edge` cases) |
+| `FsPort` has no `writeFile` or `appendFile`; discovery creates its record files with `O_EXCL` | P5 | P4 rule: the canonical-data port has no write in place; only intake output gets the in-place writer | All 43 discovery goldens and 32 P5 edge cases equal Go as before. A file already at a record name in the just-reserved folder (only another process can put one there) now fails with `open <path>: file exists` and the cleanup, where Go overwrites it |
+| `writeNewFile`, `symlinkAtomic`, and `remove` re-check their folder; `writeNewFile` checks the opened file | P5 | P4 rule for every write | No golden change |
+| A content read stays inside the root with `--allow-outside-root`; `statStrict` is metadata (the flag applies) | P4 | P5 rule (review round 2) | Intake reads go through ports bound to the volume root, so `source-outside` and `source-outside-allowed` still equal Go |
+| Intake folders are made with `0o755` before the umask | P4 | P5 umask fix | Go 1.24.1 `buildos-intake` and the bundle under umask 002, `convert` and `index references --output new/deep/refs.json`: every folder 0755, every file 0644, in both |
+| A link at an atomic-write target that points outside the root is replaced | P4 | PRD 20 rule (P5 behavior) | Intake writes in place, which already replaced such links; PE-010's pinned `intake_edge` cases are unchanged, and `test/intake-edge.test.ts` passes 31/31 against the Go 1.24.1 edge goldens |
+| `invocationName(undefined)` is `""`; `.ps1` shims map | P4, P5 | One file | No golden change |
+
+### Check Results
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm test` | exit 0; 1,486 tests, 1,477 pass, 0 fail, 9 skipped (Windows-only, and the setgid cases this macOS user cannot keep) |
+| `npm run build` | exit 0; `dist/buildos.js` 3,124,383 bytes (P4 3,028,756; P5 253,733) |
+| Smoke | From bundle copies in a scratch folder: `version` and `help` exit 0; `entities validate` exit 0; `buildos-intake.mjs convert` exit 0; `intake index references` exit 0, with `--output` outside the root exit 3 and the flag hint, and with `--allow-outside-root` exit 0; `buildos-discovery.mjs run discovery` exit 0, `discovery --json ... --dry-run` exit 0, a runs folder linked outside exit 3 with the flag hint; `buildos-design.mjs promote finding ... --dry-run` exit 0; `design --help` exit 0 |
+| Golden harness | `cli` 8/8, `entities` 27/27, `intake` 55/55, `discovery` 43/43, `design` 25/25, all enforced |
+| Eval gate | 12/12 files pass (`xlsx-annual-budget` 98.09%, `html-visitor-policy` 99.16%, `html-dir-help-center` 99.61%, the rest 100%) |
+| Edge and hostile tests | `entities-edge` 48/48, `intake-edge` 31/31, `p5-edge` 32/32, `intake-eval-parity` 15/15, `intake-hostile` 96/96, `fs-port` 99 (97 pass, 2 skipped), `boundary` 185/185 |
+| `node test/golden/capture.mjs --check` | exit 0; 158 cases on darwin, byte-identical to a fresh Go 1.24.1 capture |
+| `capture.mjs --verify-artifact` | darwin, linux, and win32: 265 files each |
+| `npm run check:deps` and `check:deps:installed` | both `dependency policy: ok` |
+| `npm audit --audit-level=high` | 0 vulnerabilities |
+| `npm pack --dry-run` | 6 files (`dist/buildos.js` 3.1 MB, package 770.8 kB) |
+| `make-docs project path-hygiene validate` | valid, 0 failing findings |
+| `make-docs run prd authority validate --target-root . --json` | `passed`, no diagnostics |
+| `git diff --check` | exit 0 on the staged merge |
+| CI on three operating systems | Pending: needs a push |
+
+- PERF-001 recheck (P8): the merged bundle is 3,124,383 bytes.
+- Open: the independent review of this merge, and the three-OS CI run.
+
+## P4-P5 Merge Fix Round
+
+On 2026-11-24, on `rewrite/ts-cli` at `e1dc814`, this round fixed the three findings of the merge review and the six Windows failures of [CI run 45336979268](https://github.com/brucewaynedecoy/build-os/actions/runs/45336979268) (macOS, Linux, and OSV passed). Checks ran on macOS arm64 with Node 24.22.3 and Go 1.24.1 from scratch folders. Each finding was reproduced first with its new regression test, which failed on `e1dc814`.
+
+### Merge Review Findings
+
+| Finding | Fix | Regression test |
+| --- | --- | --- |
+| 1: discovery could delete another process's record file: every record name entered the cleanup list before its exclusive create; with a planted `EEXIST` on `run.md`, the rollback asked to remove it | `src/core/discovery/discovery.ts`: a record file, copied file, or folder enters the cleanup list only after this command created it. The folders inside a reserved run or finding folder (`evidence`, `confirmation-test`) are made with an exclusive `mkdir` (`mkdirOwned`); one that already exists is not listed, and Go's `MkdirAll` still runs for its result and text. The port's `writeNewFile` removes its own new file when any step fails, so the writer cleans up only its own partial create. | `discovery.test.ts` "never removes a `<name>` that another process made in the reserved folder (EEXIST)", for `run.md`, `raw-findings.md`, `finding.md`, and `qualification.md`: no remove call names the file, its bytes stay, and everything this command made is gone (4 cases; all failed before the fix) |
+| 2: an `EIO` on the close of a copied evidence file kept `evidence/001-raw-1.md` and the run folder, and a retry failed with "already exists" | `src/adapters/node-fs.ts` `writeNewFile`: the file is complete only after its close succeeds. The close runs inside the guarded block; a close error is a failed step (`syscall` `close`), and the new file is removed after the identity checks below. | `discovery.test.ts` "an EIO on the close of a copied evidence file removes the copy and the run folder, and a retry succeeds": Go's `close <path>: input/output error`, an empty `runs/` folder, and a retry that writes `RUN-001` with the evidence bytes (failed before the fix) |
+| 3: a refused atomic symlink put unlinked the temporary name through the changed folder | `symlinkAtomic` records the identity (device and inode) of the folder that holds the new link and of the link itself, right after it creates the link. The cleanup removes the link only when the folder path still names that folder and the entry is still that link. Otherwise it removes nothing, and the refusal names the temporary link left in place. | `fs-port.test.ts` "atomic symlink: a folder replaced by a link to an outside folder (or by another folder) keeps its entry with the temporary link's name": the replacement folder holds a regular file with the temporary link's name; after the refusal it is still there with its bytes, the moved folder still holds the temporary link, and the message names it (2 cases). A scratch run of the same race against the `e1dc814` port showed the replacement's entry deleted. |
+
+Cleanup and rollback audit (the two patterns: cleanup of an entry not proven to be ours, and cleanup through an unverified folder):
+
+| Site | Before | After |
+| --- | --- | --- |
+| `node-fs.ts` `removeOwn` (used by every create below) | Checked the entry's identity only | Also checks that the folder path still names the folder the entry was created in (identity taken right after the create); on a mismatch nothing is removed and the caller's refusal names the entry left in place (`leftInPlace`) |
+| `writeFileAtomic`, temporary file | `finally` cleanup; a close error could replace the first failure | Cleanup in the error path with both checks; the first failure is kept |
+| `writeNewFile` | Kept a partial buffered write; a close error skipped the cleanup | Any failed step, the close included, removes the new file with both checks |
+| `symlinkAtomic`, temporary link | Unlinked with no check (finding 3) | Both checks, as above |
+| In-place writer, refused new file | Entry identity only | Both checks |
+| In-place writer, replacement of a symlink at the target | Unlinked the entry with no re-check | Unlinks only when the folder is still the checked one and the entry is still the link the inspection saw |
+| `remove` (core cleanup) | Checks its folder before it unlinks | Unchanged; ownership is the caller's (discovery now lists only its own entries) |
+| Discovery run and finding cleanup | Listed names before their create (finding 1) | Lists entries after they are created |
+| Design promotion rollback | Restores replaced entries through the atomic replace and symlink put; the design file is a synced `writeNewFile` | No deletion of its own; it now gets the port fixes above. No change needed |
+| Intake and entities | Write through the in-place writer and the atomic write; no core cleanup | Get the port fixes above. No change needed |
+
+### Windows CI Failures
+
+| Test | Root cause | Change |
+| --- | --- | --- |
+| "removes what it created when a step after the reservation fails, so the same run can be recorded again", "copies evidence as a stream: a source read failure removes the partial copy and the run folder", "a short write and EIO on the index leave the old index bytes, the cleanup removes the run, and a retry succeeds" | A POSIX-only test expectation: the tests plant a Node `EIO` and expected Go's POSIX text `input/output error`. On Windows a real I/O error reaches Go as a Win32 error, and libuv folds several into `EIO`, so the port keeps the code name (`EIO`); the cleanup was never reached by the assertion. The streaming test also matched `inputs/evidence.bin` with a `/` only. | Test only: the expected text is `goErrnoText({ errno: "EIO" })` for the running OS, and the path accepts either separator, with a comment naming the reason. The POSIX text is unchanged. On Windows each test now goes on to check that the cleanup leaves nothing behind and that a retry succeeds. |
+| "preflight-twin-directory-force" (PE-013) | A Windows port defect: Node opens a folder for writing on Windows (libuv asks for backup semantics), so the preflight probe passed and the write refused the folder as "not a regular file" (exit 3). Go 1.24.1's `syscall.Open` gets `ERROR_ACCESS_DENIED` there and returns its own `EISDIR`, "is a directory" (`syscall_windows.go`, `zerrors_windows.go`). | Code: on Windows the in-place writer and its preflight fail a folder target with `EISDIR` from `open` before the open, and `goPathError` gives Go's own `is a directory` for an `open` (a `read` keeps the Win32 `Incorrect function.`). New `fs-port.test.ts` cases run on every OS. The test also changed, as below. |
+| "preflight-twin-exists" (PE-013) | A POSIX-only test expectation: PE-013 pins Go's POSIX text with `/`. Go on Windows prints the path with `\` (`filepath.Join`), as the win32 golden `intake-convert-existing-output` shows. | Test only: on Windows the separators of the `{PROJECT}` path in the pinned text become `\`; exit code, text, and the no-side-artifact checks are unchanged. |
+| "writes the image and SVG side artifacts of a span inside a div, as Go does, plus only the added text" | A POSIX-only test expectation: the harness lists written files with the OS separator, and the stdout pattern matched `/` only. Go prints side artifact paths with `\` on Windows (the win32 goldens). | Test only: the expected list uses `join`, and the stdout pattern uses the OS separator. The three files and the body are checked as before. |
+
+No case needs a new win32 Go golden. The `EIO` text on Windows has no Go golden: no Win32 error can be planted there in CI. The next three-OS CI run is the Windows proof.
+
+### Check Results
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm test` | exit 0; 1,495 tests, 1,486 pass, 0 fail, 9 skipped (Windows-only, and the setgid cases this macOS user cannot keep) |
+| `npm run build` | exit 0; `dist/buildos.js` 3,127,796 bytes |
+| Smoke | From bundle copies in a scratch folder: `version` and `help` exit 0; `entities validate --root system --mode compat` exit 0; `buildos-discovery.mjs run discovery` with a raw finding and evidence exit 0 (`RUN-003`), `--json ... --dry-run` exit 0; `buildos-design.mjs promote finding ... --dry-run` exit 0; `buildos-intake.mjs convert --source inputs/handbook.html` exit 0; `--force` with a folder at the twin exit 1, `open <path>: is a directory`, and no side artifact; `index references` with `--output` outside the root exit 3, with `--allow-outside-root` exit 0 |
+| Golden harness | `cli` 8/8, `entities` 27/27, `intake` 55/55, `discovery` 43/43, `design` 25/25, all enforced |
+| Eval gate | 12/12 files pass (`xlsx-annual-budget` 98.09%, `html-visitor-policy` 99.16%, `html-dir-help-center` 99.61%, the rest 100%) |
+| Edge and hostile tests | `entities-edge` 48/48, `intake-edge` 31/31, `p5-edge` 32/32, `intake-eval-parity` 15/15, `intake-hostile` 96/96, `fs-port` 103 (101 pass, 2 skipped), `boundary` 185/185, `discovery` 38/38, `design` 57 (52 pass, 5 skipped) |
+| `node test/golden/capture.mjs --check` | exit 0; 158 cases on darwin, byte-identical to a fresh Go 1.24.1 capture (scratch Go build and module caches) |
+| `npm run check:deps` and `check:deps:installed` | both `dependency policy: ok` |
+| `npm audit --audit-level=high` | 0 vulnerabilities |
+| `npm pack --dry-run` | 6 files (`dist/buildos.js` 3.1 MB, package 772.0 kB) |
+| `make-docs project path-hygiene validate` | valid, 0 failing findings |
+| `make-docs run prd authority validate --target-root . --json` | `passed`, no diagnostics |
+| `git diff --check` | exit 0 |
+| CI on three operating systems | Pending: needs a push |
+
+- `SECURITY.md` Write Safety states the cleanup rule and the Windows folder rule. `fs-port.ts` documents the `writeNewFile` and `symlinkAtomic` cleanup.
+- Behavior change versus `e1dc814`: a buffered `writeNewFile` (the discovery record files) that fails after its create now removes its file in the port too; discovery's approved cleanup removed it before, so the end state is the same. A failed cleanup check is now a refusal (exit 3) that names the entry left in place.
+- PERF-001 recheck (P8): the bundle is 3,127,796 bytes.
+- Open: the three-OS CI run, and the independent review of this round.
+
+## P4-P5 Windows OS Error Text Round
+
+On 2026-11-24, on `rewrite/ts-cli` at `65b7ee7`, this round fixed the last merge review finding, two test follow-ups, and the Windows golden failures of [CI run 45339414591](https://github.com/brucewaynedecoy/build-os/actions/runs/45339414591) (unit tests passed on Windows). Checks ran on macOS arm64 with Node 24.22.3 and Go 1.24.1 from scratch folders.
+
+### Review Finding and Test Follow-ups
+
+| Item | Fix | Test |
+| --- | --- | --- |
+| With an empty replacement folder, the temporary link stayed in the original folder, but the refusal named only the target: `removeOwn` took a missing entry as a done cleanup before it checked the folder | `src/adapters/node-fs.ts` `removeOwn` checks the folder identity first. When the folder changed (or cannot be read), it removes nothing and returns `mismatch`, so the refusal names the temporary link left in place. A missing entry is a done cleanup only in the unchanged folder. | `fs-port.test.ts` "atomic symlink: a folder replaced by an empty folder names the temporary link left in place" (failed on `65b7ee7`) |
+| The `EIO` text came from the code under test | `discovery.test.ts` pins it as a literal per OS: `input/output error` on darwin and linux, `EIO` on Windows | The three planted-`EIO` tests |
+| The evidence-read assertion accepted `\` on POSIX, and did not retry | The path separator is `/` on POSIX and `\` on Windows only. After the cleanup, a retry with a working read records `RUN-001` with the full evidence copy. | "copies evidence as a stream: a source read failure removes the partial copy and the run folder" |
+
+### Windows CI Failures
+
+The CI log shows two failing cases with one cause: `intake-convert-missing-source` and `intake-convert-missing-root`. The port printed `read source: stat <path>: ...`; Go 1.24.1 on Windows prints `read source: CreateFile <path>: ...`. In `os/stat_windows.go`, `stat` tries `GetFileAttributesEx`; on any error but `ERROR_SHARING_VIOLATION` it calls `CreateFile`, and that call's failure is the `*PathError` (`Op: "CreateFile"`). `FindFirstFile` is the op only after a sharing violation, and `Stat` or `Lstat` only for an empty name, which the port never stats.
+
+New `goStatOp` in `src/core/shared/go-os-error.ts`: `CreateFile` on Windows, `stat` or `lstat` elsewhere. Every `os.Stat` site the port mirrors now uses it:
+
+| Site | Go call | Before on Windows |
+| --- | --- | --- |
+| `intake/convert/convert.ts` source | `os.Stat(source)` | `stat` (the CI failure) |
+| `intake/convert/convert.ts` outputs (2 sites) | `os.Stat(output)` | `stat` |
+| `intake/index/index.ts` source root | `os.Stat(root)` | `stat` |
+| `entities/index.ts` existing index | `os.Stat(path)` | `stat` |
+| `entities/consolidate.ts` canonical dataset (2 sites) | `os.Stat(path)` | `stat` |
+| `shared/go-files.ts` (discovery and design) | `os.Stat(path)` | Already `CreateFile`; now through `goStatOp` |
+
+The other ops match Go's Windows source: `os.Open` and `os.ReadFile` give `open` (`os/file_windows.go`), a read gives `read`, `os.MkdirAll` over a file gives `mkdir` with `ERROR_PATH_NOT_FOUND`, and `os.Rename` gives `rename`.
+
+Win32 golden audit: 19 golden files under `test/golden/os/win32/` hold an OS error. New `test/go-os-error.test.ts` feeds the win32 error of each port call site through the mapping and requires the result in the golden, so it runs on every OS. It covers 17 files; the other 2 (`entities-validate-missing-root-human` and `-json`) are PE-004, where the port prints its own text. It fails when a win32 golden gains an OS error line with no row, and when a `src` file passes a fixed `stat`, `lstat`, or `CreateFile` op. The only mismatches found were the 6 `stat` sites above. `test/golden/review-fixes-2.test.ts` also spelled Go's Windows text with `stat`; it now uses `CreateFile`.
+
+### Check Results
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm test` | exit 0; 1,516 tests, 1,507 pass, 0 fail, 9 skipped |
+| `npm run build` | exit 0; `dist/buildos.js` 3,127,995 bytes |
+| Smoke | From bundle copies in a scratch folder: `version` and `help` exit 0; `entities validate --mode compat` exit 0; discovery and design `--dry-run` exit 0; `buildos-intake.mjs convert` exit 0, a missing source exit 1 with `read source: stat <path>: no such file or directory`; `index references` exit 0 |
+| Golden harness | `cli` 8/8, `entities` 27/27, `intake` 55/55, `discovery` 43/43, `design` 25/25, all enforced |
+| Edge and hostile tests | `entities-edge` 48/48, `intake-edge` 31/31, `p5-edge` 32/32, `intake-eval-parity` 15/15, `intake-hostile` 96/96, `fs-port` 104 (102 pass, 2 skipped), `boundary` 185/185, `discovery` 38/38, `design` 57 (52 pass, 5 skipped), `go-os-error` 20/20 |
+| `node test/golden/capture.mjs --check` | exit 0; 158 cases on darwin, byte-identical to a fresh Go 1.24.1 capture |
+| `npm run check:deps` and `check:deps:installed` | both `dependency policy: ok` |
+| `make-docs project path-hygiene validate` | valid, 0 failing findings |
+| `make-docs run prd authority validate --target-root . --json` | `passed` |
+| `git diff --check` | exit 0 |
+| CI on three operating systems | Pending: needs a push |
+
+- Behavior change versus `65b7ee7`: a failed write whose folder changed and whose own entry is missing from the new folder is now a refusal that names the entry left in place, not a refusal naming only the target. On Windows, every mirrored `os.Stat` failure prints `CreateFile`.
+- Open at this round: the three-OS CI run, and the independent review of this round.
+- Closed: [CI run 45340971690](https://github.com/brucewaynedecoy/build-os/actions/runs/45340971690) on `52655a0` passed all four jobs. See [P4-P5 Closeout](#p4-p5-closeout).
+
+## P4-P5 Closeout
+
+On 2026-11-24, P4 and P5 closed on `rewrite/ts-cli` at `52655a0` after [CI run 45340971690](https://github.com/brucewaynedecoy/build-os/actions/runs/45340971690) passed all four jobs. See [P4 CI Run](#p4-ci-run) and [P5 CI Run](#p5-ci-run).
+
+### P4-P5 Follow-ups
+
+These items stay open and carry forward. None blocks the P4 or P5 closeout.
+
+- pdf.js memory limit: pdf.js reads one text string of a content stream whole, so a single string of tens of millions of characters exhausts a small heap (256 MiB) inside pdf.js before the text budget sees it. With Node's default heap the text budget stops it (exit 1). See [P4 Open Items](#p4-open-items) and `SECURITY.md` Intake Input Limits.
+- PERF-001 recheck in [P8](./08-release-0-1-0.md): the bundle is 3,127,995 bytes (about 3.1 MB) at `52655a0`. The reviewer noted that a minified build is about 2.0 MB (3.19 MB to 2.04 MB in P4 review round 1). P8 measures the startup and decides minification.
+- BOM fix: [P6 t29](./06-command-names-wrappers-and-initialization.md#stage-5---human-experience-review) fixes the U+FEFF handling of `isNullLiteral` in `src/core/entities/graph.ts`, with a Go golden.
+- Residual time-of-check window: a local process that can rename folders inside the project while a command runs can swap a folder between two checks. `toolkits/buildos/SECURITY.md` Write Safety documents it; no fix is planned.
+- `R-009`: design promotion still writes under `docs/designs/`. The register item stays open, and its follow-up (a public Make Docs design-create operation) is unchanged.
+
+## P6 Command Names, Wrappers, and Initialization
+
+On 2026-11-24, W1 R7 P6 was built on `rewrite/ts-cli` from `7cfc0b7`, with Node 24.22.3 and Go 1.24.1 on macOS. Nothing is staged, committed, or pushed. Every item that needs Linux or Windows waited for the three-OS CI run; these items were then proven in CI. See [P6 CI Run 45433974561](#p6-ci-run-45433974561).
+
+### Port Map
+
+| Stage | Files |
+| --- | --- |
+| 1. Legacy names (t1 to t5) | `package.json` `bin` (four names, one entry file); `src/cli/invocation.ts` (`legacyNotice`); `src/cli/main.ts` (the notice is the first stderr line); `test/golden/parity-exceptions.json` PE-016; `test/golden/harness.ts` (`legacyNoticeLine`, `stripLegacyNotice`, `installedRunner`); `test/golden/compare.test.ts` (`BUILDOS_GOLDEN_BIN_DIR`); `test/intake-edge.test.ts`; `test/package.test.ts` |
+| 2. Wrappers (t6 to t10) | `system/.os/scripts/` `buildos`, `buildos-intake`, `buildos-discovery`, `buildos-design` (`sh`) and the same four as `.cmd`; `pinned-version.cjs` (Node version check and pinned version); `node-required.txt` (the one plain message, used by both forms); `AGENTS.md`; root `.gitattributes` (`system/**` LF, `*.cmd` CRLF); `test/wrappers.test.ts` |
+| 3. Init and adoption (t11 to t17) | `scripts/build.ts` (`copyPackageContent`); `src/adapters/package-content.ts`; `src/core/init/content.ts`, `manifest.ts`, `plan.ts`, `apply.ts`, `init.ts`; `src/cli/commands/init.ts`; `src/cli/run.ts`; `test/init.test.ts`; `test/fixtures/init/go-era-project/` |
+| 4. Make Docs (t18 to t25) | `src/core/init/make-docs-choice.ts`, `make-docs-range.ts`, `make-docs.ts`; `src/core/shared/process-port.ts`; `src/adapters/node-process.ts`; `src/cli/io.ts` (TTY and prompt); `scripts/make-docs-contract.ts`; `test/make-docs-contract.test.ts`; `.github/workflows/buildos-ci.yml` (job `make-docs-contract`, installed-tarball golden step, `system/**` path trigger); `test/boundary-rules.ts` (`PROCESS_ADAPTER`) |
+| 5. Review and BOM fix (t26 to t29) | This section; `src/core/entities/graph.ts` `isNullLiteral`; `scripts/capture-entity-edge-goldens.ts` and `test/fixtures/go-seed/entity-edge-goldens.json` (four new Go 1.24.1 cases); `test/entities-core.test.ts` |
+
+### Implementation Choices
+
+These are implementing-agent choices under PRD 20, not owner decisions:
+
+- Package content: the build copies `system/` into `dist/system/` and writes `dist/system.json` (each file's project path, stored name, mode, and SHA-256). npm drops `.gitignore` files, so the project `.gitignore` ships as `_dot.gitignore`. A file is `0755` when it starts with `#!`, so a package built on Windows is the same. `buildos init` checks every SHA-256.
+- Human output of `buildos init` goes to stdout, also when it stops (exit 10). Only the legacy notice, the prompt, and "Setting up Make Docs. This can take a minute." go to stderr.
+- The two choice commands use `buildos` for a source build and `npx -y @brucewaynedecoy/buildos@<version>` for a release, so they work in an empty folder. In JSON mode they end in `--json`.
+- The "set up later" and retry commands are the exact Make Docs command (`make-docs ...` when it was on `PATH`, else the `npx` form). `buildos init` cannot be re-run for Make Docs alone, because the manifest then exists.
+- An adoption whose only clash is `.os/manifest.json` reports `already_set_up` ("BuildOS is already set up in this folder."), still exit 10 and no write. W2 owns update.
+- In an adoption, existing wrapper and packaged-skill files are replaced (BuildOS owns them); an existing `.os/manifest.json` is a clash. A link at a planned folder path is a clash.
+- Make Docs range: `~2.0.9` (`>=2.0.9 <2.1.0`); a tilde range needs no shell quoting on any OS. Make Docs 2.0.2 lacks `--no-github-copilot`.
+- The wrappers exit 127 when Node is missing or older than 24, and 3 when `.os/manifest.json` holds no usable version (a source build writes `dev`, which has no published version).
+- The process port: `src/adapters/node-process.ts` is the one file that may load `child_process`; it may not name a `buildos` program. Core asks only through `ProcessPort`.
+
+### Acceptance Criteria
+
+| Case | Result | Evidence |
+| --- | --- | --- |
+| A38 | Pass on macOS; Linux and Windows pending CI (Windows unblocked by the 2026-11-24 entry files; see [P6 Legacy Entry Files](#p6-legacy-entry-files)) | `compare.test.ts` 158/158 with the PE-016 line checked and removed; the same 158 from an installed tarball's `.bin` links (`BUILDOS_GOLDEN_BIN_DIR`); `intake-edge` 31/31 under `buildos-intake.mjs` |
+| A39 | Pass on macOS; Linux and Windows pending CI (Windows now runs the installed `.cmd` shims) | `package.test.ts`: each legacy name from the installed tarball prints the notice, then the same stderr, the same stdout, and the same exit code as `buildos <domain>`, for `--help` (exit 0) and an unknown subcommand |
+| A40 | Pass | `package.test.ts`: the installed `.bin` holds exactly `buildos`, `buildos-design`, `buildos-discovery`, `buildos-intake`; since 2026-11-24 `buildos` points to `dist/buildos.js` and each legacy name to its own entry file |
+| A41 | Pass for `sh` on macOS; Linux and `.cmd` on Windows pending CI | `wrappers.test.ts`: with Node absent and with Node 22, each wrapper prints `node-required.txt` and exits 127, no stack trace. Real output below |
+| A42 | Pass for `sh` on macOS; pending CI elsewhere | `wrappers.test.ts`: the stub `npx` records `-y @brucewaynedecoy/buildos@1.2.3 [<domain>] help`; a wrapper on `PATH` skips itself |
+| A43 | Pass on macOS; Linux and Windows pending CI | `init.test.ts`: 219 entries before, 0 changed outside the adoption set (only the four `sh` wrappers changed), 8 added: `.os/manifest.json`, the four `.cmd` wrappers, `pinned-version.cjs`, `node-required.txt`, `.os/skills/`. The fixture has config, entity data, runs, findings, indexes, assets (with an `.xlsx`), Make Docs files, an executable file, and (POSIX) a symlink |
+| A44 | Pass on macOS | `init.test.ts`: the folder first, every one of the 123 planned paths, nothing written, exit 0, `write_status` `planned` |
+| A44a | Pass on macOS | `init.test.ts`: unrelated files and a user playbook keep every byte; a clash writes nothing, exits 10, and both outputs list every path and the tip |
+| A45 | Pass on macOS | `init.test.ts`: from `workspace/runs/deep` of a set-up project, the root is the child folder and the setup is `new_project` |
+| A46 | Pass on macOS | `init.test.ts`: `.os/`, `assets/`, `playbooks/`, `workspace/`, `.os/skills/`, `.os/manifest.json` with `schema_version`, `buildos_version`, `initialized_at`; no `docs/` or `.make-docs/` |
+| A47 | Pass on macOS | `init.test.ts`; real output below |
+| A48 | Pass on macOS | `init.test.ts`: the stub records exactly the PRD 20 arguments; only the stub writes `docs/` and `.make-docs/`; the `npx` form when `make-docs` is not on `PATH` |
+| A49 | Pass on macOS | `init.test.ts`: a failing stub gives exit 0, `ok: true`, `result.status` `partial`, and the retry command, which then works against a working stub (run through `sh -c`; on Windows through `cmd.exe`) |
+| A50 | Self-check pass; CI pending | `make-docs-contract.test.ts` fails a stub with a renamed setup flag and a changed JSON field. `scripts/make-docs-contract.ts --expect-version 2.0.9 -- make-docs` passes against the real Make Docs 2.0.9 (run by hand; the upper bound is also 2.0.9 today) |
+| A51 | Pass on macOS; Linux and Windows pending CI | `package.test.ts`: `npx -y --package=<tarball> buildos init --skip-make-docs` (exit 0) and `init` with no TTY (exit 10, folder empty), offline, PATH with Node only. `npx -y <tarball>` with a bare file path runs the file as a command, so the test names the package with `--package` |
+| A52 | Met on macOS, pending an owner veto of option A and the three-OS CI run | After the 2026-11-24 decisions, the two earlier `material gap` conclusions are closed (Windows pending CI). The last one, the "set up Make Docs later" path, is closed for honesty by review round 1: every output now says what works with the pinned Make Docs version. See [P6 Review Round 1](#p6-review-round-1) |
+| A53 | Pass | The no-TTY capture names the folder, then "Stopped. Nothing was changed.", then the question, then both commands. In JSON, `root`, `status`, and `choices` come before `reason` and the diagnostic code |
+
+Every row above that reads "pending CI" or "Pass on macOS" passed on macOS, Linux, and Windows in [CI run 45433974561](https://github.com/brucewaynedecoy/build-os/actions/runs/45433974561) on `9e2f8a2`. See [P6 CI Run 45433974561](#p6-ci-run-45433974561).
+
+### Parity Exception PE-016
+
+One new exception, recorded as approved under PRD 20 Legacy Command Names (see [Owner Decisions](#owner-decisions)). `legacy_notice` maps each legacy name to its exact line. `stripLegacyNotice` requires that line first on stderr, removes it once, and the comparison of the rest is unchanged. A missing, changed, or doubled line fails (`self-test.test.ts`). PE-001's exact root-help value now lists `init`, as PE-001 asks when a domain is added. No other exception changed. No exception is pending.
+
+### Check Results
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm test` | exit 0; 1,570 tests, 1,561 pass, 0 fail, 9 skipped (as before: Windows-only and setgid cases) |
+| `npm run build` | exit 0; `dist/buildos.js` 3,156,792 bytes, plus `dist/system.json` and 100 files in `dist/system/` |
+| Smoke | `version`, `help` (lists `init`), `init` in an empty folder with no TTY (exit 10), `--skip-make-docs` (exit 0), `--dry-run --json` (exit 0), a clash (exit 10), adoption (exit 0), from the bundle |
+| Golden harness | `cli` 8/8, `entities` 27/27, `intake` 55/55, `discovery` 43/43, `design` 25/25, all enforced; the same from the installed tarball |
+| Edge tests | `entities-edge` 52/52 (4 new P6 t29 cases), `intake-edge` 31/31, `p5-edge` 32/32, `boundary` with the process-adapter rule |
+| `node test/golden/capture.mjs --check` | exit 0; 158 cases on darwin, byte-identical to a fresh Go 1.24.1 capture |
+| `npm run check:deps` and `check:deps:installed` | both `dependency policy: ok` |
+| `npm audit --audit-level=high` | 0 vulnerabilities |
+| `npm pack --dry-run` | 107 files, 837,079 bytes packed, 3,488,951 unpacked: `dist/buildos.js`, `dist/system.json`, 100 `dist/system/` files, `LICENSE`, `SECURITY.md`, `THIRD_PARTY_NOTICES.md`, `README.md`, `package.json`. No `system/docs/`, no `system/.make-docs/`, no test, fixture, golden, or Go file. `test/package.test.ts` checks the exact list |
+| Make Docs contract, by hand | `pass (make-docs 2.0.9)` |
+| `make-docs project path-hygiene validate` | valid, 0 failing findings |
+| `make-docs run prd authority validate --target-root . --json` | `passed` |
+| `git diff --check` | exit 0 |
+| CI on three operating systems | Pending at this round: needs a push. Passed later in [CI run 45433974561](https://github.com/brucewaynedecoy/build-os/actions/runs/45433974561); see [P6 CI Run 45433974561](#p6-ci-run-45433974561) |
+
+- PERF-001 recheck (P8): the bundle is 3,156,792 bytes at P6.
+
+### P6 Captures (t26)
+
+These captures were taken before the 2026-11-24 owner decisions. Since then, `AGENTS.md`, `CLAUDE.md`, and `.gitignore` are no longer plan rows or clashes: the plan lists them under "Shared files", so the new-project plan has 120 paths, not 123. The clash captures below are superseded by [P6 Shared Files and Make Docs Order](#p6-shared-files-and-make-docs-order).
+
+Real output of the source build (`version` `dev`), captured on macOS from `dist/buildos.js` in fresh folders on 2026-11-24. `{PROJECT}` stands for the project folder. Make Docs is a stub on `PATH` except in the last case, which runs the real Make Docs 2.0.9 with its own temporary home. The capture script cut only the long lists of planned paths (human rows and JSON `planned` or `written` entries); each cut is marked. Everything else is as printed.
+
+#### Wrapper with Node missing, and with Node 22
+
+`PATH` holds only `sh` (and, for Node 22, a `node` stub that reports 22.11.0, and an `npx` stub that is never run). Commands: `.os/scripts/buildos-intake index references`, `.os/scripts/buildos version`, and `.os/scripts/buildos-design promote finding --help`. Each prints this one line on stderr, nothing on stdout, and exits 127:
+
+```text
+BuildOS needs Node.js 24 or newer on this computer. Install it from https://nodejs.org, then try again.
+```
+
+The `.cmd` form prints the same file with `type`; its capture waits for the Windows CI run.
+
+#### init: New project, Make Docs skipped (No by flag)
+
+Command: `buildos init --skip-make-docs` (exit code 0)
+
+stdout:
+
+```text
+Project folder: {PROJECT}
+
+Planned changes (new BuildOS project, 123 paths):
+  add      .os/
+  add      .os/config/
+  add      .os/contracts/
+  add      .os/contracts/examples/
+  [... 117 more rows cut from this report ...]
+  add      workspace/runs/AGENTS.md
+  add      workspace/runs/CLAUDE.md
+
+Done. BuildOS is set up in this folder.
+Make Docs: not set up, as chosen. To set it up later, run:
+  npx -y @brucewaynedecoy/make-docs@~2.0.9 setup --target {PROJECT} --codex-method none --claude-code-method none --no-github-copilot --no-skills --project-resources all --yes --json
+```
+
+stderr: empty
+
+#### init: Same folder again
+
+Command: `buildos init --skip-make-docs` (exit code 10)
+
+stdout:
+
+```text
+Project folder: {PROJECT}
+Stopped. Nothing was changed. BuildOS is already set up in this folder.
+
+BuildOS is already set up here, so there is nothing more to do.
+```
+
+stderr: empty
+
+#### init: Dry run
+
+Command: `buildos init --dry-run` (exit code 0)
+
+stdout:
+
+```text
+Project folder: {PROJECT}
+Dry run. Nothing was changed. This is what buildos init would add to this folder.
+
+Planned changes (new BuildOS project, 123 paths):
+  add      .os/
+  add      .os/config/
+  add      .os/contracts/
+  add      .os/contracts/examples/
+  [... 117 more rows cut from this report ...]
+  add      workspace/runs/AGENTS.md
+  add      workspace/runs/CLAUDE.md
+
+Make Docs: the user is asked before anything changes.
+```
+
+stderr: empty
+
+#### init: Dry run, JSON
+
+Command: `buildos init --dry-run --json` (exit code 0)
+
+stdout:
+
+```text
+{
+  "ok": true,
+  "command": "init",
+  "version": "dev",
+  "source_revision": "unknown",
+  "root": "{PROJECT}",
+  "mode": "not_applicable",
+  "write_status": "planned",
+  "result": {
+    "status": "planned",
+    "summary": "Nothing was changed. This is what buildos init would add to this folder.",
+    "setup": "new_project",
+    "planned": [
+      {
+        "path": ".os/",
+        "kind": "folder",
+        "action": "create"
+      },
+      {
+        "path": ".os/config/",
+        "kind": "folder",
+        "action": "create"
+      },
+      "[... 120 more entries cut from this report ...]",
+      {
+        "path": "workspace/runs/CLAUDE.md",
+        "kind": "file",
+        "action": "create"
+      }
+    ],
+    "manifest": {
+      "schema_version": 1,
+      "buildos_version": "dev",
+      "initialized_at": "2026-11-24T07:06:57.627Z"
+    },
+    "make_docs": {
+      "choice": "not_decided",
+      "status": "not_started",
+      "note": "Without --make-docs or --skip-make-docs, buildos init asks the user before it changes anything."
+    }
+  },
+  "diagnostics": []
+}
+```
+
+stderr: empty
+
+#### init: No TTY, no flag
+
+Command: `buildos init` (exit code 10)
+
+stdout:
+
+```text
+Project folder: {PROJECT}
+Stopped. Nothing was changed. BuildOS needs one answer from the user first.
+
+Ask the user: "Set up Make Docs in this project?"
+
+Make Docs is an optional companion tool. It adds a docs/ folder with guides and templates for plans, designs, and requirements, so agents can keep project documents in order. The user can also say no now and set up Make Docs later.
+
+If the user says yes, run:
+  buildos init --root {PROJECT} --make-docs
+If the user says no, run:
+  buildos init --root {PROJECT} --skip-make-docs
+```
+
+stderr: empty
+
+#### init: No TTY, no flag, JSON
+
+Command: `buildos init --json` (exit code 10)
+
+stdout:
+
+```text
+{
+  "ok": false,
+  "command": "init",
+  "version": "dev",
+  "source_revision": "unknown",
+  "root": "{PROJECT}",
+  "mode": "not_applicable",
+  "write_status": "not_requested",
+  "result": {
+    "status": "stopped",
+    "summary": "Nothing was changed. BuildOS needs one answer from the user first.",
+    "question": "Set up Make Docs in this project?",
+    "about_make_docs": "Make Docs is an optional companion tool. It adds a docs/ folder with guides and templates for plans, designs, and requirements, so agents can keep project documents in order.",
+    "later": "The user can also say no now and set up Make Docs later.",
+    "choices": [
+      {
+        "answer": "yes",
+        "meaning": "Set up BuildOS and Make Docs.",
+        "command": "buildos init --root {PROJECT} --make-docs --json"
+      },
+      {
+        "answer": "no",
+        "meaning": "Set up BuildOS only.",
+        "command": "buildos init --root {PROJECT} --skip-make-docs --json"
+      }
+    ],
+    "setup": "new_project",
+    "reason": "make_docs_choice_needed"
+  },
+  "diagnostics": [
+    {
+      "code": "make_docs_choice_needed",
+      "severity": "error",
+      "message": "buildos init needs the user's answer to the Make Docs question, and no terminal can ask it",
+      "correction": "Ask the user, then run one of the two commands in result.choices."
+    }
+  ]
+}
+```
+
+stderr: empty
+
+#### init: Yes by flag, Make Docs stub that works
+
+Command: `buildos init --make-docs` (exit code 0)
+
+stdout:
+
+```text
+Project folder: {PROJECT}
+
+Planned changes (new BuildOS project, 123 paths):
+  add      .os/
+  add      .os/config/
+  add      .os/contracts/
+  add      .os/contracts/examples/
+  [... 117 more rows cut from this report ...]
+  add      workspace/runs/AGENTS.md
+  add      workspace/runs/CLAUDE.md
+
+Done. BuildOS is set up in this folder, with Make Docs.
+Make Docs: set up.
+```
+
+stderr:
+
+```text
+Setting up Make Docs. This can take a minute.
+```
+
+#### init: Yes by flag, JSON, Make Docs stub that works
+
+Command: `buildos init --make-docs --json` (exit code 0)
+
+stdout:
+
+```text
+{
+  "ok": true,
+  "command": "init",
+  "version": "dev",
+  "source_revision": "unknown",
+  "root": "{PROJECT}",
+  "mode": "not_applicable",
+  "write_status": "applied",
+  "result": {
+    "status": "complete",
+    "summary": "BuildOS is set up in this folder, with Make Docs.",
+    "setup": "new_project",
+    "written": [
+      {
+        "path": ".os/",
+        "kind": "folder",
+        "action": "create"
+      },
+      {
+        "path": ".os/config/",
+        "kind": "folder",
+        "action": "create"
+      },
+      "[... 120 more entries cut from this report ...]",
+      {
+        "path": "workspace/runs/CLAUDE.md",
+        "kind": "file",
+        "action": "create"
+      }
+    ],
+    "manifest": {
+      "schema_version": 1,
+      "buildos_version": "dev",
+      "initialized_at": "2026-11-24T07:06:58.100Z"
+    },
+    "make_docs": {
+      "choice": "yes",
+      "status": "set_up",
+      "command": "make-docs setup --target {PROJECT} --codex-method none --claude-code-method none --no-github-copilot --no-skills --project-resources all --yes --json"
+    }
+  },
+  "diagnostics": []
+}
+```
+
+stderr: empty
+
+#### init: Make Docs failure (stub)
+
+Command: `buildos init --make-docs` (exit code 0)
+
+stdout:
+
+```text
+Project folder: {PROJECT}
+
+Planned changes (new BuildOS project, 123 paths):
+  add      .os/
+  add      .os/config/
+  add      .os/contracts/
+  add      .os/contracts/examples/
+  [... 117 more rows cut from this report ...]
+  add      workspace/runs/AGENTS.md
+  add      workspace/runs/CLAUDE.md
+
+Partly done. BuildOS is set up in this folder, but Make Docs is not set up.
+Why: Make Docs stopped with exit code 1: make-docs cannot classify this target safely enough to write changes.
+To try Make Docs again, run:
+  make-docs setup --target {PROJECT} --codex-method none --claude-code-method none --no-github-copilot --no-skills --project-resources all --yes --json
+```
+
+stderr:
+
+```text
+Setting up Make Docs. This can take a minute.
+```
+
+#### init: Make Docs failure (stub), JSON
+
+Command: `buildos init --make-docs --json` (exit code 0)
+
+stdout:
+
+```text
+{
+  "ok": true,
+  "command": "init",
+  "version": "dev",
+  "source_revision": "unknown",
+  "root": "{PROJECT}",
+  "mode": "not_applicable",
+  "write_status": "applied",
+  "result": {
+    "status": "partial",
+    "summary": "BuildOS is set up in this folder, but Make Docs is not set up.",
+    "setup": "new_project",
+    "written": [
+      {
+        "path": ".os/",
+        "kind": "folder",
+        "action": "create"
+      },
+      {
+        "path": ".os/config/",
+        "kind": "folder",
+        "action": "create"
+      },
+      "[... 120 more entries cut from this report ...]",
+      {
+        "path": "workspace/runs/CLAUDE.md",
+        "kind": "file",
+        "action": "create"
+      }
+    ],
+    "manifest": {
+      "schema_version": 1,
+      "buildos_version": "dev",
+      "initialized_at": "2026-11-24T07:06:58.517Z"
+    },
+    "make_docs": {
+      "choice": "yes",
+      "status": "failed",
+      "reason": "Make Docs stopped with exit code 1",
+      "detail": "make-docs cannot classify this target safely enough to write changes.",
+      "retry_command": "make-docs setup --target {PROJECT} --codex-method none --claude-code-method none --no-github-copilot --no-skills --project-resources all --yes --json"
+    }
+  },
+  "diagnostics": []
+}
+```
+
+stderr: empty
+
+#### init: Existing files that clash
+
+Command: `buildos init --skip-make-docs` (exit code 10)
+
+stdout:
+
+```text
+Project folder: {PROJECT}
+Stopped. Nothing was changed. 2 paths that BuildOS must add are already in this folder.
+
+These paths are already here:
+  .gitignore
+  AGENTS.md
+
+Move or back up these files, then run `buildos init` again.
+```
+
+stderr: empty
+
+#### init: Existing files that clash, JSON
+
+Command: `buildos init --skip-make-docs --json` (exit code 10)
+
+stdout:
+
+```text
+{
+  "ok": false,
+  "command": "init",
+  "version": "dev",
+  "source_revision": "unknown",
+  "root": "{PROJECT}",
+  "mode": "not_applicable",
+  "write_status": "not_requested",
+  "result": {
+    "status": "stopped",
+    "summary": "Nothing was changed. 2 paths that BuildOS must add are already in this folder.",
+    "setup": "new_project",
+    "clashes": [
+      {
+        "path": ".gitignore",
+        "found": "file"
+      },
+      {
+        "path": "AGENTS.md",
+        "found": "file"
+      }
+    ],
+    "tip": "Move or back up these files, then run `buildos init` again.",
+    "reason": "paths_exist"
+  },
+  "diagnostics": [
+    {
+      "code": "init_paths_exist",
+      "severity": "error",
+      "message": "2 path(s) that buildos init must add already exist: .gitignore, AGENTS.md",
+      "correction": "Move or back up these files, then run buildos init again."
+    }
+  ]
+}
+```
+
+stderr: empty
+
+#### init: Adoption of a Go-era project
+
+Command: `buildos init --skip-make-docs` (exit code 0)
+
+stdout:
+
+```text
+Project folder: {PROJECT}
+
+Planned changes (adopt an existing BuildOS project, 12 paths):
+  add      .os/skills/
+  add      .os/manifest.json
+  replace  .os/scripts/buildos
+  replace  .os/scripts/buildos-design
+  [... 6 more rows cut from this report ...]
+  add      .os/scripts/node-required.txt
+  add      .os/scripts/pinned-version.cjs
+
+Done. BuildOS adopted this existing project.
+Your project data was not changed. Only .os/manifest.json, the .os/scripts/ wrappers, and .os/skills/ were written.
+Make Docs: not set up, as chosen. To set it up later, run:
+  npx -y @brucewaynedecoy/make-docs@~2.0.9 setup --target {PROJECT} --codex-method none --claude-code-method none --no-github-copilot --no-skills --project-resources all --yes --json
+```
+
+stderr: empty
+
+#### init: Adoption of a Go-era project, JSON
+
+Command: `buildos init --skip-make-docs --json` (exit code 0)
+
+stdout:
+
+```text
+{
+  "ok": true,
+  "command": "init",
+  "version": "dev",
+  "source_revision": "unknown",
+  "root": "{PROJECT}",
+  "mode": "not_applicable",
+  "write_status": "applied",
+  "result": {
+    "status": "complete",
+    "summary": "BuildOS adopted this existing project.",
+    "setup": "adoption",
+    "written": [
+      {
+        "path": ".os/skills/",
+        "kind": "folder",
+        "action": "create"
+      },
+      {
+        "path": ".os/manifest.json",
+        "kind": "file",
+        "action": "create"
+      },
+      "[... 9 more entries cut from this report ...]",
+      {
+        "path": ".os/scripts/pinned-version.cjs",
+        "kind": "file",
+        "action": "create"
+      }
+    ],
+    "manifest": {
+      "schema_version": 1,
+      "buildos_version": "dev",
+      "initialized_at": "2026-11-24T07:06:59.039Z"
+    },
+    "make_docs": {
+      "choice": "no",
+      "status": "skipped",
+      "later_command": "npx -y @brucewaynedecoy/make-docs@~2.0.9 setup --target {PROJECT} --codex-method none --claude-code-method none --no-github-copilot --no-skills --project-resources all --yes --json"
+    }
+  },
+  "diagnostics": []
+}
+```
+
+stderr: empty
+
+#### init: Yes by flag, real Make Docs 2.0.9 on PATH
+
+Command: `buildos init --make-docs` (exit code 0)
+
+stdout:
+
+```text
+Project folder: {PROJECT}
+
+Planned changes (new BuildOS project, 123 paths):
+  add      .os/
+  add      .os/config/
+  add      .os/contracts/
+  add      .os/contracts/examples/
+  [... 117 more rows cut from this report ...]
+  add      workspace/runs/AGENTS.md
+  add      workspace/runs/CLAUDE.md
+
+Partly done. BuildOS is set up in this folder, but Make Docs is not set up.
+Why: Make Docs stopped with exit code 1: This target requires an explicit backup-and-reinstall migration flow before make-docs can write changes.
+To try Make Docs again, run:
+  make-docs setup --target {PROJECT} --codex-method none --claude-code-method none --no-github-copilot --no-skills --project-resources all --yes --json
+```
+
+stderr:
+
+```text
+Setting up Make Docs. This can take a minute.
+```
+
+### P6 Human Experience Review
+
+Reviewer: the implementing agent (t27), from a non-technical adopter's point of view: someone who asks an agent in a chat app to "set up BuildOS here" and reads what the agent passes on. Limits: one reviewer, agent-run, macOS only, source build (`buildos` in the shown commands, where a release shows the `npx` form). No real chat-app trial (that is `R-012` in P8). Authority: `make-docs://system/contract/human-experience-contract.md`.
+
+| Case | Folder named first | State reads differently | Next action visible | npm, `npx`, `PATH`, or flag knowledge needed to choose | Conclusion |
+| --- | --- | --- | --- | --- | --- |
+| New project, No | Yes (`Project folder:` line 1) | "Done." after the plan | Yes: the later Make Docs command | No. The later command is an `npx` line, for the agent to run | `satisfied` |
+| Dry run | Yes | "Dry run. Nothing was changed." | Yes: what would change, and that the user is asked first | No | `satisfied` |
+| No TTY, no flag | Yes | "Stopped. Nothing was changed." | Yes: "Ask the user", then one command per answer | No. The choice is in plain words; the flags are inside the two commands | `satisfied` |
+| Yes, Make Docs works (stub) | Yes | "Done. ... with Make Docs." | Nothing left to do | No | `satisfied` (stub only) |
+| Make Docs fails | Yes | "Partly done." differs from "Done." and "Stopped." | Yes: "Why:" and the exact retry command | No | `satisfied` |
+| Yes, real Make Docs 2.0.9 | Yes | "Partly done." | The retry command is shown, but it fails again the same way, because Make Docs refuses the BuildOS `AGENTS.md` and `CLAUDE.md` | The user cannot fix it by any choice | `material gap` (open item 1) |
+| Existing files clash | Yes | "Stopped. Nothing was changed." | Yes: the paths and the PRD 20 tip | No | `satisfied` |
+| Already set up | Yes | "Stopped. Nothing was changed. BuildOS is already set up in this folder." | Yes: nothing more to do | No | `satisfied` |
+| Adoption | Yes | "Done. BuildOS adopted this existing project." | Yes: "Your project data was not changed." and what was written | No | `satisfied` |
+| Wrapper, Node missing or 22 | Not applicable (no folder output) | One line, exit 127 | Yes: install Node.js 24 or newer, from nodejs.org | No | `satisfied` (`sh`); `.cmd` `insufficient evidence` until Windows CI |
+
+Promise by promise:
+
+- One agent-run `buildos init` sets up a new project with Node 24: `satisfied` on macOS from a tarball through `npx` (A51); Linux and Windows `insufficient evidence` until CI.
+- Missing or old Node gives one plain message: `satisfied` for `sh`; `.cmd` `insufficient evidence` until Windows CI.
+- The user decides Make Docs; with no TTY, `init` stops and explains both choices: `satisfied`.
+- Make Docs failure does not fail BuildOS setup and shows the retry command: `satisfied` for the mechanism. But with the real Make Docs 2.0.9, Yes always fails in a new project, and the retry fails the same way: `material gap` (open item 1).
+- `init` never overwrites, lists clashes, and gives a tip: `satisfied`. Observation, not a gap against PRD 20: a typical existing code folder already has `.gitignore`, `AGENTS.md`, or `CLAUDE.md`, so this stop will be common there (open item 3).
+- Adoption changes no user data: `satisfied` on macOS (A43); Linux and Windows `insufficient evidence` until CI.
+- Legacy names work and name the new command: `satisfied` on macOS and expected on Linux; Windows `material gap` from an npm install (open item 2).
+
+A52 is not met: two `material gap` conclusions stay open, and both need an owner decision.
+
+### P6 Experience Handoff (t28)
+
+A short check for a person, optional. A missing reply does not block closure.
+
+1. In a chat app that can open folders (for example Claude or ChatGPT with folder access), open an empty folder.
+2. Say: "Set up BuildOS in this folder."
+3. Notice whether the agent comes back with a plain question: "Set up Make Docs in this project?", with a short note on what Make Docs adds and that you can do it later.
+4. Answer yes or no. Notice what the agent says at the end: done, partly done, or stopped, and what to do next.
+5. Reply with anything that was unclear, any step that needed knowledge you did not have, and the agent's last message.
+
+Today, a yes answer ends as "partly done" because of open item 1. Answer no for a clean run, or answer yes to see the partial message.
+
+### P6 Open Items
+
+Items 1, 2, and 3 were decided by the owner on 2026-11-24 (option A each; see [Owner Decisions](#owner-decisions), [P6 Shared Files and Make Docs Order](#p6-shared-files-and-make-docs-order), and [P6 Legacy Entry Files](#p6-legacy-entry-files)).
+
+1. Owner decision: Make Docs 2.0.9 refuses setup in a folder that `buildos init` has just set up. Real run: `make-docs setup ... --yes --json` exits 1 with "This target requires an explicit backup-and-reinstall migration flow before make-docs can write changes." (`missing-manifest-recognizable`), because the root `AGENTS.md` holds the Make Docs router line; with BuildOS-only text it still exits 1 (`unknown-shape`, `manual-review-required`). In an empty folder the same call passes. So Yes is `partial` in every new project, and the retry fails the same way. Recorded in register [`R-001`](../../prd/03-open-questions-and-risk-register.md#r-001-make-docs-companion-public-contract-dependency). Options: (a) run Make Docs before BuildOS writes its root `AGENTS.md` and `CLAUDE.md`, and keep the Make Docs ones (BuildOS routing then lives in `.os/AGENTS.md` and the P7 skills router); this changes the PRD 20 order "after BuildOS setup" and the BuildOS root files; or (b) keep the order and ask Make Docs for a companion mode that accepts router files it did not write (Q-010), with Yes `partial` until then.
+2. Owner decision: on Windows, npm's `.cmd` and `.ps1` shims start Node with the target file path (`dist/buildos.js`), so with one entry file for all four names (PRD 20, t1) a legacy name cannot be seen from `process.argv[1]`, and `buildos-intake convert ...` would run as `buildos convert ...` (unknown command). The project wrappers are not affected: they call `buildos <domain>`. Options: (a) three one-line entry files (`dist/buildos-intake.js` and the others, each `import "./buildos.js"`), so the name reaches the program on every OS; PRD 20 would say "all four run the same bundle"; or (b) keep one entry file and accept that legacy names do not work from an npm install on Windows. The installed-tarball legacy tests skip Windows with this reason.
+3. Observation for the owner (PRD 20 behavior, implemented as written): in an existing code folder, `.gitignore`, `AGENTS.md`, or `CLAUDE.md` usually exist already, so `buildos init` will often stop with a clash there.
+4. Carried to P8: `docs/assets/user/` guides, `guide/`, `justfile`, `toolkits/buildos/README.md`, and `toolkits/buildos/AGENTS.md` still describe `BUILDOS_BIN`, `toolkits/*/bin/`, and the Go build. P8 owns the guide and README updates.
+5. `system/.os/skills/` holds no skills yet (P7). `buildos init` creates `.os/skills/` and copies any files under it; adoption replaces packaged skill files and never removes other files there.
+6. CI: resolved. [CI run 45433974561](https://github.com/brucewaynedecoy/build-os/actions/runs/45433974561) on `9e2f8a2` passed the three-OS tests, the installed-tarball golden step on all three systems (167 of 167), and the `make-docs-contract` job, with the Windows `.cmd` wrapper tests and the Windows `init` and npx runs. See [P6 CI Run 45433974561](#p6-ci-run-45433974561).
+7. t29: the port already matched Go on every reachable input. Go's JSON scanner rejects a U+FEFF before a value, and the port rejects it the same way (Go goldens `redirect-bom-null` and `row-bom-prefix`), so `isNullLiteral` never saw a BOM. It now trims with Go's `bytes.TrimSpace` on the bytes, so a raw `﻿null` is not the null literal, as in Go.
+8. Commit note: the root `.gitignore` rule `build/` hides the fixture folder `toolkits/buildos/test/fixtures/init/go-era-project/playbooks/build/` (3 files). Add it with `git add -f`. The tests pass without it.
+
+### P6 Shared Files and Make Docs Order
+
+Owner decision 2026-11-24, question 1, option A. The root `AGENTS.md`, `CLAUDE.md`, and `.gitignore` of a new project are a closed list of shared files (`src/core/init/shared-files.ts`). Every other existing path still clashes.
+
+Implementing-agent choices under the decision:
+
+- The section is the package file's text between the begin and end lines. A marker line counts when the line, trimmed (a leading BOM too), is exactly the marker. Lines are split on bytes, so a file that is not valid UTF-8 keeps every byte outside the section.
+- No section yet: the section goes at the end, after one empty line, with the file's own line break (that of its first line, else LF). A file with no final line break gets one line break and the empty line before the section, and the section then ends with no line break, as the file did. An empty or BOM-only file gets the section right after its BOM. A missing file is created with LF and mode `0644`.
+- One section: it is replaced in place; the end line keeps its old line break (or none at the end of the file). Equal bytes mean no write (`unchanged`).
+- Links: a shared file that is a link to another shared file in the same folder (link text `AGENTS.md` or `./AGENTS.md`, for example the common `CLAUDE.md` -> `AGENTS.md`), when that file is a regular file, stays as it is and is reported `unchanged` with `link_to`. Any other link stops before any write (exit 10): BuildOS never reads or writes through it, so a link out of the root is never followed and never replaced by a regular file. `buildos init` has no `--allow-outside-root`.
+- Size: a shared file over 4 MiB (`SHARED_FILE_MAX_BYTES`) is not read and stops before any write (exit 10). The size comes from `stat` first.
+- A shared file that is a folder or a special file is a clash, as before.
+- Stops: marker, link, and size problems are listed with the clashes in one stop (exit 10, `reason` `shared_file_problem`, or `paths_exist` when a clash is also there), each with its plain fix, and diagnostic code `init_shared_file_problem`.
+- Order: every clash and shared-file check runs before the first write of any kind. For Yes, Make Docs runs next, before BuildOS writes anything; then BuildOS reads the folder again (`replanInit`) and writes all its files and sections as one unit. When the second read finds a new clash or problem, BuildOS writes nothing, exits 10, and the stop says what Make Docs did (`result.make_docs`). Make Docs files are never undone by BuildOS.
+- Undo: just before each section write, BuildOS reads the file again; when it changed or became a link, the run stops (`init_shared_file_changed`, exit 10) and undoes everything. Any failure after a write removes each created file and folder and puts each shared file's exact earlier bytes and permission bits back. The atomic write uses the temporary name `.buildos-init-<n>.tmp`, because the default `..gitignore.<n>.tmp` is refused by the port (found and fixed while testing; the undo had already restored every byte).
+- The shipped `system/AGENTS.md` lost its last line, `<!-- make-docs appends its routing below this line; augment above, do not overwrite. -->`, which is no longer true: Make Docs writes its own marked section.
+
+Observed Make Docs 2.0.9 behavior (by hand, macOS, temporary Make Docs home; setup arguments as in PRD 20):
+
+| Folder before `make-docs setup` | Make Docs result |
+| --- | --- |
+| Empty | Exit 0, `status` `complete`. Writes root `AGENTS.md` and `CLAUDE.md`, each one `<!-- make-docs:begin -->` ... `<!-- make-docs:end -->` section, plus `docs/` and `.make-docs/`. No `.gitignore` |
+| Only a user `.gitignore` | Exit 0, `complete`; `.gitignore` unchanged |
+| The BuildOS tree (`.os/`, `playbooks/`, `workspace/`) and a marked `.gitignore`, no root `AGENTS.md` or `CLAUDE.md` | Exit 0, `complete` |
+| A user `AGENTS.md`, or a user `CLAUDE.md`, or both | Exit 1, `make-docs cannot classify this target safely enough to write changes.` (`unknown-shape`, `manual-review-required`, "Ambiguous fallback paths: AGENTS.md, CLAUDE.md") |
+| Root `AGENTS.md` and `CLAUDE.md` with only a BuildOS section (BuildOS set up earlier with No) | Exit 1, `This target requires an explicit backup-and-reinstall migration flow before make-docs can write changes.` (`missing-manifest-recognizable`) with the real BuildOS text; `unknown-shape` with BuildOS-only text |
+| After Make Docs setup, a BuildOS section added after (or before) the Make Docs section, then `make-docs setup` again | Exit 0, `complete`; `AGENTS.md` byte for byte unchanged. `make-docs project state status --json` reports `ready` |
+
+What `buildos init --make-docs` now reports with the real Make Docs 2.0.9 on `PATH`:
+
+- Empty folder: exit 0, "Done. BuildOS is set up in this folder, with Make Docs." `AGENTS.md` and `CLAUDE.md`: "BuildOS section added" after the Make Docs section; `.gitignore`: created. The earlier P6 open item 1 case is closed.
+- Folder with the user's own `AGENTS.md` and `CLAUDE.md`: exit 0, partial. Output, with the project path as `{PROJECT}`:
+
+```text
+Shared files. BuildOS changes only its own section of these files, between its buildos:begin and buildos:end lines.
+  AGENTS.md: BuildOS section added; the other lines were not changed
+  CLAUDE.md: BuildOS section added; the other lines were not changed
+  .gitignore: created, with only the BuildOS section
+
+Partly done. BuildOS is set up in this folder, but Make Docs is not set up.
+Why: Make Docs stopped with exit code 1: make-docs cannot classify this target safely enough to write changes.
+This Make Docs version does not set up a folder that already has its own AGENTS.md or CLAUDE.md, and this folder had one. Your files were kept, and BuildOS added its section to them.
+To try Make Docs again, run:
+  make-docs setup --target {PROJECT} --codex-method none --claude-code-method none --no-github-copilot --no-skills --project-resources all --yes --json
+```
+
+The JSON envelope has `ok` `true`, `result.status` `partial`, and `result.make_docs.tip` with the same tip. The tip shows only when Make Docs failed and the root `AGENTS.md` or `CLAUDE.md` was there before Make Docs ran. The retry command fails the same way while those files are there.
+
+Captures (`buildos init --skip-make-docs`):
+
+Existing `AGENTS.md`, `.gitignore`, and `assets/AGENTS.md` (exit 10):
+
+```text
+Project folder: {PROJECT}
+Stopped. Nothing was changed. 1 path that BuildOS must add is already in this folder.
+
+These paths are already here:
+  assets/AGENTS.md
+
+Move or back up these files, then run `buildos init` again.
+```
+
+`AGENTS.md` with a begin line and no end line (exit 10):
+
+```text
+Project folder: {PROJECT}
+Stopped. Nothing was changed. BuildOS cannot safely add its section to 1 file.
+
+AGENTS.md has a "<!-- buildos:begin -->" line, but no "<!-- buildos:end -->" line after it.
+To fix it: Keep one buildos:begin line with one buildos:end line after it, or remove both lines. Then run `buildos init` again.
+```
+
+The other marker messages: `<file> has a "<end>" line, but no "<begin>" line before it.`, `<file> has its "<end>" line before its "<begin>" line.`, and `<file> has more than one BuildOS section (more than one "<begin>" or "<end>" line).` The link message: `<file> is a link to another file. BuildOS does not change a file through a link.` with `To fix it: Put a regular file in place of the link, or move the link away. Then run `buildos init` again.` The size message: `<file> is larger than 4 MiB, so BuildOS does not read it.`
+
+Existing `AGENTS.md` and `.gitignore`, the plan rows and then the result rows (exit 0):
+
+```text
+Shared files. BuildOS changes only its own section of these files, between its buildos:begin and buildos:end lines.
+  update   AGENTS.md (add the BuildOS section; the other lines stay as they are)
+  add      CLAUDE.md (a new file with only the BuildOS section)
+  update   .gitignore (add the BuildOS section; the other lines stay as they are)
+
+Shared files. BuildOS changes only its own section of these files, between its buildos:begin and buildos:end lines.
+  AGENTS.md: BuildOS section added; the other lines were not changed
+  CLAUDE.md: created, with only the BuildOS section
+  .gitignore: BuildOS section added; the other lines were not changed
+
+Done. BuildOS is set up in this folder.
+```
+
+The other rows: `update   <file> (refresh the BuildOS section; the other lines stay as they are)`, `keep     <file> (the BuildOS section is already up to date)`, `keep     <file> (a link to <other>, which gets the BuildOS section)`; and after the write `<file>: BuildOS section updated; the other lines were not changed`, `<file>: no change; the BuildOS section was already up to date`, `<file>: no change; it is a link to <other>, which has the BuildOS section`. JSON: `result.shared_files` lists `{ path, action }` in a dry run (`create`, `add_block`, `update_block`, `unchanged`) and `{ path, result }` after the write (`created`, `block_added`, `block_updated`, `unchanged`), with `link_to` for a kept link. `result.planned` and `result.written` no longer list the shared files.
+
+Tests (`test/init.test.ts`, all on the built bundle unless noted): user lines kept byte for byte with CRLF, a BOM, no final line break, and mode `0600` kept (POSIX); run again is `unchanged` and a stale section is updated in place with lines after it kept; the dry run in human and JSON form; each of the four marker problems exits 10, names the file, writes nothing, and with `--make-docs` never starts Make Docs; clashes and problems together; a file over 4 MiB; a shared folder is a clash; `CLAUDE.md` -> `AGENTS.md` kept and a link outside the root refused with the outside file untouched (skipped where the OS user cannot make a link); an injected `.gitignore` write failure after `AGENTS.md` got its section and `CLAUDE.md` was created restores the folder exactly (through `run` with a wrapped port); Make Docs runs before any BuildOS write and its files get the section; a refusing Make Docs stub with the user's own `AGENTS.md` or `CLAUDE.md` gives partial and the tip; no tip without user routers.
+
+Parity: `buildos init` has no Go equivalent and no golden case, so neither decision needs a parity exception. The legacy entry files leave the legacy-name goldens unchanged, PE-016 included.
+
+### P6 Legacy Entry Files
+
+Owner decision 2026-11-24, question 2, option A. The build (`scripts/build.ts` `writeLegacyEntries`) writes `dist/buildos-intake.js`, `dist/buildos-discovery.js`, and `dist/buildos-design.js` next to the bundle (mode `0755`). Each is five lines (271 bytes for `buildos-intake.js`):
+
+```js
+#!/usr/bin/env node
+// The legacy command name "buildos-intake" (PRD 20 Legacy Command Names). It runs
+// the same program as "buildos intake" and goes away in BuildOS 0.3.0.
+globalThis[Symbol.for("buildos.commandName")] = "buildos-intake";
+await import("./buildos.js");
+```
+
+`src/cli/main.ts` reads the name only from that global (`entryCommandName`); the `argv[1]` file-name reading (`invocationName`) is gone, so `dist/buildos.js` under any file name is `buildos`. `package.json` points each legacy `bin` name at its entry file and lists the three files in `files`. esbuild stays the only bundler; no dependency changed.
+
+Tests: `test/package.test.ts` checks the exact pack list (110 files), the installed `bin` map, each legacy name from the installed tarball (POSIX `.bin` links; on Windows the npm `.cmd` shims through `cmd.exe`, no longer skipped), `node <dist>/<name>.js --help` for each name (the npm Windows shim form) against `buildos <domain> --help` with the PE-016 line, a copy of each entry file under another file name (still its own domain), and a copy of the bundle named `buildos-intake.js` (plain `buildos`, no notice). `test/go-tool-cli.test.ts` checks that a path-like name is never a legacy name and the entry file text. The golden bundle runner and `test/intake-edge.test.ts` now run legacy names as `node <folder>/<name>.js`, on all three operating systems. The CI step "Golden parity from the installed tarball" stays POSIX-only, because it starts `.bin` links directly; its comment now says so.
+
+### P6 Decisions Check Results
+
+On 2026-11-24, macOS, Node 24.22.3, from `toolkits/buildos/` unless noted. Nothing is staged, committed, or pushed.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm test` | exit 0; 1,593 tests, 1,584 pass, 0 fail, 9 skipped (the same Windows-only and setgid cases as before) |
+| `npm run build` | exit 0; `dist/buildos.js` 3,171,282 bytes, the three legacy entry files, `dist/system.json`, and 100 files in `dist/system/` |
+| Golden harness from an installed tarball (`BUILDOS_GOLDEN_BIN_DIR`) | 166 tests, 166 pass |
+| `npm run check:deps` and `check:deps:installed` | both `dependency policy: ok` |
+| `npm audit --audit-level=high` | 0 vulnerabilities |
+| `npm pack --dry-run` | 110 files, 842,980 bytes packed, 3,509,400 unpacked |
+| Make Docs contract, by hand | `pass (make-docs 2.0.9)` |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | `passed`, 0 findings |
+| `make-docs project path-hygiene validate` (repository root) | valid, 0 failing findings |
+| `git diff --check` | exit 0 |
+| CI on three operating systems | Pending at this round: needs a push. Passed later in [CI run 45433974561](https://github.com/brucewaynedecoy/build-os/actions/runs/45433974561); see [P6 CI Run 45433974561](#p6-ci-run-45433974561) |
+
+Sandbox note: the default npm cache folder is not writable in the agent sandbox (`EPERM`), so the pack and install checks ran with `npm_config_cache` in a temporary folder, as `test/package.test.ts` does.
+
+### P6 Human Experience Review Update
+
+Reviewer: the implementing agent, same point of view and limits as [P6 Human Experience Review](#p6-human-experience-review).
+
+| Case | Conclusion |
+| --- | --- |
+| Existing project with `AGENTS.md`, `CLAUDE.md`, `.gitignore` | `satisfied`: it no longer stops; each file's line says what BuildOS did, and that the other lines were not changed |
+| Malformed markers, a link, a file over 4 MiB | `satisfied`: "Stopped. Nothing was changed.", the file named, the problem and the fix in plain words |
+| Yes, real Make Docs 2.0.9, empty folder | `satisfied`: "Done. ... with Make Docs." (was `material gap`) |
+| Yes, real Make Docs 2.0.9, the user's own `AGENTS.md` or `CLAUDE.md` | `satisfied` for honesty: partial, why, and a plain tip that names the cause; the user cannot get Make Docs set up by any choice inside BuildOS |
+| No, then "set up Make Docs later" with the shown command | `material gap`: with Make Docs 2.0.9 the shown command fails, because the BuildOS section is then in `AGENTS.md` and `CLAUDE.md`. The no-TTY question also says "The user can also say no now and set up Make Docs later." Open item 9 |
+| Legacy names from an npm install | `satisfied` on macOS; Windows `insufficient evidence` until CI (was `material gap`) |
+
+A52 stays not met: one `material gap` (open item 9) needs an owner decision.
+
+### P6 Open Items After the Decisions
+
+9. Owner decision: after a No answer, "set up Make Docs later" does not work with Make Docs 2.0.9, because Make Docs refuses root `AGENTS.md` and `CLAUDE.md` it did not write, and BuildOS has written its section there. The same holds for any folder with the user's own `AGENTS.md` or `CLAUDE.md` (now reported with a tip). This is the remaining co-owned router case of register `R-001` and `Q-010`. Options: (a) keep the behavior and change the "later" wording in the choice text and the No result to say plainly that Make Docs can be set up later only in a folder without its own `AGENTS.md` and `CLAUDE.md`, and ask Make Docs for a companion mode that accepts marked sections it did not write; or (b) also add a BuildOS step that sets up Make Docs later by moving the BuildOS sections aside, running Make Docs, and putting them back.
+10. The no-TTY and flag runs show the "Shared files" rows twice: first as the plan, then as the result. With Yes, a file the plan shows as `add` can be reported `BuildOS section added`, because Make Docs created it in between. Both are correct; a reviewer may prefer one list.
+
+### P6 Review Round 1
+
+On 2026-11-24, macOS, Node 24.22.3, from the uncommitted P6 tree on `rewrite/ts-cli` (`7cfc0b7`). Nothing is staged, committed, or pushed. Each finding was reproduced first; each fix has a test that fails without it. Tests are in `test/init-review.test.ts` unless another file is named.
+
+| Finding | Disposition | Test |
+| --- | --- | --- |
+| P6-R1-01 | Fixed. The Markdown marker scanner follows CommonMark fenced code (``` and ~~~, closed by the same character at least as long) and indented code (four or more columns). A file with no section that ends inside an open fence stops (`open_code_block`, exit 10). Package Markdown must end with every fence closed and hold no marker text. | "updates only the real section when the file also holds a sample section in a fenced code block"; "adds the section after a file whose only markers are a sample in a code block, and keeps the sample"; "matches fences by character and length, and never reads an indented line as a marker"; "stops before any write when a file with no section ends inside an open code block" |
+| P6-R1-02 | Fixed. The apply journal records what each replaced path was (file bytes and mode, or link text and mode); the undo puts a link back as a link. | "P6-R1-02: puts a replaced wrapper link back as a link after a later failure" |
+| P6-R1-03 | Fixed. Before Make Docs runs, every existing folder BuildOS writes in is checked (`checkMkdir`, POSIX); a refused folder stops with exit 5 and `folder_not_writable`. Every later stop or failure carries `make_docs` and says to add `--skip-make-docs`. | "stops with exit 5 before Make Docs runs when a folder BuildOS writes in is read-only"; "a write failure after Make Docs ran reports both: Make Docs set up, BuildOS undone, and what to run next" |
+| P6-R1-04 | Fixed. The replan's setup is compared with the planned one; a change stops with exit 10 (`setup_changed`) and the Make Docs result. "Nothing was changed" prints only when Make Docs did not run. | "stops with exit 10, names what Make Docs did, and never says "Nothing was changed"" (two cases); "a clash after Make Docs ran carries the Make Docs result in both outputs" |
+| P6-R1-05 | Fixed. The plan's lookup asks the port (`entryId`, an `lstat`) when a name is not listed under its exact spelling; the entry with the same identity is used, with its spelling on disk. | "keeps an existing agents.md spelled its own way, or keeps both names distinct on a case-sensitive volume"; "replaces a differently cased wrapper in an adoption, keeping its spelling, or adds the wrapper on a case-sensitive volume" (each probes the volume) |
+| P6-R1-06 | Fixed. A valid `.os/manifest.json` makes a rerun (`setup: "rerun"`, exit 0): it refreshes only sections that are there, writes no other file, and reports the rest as kept. A folder or invalid JSON at the manifest stops (`manifest_problem`, exit 10). `.os/` without a manifest is still a Go-era adoption. PRD 20 records both decisions. | "the same command twice: the second run exits 0, changes nothing, and says so"; "a rerun refreshes a stale section and keeps every other BuildOS file"; "a rerun of an adopted project adds no section to its shared files"; "stops (exit 10) when .os/manifest.json is a folder or is not a valid manifest"; the A46 test in `test/init.test.ts` |
+| P6-R1-07 | Fixed. `writeFileAtomic` and `symlinkAtomic` take `expect`, checked by the port with a bounded `O_NOFOLLOW` read as the last step before the rename. Kept shared files and links are checked again before success. `SECURITY.md` states the window that stays. | "an editor save between the plan and the rename stops the run, and the user's save stays" (uses the port's rename hook); "a shared file the plan keeps that is gone before the end fails the run and undoes it" |
+| P6-R1-08 | Fixed. Each journal step records the identity of the entry it made; the undo removes or restores only that entry (`remove` and the atomic writes take `expect: { kind: "entry" }`), and lists every path it could not put back, in human and JSON output, with exit 10 and diagnostic `init_undo_incomplete`. | "P6-R1-08: leaves an entry that changed after BuildOS wrote it, and reports every path it could not put back (exit 10)" |
+| P6-R1-09 | Fixed. A section on the first line of a BOM file keeps the BOM. | "keeps the BOM for a current and for a stale first-line section" (LF and CRLF); "keeps the BOM through the CLI" |
+| P6-R1-10 | Fixed. UTF-16 LE/BE and UTF-32 LE/BE byte order marks and zero bytes stop before any write (`unsupported_encoding`, exit 10), naming the file. Non-UTF-8 bytes outside the section are still kept. | "stops with exit 10 and names the file" (four cases); "keeps bytes that are not UTF-8, outside the section, byte for byte" |
+| P6-R1-11 | Fixed. The `sh` wrapper walks every PATH folder and skips a candidate that is this file (`-ef`, so a link or another spelling counts) or any project wrapper (its second line), so it never stops early and never loops between projects. The `.cmd` wrapper compares full short paths (`%~fs`) and skips project wrappers by their `rem` line. The legacy wrappers call these two, so they share the fix. | `test/wrappers.test.ts`: "with this wrapper folder first on PATH, still runs a real buildos later on PATH (no npx)"; "skips another project's wrapper on PATH instead of running it (no loop between projects)"; "knows itself through another spelling of its folder (a link to it)" |
+| P6-R1-12 | Fixed. `buildos.cmd` runs the helper once (`pinned-version.cjs --cmd` prints `<code> <version>`), exits with a non-zero code, and refuses an empty version or one with a character outside `0-9 A-Z a-z . -` before any `npx`. The `sh` wrapper refuses the same values. | `test/wrappers.test.ts`: "refuses an empty version from the version helper (exit 3, no npx)"; "refuses a version with a shell character from the version helper (exit 3, no npx)" (both run the `.cmd` form on Windows CI) |
+| P6-R1-13 | Fixed. The fixture is 34 short placeholder files: no scripts, no absolute paths, user names, home folders, or client names. `playbooks/build/` is renamed `playbooks/packaging/`, so no force-add is needed; the test does not depend on that name. `.gitattributes` marks the fixture `-text`. | "buildos init: adoption of a Go-era project (A43)" in `test/init.test.ts` |
+| P6-R1-14 | Fixed. The installed-tarball golden step runs on Windows too: `installedRunner` runs npm's real `.cmd` shims through `cmd.exe /d /s /c`, with cross-spawn's double `^` escaping. | "each argument reaches the program unchanged through cmd.exe and a shim's %*" (Windows only); the CI step |
+| P6-R1-15 | Fixed. One rule: strip trailing spaces and tabs and leading spaces and tabs, compare bytes, at every length (no cutoff). In Markdown, four or more columns of indentation is code. | "reads a marker after 300 spaces as a marker in .gitignore, and as indented code in Markdown" |
+| P6-R1-16 | Fixed. A shared file is written with its full mode and `exactMode`. | "keeps the sticky or setgid bit when the BuildOS section is added" |
+| P6-R1-17 | Fixed. `findOnPath` needs execute permission on POSIX (`access X_OK`) and keeps searching. | "skips a make-docs file without execute permission" |
+| P6-R1-18 | Fixed. Product decision: the shown commands are for `sh` on macOS and Linux and the Command Prompt on Windows. Windows quoting now doubles a backslash run before each closing quote and writes `%` as `"^%"`, so `%NAME%` is never expanded, also through an npm `.cmd` shim. The test runs each shown command against a recorder and checks the exact argv. | "both choice commands run with exactly the shown arguments" (three POSIX names, four Windows names); "quotes a Windows path that ends in a backslash so the quote stays closed" |
+| P6-R1-19 | Fixed in the phase file: A43 says "zero changes outside the allowed adoption set" and names the four replaced wrappers. | Not code |
+| UX note (open item 10) | Fixed. With a flag, the plan lists only paths and the result lists the shared files once; with the question, the plan shows them before the answer. | The A46 test in `test/init.test.ts` counts one "Shared files." line |
+
+Superseded by this round: the implementation choice "An adoption whose only clash is `.os/manifest.json` reports `already_set_up`" (now a rerun, exit 0); open item 8 (no force-add is needed); open item 10 (fixed).
+
+#### Orchestrator Decision: Make Docs "Later" Text
+
+Open item 9, option A, decided by the orchestrator on 2026-11-24, pending an owner veto. Every text that promised "set up Make Docs later" now says what works with the pinned Make Docs version. No move-aside step was built. Checked with the real Make Docs 2.0.9 (its own temporary home): after `buildos init --skip-make-docs` in an empty folder, `make-docs setup ... --yes --json` exits 1 with "This target requires an explicit backup-and-reinstall migration flow before make-docs can write changes." Register `Q-010` now tracks a Make Docs setup mode that accepts marked sections it did not write. A52 is met on macOS on this basis: no `material gap` stays open; the limit is stated, not hidden.
+
+Final user-facing texts (`{TMP}` stands for a temporary folder):
+
+No TTY, no flag, empty folder (exit 10):
+
+```text
+Project folder: {TMP}/a
+Stopped. Nothing was changed. BuildOS needs one answer from the user first.
+
+Ask the user: "Set up Make Docs in this project?"
+
+Make Docs is an optional companion tool. It adds a docs/ folder with guides and templates for plans, designs, and requirements, so agents can keep project documents in order.
+If the user says no, Make Docs cannot be set up in this folder later with this Make Docs version: it does not set up a folder that has an AGENTS.md or CLAUDE.md file that Make Docs did not write, and BuildOS adds its section to these files.
+
+If the user says yes, run:
+  buildos init --root {TMP}/a --make-docs
+If the user says no, run:
+  buildos init --root {TMP}/a --skip-make-docs
+```
+
+The same stop in a folder with the user's own `AGENTS.md` or `CLAUDE.md` says instead: "This folder already has an AGENTS.md or CLAUDE.md file that Make Docs did not write. This Make Docs version does not set up such a folder, so Make Docs setup will not finish here, now or later. BuildOS setup finishes either way." In a folder that will have neither file (an adoption without them): "The user can also say no now and set up Make Docs later."
+
+No result (new project): "Make Docs: not set up, as chosen. With this Make Docs version, Make Docs cannot be set up in this folder later. This Make Docs version does not set up a folder that has an AGENTS.md or CLAUDE.md file that Make Docs did not write." On a rerun: "Make Docs: not run, as chosen."
+
+Partial result (Make Docs failed):
+
+```text
+Partly done. BuildOS is set up in this folder, but Make Docs is not set up.
+Why: Make Docs stopped with exit code 1: This target requires manual review.
+This Make Docs version does not set up a folder that has an AGENTS.md or CLAUDE.md file that Make Docs did not write. So with this version, the command below stops the same way in this folder. It can work with a newer Make Docs version.
+To try Make Docs again, run:
+  make-docs setup --target {TMP}/b --codex-method none --claude-code-method none --no-github-copilot --no-skills --project-resources all --yes --json
+```
+
+With the user's own router file before Make Docs ran, a line comes before the note: "This folder already had its own AGENTS.md or CLAUDE.md. Your files were kept, and BuildOS added its section to them."
+
+`buildos init --help` adds: "This Make Docs version does not set up a folder that has an AGENTS.md or CLAUDE.md file that Make Docs did not write. BuildOS adds its section to these files, so after a no, Make Docs usually cannot be set up in the folder later with this version."
+
+#### Other New Messages
+
+Rerun, nothing to change (exit 0): "Done. BuildOS is already set up in this folder, and its sections are up to date. Nothing was changed." then "BuildOS was already set up here, so it kept its other files as they are." With a refresh: "Done. BuildOS was already set up in this folder. It refreshed its section in 1 shared file."
+
+Undo incomplete (exit 10):
+
+```text
+Failed. BuildOS could not finish its setup, and it could not undo all of its own changes.
+Why: injected failure.
+
+BuildOS could not put these paths back as they were:
+  .os/manifest.json (it changed after BuildOS wrote it, so BuildOS left it as it is)
+  .os/ (the folder is not empty, so BuildOS left it)
+
+Look at each path listed. Move away what BuildOS left there, fix the problem shown in "Why", then run `buildos init` again.
+```
+
+Undo complete: "Failed. BuildOS could not finish its setup, so it undid its own changes." After Make Docs ran, the summary adds "Make Docs was set up before this, and it stays set up." and the tip adds "Make Docs already ran, so add --skip-make-docs when you run buildos init again."
+
+Encoding stop (exit 10):
+
+```text
+Project folder: {TMP}/c
+Stopped. Nothing was changed. BuildOS cannot safely add its section to 1 file.
+
+AGENTS.md is saved as UTF-16 text. BuildOS changes only UTF-8 text, so it did not change this file.
+To fix it: Save the file as UTF-8 text, or move it away. Then run `buildos init` again.
+```
+
+A zero byte gives "AGENTS.md holds a zero byte, so it is not plain text that BuildOS can safely change." A read-only folder gives "Stopped. Nothing was changed. BuildOS cannot write in 1 folder that it must add files to." with the folder and "(permission denied)" (exit 5).
+
+#### Review Round 1 Check Results
+
+From `toolkits/buildos/` unless noted.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm run build` | exit 0; `dist/buildos.js` 3,194,247 bytes |
+| `npm test` | exit 0; 1,634 tests, 1,624 pass, 0 fail, 10 skipped (the 9 earlier Windows-only and setgid cases, and the new Windows-only shim test) |
+| `npm test` with `TMPDIR` holding a space | exit 0; 1,634 tests, 1,624 pass, 0 fail, 10 skipped |
+| `npm run check:deps` and `check:deps:installed` | both `dependency policy: ok` |
+| `npm audit --audit-level=high` | 0 vulnerabilities |
+| `npm pack` | 110 files, 850.6 kB packed, 3.5 MB unpacked |
+| Offline install of the tarball, then `BUILDOS_GOLDEN_BIN_DIR=<installed .bin> node --test test/golden/compare.test.ts` | 166 tests, 166 pass |
+| `scripts/make-docs-contract.ts --expect-version 2.0.9 -- make-docs` | `pass (make-docs 2.0.9)` |
+| Real Make Docs 2.0.9: Yes in an empty folder, then the same `buildos init --skip-make-docs` again | `complete` (exit 0), then a rerun (exit 0, nothing changed) |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | `passed` |
+| `make-docs project path-hygiene validate --target-root .` (repository root) | valid, 0 failing findings |
+| `git diff HEAD --check` | exit 0 |
+| Search of every changed and new file for absolute paths, user names, and home folders | none (only the existing generic device-path examples in the boundary tests) |
+| CI on three operating systems | Pending at this round: needs a push. Passed later in [CI run 45433974561](https://github.com/brucewaynedecoy/build-os/actions/runs/45433974561); see [P6 CI Run 45433974561](#p6-ci-run-45433974561) |
+
+The npm cache ran in a temporary folder (`npm_config_cache`), as before.
+
+### P6 CI Run 45412403531
+
+CI run 45412403531 on `9c6712a` (P6 with review round 1). macOS matched local results. Linux had 1 failure and Windows had 6. The fixes are on 2026-11-24 in the uncommitted tree on `rewrite/ts-cli`. Nothing is staged, committed, or pushed. Windows cannot be run locally, so the Windows causes below come from the CI log and from reading the `.cmd` code.
+
+| Failure | Cause | Fix | Test |
+| --- | --- | --- | --- |
+| Linux: "P6-R1-08: leaves an entry that changed after BuildOS wrote it, ..." (exit 1, expected 10) | Product. The test removes `.os/manifest.json` and writes a new file there. Linux (ext4) gave the new file the same inode, so the undo saw the same identity and removed the user's file, then reported a complete undo. Identity alone cannot tell a later edit from the entry this run wrote. | P6-R2-03: the journal records the bytes and permission bits this run wrote, and the undo checks identity, bytes, and mode right before it acts. | The same test, now deterministic on every system; "a save in place (same identity) after BuildOS replaced AGENTS.md is kept and listed (exit 10)" (`test/init-review-2.test.ts`) fails without the fix on every system. |
+| Windows: "P6-R1-02: puts a replaced wrapper link back as a link after a later failure" (`..\..\old-wrapper` against `../../old-wrapper`) | Test. Node on Windows returns backslashes from `readlink` for a relative link. The test also injected its failure before the wrapper was replaced (P6-R2-15). | The test records `readlink` before the run and compares with it, injects the failure at a later wrapper's create, and asserts that the replace happened. | The same test. |
+| Windows: "skips itself on PATH and, with Node 24, runs npx ..." for `buildos`, `buildos-intake`, `buildos-discovery`, and `buildos-design` (exit 3, "cannot find its version") | Product. In the old `:check_version`, the loop removed each allowed character from a copy of the version with `!BUILDOS_REST:%%c=!`. After `.` removed the last character, the variable was undefined, and Command Prompt expands `!UNDEFINED:-=!` to text that is not empty, so the last step (`-`) made the copy non-empty and every valid version was refused. No `.cmd` run had ever reached `npx` on Windows. | The `.cmd` wrappers are rewritten (P6-R2-12 to P6-R2-14). The check keeps a leading `_` in the copy, so it never becomes undefined, and checks that the first character is a digit. | The four tests, now named "... runs npx with the version pinned in .os/manifest.json and the exact arguments". |
+| Windows: "skips another project's wrapper on PATH instead of running it (no loop between projects)" | Product: the same version check. | The same fix. | The same test. |
+
+### P6 Review Round 2
+
+On 2026-11-24, macOS, Node 24, from the uncommitted tree on `rewrite/ts-cli` (`9c6712a`). Nothing is staged, committed, or pushed. Each finding was checked first. Each fix has a test that fails without it: for the init findings this was checked by turning each fix off and running the test (the wrapper tests were run against the `9c6712a` wrapper). Tests are in `test/init-review-2.test.ts` unless another file is named.
+
+| Finding | Disposition | Test |
+| --- | --- | --- |
+| P6-R2-01 | Fixed by one conservative ownership rule (orchestrator direction), with no Markdown parser by cases. A section is BuildOS's only when both marker lines are whole lines at column 0 with only trailing spaces and tabs, in order, exactly one pair, and outside every code or raw region. The region scan follows fenced code at any indentation, in list items and block quotes (a closing fence needs the same number of `>` markers), `<pre>`, `<script>`, `<style>`, and `<textarea>` blocks, and HTML comments that start a line (a fence in a comment is not a fence). It errs toward "inside a region". An unclosed region, a column-0 marker inside a region with no clean pair outside, or markers that are not one pair stop with exit 10, the file, and the line (`unclosed_region`, `marker_in_region`, and the earlier codes). `.gitignore` uses only the column-0 rule. P6-R1-15 is reconciled: leading whitespace now means "not a marker", in `.gitignore` too. | `test/init-review.test.ts`: "P6-R2-01: the ownership rule, table-driven" (30 cases, each with LF, CRLF, and mixed line breaks: fences in lists and block quotes, longer and shorter closing fences, backtick and tilde, `<pre>`, comments with fence characters and with markers, unclosed fence and comment, sample and real, sample only, real only, indented and mid-line markers); "keeps .gitignore simple: a whole line at column 0, no regions"; "a CRLF list item that opens a ~~~md fence with two-space-indented example markers ..."; "~~~ inside an HTML comment does not hide a real section (no second section)"; "stops (exit 10) and names the line when the only markers are at column 0 inside a code block ..."; "adds the section after an indented example, and keeps the example byte for byte" |
+| P6-R2-02 | Fixed. A write that renamed its file and then failed (the parent folder flush) attaches the committed entry to its error (`WriteLeftovers.committed`). The init journal records it, so the undo puts the old file back, or lists the path with exit 10. `writeFileAtomic`, `writeNewFile`, and `symlinkAtomic` return the identity of the entry they made. | "the folder flush after the AGENTS.md rename fails: the undo puts AGENTS.md back, and says so only when it did" (POSIX; Windows has no folder flush, PE-005) |
+| P6-R2-03 | Fixed. The journal records the identity, bytes, and permission bits this run wrote; the undo expects all three (the port compares the bytes with a bounded read). A later edit, also in place, is kept and listed. | "a save in place (same identity) after BuildOS replaced AGENTS.md is kept and listed (exit 10)"; the Linux CI failure above |
+| P6-R2-04 | Fixed. A cleanup unlink that fails is no longer silent: the write's error lists the entry (`WriteLeftovers.leftBehind`, the path as given to the port), and the result lists it in `not_restored` with exit 10. The JSON `write_status` of an incomplete undo is `partially_applied`, a new value that PRD 20 defines; `applied` keeps its meaning ("every authorized write completed"). | "the destination check fails, then the unlink of the temporary file fails: exit 10, the temporary file listed"; `test/envelope.test.ts` "allows exactly the five write statuses" |
+| P6-R2-05 | Fixed. The plan reads each file or link an adoption replaces once, with a bound, before Make Docs runs (`PlannedEntry.before`); a file over 4 MiB stops (`replace_too_large`, exit 10) before Make Docs. The replan after Make Docs keeps that first snapshot, and the write expects it. | "a wrapper of 4 MiB + 1 byte stops the adoption before Make Docs runs (exit 10)"; "a wrapper edited while Make Docs runs is not overwritten: the run stops and is undone (exit 10)" |
+| P6-R2-06 | (a) Fixed: the expected entry carries the permission bits and identity of the snapshot, so a `chmod` before the rename stops the run. (b) Documented as directed: a replace keeps POSIX mode bits but not extended ACLs or extended attributes. Writing in place under a checked handle would keep them, but a crash in the middle leaves a half-written user file, which breaks the atomic-write promise, so the rename stays. Tracked follow-up: F-P6-01 below. | (a) "a chmod 0644 to 0600 between the plan and the replace stops the run; the user's mode stays"; (b) `SECURITY.md` Write Safety |
+| P6-R2-07 | Fixed. The preflight check is a new port method, `checkCanCreateIn(folder)`: it checks the folder the create or rename acts in (contained, a folder), never through a link in it. POSIX: `access(W_OK \| X_OK)`. Windows: Node has no check of folder access rules (`fs.access` looks only at the read-only attribute, which Windows ignores on folders), so only existence, type, and containment are checked, and a denied folder is found by the write itself (undone, exit 5, with the Make Docs result). No probe files. Documented in PRD 20 and `SECURITY.md`. | "adopts a project whose wrapper is a link to a file outside the project: the link is replaced, the outside file kept (exit 0)"; "stops with exit 5 before Make Docs runs when the wrapper folder itself is read-only" |
+| P6-R2-08 | Fixed. The Make Docs report is made from the outcome right when the process returns, before the second read of the folder, so every later exit path carries it and the `--skip-make-docs` line. | "Make Docs succeeds and leaves AGENTS.md unreadable: the failure still names Make Docs and --skip-make-docs" |
+| P6-R2-09 | Fixed. One manifest contract in PRD 20, implemented once in `src/core/init/manifest.ts` and mirrored in `pinned-version.cjs` (no dependency, runs on any Node): UTF-8 up to 64 KiB with one optional BOM, one JSON object, `schema_version` 1, `buildos_version` an exact semver 2.0.0 version without build metadata (at most 256 characters) or `dev`, `initialized_at` an ISO 8601 UTC time with a real calendar date. `dev` makes the wrappers stop with exit 3. `buildos init` refuses to write a version outside the contract. | `test/manifest-contract.test.ts` (80 shared cases from `test/fixtures/manifest-contract.json`, both implementations and the helper as a process); `test/wrappers.test.ts` "runs npx with the version from a manifest that starts with a UTF-8 byte order mark"; "refuses a rerun manifest that breaks the manifest contract (exit 10)" |
+| P6-R2-10 | Fixed. A rerun and its dry run report the manifest on disk (`InitPlan.installed`). | "in the result and in the dry run" |
+| P6-R2-11 | Fixed. Make Docs 2.0.9 marks its routers with `<!-- make-docs:begin -->` and `<!-- make-docs:end -->` (checked with the real 2.0.9: such a router, also with a BuildOS section added, does not block its setup). The plan records the routers without a Make Docs section (`foreignRouters`) and the missing ones; "can Make Docs be set up later" follows them. The user-files tip names only the files BuildOS actually changed, from the write results. t19 and A47 in the phase file now say "whether". | "in a folder that Make Docs set up first, the no-TTY stop says Make Docs can be set up now or later"; "in a folder with the user's own AGENTS.md, ..."; "a Go-era adoption with a failing Make Docs: the tip never says BuildOS added a section, ..."; "a new project with the user's own AGENTS.md and a failing Make Docs names the file that got the section" |
+| P6-R2-12 | Fixed. `sh`: reads `PATH` as POSIX does (empty entry is the current folder, relative entries relative to it), skips the P6 wrapper (second line) and the Go-era wrapper of `7cfc0b7` (its first, second, and fourth lines), and sets `BUILDOS_WRAPPER_ACTIVE` so a chain that comes back stops with one plain message (exit 127). `.cmd`: Node.js searches `PATH` in order (`pinned-version.cjs --cmd`), never the current folder; `NoDefaultCurrentDirectoryInExePath` is set and `where $PATH:node` searches `PATH` only. Every shipped `.cmd` wrapper is skipped by its `rem BuildOS project wrapper` line. On Windows with no Node.js, the wrapper prints the Node.js message, because it uses Node.js to search `PATH` (PRD 06 history entry). | `test/wrappers.test.ts`: "skips the Go-era wrapper (commit 7cfc0b7) first on PATH ..." (POSIX); "finds buildos through a relative PATH entry, relative to the current folder"; "reads an empty PATH entry as the current folder, as POSIX does" / "never runs a buildos.cmd from the current folder that is not on PATH" (Windows); "stops a chain of wrappers that comes back to it, with one plain message (exit 127)". All four failed against the `9c6712a` `sh` wrapper (two by a 30-second timeout). |
+| P6-R2-13 | Fixed. The `.cmd` wrappers use `setlocal DisableDelayedExpansion`, pass arguments on without `call` (no second read of `%*`), and pass their own paths to the helper through variables. The shown commands name their shell: JSON `shell` (`sh` or `cmd`), and on Windows "run this in Command Prompt". They are written for Command Prompt with default settings; `!` under `cmd /v:on` is a stated limit (no one spelling works with delayed expansion on and off), and no PowerShell form is shown (npm's PowerShell shims depend on the script policy, and that form cannot be tested here). The wrapper tests pass an argv array through the real wrappers and compare the exact list a recorder program got. | `test/wrappers.test.ts`: "runs buildos from PATH with the exact arguments" and "... runs npx with ... the exact arguments" (each wrapper; `a&b\|c`, `x^y`, `100%`, `(paren)`, and more); "keeps a folder name with ! and the arguments unchanged in Command Prompt with delayed expansion on" (Windows); "on Windows, the human text says Command Prompt and the JSON says cmd; elsewhere sh" |
+| P6-R2-14 | Fixed. No `rem` or `::` line in any `.cmd` file holds `<`, `>`, `\|`, or `&`. | `test/wrappers.test.ts` "the .cmd wrappers have no <, >, \|, or & in a comment line" (also checks CRLF line ends) |
+| P6-R2-15 | Fixed in the test (see the CI table). | `test/init-review.test.ts` "P6-R1-02: puts a replaced wrapper link back as a link after a later failure" (fails when the undo writes a file instead of the link) |
+| P6-R2-16 | Fixed. A link counts as a link to the sibling only when the OS resolves it to that entry (new port method `resolvedId`, compared with the sibling's identity). | "on POSIX, a CLAUDE.md link whose text is .\AGENTS.md does not lead to AGENTS.md: stop (exit 10), nothing written"; "a link with the text ./AGENTS.md is kept, and AGENTS.md gets the section" |
+| P6-R2-17 | Fixed. New port method `readFileLimited(path, limit)`: one open with no link followed, checked against the entry at the name, and a hard read bound. Init uses it for the shared files, the manifest, and every adoption snapshot. | "a new project with shared files, an adoption with a wrapper, and a rerun read nothing without a bound"; "readFileLimited reads at most the bound from one open, and names a larger file too large" |
+| P6-R1-13 (partly closed) | Closed. A test scans the fixture. | `test/package.test.ts`: "holds no absolute path, home folder, user name, or file URL"; "holds only placeholder scripts: ..." |
+| P6-R1-14 (partly closed) | Closed. In the installed-tarball step, a case must start from the installed `node_modules/.bin` (the `.cmd` shims on Windows); the workflow must run the step on every system. `SECURITY.md` no longer says "macOS and Linux" for that step. | `test/golden/compare.test.ts` "runs every invocation name from the installed package's node_modules/.bin (the .cmd shims on Windows)"; `test/package.test.ts` "runs on macOS, Linux, and Windows, with BUILDOS_GOLDEN_BIN_DIR set to the installed node_modules/.bin" |
+
+Tracked follow-up F-P6-01: `buildos init` does not keep extended ACLs or extended attributes on a file it replaces (`AGENTS.md`, `CLAUDE.md`, `.gitignore`, Go-era wrappers). Node has no API for them. Revisit if an owner wants an opt-in in-place write that trades crash atomicity for ACLs.
+
+#### Review Round 2 Messages
+
+New or changed user-facing texts (`{TMP}` stands for a temporary folder):
+
+```text
+AGENTS.md line 4 is a buildos marker line inside a code block, so BuildOS cannot tell whether it is an example or the BuildOS section.
+To fix it: If it is an example, indent that line by one space. If it is the BuildOS section, move it out of the code block or comment. Then run `buildos init` again.
+
+AGENTS.md line 2 starts a code block that is never closed, so BuildOS cannot tell which lines are inside it.
+To fix it: Close it (add its closing line), then run `buildos init` again.
+```
+
+"a raw HTML block" and "an HTML comment" replace "a code block" for those regions. The marker problems now name the line: "AGENTS.md line 2 is a "<!-- buildos:begin -->" line, but no "<!-- buildos:end -->" line comes after it.", "... is a "<!-- buildos:end -->" line, but no "<!-- buildos:begin -->" line comes before it.", "... is a "# buildos:end" line that comes before the "# buildos:begin" line.", and "... starts a second BuildOS section: this file has more than one "<!-- buildos:begin -->" or "<!-- buildos:end -->" line.", each with "To fix it: Keep one buildos:begin line with one buildos:end line after it, both at the start of their lines, or remove both lines. Then run `buildos init` again."
+
+Link: "CLAUDE.md is a link that does not lead to another of these shared files in this folder. BuildOS does not change a file through a link." Adoption: ".os/scripts/buildos is larger than 4 MiB, so BuildOS cannot keep a copy to put back if setup fails." with "To fix it: Move the file away, then run `buildos init` again."
+
+Undo: "BuildOS could not remove this file after a failed write, so it is still there" (the reason for a temporary file). Wrappers: "BuildOS stopped: its project wrappers kept calling each other. Remove the other BuildOS wrapper folders from PATH, then try again." (exit 127).
+
+Make Docs (real Make Docs 2.0.9 for the first; a folder that Make Docs set up first, then `buildos init` with no TTY): "The user can also say no now and set up Make Docs later." For a new project with no routers: "If the user says no, Make Docs cannot be set up in this folder later with this Make Docs version: it does not set up a folder that has an AGENTS.md or CLAUDE.md file that Make Docs did not write, and BuildOS adds such a file here." The failure tip: "This folder already had its own AGENTS.md or CLAUDE.md. Your files were kept." in an adoption, and "... Your files were kept, and BuildOS added its section to AGENTS.md." when it did. On Windows: "If the user says yes, run this in Command Prompt:", "To set it up later, run this in Command Prompt:", "To try Make Docs again, run this in Command Prompt:".
+
+#### Review Round 2 Check Results
+
+From `toolkits/buildos/` unless noted. macOS only: no Docker or other Linux runtime is installed on this machine, and Windows cannot be run here.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm run build` | exit 0; `dist/buildos.js` 3,208,568 bytes |
+| `npm test` | exit 0; 1,847 tests, 1,835 pass, 0 fail, 12 skipped (Windows-only cases, the setgid case, and the installed-runner check outside its CI step) |
+| `npm test` with `TMPDIR` holding a space | exit 0; 1,847 tests, 1,835 pass, 0 fail, 12 skipped |
+| `npm run check:deps` and `check:deps:installed` | both `dependency policy: ok` |
+| `npm audit --audit-level=high` | 0 vulnerabilities |
+| `npm pack` | 110 files, 858.2 kB packed, 3.6 MB unpacked |
+| Offline install of the tarball, then `BUILDOS_GOLDEN_BIN_DIR=<installed .bin> node --test test/golden/compare.test.ts` | 167 tests, 167 pass |
+| `scripts/make-docs-contract.ts --expect-version 2.0.9 -- make-docs` | `pass (make-docs 2.0.9)` |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | `passed` |
+| `make-docs project path-hygiene validate --target-root .` (repository root) | valid, 0 failing findings |
+| `git diff HEAD --check`, and the new files | exit 0; no whitespace errors |
+| CI on three operating systems | Pending at this round: needs a push. Passed later in [CI run 45433974561](https://github.com/brucewaynedecoy/build-os/actions/runs/45433974561); see [P6 CI Run 45433974561](#p6-ci-run-45433974561) |
+
+The npm cache ran in a temporary folder (`npm_config_cache`), as before.
+
+### P6 CI Run 45420565710
+
+CI run 45420565710 on `27e1cfc` (P6 with review round 2). Linux and macOS passed. Windows had 4 failures (finding P6-R3-07). Fixed on 2026-11-24 in the uncommitted tree on `rewrite/ts-cli`. Nothing is staged, committed, or pushed. Windows cannot be run locally.
+
+| Failure | Cause | Fix | Test |
+| --- | --- | --- | --- |
+| `test/init.test.ts` "A47: with no TTY and no flag, exits 10, ..." | Test. The product correctly prints "run this in Command Prompt:" on Windows; the test wanted "run:". | The three tests take the words from the platform (`RUN`). | The same test. |
+| `test/init.test.ts` "A49: a failing Make Docs still completes BuildOS setup ..." | Test, same cause. | Same. | The same test. |
+| `test/init.test.ts` "with the user's own AGENTS.md, a Make Docs refusal gives a partial result ..." | Test, same cause. | Same. | The same test. |
+| `test/wrappers.test.ts` "keeps a folder name with ! and the arguments unchanged in Command Prompt with delayed expansion on" | Test. The test started the wrapper by an absolute path that holds `!TEMP!` under `cmd /v:on`; the caller's own Command Prompt expanded it before the wrapper reached `setlocal`. | The wrapper is named from the project folder (`.os\scripts\buildos.cmd`), with no `!` in the caller's line. | The same test. |
+
+The installed-tarball golden step never ran on Windows, because the unit failures stopped the job. Read again with Git Bash on Windows in mind, it had a real fault: `$RUNNER_TEMP` is a Windows path with backslashes, so the glob `"$RUNNER_TEMP"/brucewaynedecoy-buildos-*.tgz` read each backslash as an escape, matched nothing, and passed the pattern to `npm install` as text. The step now takes the tarball name from `npm pack --json`, checks that the file is there, lists the installed `.bin` folder, and on any failure prints `RUNNER_TEMP`, the folders it made, and npm's own logs (Node lists them, because a glob after a Windows path fails the same way). `test/golden/harness.ts` now names the program, the arguments, the folder, and the output of a case that could not run. The constructs that the Windows run proved (doubled percent signs in a `for /f` child command, `where $PATH:node`, the no-`call` hand-off) are kept where they are still used; the `for /f` read-back itself is gone (P6-R3-11).
+
+### P6 Review Round 3
+
+On 2026-11-24, macOS, Node 24, from the uncommitted tree on `rewrite/ts-cli` (`27e1cfc`). Nothing is staged, committed, or pushed. Each finding was checked first and is confirmed. Each fix has a test that fails without it (checked by turning the fix off for P6-R3-08, and by the old behavior the test names for the rest). New init tests are in `test/init-review-3.test.ts` unless another file is named.
+
+| Finding | Disposition | Test |
+| --- | --- | --- |
+| P6-R3-01 | Fixed by the orchestrator direction: proof of ownership by an integrity line. Each section's first inner line is `<!-- buildos:section v1 sha256=<hex> -->` (`# buildos:section v1 sha256=<hex>` in `.gitignore`), the SHA-256 of the section text up to the end line with CRLF read as LF. BuildOS replaces a section only when the hash matches, wherever it sits. A column-0 pair without a valid line is never replaced or deleted: inside a region it is an example (the section is added), outside every region the command stops (exit 10, `section_changed`). More than one valid section, or loose marker lines outside regions, stop as before. The scanner now finds `<pre>`, `<script>`, `<style>`, `<textarea>`, and `<!--` anywhere in a line outside code spans, ends a region only at its own closer, and keeps a marker line inside an open comment from closing it; it is a second line of defense. Core hashes with `node:crypto`, which the boundary allowlist already permits. | `test/init-review.test.ts`: "P6-R3-01: the ownership rule, table-driven" (43 cases × LF, CRLF, mixed); "keeps a team instruction between column-0 marker lines inside ..." (the reviewer's three cases); "stops (exit 10), names the line, and changes nothing for a section changed by hand, outside every region"; "a CRLF conversion of the whole file keeps the section valid ..."; "holds for 4,000 generated files ..." (property test: without a valid integrity line, `init` only adds bytes in one place or stops) |
+| P6-R3-02 | Fixed. `replanInit` carries the first plan's view of every path BuildOS will write (missing, a folder, or a file or link with its snapshot) through the second read. Any path that appeared, went away, or changed stops the run before any write (exit 10, `changed_during_setup`), with the Make Docs result. The three shared files are not compared: Make Docs may create them. Clashes and problems are reported first. | "a wrapper that another writer creates while Make Docs runs is not overwritten ..."; "a wrapper that is deleted while Make Docs runs is not made again ..."; `test/init-review-2.test.ts` "a wrapper edited while Make Docs runs is not overwritten: the run stops before any write (exit 10)" |
+| P6-R3-03 | Fixed by the rule "never alter user content silently". The port reports the hard link count (`FsEntryId.links`, `FsLimitedRead.links`). A shared file that gets a section, or a file an adoption replaces, with more than one link stops before Make Docs runs (exit 10, `hard_link`). The count is also part of what the write checks right before the rename. Windows limit in PRD 20 and `SECURITY.md`. | "AGENTS.md hard-linked with team-policy.md: exit 10, Make Docs not run, the link kept"; "a hard-linked wrapper in an adoption stops too (exit 10)"; "a hard link made between the plan and the replace stops the run; the link stays whole" |
+| P6-R3-04 | Fixed as directed. A file with no column-0 marker lines never stops for a region; one that ends inside an unclosed region gets the section at its start (after a BOM), then one blank line, with no byte changed, reported as `position: "top"` with "at the top, because the file ends inside an unclosed code block or comment". A valid section followed by an unfinished comment is owned. The round 2 test "stops before any write when a file with no section ends inside an open code block" is replaced. | `test/init-review.test.ts`: "adds the section at the top of a file that ends inside an open code block / an unfinished HTML comment, ..."; "says where the section went, in the plan and in the result"; table cases "an unclosed fence after the owned section", "an unclosed comment after the owned section" |
+| P6-R3-05 | Fixed. The rerun shortcut is gone: every shared file is decided from its whole scan in a rerun too, and every stop happens before any write to any file. A rerun still adds no section (round 1 decision) and reports each file it does not change as `skipped` with a reason (`no_section`, `missing`, `not_a_file`, `link`, `too_large`, `unsupported_encoding`, `unreadable`). | "AGENTS.md whose only pair is an example in a code block: reported as not refreshed; .gitignore refreshed (exit 0)"; "AGENTS.md with a section changed by hand: exit 10, and .gitignore is not written either"; `test/init-review.test.ts` "a rerun refreshes a stale section ..." and "a rerun of an adopted project adds no section to its shared files" |
+| P6-R3-06 | Fixed as directed. An adoption replacement keeps the existing file's permission bits and adds the owner-execute bit (`0700` stays `0700`, `0640` becomes `0740`); a link becomes a file with the package mode. A link's own mode is part of what the replace expects (`ExpectedEntry.symlink.mode`), where the OS keeps one. PRD 20 states it. | "a 700 wrapper is 700 after the adoption"; "a 640 wrapper is 740 after the adoption"; "a change of a wrapper link's own mode between the plan and the replace stops the run" (macOS) |
+| P6-R3-07 | Fixed: see [P6 CI Run 45420565710](#p6-ci-run-45420565710). | The four tests. |
+| P6-R3-08 | Fixed. `src/cli/wrapper-guard.ts`, imported first by `src/cli/main.ts`, deletes `BUILDOS_WRAPPER_ACTIVE` before any other code of the program runs. The guard now holds only from wrapper to wrapper. | `test/wrappers.test.ts` "a program that BuildOS starts can call the project wrapper again (sh / dash / cmd): no false loop" (the real CLI from source runs `init --make-docs`; the companion stub calls the project wrapper again; fails with exit 127 when the import is removed); "stops a chain of wrappers that comes back to it ..." still passes |
+| P6-R3-09 | Fixed. `readManifestFile` in the helper: `lstat` must be a regular file of at most 64 KiB, one open (`O_NOFOLLOW` where Node has it), `fstat` must be the same entry, and a bounded read. | `test/manifest-contract.test.ts` "P6-R3-09: both read the manifest file by the same rules" (a regular file, a BOM, a link, a folder, missing, 98,304 bytes; from files on disk through `buildos init` and through the helper as a process, with a count of the bytes the helper read) |
+| P6-R3-10 | Fixed. `sharedReader` reads each root shared file at most once per plan, for both the shared-file plan and the Make Docs ownership lookup. A router the OS does not let BuildOS read is `unreadable`: it stops only a new project (which needs its text), a rerun reports it as skipped, and the ownership lookup counts it as not written by Make Docs. | "a Go-era project with an unreadable AGENTS.md adopts with --skip-make-docs (exit 0), ..."; "a new project reads AGENTS.md and CLAUDE.md once each" |
+| P6-R3-11 | Fixed by design choice 1 (the helper decides and starts the program itself). No path goes back to Command Prompt as text, so no code page can change it. The `.cmd` wrapper passes `%*` to the helper without `call` (as it passed it to the program before), and the helper starts `buildos` or `npx`: a `.cmd` or `.bat` file through `cmd.exe /d /v:off /s /c` with each argument quoted for the Windows rules and every Command Prompt special character escaped twice (the cross-spawn rule for npm's `.cmd` shims, which the Windows CI run of P6-R1-14 already passed with `%PATH%`, `a&b\|c`, `caret^`, `bang!`, a quote inside, a trailing backslash, and an empty argument), any other program directly. It returns the exit code and keeps the console. Why not choice 2 (ASCII hand-off, for example a PATH index): picking the n-th `PATH` entry in batch is fragile for folder names with `&`, `!`, `^`, `%`, or quotes, and still needs a batch loop. The `for /f` read-back and the batch version check are gone (the helper starts `npx` only with a version that meets the manifest contract), so the P6-R1-12 helper-output tests skip on Windows with that reason. | `test/wrappers.test.ts` "runs buildos and npx from folders whose names are not ASCII, with the exact arguments" (runs on all three systems; skips only if the file system refuses the name); every recorder test with `HARD_ARGS` |
+| P6-R3-12 | Fixed. A folder is journaled the moment `mkdir` succeeds, also when reading it back fails; the undo leaves it and lists it ("BuildOS made this folder but could not check it afterwards, so it left it there"). | "a folder made just before its read-back fails is journaled and reported, not forgotten (exit 10)" |
+| P6-R3-13 | Fixed. `NotRestored.state`: `left` (a real leftover) or `unsure` (the earlier content is back, but the folder flush after the rename failed). A created entry that is already gone is not listed. The summary, the list heading, and the tip follow the states. | "a created file that is already gone is not listed as left behind (complete undo)"; "an undo whose folder flush fails says the content is back but its save to disk is not certain" |
+| P6-R3-14 | Fixed. The adapter keeps device and inode as bigint in every comparison (`EntryKey`, `FolderKey`, the in-place writer, the atomic write, the exclusive create, the link put). `identityOf` gives an entry with inode 0 an identity that never matches, so every check by identity declines (the sibling-link test then sees an unrelated link and stops). | "inode 0 gives a new identity each time; a real inode gives the same one, kept as bigint" |
+| P6-R3-15 | Fixed. The `sh` wrapper reads the pin before it looks for `npx`; with no `npx` it prints its own message (exit 127). The helper does the same on Windows. | `test/wrappers.test.ts` "with Node but no npx, a dev pin still stops with its own message (exit 3)"; "with Node and a valid pin but no npx, says that npx is missing (exit 127)" |
+| P6-R3-16 | Fixed. The fixture scan refuses any absolute POSIX path (only the placeholder shebang is allowed), and a script may only hold comments and `exit 0`. The `-text` rule for the fixture moved into `toolkits/buildos/.gitattributes` after its `*` rule, with `whitespace=cr-at-eol` so `git diff --check` accepts the CRLF line ends (a deeper `.gitattributes` wins over the root one, so the root rule had no effect); `workspace/datasets/notes.txt` now checks out with its CRLF, and `git status` shows it as changed (its blob gets CRLF at the next commit). | `test/package.test.ts` "holds no absolute path, ..."; "holds only placeholder scripts: ... a script only exits"; "checks out byte for byte: ..." |
+| P6-R3-17 | Fixed. `SECURITY.md` lists the three legacy entry files in the `files` list, and the pack figures are from a fresh `npm pack --dry-run`: 110 files, 863,481 bytes packed, 3,584,513 unpacked. | `test/package.test.ts` (the exact file list) |
+
+#### Open Follow-ups
+
+- F-P6-01 (from round 2, open): `buildos init` does not keep extended ACLs or extended attributes on a file it replaces (`AGENTS.md`, `CLAUDE.md`, `.gitignore`, Go-era wrappers). Node has no API for them.
+- F-P6-02 (new): a file with no marker lines that ends inside an unclosed code block or comment gets the BuildOS section at its very start, before YAML front matter if the file has any. A placement after front matter is not done; the file keeps every byte either way.
+- F-P6-03 (new): the Windows behavior of this round (the helper that starts programs, the non-ASCII folder test, the nested call through `cmd`, and the installed-tarball step in Git Bash) has no CI run yet.
+
+#### Review Round 3 Messages
+
+New or changed user-facing texts (`{TMP}` stands for a temporary folder):
+
+```text
+AGENTS.md line 3 starts a BuildOS section that was changed by hand, or that is an example. BuildOS replaces only a section that it wrote and that no one changed, so it did not change this file.
+To fix it: Move your own text outside the buildos lines, or delete the buildos lines. Then run `buildos init` again.
+
+AGENTS.md is shared with another file name through a hard link. BuildOS replaces files and would break that link, so the names would no longer share their text.
+To fix it: Make it a file with one name: copy it, delete the original, and give the copy the original name. Or move it away. Then run `buildos init` again.
+
+Stopped. Make Docs was set up, but BuildOS changed nothing. While Make Docs ran, 1 path that BuildOS must write changed, so BuildOS did not write over it.
+
+This path changed while Make Docs ran:
+  .os/scripts/buildos (it was not there before Make Docs ran, and now it is)
+
+Make Docs: set up.
+
+Check this path, then run `buildos init` again. Make Docs already ran, so add --skip-make-docs when you run buildos init again.
+```
+
+The other change words are "it was there before Make Docs ran, and now it is gone" and "it changed while Make Docs ran". The marker fix for loose marker lines is now "Delete the buildos lines that are not part of one BuildOS section, or delete all of them. Then run `buildos init` again." The shared-files note is "BuildOS changes only its own section of these files, between its buildos:begin and buildos:end lines, and only when that section is still exactly as BuildOS wrote it." The `init --help` text adds "BuildOS replaces its section only when the section is exactly as BuildOS wrote it; a section changed by hand stops init (exit code 10)."
+
+Shared-file rows: plan "update   AGENTS.md (add the BuildOS section at the top, because the file ends inside an unclosed code block or comment; the other lines stay as they are)", result "AGENTS.md: BuildOS section added at the top, because the file ends inside an unclosed code block or comment; the other lines were not changed". A rerun's skipped file: plan "keep     AGENTS.md (not refreshed: <reason>)", result "AGENTS.md: no change; <reason>", where the reason is one of "it has no BuildOS section, and a rerun does not add one", "it is not there, and a rerun does not create it", "it is not a regular file", "it is a link that does not lead to another of these shared files", "it is larger than 4 MiB, so BuildOS did not read it", "it is not UTF-8 text", "BuildOS may not read it".
+
+Undo: "BuildOS could not finish its setup. It undid its own changes, but it could not make sure that every undo was saved to disk.", the list heading "BuildOS put these paths back, but could not make sure the change was saved to disk:", the tip "Check that each path listed holds what it held before, fix the problem shown in "Why", then run `buildos init` again.", and the reason "BuildOS made this folder but could not check it afterwards, so it left it there".
+
+Wrappers: "BuildOS needs npx to fetch the BuildOS version this project uses. npx comes with Node.js: install Node.js 24 or newer from https://nodejs.org, then try again." (exit 127), and on Windows, when the helper cannot start a program, "BuildOS could not start <program>: <error>" (exit 1).
+
+The section as written in `AGENTS.md` (the package text is shortened here) and in `.gitignore`:
+
+```text
+<!-- buildos:begin -->
+<!-- buildos:section v1 sha256=0c5172b18c82c2b5b7941e922fb228db9371aa9e6fee0b0d573ea089a4f408fd -->
+# Agent Instructions
+...
+[Respect the make-docs plug-in boundary](playbooks/administrative/respect-make-docs-plugin-boundary.md).
+<!-- buildos:end -->
+
+# buildos:begin
+# buildos:section v1 sha256=521a2eb7a1c17851d8ac9f89f7f81c58c89f34472011b33f16d3555709dde911
+# Runtime ephemera only. Data tracking or ignoring is the adopter's choice.
+node_modules/
+.playwright/
+test-results/
+# buildos:end
+```
+
+#### Review Round 3 Check Results
+
+From `toolkits/buildos/` unless noted. macOS only: Windows and Linux cannot be run here.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm run build` | exit 0; `dist/buildos.js` 3,220,641 bytes |
+| `npm test` | exit 0; 1,919 tests, 1,907 pass, 0 fail, 12 skipped (Windows-only cases, the setgid case, and the installed-runner check outside its CI step) |
+| `npm test` with `TMPDIR` holding a space | exit 0; 1,919 tests, 1,907 pass, 0 fail, 12 skipped |
+| `npm run check:deps` and `check:deps:installed` | both `dependency policy: ok` |
+| `npm audit --audit-level=high` | 0 vulnerabilities |
+| `npm pack --dry-run` | 110 files, 863,481 bytes packed, 3,584,513 unpacked |
+| The CI installed-tarball step, run as written in bash (with a space in `RUNNER_TEMP`) | 167 tests, 167 pass |
+| `scripts/make-docs-contract.ts --expect-version 2.0.9 -- make-docs` | `pass (make-docs 2.0.9)` |
+| Real run with the installed Make Docs 2.0.9: an empty folder, `buildos init --make-docs`, then `buildos init --skip-make-docs` | First run exit 0, "Done. BuildOS is set up in this folder, with Make Docs."; `AGENTS.md` and `CLAUDE.md` "BuildOS section added" to the Make Docs routers, `.gitignore` created. Rerun exit 0, all three "no change; the BuildOS section was already up to date", "Nothing was changed.". Each file holds exactly one `buildos:begin` and one integrity line. A later `make-docs setup` on the same folder completes and keeps the BuildOS sections. (Run outside the sandbox: inside it, Make Docs cannot reach its Store, `store-unavailable`.) |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | `passed` |
+| `make-docs project path-hygiene validate --target-root .` (repository root) | valid, 0 failing findings |
+| `git diff HEAD --check` | exit 0 |
+| CI on three operating systems | Pending at this round: needs a push. Passed later in [CI run 45433974561](https://github.com/brucewaynedecoy/build-os/actions/runs/45433974561); see [P6 CI Run 45433974561](#p6-ci-run-45433974561) |
+
+The npm cache ran in a temporary folder (`npm_config_cache`), as before.
+
+### P6 CI Run 45429667932
+
+CI run 45429667932 on `22d5970` (P6 with review round 3). Linux and Windows passed, with the Windows installed-tarball golden step at 167/167. This closes F-P6-03: the Windows helper that starts programs, the non-ASCII folder test, the nested call through `cmd`, and the installed-tarball step in Git Bash all ran green.
+
+### P6 Review Round 4 (closing check)
+
+On 2026-11-24, macOS, Node 24, from the uncommitted tree on `rewrite/ts-cli` (`22d5970`). Nothing is staged, committed, or pushed. The closing check found no blockers, 3 majors, and 7 minors. Each finding was checked first and is confirmed. Each fix has a test that fails without it (checked by turning the fix off for P6-R4-01, P6-R4-02, P6-R4-04, and P6-R4-08, and by the old behavior the test names for the rest). New tests are in `test/init-review-4.test.ts` unless another file is named.
+
+| Finding | Disposition | Test |
+| --- | --- | --- |
+| P6-R4-01 (major) | Fixed. Before it renders a replacement, `mergeSection` compares the hash of the verified section text (CRLF read as LF) with the hash of the package text. When they are equal, the file is `unchanged` and keeps its exact bytes, whatever line breaks it uses, and the hard link stop does not apply, because nothing is written. The hard link stop applies only to a file BuildOS writes (`add_block`, `update_block`), and a rerun skips a file before that check. | "AGENTS.md / CLAUDE.md / .gitignore: an LF section in a file with a CRLF line elsewhere, or with CRLF lines inside it, keeps every byte"; "a rerun with a hard-linked AGENTS.md whose section is current: exit 0, no write, the link kept"; `test/init-review.test.ts` "keeps .gitignore simple ..." (a padded current section is now `unchanged`) |
+| P6-R4-02 (major) | Fixed. A begin line inside a region starts the user's example: every line through the next end line is that example, whatever comment closers or fences its lines hold, and the region open at the begin line is still open after the end line. The marker lines of the example are recorded as inside that region. A pair with a valid hash is still owned wherever it sits. Trade-off, recorded: a begin line inside a region with no end line in that region now pairs with the next end line, also one outside the region; without a valid hash BuildOS then only adds its section, so no byte is lost. | "keeps the example and adds the section (no stop)"; "through the CLI: exit 0, and the example stays byte for byte"; "a pair with a valid hash inside a comment is still owned and refreshed" |
+| P6-R4-03 (major) | Fixed. The rerun summary says "its sections are up to date" only when every shared file was checked. When BuildOS could not read a file (`unreadable`, `too_large`), the summary names the files whose section is up to date, then each file it could not check and why, in human and JSON output, with exit 0. The skip words moved from the CLI to core (`SKIP_WORDS`), so the rows and the summary use the same words. | "an AGENTS.md over the size limit: the summary names it and why (human and JSON), exit 0"; "an unreadable AGENTS.md: the summary says BuildOS may not read it" (POSIX) |
+| P6-R4-04 (minor) | Fixed. A line ends at LF or CRLF. A bare CR is text: never a line break and never marker padding (padding is spaces and tabs before the real line break). A file whose begin or end line appears only when a bare CR is read as a line break stops before any write (exit 10, `cr_line_endings`), with the file and line. The round 3 property test now has bare-CR pieces and a CR-only style. | "a stale section whose end line holds a bare CR stops (exit 10) instead of dropping bytes"; "a CR-only file with a BuildOS section stops; no second section is added"; "a bare CR elsewhere in the file is kept, and the section is still found"; "through the CLI: exit 10 with the plain message, and the file is not changed"; "holds for 3,000 generated files with bare CRs around a valid section" (property test); `test/init-review.test.ts` "holds for 4,000 generated files, each with LF, CRLF, mixed, or CR-only line breaks ..." |
+| P6-R4-05 (minor) | Fixed. A path that the second plan must create was there before (a file to replace, or a folder the first plan did not need to make), so it is reported as `removed`. | "an .os/scripts folder that Make Docs removes: exit 10, 'now it is gone'" |
+| P6-R4-06 (minor) | Fixed. The snapshot of a wrapper link records the link's own hard link count. A link with more than one stops the adoption (exit 10, `hard_link`); the count is also part of what the replace expects (`ExpectedEntry.symlink.links`) and of the second read. | "exit 10, hard_link, and the link is kept" (makes the link with `ln -P`; skips on Windows) |
+| P6-R4-07 (minor) | Fixed. The adapter's lower-level checks (`sameFolder`, `sameEntry`, the cleanup checks, the committed identity, the expected-entry read, and the bounded reader) use one compare, `sameKey`, on bigint stats, where an inode of 0 never matches. The version helper reads the manifest with bigint stats and `sameFileStats`, with the same rule. `goGetwd` keeps Go's own compare (parity). | "the adapter's sameKey"; "the version helper's sameFileStats (bigint only)" |
+| P6-R4-08 (minor) | Fixed. The init core hashes through a port, `HashPort` in `src/core/shared/hash-port.ts`, implemented by `src/adapters/node-hash.ts` and passed in by the CLI. `crypto` is no longer on the core module allowlist; only the two core files that used it before P6 (`src/core/intake/convert/convert.ts`, `src/core/entities/index.ts`) may load it, by path (`CORE_CRYPTO_FILES`, follow-up F-P6-04). The boundary test no longer lists `node:crypto` as allowed. | `test/boundary.test.ts` "fails a core file that loads crypto, except the two files listed by path"; "the real init core loads no built-in module beyond the rules from before review round 3" |
+| P6-R4-09 (minor) | Fixed. When a program that the helper started ends by a signal, the helper prints one line, "<program> was stopped by <signal> before it finished.", and exits with 128 plus the signal number where Node knows it, else 1. | "one plain line naming the signal, and exit 128 + its number" (POSIX) |
+| P6-R4-10 (minor) | Fixed. The fixture scan finds an absolute path that starts with a digit, `_`, or `-`, at the start of any line or after `!`, and any shebang but the placeholder one. | `test/package.test.ts` "the scan finds absolute paths that start with a digit and every shebang but the placeholder one" |
+
+#### Open Follow-ups
+
+- F-P6-01 (from round 2, open): `buildos init` does not keep extended ACLs or extended attributes on a file it replaces. Node has no API for them.
+- F-P6-02 (from round 3, open): a file with no marker lines that ends inside an unclosed code block or comment gets the BuildOS section at its very start, before YAML front matter if the file has any.
+- F-P6-03: closed by CI run 45429667932 (Linux and Windows passed; the Windows installed-tarball golden step 167/167).
+- F-P6-04 (new): `src/core/intake/convert/convert.ts` and `src/core/entities/index.ts` still load `node:crypto` directly, allowed by path. Move them to the hash port when those domains are next changed.
+
+#### Review Loop Status
+
+The P6 review loop is closed under the project stop rule: three full review rounds and this closing check are done, and the remaining items are tracked as F-P6-01, F-P6-02, and F-P6-04. P6 is done when the three-OS CI run of this change is green. Closed: [CI run 45433974561](https://github.com/brucewaynedecoy/build-os/actions/runs/45433974561) on `9e2f8a2` passed every job. See [P6 Closeout](#p6-closeout).
+
+#### Review Round 4 Messages
+
+New or changed user-facing texts:
+
+```text
+AGENTS.md uses old Mac line endings (CR only) at line 1: BuildOS finds a buildos line there only when it reads a CR as a line break, so it cannot tell where that line starts and ends, and it did not change this file.
+To fix it: Save the file with LF or CRLF line endings. Then run `buildos init` again.
+
+Done. BuildOS is already set up in this folder. Its section is up to date in CLAUDE.md, .gitignore. BuildOS could not check AGENTS.md, because it is larger than 4 MiB, so BuildOS did not read it. Nothing was changed.
+```
+
+With an unreadable file the reason is "because BuildOS may not read it"; with more than one such file, the files are joined with "; or ". The summary with every file checked is as before. The version helper on Windows: "<program> was stopped by <signal> before it finished." The change words after Make Docs: a folder that Make Docs removed is now "(it was there before Make Docs ran, and now it is gone)".
+
+#### Review Round 4 Check Results
+
+From `toolkits/buildos/` unless noted. macOS only: Windows and Linux cannot be run here.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm run build` | exit 0; `dist/buildos.js` 3,223,975 bytes |
+| `npm test` | exit 0; 1,941 tests, 1,929 pass, 0 fail, 12 skipped (Windows-only cases, the setgid case, and the installed-runner check outside its CI step) |
+| `npm run check:deps` and `check:deps:installed` | both `dependency policy: ok` |
+| `npm audit --audit-level=high` | 0 vulnerabilities |
+| `npm pack` | 110 files, 864,504 bytes packed, 3,588,880 unpacked |
+| The CI installed-tarball step, run as written in bash (with a space in `RUNNER_TEMP`) | 167 tests, 167 pass |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | `passed` |
+| `make-docs project path-hygiene validate --target-root .` (repository root) | valid, 0 failing findings |
+| `git diff HEAD --check` | exit 0 |
+| CI on three operating systems | Pending at this round: needs a push. Passed later in [CI run 45433974561](https://github.com/brucewaynedecoy/build-os/actions/runs/45433974561); see [P6 CI Run 45433974561](#p6-ci-run-45433974561) |
+
+The npm cache ran in a temporary folder (`npm_config_cache`), as before.
+
+### P6 CI Run 45433974561
+
+[CI run 45433974561](https://github.com/brucewaynedecoy/build-os/actions/runs/45433974561), workflow `.github/workflows/buildos-ci.yml`, head `9e2f8a2` (P6 with the closing check fixes). Conclusion: `success`. All five jobs passed.
+
+| Job | Result |
+| --- | --- |
+| `test (ubuntu-latest, Node 24)` | success. Tests: 1,644 tests, 1,636 pass, 0 fail, 8 skipped. Installed-tarball golden step: 167 of 167. Conversion and eval suite: 284 tests, 0 fail. |
+| `test (macos-latest, Node 24)` | success. Tests: 1,644 tests, 1,637 pass, 0 fail, 7 skipped. Installed-tarball golden step: 167 of 167. Conversion and eval suite: 284 tests, 0 fail. |
+| `test (windows-latest, Node 24)` | success. Tests: 1,502 tests, 1,412 pass, 0 fail, 90 skipped (POSIX-only cases). Installed-tarball golden step, through npm's `.cmd` shims: 167 of 167. Conversion and eval suite: 284 tests, 0 fail. |
+| Make Docs contract (pinned range bounds) | success |
+| OSV scan of `package-lock.json` | success |
+
+- t2, t30, A38, A39, and A40: the legacy names, from the entry files and from the installed tarball, pass on all three systems, with only the PE-016 line added.
+- t5: every legacy-name golden case passes from an installed tarball on all three systems.
+- t9, A41, and A42: the `sh` wrapper tests pass on macOS and Linux, and the `.cmd` wrapper tests pass on Windows (Node absent, Node 22, `buildos` on `PATH`, and the `npx` stub).
+- t17 and A43: the adoption byte check passes on all three systems.
+- t24, A44 to A49: the `init` tests pass on all three systems.
+- t23 and A50: the Make Docs contract job passes at the bounds of the pinned range.
+- t25 and A51: the `npx` runs from the tarball pass on all three systems with Node 24.
+- Human Experience Review: the cases marked `insufficient evidence` until Windows CI (the `.cmd` wrapper message, legacy names from an npm install, `init` and adoption on Linux and Windows) are now `satisfied`. A52 is met.
+- This closes the CI items in [P6 Open Items](#p6-open-items) and the condition in [Review Loop Status](#review-loop-status).
+
+## P6 Closeout
+
+On 2026-11-24, P6 closed on `rewrite/ts-cli` at `9e2f8a2` after [CI run 45433974561](https://github.com/brucewaynedecoy/build-os/actions/runs/45433974561) passed all five jobs. Three full review rounds and the closing check are done (see [P6 Review](#p6-review)). The option A decision on the "set up Make Docs later" wording ([P6 Open Items After the Decisions](#p6-open-items-after-the-decisions), item 9) is recorded as an orchestrator decision that the owner may still veto.
+
+### P6 Follow-ups
+
+These items stay open and carry forward. None blocks the P6 closeout.
+
+- F-P6-01: `buildos init` does not keep extended ACLs or extended attributes on a file it replaces (`AGENTS.md`, `CLAUDE.md`, `.gitignore`, Go-era wrappers). Node has no API for them. See [P6 Review Round 2](#p6-review-round-2).
+- F-P6-02: a file with no marker lines that ends inside an unclosed code block or comment gets the BuildOS section at its very start, before YAML front matter if the file has any. The file keeps every byte. See [P6 Review Round 3](#p6-review-round-3).
+- F-P6-04: two older core files, `src/core/intake/convert/convert.ts` and `src/core/entities/index.ts`, still import `node:crypto` directly, allowed by path. Move them to the hash port when those domains are next changed. See [P6 Review Round 4 (closing check)](#p6-review-round-4-closing-check).
+- Make Docs sections it did not write: Make Docs 2.0.9 refuses a root `AGENTS.md` or `CLAUDE.md` that it did not write. So after a No answer, and in a folder with the user's own router files, Make Docs cannot be set up later. Register [`Q-010`](../../prd/03-open-questions-and-risk-register.md#q-010-make-docs-public-companion-contract-verification) asks Make Docs for a setup mode that accepts marked sections it did not write; [`R-001`](../../prd/03-open-questions-and-risk-register.md#r-001-make-docs-companion-public-contract-dependency) stays open. The owner may still veto the option A wording.
+- Windows folder permission check: on Windows, Node has no check of folder access rules, so the preflight checks only existence, type, and containment. A denied folder is found by the write itself, which is undone (exit 5, with the Make Docs result). Documented in PRD 20 and `SECURITY.md`. See P6-R2-07 in [P6 Review Round 2](#p6-review-round-2).
+- Stated Windows limits: a `!` in a shown command under `cmd /v:on` (P6-R2-13), no PowerShell form of the shown commands, and the Windows hard link limit (P6-R3-03). Documented in PRD 20 and `SECURITY.md`.
+- Carried to [P8](./08-release-0-1-0.md): the guides, `guide/`, `justfile`, `toolkits/buildos/README.md`, and `toolkits/buildos/AGENTS.md` still describe `BUILDOS_BIN`, `toolkits/*/bin/`, and the Go build ([P6 Open Items](#p6-open-items), item 4). The `PERF-001` recheck uses the P6 bundle size, 3,223,975 bytes at the closing check.
+- Carried to [P7](./07-skills-and-validation.md): `system/.os/skills/` holds no skills yet ([P6 Open Items](#p6-open-items), item 5).
+- Experience handoff (t28): written; no reply yet. A missing reply does not block closure. See [P6 Experience Handoff (t28)](#p6-experience-handoff-t28).
+
+## P7 Skills and Validation
+
+On 2026-11-24, W1 R7 P7 Stages 4 and 5 were built on `rewrite/ts-cli` from `0560ba1`, on macOS with Node 26.13.1 (this machine has no Node 24 and no Go; CI runs Node 24) and Python 3.14.10 for the golden capture only. Nothing is staged, committed, or pushed. Stages 1 to 3 (skills import, client-content removal, deny-list check, skills router) stay open: they wait on t1, the owner's copy of the adopter skill files.
+
+### Stage Order Departure
+
+The default order is Stage 1, 2, 3, 4, 5, and each phase-file `Dependencies` line says that a stage needs the one before it. The orchestrator decided to run Stages 4 and 5 first, because they do not use the skill files and t1 blocks Stages 1 to 3. This is a recorded departure from the default arc. Its one overlap is t16: every `validate_config.py` reference that exists under `system/` today is replaced. A skill that names the script is not imported yet; Stage 1 to 3 must replace such references when the skills arrive (open item P7-O1).
+
+### Port Map (t14)
+
+| `validate_config.py` | TypeScript |
+| --- | --- |
+| `yaml_source_lines`, `parse_block`, `parse_mapping`, `parse_sequence`, `split_key_value`, `parse_scalar`, `is_inline_mapping`, `YamlSubsetError` | `src/core/validate/yaml-subset.ts` (`parseYamlSubset`; Python `str.splitlines` and `str.strip` ported as `pySplitlines` and `pyStrip`) |
+| `validate_contract`, `CONTRACT_TERMS` | `src/core/validate/checks.ts` `checkContractText`; the file read in `validate.ts` `readChecked` |
+| `validate_config_file`, `validate_config_data`, `validate_collection`, `require_string`, `validate_slug`, `validate_default_list`, `validate_references` | `checks.ts` `checkConfigText`, `checkConfigData`, `checkCollection`, `requireString`, `checkSlug`, `checkDefaultList`, `checkReferences` |
+| `iter_scoped_markdown`, `extract_frontmatter`, `validate_frontmatter`, `validate_frontmatter_data` | `validate.ts` `scopedMarkdownPaths`; `checks.ts` `extractFrontmatter`, `checkFrontmatterText` (callable on its own, PRD 13) |
+| `validate_entity_jsonl_files`, `validate_entity_jsonl_file`, `validate_entity_row`, `validate_prefixed_id`, `validate_anchor_value`, `validate_scoped_entity_fields` | `validate.ts` (file reads, `jsonlLines`); `checks.ts` `checkEntityLines`, `checkEntityRow`, `checkAnchor` |
+| `validate_extraction_row`, `validate_utc_datetime`, `validate_string_list` | `checks.ts` `checkExtractionRow`, `checkUtcDatetime` (review round 1: the RFC 3339 UTC profile that PRD 13 states; hour 00 to 23, so no 24:00:00, no 23:59:60, year 1 to 9999) |
+| `main`, `Finding.format`, exit 0 or 1 | `validate.ts` `validateProject`; `src/cli/commands/validate.ts` (`--root`, `--json`, help, exit 0, 2, 3, 4); registered in `src/cli/run.ts` |
+| `run_self_tests` | `test/validate-parity.test.ts` and `test/validate.test.ts` |
+
+Every finding has a stable `code`, the project-relative `path`, the `field`, a plain `message`, and, for some codes, a `detail` (the unknown ID, the missing term, the expected type or prefix, the legacy field). Parity is checked on (code, path, field, detail), never on the message. No YAML or frontmatter package was added: the port reads exactly the subset the Python parser read.
+
+### Fixtures (t12)
+
+`toolkits/buildos/test/fixtures/validate/` holds `base/` (a valid invented project in the installed layout: contract, config, two playbook files with frontmatter, a playbook router and a note without it, a non-playbook template that is skipped, and the eight data files) and 73 cases in `cases/<id>/`, listed with a one-line description in `cases.json`. A case is `base/` with its files laid over it and its `remove` paths taken away. All content is invented. `.gitattributes` there keeps every byte (`-text`), so the CRLF and byte order mark cases check out the same on every OS.
+
+- Contract: `contract-missing`, `contract-term-missing`.
+- Config file: `config-missing`, `config-folder`, `config-empty`, `config-not-mapping`, `config-tab`, `config-duplicate-key`, `config-unexpected-indent`, `config-no-key-value`, `config-empty-key`, `config-unexpected-content`, `config-uneven-sequence-indent`, `version-not-integer`, `instance-not-mapping`, `instance-fields`, `instance-id-missing`, `collection-not-list`, `collection-item-not-mapping`, `collection-required`, `collection-id-not-string`, `collection-duplicate-id`, `collection-slug`, `environment-systems-missing`, `environment-systems-not-list`, `environment-systems-unknown`, `defaults-not-mapping`, `defaults-not-list`, `defaults-unknown`.
+- Frontmatter hygiene: `frontmatter-parse`, `frontmatter-not-mapping`, `frontmatter-empty`, `frontmatter-legacy`, `frontmatter-required`, `frontmatter-not-list`, `frontmatter-unknown`, `frontmatter-template`, `frontmatter-hidden-and-nested`.
+- Entity record hygiene: `entity-file-missing`, `entity-file-folder`, `entity-blank-line`, `entity-invalid-json`, `entity-not-object`, `entity-duplicate-id`, `entity-wrong-type`, `entity-bad-id`, `entity-bad-status`, `entity-source-anchor`, `entity-doc-anchor`, `entity-scoped-fields`, `extraction-minted`, `extraction-fields`, `extraction-extracted-at`, `extraction-dataset-refs`.
+- Line endings and encodings: `crlf`, `crlf-findings`, `bom-config`, `bom-jsonl`, `bom-frontmatter`, `non-utf8-config`, `non-utf8-jsonl`, `non-utf8-contract`.
+- PRD 13 divergences: `defaults-absent`, `defaults-partial`, `version-boolean`, `owner-kind-number`, `type-specific-status`, `extracted-at-minutes`, `dataset-refs-null`, `entity-legacy-fields`, `anchor-forms`, `entity-line-separator`, `entity-nan`.
+
+Every distinct finding the script can emit is reached by at least one case (36 codes across the goldens), with three exceptions:
+
+- `expected indent N`: `parse_block` is always called with the indent of the line it starts at, so this message cannot be reached. The case `config-uneven-sequence-indent` shows what the parser reports instead (`unexpected indent`).
+- A config read error other than a missing file or a folder (for example `[Errno 13] Permission denied`), and the entity-file `file` finding for an `OSError` on read: both need file permissions, which git does not keep and Windows does not have. `buildos validate` reports such a file as `unreadable`.
+- A contract path that is a folder: the legacy script crashed (`IsADirectoryError`), so it has no finding to match. `buildos validate` reports `not_regular_file`.
+
+### Capture Record (t13)
+
+`toolkits/buildos/test/golden/validate/cases/<id>.json` holds the legacy result of each case: exit code, stdout, and stderr, normalized. `capture-record.json` names the script (`system/.os/scripts/validate_config.py` at `0560ba1`, SHA-256 `20350b47ccde83df980e7b8b42b0c30262226ccd8b48809184afc72c6dbf905c`), Python 3.14.10, `darwin arm64`, and 73 cases. The capture script is `toolkits/buildos/test/golden/validate/capture.ts` (Node, no new Python file):
+
+```sh
+node test/golden/validate/capture.ts           # write the goldens
+node test/golden/validate/capture.ts --check   # compare, fail on any difference
+```
+
+It reads the script from git (`git show 0560ba1:system/.os/scripts/validate_config.py`) and checks its SHA-256, or takes `--script <path>`. For each case it builds the project in a fresh temporary folder and runs `python3 -I validate_config.py --repo-root <tmp> --config <tmp>/system/.os/config/instance.yaml --contract <tmp>/system/.os/contracts/config-contract.md --data-dir <tmp>/system/.os/data`. Normalizations: N1, the temporary folder is removed from every path, a leading `system/` is removed from each finding path, `\` there becomes `/`, and a crash keeps only its last stderr line (no machine path is kept); N2, the case runs in the source layout the script was written for: the files under `system/`, and each `doc_anchor` under `docs/` and `source_anchor` under `assets/` spelled `system/docs/` and `system/assets/` (register D-004). OS-dependent output: the script sorts its Markdown paths and walks the eight data files in a fixed order; `buildos validate` sorts by path segment and uses the same data-file order, so no output depends on the order of a folder listing. The parity test compares sorted multisets. CI never runs Python. `--check` passed after the script was deleted from the tree.
+
+### Parity and Hostile-Input Tests (t15)
+
+- `test/validate-parity.test.ts` (75 tests): for each case, `buildos validate --root <case> --json` reports exactly the legacy keys, less and plus the keys that `test/golden/validate/divergences.json` records for that case, and passes or fails as that set says (exit 0 or 4). A case with no recorded divergence must pass or fail as the legacy script did. A divergence entry that no longer matches a real difference fails the test, and so does a legacy crash without one. 56 cases match the legacy keys exactly; 17 differ only as recorded.
+- `test/validate.test.ts` (25 tests): help, root help, human and JSON output, the default root (no walk up), usage errors (exit 2), a folder with no `.os/` (exit 3), no file changed, an oversized config and a 128 MiB + 1 data file (not read), YAML nesting past 64 levels in the config and in frontmatter, JSON nesting at 600 and 200,000 levels, bytes that are not UTF-8, CRLF, one and two byte order marks, a config link out of the root, a data-file link inside the root, a data folder that is a link out of the root, a playbook link and a playbook folder link out of the root, `playbooks/` itself as a link, folders past 32 levels, and the 10,000-finding stop. A link case skips only where the OS refuses to make a link (`EPERM`).
+- `test/system-content.test.ts` (4 tests): A61, A62, and the A63 link check (below).
+- `test/init.test.ts`: a new project gets no `validate_config.py`, and an adoption keeps a Go-era copy byte for byte.
+
+### Divergences From the Legacy Script
+
+`toolkits/buildos/test/golden/validate/divergences.json` records each one with its reason and authority. "Changes pass/fail" says whether a realistic project can pass under one and fail under the other.
+
+| ID | Divergence | Authority | Changes pass/fail |
+| --- | --- | --- | --- |
+| VD-01 | Exit 4 for findings, 3 for a folder with no `.os/`, 2 for usage; the script exited 1 for findings and for a crash | PRD 20 Output and Exit Contract | No |
+| VD-02 | Installed paths and anchors: `doc_anchor` under `docs/`, extraction `source_anchor` under `assets/` (the script required `system/docs/` and `system/assets/`); captured under N2 | PRD 13; D-004 | Yes: the script failed every installed project with a promoted row or an extraction row |
+| VD-03 | `defaults` and each of its lists are optional | PRD 13; D-006 item 1 | Yes: a config without `defaults` now passes |
+| VD-04 | `version: true` fails | PRD 13; D-006 item 2 | Only for a boolean version |
+| VD-05 | An owner `kind` that is not text fails: a number, `true`, a list, no value (null), or a mapping | PRD 13; D-006 item 2 | Only for such a kind |
+| VD-06 | `qualified` findings and `running`, `closed`, `aborted` runs pass; they still need a `doc_anchor` | PRD 13, 08, 17; D-007 item 2 | **Yes: every project with a discovery run or a qualified finding failed the script and passes now** |
+| VD-07 | `extracted_at` is the RFC 3339 UTC profile (review round 1; orchestrator decision, owner may veto). A time with no seconds now fails as in the script; `24:00:00` fails (the script passed it); a value ending in a line feed is `datetime_format` (the script: `datetime_invalid`) | PRD 13; D-007 item 3 | Only for `24:00:00` |
+| VD-08 | `dataset_refs: null` fails | PRD 13; D-007 item 1 | Yes, if an extraction tool writes `null` |
+| VD-09 | A legacy scoped field in an entity row fails | PRD 13; D-007 item 4 | Only for such a row |
+| VD-10 | Anchors with no path, an absolute path, or a path out of the project fail; prefixes are checked on the folded path | PRD 13; D-004 | Only for such anchors |
+| VD-11 | One byte order mark is ignored (the script failed a config or data file with one, and skipped a playbook with one without a word) | Safe input handling; the PRD 20 manifest rule | Yes: such a config or data file now passes; such a playbook is now checked |
+| VD-12 | Bytes that are not UTF-8 give `not_utf8` (the script crashed with a traceback) | No stack trace (PRD 20) | No |
+| VD-13 | Links are never followed. A link or a special file at a checked name is a finding; a link at any other name (also a folder link under `playbooks/`) is skipped without a word and never looked through; `playbooks/` or `.os/templates/` itself as a link is a finding (review round 1). The script followed file links out of the root and skipped folder links silently | PRD 20; `SECURITY.md` | Only for a checked file, `playbooks/`, or `.os/templates/` kept as a link, or a special file at a checked name |
+| VD-14 | Size, nesting (block and inline list levels share 64; a `- key: value` item opens its mapping one level down, review round 2), folder-depth, file-count, and findings limits, the last kept in the collector, and every loop breaks once it is spent (review round 2) (the script read files whole and crashed on deep nesting) | `SECURITY.md` | Only past a limit |
+| VD-15 | Data lines split at LF only (the script also split at lone CR, VT, FF, FS, GS, RS, NEL, U+2028, U+2029) | PRD 13 | Yes, both ways: a row with such a character raw in a string passes now; two rows separated by a lone CR fail now (`entity-lone-cr`) |
+| VD-16 | `NaN` and `Infinity` are not JSON | PRD 13 | Only for such a row |
+| VD-17 | Not ported: `--repo-root`, `--config`, `--contract`, `--data-dir`, `--skip-frontmatter`, `--skip-data`, `--self-test` | PRD 13; PRD 20 | Only for a run that used a skip flag: it hid findings that `buildos validate` always reports |
+| VD-18 | A saved anchor path with a URI scheme, the `system/` prefix (as written or folded, review round 2), a path that folds to the project folder (review round 1), or a path that names a folder (review round 2) fails; the fragment after the first `#` must not be empty and may hold `#`; only the spelling is checked (review round 2) | PRD 13; D-004 | Only for such anchors |
+| VD-19 | The reserved sentinel `both` fails in every scoped list also when configured; a config that defines it fails (review round 1) | PRD 13 Scoped vocabulary | Only for a config that defines `both` |
+| VD-20 | File names match ASCII case-insensitively on every OS (review round 1; orchestrator decision) | PRD 13 Frontmatter hygiene | On macOS and Linux, only for a mixed-case `.md` or `playbook` name |
+| VD-21 | An ID, minted ID, or `extracted_at` that ends in an escaped line feed fails (Python's `$` passed the IDs) | PRD 13 | Only for such a value |
+| VD-22 | A `status` that is an object fails (the script crashed) | No stack trace (PRD 20) | No |
+| VD-23 | An integer `version` with more than 4,300 digits passes; Python 3.14 raised `ValueError` past its default integer string limit, so the script crashed (review round 2, P7-R2-10) | PRD 13 (an integer of any size); no stack trace (PRD 20) | Only for such a version |
+
+Human messages are plainer than the script's (for example `"missing-system" is not a configured ID in .os/config/instance.yaml.` for `unknown configured ID 'missing-system'`); the code in brackets is the stable key. VD-03 to VD-09 follow PRD 13 under form (a) of D-006 and D-007. On 2026-11-24 the owner chose form (a) for VD-03 (D-006 item 1), VD-06 (D-007 item 2), and VD-08 (D-007 item 1) ([Owner Decisions](#owner-decisions)); the other items stay open.
+
+### t16 References and Adoption
+
+- `system/.os/scripts/validate_config.py` is deleted. References replaced: `system/.os/scripts/AGENTS.md` (new `## Validate` section with `.os/scripts/buildos validate` and the `.cmd` form), `system/.os/AGENTS.md`, `system/.os/contracts/config-contract.md`, `system/.os/contracts/root-and-path-contract.md`, the PB-002 playbook (`related` now names `../../.os/scripts/AGENTS.md`), and `system/.os/indexes/playbooks.json` (the edit equals a rebuild with `buildos intake index playbooks` on a copy of the package content). A61: `grep -rn validate_config system/` finds nothing, and `test/system-content.test.ts` checks it.
+- Adoption: PRD 20 lets an adoption write only the manifest, the wrappers, and `.os/skills/`, and never change user data. A Go-era project's `.os/scripts/validate_config.py` is not in that set, so adoption leaves it byte for byte, and no BuildOS command uses it; W2 update owns removing files that are no longer shipped. PRD 20 now says this. The package content manifest (`dist/system.json`) is built from `system/`, so it no longer lists the file: 99 package content files, 109 packed files.
+- Outside `system/`: the root `README.md` and the root `AGENTS.md` Python rule named the deleted files and now name `buildos validate`. The guide (`guide/`) and `docs/assets/` guides still name `validate_config.py` (open item P7-O2).
+
+### Stage 5 Inventory and Decisions (t17 to t19)
+
+Evidence: `system/.make-docs/manifest.json` is the Make Docs 0.1.0 install record (2026-06-03). 69 of the 70 tracked files under `system/docs/` and `system/.make-docs/` have exactly the SHA-256 that this manifest recorded for them, so none was changed after Make Docs installed it; the 70th is the manifest itself. Every file arrived in `2b29ac5` (W1 R0 baseline) and no later commit changed it. No file is BuildOS-authored, so nothing moved; both folders were deleted.
+
+| Folder | Files | Names |
+| --- | --- | --- |
+| `system/.make-docs/` | 1 | `manifest.json` |
+| `system/.make-docs/scripts/` | 1 | `check_path_hygiene.py` |
+| `system/docs/` | 2 | `AGENTS.md`, `CLAUDE.md` |
+| `system/docs/assets/` | 2 | `AGENTS.md`, `CLAUDE.md` |
+| `system/docs/assets/archive/` | 2 | `AGENTS.md`, `CLAUDE.md` |
+| `system/docs/assets/history/` | 2 | `AGENTS.md`, `CLAUDE.md` |
+| `system/docs/assets/prompts/` | 15 | `AGENTS.md`, `CLAUDE.md`, `designs-to-plan-change.prompt.md`, `designs-to-plan.prompt.md`, `docs-path-hygiene-cleanup.prompt.md`, `plan-to-prd-change.prompt.md`, `plan-to-prd-green-field.prompt.md`, `prd-change-to-work.prompt.md`, `prd-to-work-full-prd.prompt.md`, `prd-to-work-prd-feature.prompt.md`, `request-to-design.prompt.md`, `session-to-history-record.prompt.md`, `update-readme-green-field.prompt.md`, `work-to-commit-message.prompt.md`, `work-to-guides.prompt.md` |
+| `system/docs/assets/references/` | 14 | `AGENTS.md`, `CLAUDE.md`, `commit-message-convention.md`, `design-contract.md`, `design-workflow.md`, `execution-workflow.md`, `guide-contract.md`, `harness-capability-matrix.md`, `history-record-contract.md`, `output-contract.md`, `path-and-link-hygiene.md`, `planning-workflow.md`, `prd-change-management.md`, `wave-model.md` |
+| `system/docs/assets/templates/` | 21 | `AGENTS.md`, `CLAUDE.md`, `design.md`, `guide-developer.md`, `guide-user.md`, `history-record.md`, `plan-overview.md`, `plan-prd-change.md`, `plan-prd-decompose.md`, `plan-prd.md`, `prd-architecture.md`, `prd-change-addition.md`, `prd-change-revision.md`, `prd-glossary.md`, `prd-index.md`, `prd-overview.md`, `prd-reference.md`, `prd-risk-register.md`, `prd-subsystem.md`, `work-index.md`, `work-phase.md` |
+| `system/docs/designs/` | 2 | `AGENTS.md`, `CLAUDE.md` |
+| `system/docs/guides/` | 2 | `AGENTS.md`, `CLAUDE.md` |
+| `system/docs/plans/` | 2 | `AGENTS.md`, `CLAUDE.md` |
+| `system/docs/prd/` | 2 | `AGENTS.md`, `CLAUDE.md` |
+| `system/docs/work/` | 2 | `AGENTS.md`, `CLAUDE.md` |
+
+Decision for `system/docs/assets/references/harness-capability-matrix.md` (t17): **Make Docs content, deleted.** Reasons: it is byte for byte the Make Docs 2.0.9 resource `make-docs://system/reference/harness-capability-matrix.md` (`make-docs resource read`, compared with `cmp`); the Make Docs install manifest lists it with source `file:docs/assets/references/harness-capability-matrix.md`; git history shows only the baseline install commit; and its content (Codex, Claude Code, and OpenCode delegation defaults) is about Make Docs agent workflows, not BuildOS discovery. PRD 10 `## Integrations` no longer cites it and has a requirement history entry. `system/.os/contracts/playbook-contract.md` now points to the Make Docs resource URI. The guide chapter `guide/content/16-harness-independence-and-trust.md` still names the old shipped path (open item P7-O2).
+
+t19 link fixes and anchors: `system/.os/contracts/root-and-path-contract.md` (no source path for `docs/`), PRD 02 code anchors (`system/docs/`, `system/docs/designs/` removed), PRD 05 code anchors and scope wording, PRD 20 `## Runtime and Package`. `toolkits/buildos` expects neither folder: the build still skips them as a guard. Correction (review round 1, P7-R1-05): the earlier sentence here said that the design and discovery code that names `system/docs/` serves only a repository-layout root with its own copy. That was wrong for installed projects: design promotion read its Make Docs inputs from `docs/assets/`, which Make Docs 2.0.9 does not write, so `buildos design promote` failed in every project set up with `buildos init --make-docs`. Promotion now reads the Make Docs 2.0.9 bodies under `.make-docs/system/` first ([P7 Review Round 1](#p7-review-round-1)).
+
+The 11 broken links that the W1 R8 evidence reported: 9 were template placeholders in `system/docs/assets/templates/`, which are now deleted. The other 2 (`USE_CASES.md` to `DESIGN_PROGRESS.md` and `GLOSSARY.md`) are outside `system/` and `docs/prd/` and are unchanged.
+
+A63 link check: `test/system-content.test.ts` reads every relative Markdown link in `system/` and `docs/prd/` (outside code), and fails on one that does not resolve or that points into `system/docs/` or `system/.make-docs/`. It passes. One link resolves only in an initialized project (`system/.os/scripts/AGENTS.md` to `../manifest.json`, which `buildos init` writes) and is listed in the test.
+
+### Acceptance Criteria (Stages 4 and 5)
+
+| Case | Result | Evidence |
+| --- | --- | --- |
+| A60 | Pass on macOS, Linux, and Windows ([P7 CI Run 45443040059](#p7-ci-run-45443040059)); after review round 1, 86/86 on macOS, three-OS CI pending a push at this round. Passed later in [CI run 45489678572](https://github.com/brucewaynedecoy/build-os/actions/runs/45489678572); see [P7 CI Runs 45489678572 and 45489679281](#p7-ci-runs-45489678572-and-45489679281) | `test/validate-parity.test.ts` 75/75 at the CI run; fixtures keep every byte (`-text`); paths are built with `/` in core and compared as sorted multisets |
+| A61 | Pass | No `validate_config.py` file or reference under `system/`; `test/system-content.test.ts` |
+| A62 | Pass | Both folders deleted; `npm pack --dry-run` lists 109 files and no path under `dist/system/docs/` or `dist/system/.make-docs/` (`test/package.test.ts`, `test/system-content.test.ts`) |
+| A63 | Pass | Matrix decision above; PRD 10 no longer cites it; the link check passes |
+| A54 to A59 | Open | Stages 1 to 3 wait on t1 |
+
+### Human Experience Review (validate part)
+
+The phase asks to compare `buildos validate` output for one invalid fixture with the Python output. For `entity-doc-anchor`, the script printed `.os/data/requirements.jsonl:line 2.doc_anchor: must point under system/docs/` (a source-checkout path that is wrong in an initialized project) and `...:line 4.doc_anchor: must be a non-empty path#anchor reference when set`. `buildos validate` prints the file once, then `line 2.doc_anchor: "notes/sample.md#a" must point to a document under docs/. [anchor_not_docs]` and `line 4.doc_anchor: \`doc_anchor\` must be a path#anchor reference when it is set, or null. [anchor_empty]`, then "Fix each problem, then run buildos validate again." Result: `satisfied` for clarity (the value, the expected place, and the next step are named; the path is right for an installed project). The router part of the review (A59) waits on Stage 3.
+
+### Check Results
+
+From `toolkits/buildos/` unless noted. macOS only, Node 26.13.1.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm run build` | exit 0; `dist/buildos.js` 3,259,444 bytes |
+| `npm test` | exit 0; 2,046 tests, 2,034 pass, 0 fail, 12 skipped (as before) |
+| `npm run check:deps` and `check:deps:installed` | both `dependency policy: ok` |
+| `npm audit --audit-level=high` | 0 vulnerabilities |
+| `npm pack` | 109 files, 867,263 bytes packed, 3,593,647 unpacked; 99 `dist/system/` files |
+| Offline install of the tarball, then `BUILDOS_GOLDEN_BIN_DIR=<installed .bin> node --test test/golden/compare.test.ts` (npm cache in a temporary folder) | 167 tests, 167 pass |
+| `node test/golden/capture.mjs --check` | Not run: Go is not installed on this machine (`spawnSync go ENOENT`). No Go source and no Go golden changed in P7 |
+| `node test/golden/validate/capture.ts --check` | 73 cases match, Python 3.14.10 |
+| `node scripts/make-docs-contract.ts --expect-version 2.0.9 -- make-docs` | `make-docs contract: pass (make-docs 2.0.9)` |
+| `buildos init --skip-make-docs` in an empty folder (built bundle), then `buildos validate` there | init exit 0; validate exit 0, `OK. No problems found.` (13 frontmatter files, 8 data files) |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | `passed` |
+| `make-docs project path-hygiene validate --target-root .` (repository root) | valid, 0 failing findings |
+| `git diff HEAD --check` (new files included with intent-to-add, then reset) | exit 0 |
+| CI on three operating systems | Pass: run 45443040059 on `b6c18c8` ([P7 CI Run 45443040059](#p7-ci-run-45443040059)) |
+
+- PERF-001 recheck (P8): the bundle is 3,259,444 bytes at P7 (3,223,975 at P6).
+
+### P7 Open Items
+
+- P7-O1: Stages 1 to 3 wait on t1. When the skills are imported, replace any `validate_config.py` reference inside them with `buildos validate`, and recheck A61.
+- P7-O2: `guide/content/` (chapters 03, 04, 07, 10, 11, 15, 16, 17, 19), `guide/BuildOS-Guide.html`, and `docs/assets/user/` and `docs/assets/maintainer/` guides still name `validate_config.py` or the old `system/docs/` matrix path. P8 carries the guides.
+- P7-O3: Owner decisions on register D-006 and D-007 (the port follows PRD 13 under form a). VD-06 changes the result for every project with discovery data. Partly closed on 2026-11-24: the owner chose form (a) for D-006 item 1, D-007 item 1, and D-007 item 2 ([Owner Decisions](#owner-decisions)). D-006 items 2 and 3 and D-007 items 3 and 4 stay open.
+- P7-O4: Closed by CI run 45443040059 (all jobs green). The review round 1 changes need a new three-OS run after a push (P7-O7).
+- P7-O5: `node test/golden/capture.mjs --check` needs Go 1.24.1; run it where Go is installed, or rely on CI.
+- P7-O6: A repository-layout root (a checkout with `system/`) no longer has `system/docs/designs/`, so `buildos design promote` against this checkout itself finds no design router. Only test fixtures use that layout; R-009 tracks the design write path. Review round 1: such a root with neither layout now stops with exit 3 and the Make Docs setup command (proposed parity exception PE-017).
+- P7-O7: CI on three operating systems for the review round 1 changes, after the orchestrator commits and pushes. Closed by [P7 CI Run 45449688415](#p7-ci-run-45449688415).
+- P7-O8: Owner question on the design write format (register R-009, [P7 Review Round 1](#p7-review-round-1)).
+- P7-O9: Owner decision on proposed parity exception PE-017 (a project with no Make Docs layout stops with exit 3, not Go's exit 1). Review round 2 states its full scope (six behaviors) and keeps it proposed ([P7 Review Round 2](#p7-review-round-2)).
+
+## P7 CI Run 45443040059
+
+[CI run 45443040059](https://github.com/brucewaynedecoy/build-os/actions/runs/45443040059) (`buildos-ci`) ran on `b6c18c8` (W1 R7 P7 Stages 4 and 5). Every job passed:
+
+| Job | Result |
+| --- | --- |
+| `test (ubuntu-latest, Node 24)` | success |
+| `test (macos-latest, Node 24)` | success |
+| `test (windows-latest, Node 24)` | success |
+| `Make Docs contract (pinned range bounds)` | success |
+| `OSV scan of package-lock.json` | success |
+
+This closes A60 on Linux and Windows for the Stages 4 and 5 code (P7-O4). The review round 1 changes below need a new run (P7-O7).
+
+## P7 Review Round 1
+
+On 2026-11-24, one independent review of W1 R7 P7 Stages 4 and 5 (`b6c18c8`) gave 14 findings. Each was reproduced before the fix, fixed at its root cause, and covered by a test that fails without the fix. Built on macOS with Node 26.13.1, Python 3.14.10 (capture only), and Make Docs 2.0.9. Nothing is staged, committed, or pushed. Stages 1 to 3 stay out of scope.
+
+| ID | Severity | Disposition | Tests |
+| --- | --- | --- | --- |
+| P7-R1-01 | Blocker | Fixed. A saved anchor path with a URI scheme, the `system/` prefix, or a path that folds to the project folder is `anchor_format`, in ordinary rows and extraction rows, for `source_anchor` and `doc_anchor` (the only anchor fields the check reads). VD-18 | parity case `anchor-invalid-forms` (7 findings the script missed) |
+| P7-R1-02 | Blocker | Fixed. `both` is the reserved sentinel (PRD 13 names only `both`): `sentinel_value` in every scoped list, also when configured; `reserved_id` when the config defines it, because such an ID can never be used. PRD 13 now states both rules. VD-19 | parity cases `sentinel-configured`, `entity-scoped-fields`, `frontmatter-unknown` |
+| P7-R1-03 | Blocker | Fixed in words, behavior kept narrow (orchestrator decision; the owner may veto). PRD 13, D-007, VD-07, and the finding text state the RFC 3339 UTC profile; each `datetime_*` message shows `2026-01-31T09:30:00Z`. Chosen: uppercase `T` and `Z` only, any number of fraction digits (as the script), no leap second (as the script), no `24:00:00` (the script passed it; RFC 3339 has no hour 24), real calendar dates in 0001 to 9999. A time with no seconds now fails, as in the script | `validate.test.ts` "P7-R1-03: extracted_at accepts exactly the RFC 3339 UTC profile" (25-row table); parity cases `extracted-at-forms`, `extraction-extracted-at`, `extracted-at-minutes` |
+| P7-R1-04 | Blocker | Fixed. `readFileLimited` takes the folder's identity after the containment check, and after the open checks the folder's real path (inside the root, also with `--allow-outside-root`), its identity, and that the name is still the opened file, as the write adapter does. `SECURITY.md` has a Read Safety section and the exact remaining window | `fs-port.test.ts` "bounded read: refuses when the folder is swapped for a link out of the root after the check, and returns no outside byte", "bounded read: also with allowOutsideRoot, a read is never let out of the root" |
+| P7-R1-05 | Major | Fixed (read side). Promotion reads each Make Docs input from a valid local 2.0.9 body under `.make-docs/system/`, then the legacy `docs/assets/` layout with Go's exact behavior, else stops with exit 3, the input, and the setup command. It never starts `make-docs`. The write side is an owner question (below). New proposed parity exception PE-017 for a project with neither layout | `design.test.ts` "design promote with the Make Docs 2.0.9 layout (P7-R1-05)" (9 tests, on a byte copy of real 2.0.9 output), "TestPromoteFindingCommandRequiresRouterInputs" |
+| P7-R1-06 | Major | Fixed. Inline lists share the 64-level budget with blocks | `validate.test.ts` "P7-R1-06: inline lists share the 64-level budget with blocks", "P7-R1-06: a 100,000-level inline list in the config is a finding, not a crash" (the old parser threw `RangeError: Maximum call stack size exceeded`) |
+| P7-R1-07 | Major | Fixed. The collector holds the budget; every loop over values, lines, and folder entries stops once it is spent, and `truncated` is set only when work was left. Data lines come from a generator over the bounded text | `validate.test.ts` "P7-R1-07: one row with 10,001 bad references ...", "... exactly at the limit ...", "... JSONL lines are made one at a time ..." |
+| P7-R1-08 | Major | Fixed. A link at an unchecked name is skipped without a finding and never looked through (no `realpath` or `stat` through it); a link or a pipe, socket, or device at a checked name is `not_regular_file`; `playbooks/` or `.os/templates/` itself as a link stays `folder_link`. All are exit 4 findings, as VD-13 states for checked names | `validate.test.ts` "a link to a non-Markdown file out of the project is skipped: exit 0", "a link at a checked name whose target cannot even be looked at ...", "a pipe at a checked .md name is a finding ...", "a link at a checked .md name is a finding; a folder link at any other name is skipped ..." |
+| P7-R1-09 | Major | Fixed. An adoption (and its dry run) that finds `.os/scripts/validate_config.py` adds one plain note to the human output and `notes` to the JSON result; the file is not changed | `init.test.ts` "an adoption that finds it says so in plain words, in the human and JSON output, the dry run too, and changes nothing about it" |
+| P7-R1-10 | Major | Fixed (orchestrator direction). `.md` and `playbook` match ASCII case-insensitively on every OS. VD-20; PRD 13 | parity cases `name-case`, `frontmatter-hidden-and-nested`; `validate.test.ts` "P7-R1-10: file names match ASCII case-insensitively ..." |
+| P7-R1-11 | Minor | Fixed. `base` is a case in `cases.json`, gets the source-layout anchors like every case, and has a Python capture (exit 0) | parity case `base` |
+| P7-R1-12 | Minor | Fixed and recorded. An integer past 2^53 is a `bigint`, so `version` keeps its exact value (no divergence); an ID, minted ID, or time that ends in an escaped line feed stays strict (VD-21); an object `status` is `bad_status` where the script crashed (VD-22). A JSON integer past 2^53 in a data row still loses precision, but no check reads an integer value in a row | parity cases `version-beyond-2-53`, `version-310-digits`, `entity-id-escaped-newline`, `entity-status-mapping`; `validate.test.ts` "P7-R1-12: an integer past 2^53 keeps its exact value" |
+| P7-R1-13 | Minor | Fixed. VD-01 (argparse exited 2 for an unknown flag), VD-05 (null and mapping kinds), VD-15 (a lone CR between two valid rows: the script passed, the port fails), VD-17 (the skip flags could hide findings) | parity cases `owner-kind-null-mapping`, `entity-lone-cr` |
+| P7-R1-14 | Minor | Fixed. The root `AGENTS.md` row for `system/docs/` says it was removed and where Make Docs 2.0.9 keeps its files. `SECURITY.md` states the file count only, because the byte sizes change with each build (two fresh `npm pack` runs in this round gave 869,579 and 870,275 bytes packed, and 3,601,025 and 3,603,410 unpacked, not the earlier 867,263 and 3,593,647) | `test/package.test.ts` (file list) |
+
+Fixtures: 84 validate cases (11 new), captured with `node test/golden/validate/capture.ts`; the 73 earlier goldens are unchanged. One fixture name had to change during the work: a template named `Sample-PlayBook.Md` replaced the base `sample-playbook.md` on the case-insensitive macOS volume, so the case uses `Extra-PlayBook.Md`, which works on every volume.
+
+### Make Docs 2.0.9 Design Inputs
+
+Established with a real `buildos init --make-docs` in an empty folder (Make Docs 2.0.9, which `buildos init` runs with `--project-resources all`). The Make Docs Store is in the home folder, so the run needed the sandbox off.
+
+- Read side: `.make-docs/system/references/design-workflow.md`, `.make-docs/system/contracts/design-contract.md` (under `contracts/`, not `references/`), `.make-docs/system/templates/design.md`, and `.make-docs/system/prompts/designs-to-plan.prompt.md` and `designs-to-plan-change.prompt.md`; the router is `docs/designs/AGENTS.md`. Nothing is written under `docs/assets/`. The file `.make-docs/system-resources.catalog.json` does not exist in 2.0.9, although the Make Docs router `.make-docs/AGENTS.md` names it; `make-docs resource list` is the catalog, and it reports these resources with state `provider-only`. Each local body is byte for byte the provider body (same SHA-256).
+- An absent body: `make-docs resource read make-docs://system/reference/design-workflow.md` returns the provider body with exit 0; with `--origin local` it fails (`resource-not-found`). `make-docs resource ensure ... --allow-write --approve resource-projection-write` fails (`projection-not-selected`). The `make-docs setup` command that `buildos init` runs (with the same flags) puts the body back byte for byte, so the stop message gives that command.
+- A standard setup always writes the local bodies, so promotion never starts `make-docs`.
+- Fixture: `toolkits/buildos/test/fixtures/make-docs-companion/` is a byte copy of the six files, made by `node test/golden/make-docs-companion/capture.ts` (record in `capture-record.json`: the version, each SHA-256, and the names of all files Make Docs wrote under `.make-docs/system/`). Tests need no Make Docs.
+- Write side, unchanged in this round and recorded in R-009: the path `docs/designs/YYYY-MM-DD-<slug>.md` matches the 2.0.9 contract. The written design lacks the 2.0.9 frontmatter (`title`, `kind`, `status`, `follow_on`), lacks the required `## Human Experience Intent` heading, links the next prompt as `../assets/prompts/<prompt>`, which does not resolve in a 2.0.9 project, and names the source path `system/docs/designs/` in its text. Make Docs 2.0.9 has no public design-create operation.
+
+Owner question (R-009 write format), two options:
+
+- A. Keep the Go design text everywhere until Make Docs offers a design-create operation; R-009 stays open with these four gaps.
+- B. In the 2.0.9 layout only, write the 2.0.9 frontmatter, a `## Human Experience Intent` section for the planner to complete, and the next prompt as `make-docs://system/prompt/<prompt>`, and drop the source path; the legacy layout keeps Go's bytes; record a parity exception.
+
+Recommendation: B, as a small follow-up item. Every design promoted in a normal 2.0.9 project now breaks the Make Docs contract (its next prompt link does not resolve).
+
+### Check Results (Review Round 1)
+
+From `toolkits/buildos/` unless noted. macOS, Node 26.13.1.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm run build` | exit 0 |
+| `npm test` | exit 0; 2,081 tests, 2,069 pass, 0 fail, 12 skipped (Windows-only and POSIX-only cases); `dist/buildos.js` 3,264,584 bytes |
+| `npm run check:deps` and `check:deps:installed` | both `dependency policy: ok` |
+| `npm pack`, offline install of the tarball (npm cache in a temporary folder), then `BUILDOS_GOLDEN_BIN_DIR=<installed .bin> node --test test/golden/compare.test.ts` | 109 files (870,275 bytes packed, 3,603,410 unpacked in this build); 167 tests, 167 pass |
+| `node test/golden/validate/capture.ts --check` | 84 cases match, Python 3.14.10 |
+| `node test/golden/make-docs-companion/capture.ts --check` (sandbox off, Make Docs Store) | 6 files match, make-docs 2.0.9 |
+| Real `buildos init --make-docs` in an empty folder (sandbox off), then `buildos validate`, then `buildos design promote finding --finding-id FIND-001 --route baseline-plan --dry-run` with the design fixture's finding data | init exit 0 (`Make Docs: set up.`); validate exit 0 (13 frontmatter files, 8 data files); promote exit 0 (`would write docs/designs/<date>-coupon-drops-tax-from-cart-total.md`) |
+| `node scripts/make-docs-contract.ts --expect-version 2.0.9 -- make-docs` | `make-docs contract: pass (make-docs 2.0.9)` |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | `passed`, 16 PRD files, no diagnostics |
+| `make-docs project path-hygiene validate --target-root .` (repository root) | valid, 0 failing findings |
+| `git diff HEAD --check` (new files included with intent-to-add, then reset) | exit 0 |
+
+## P7 CI Run 45449688415
+
+[CI run 45449688415](https://github.com/brucewaynedecoy/build-os/actions/runs/45449688415) (`buildos-ci`) ran on `3bced49` (W1 R7 P7 review round 1 fixes). Every job passed (checked with `gh run view`):
+
+| Job | Result |
+| --- | --- |
+| `test (ubuntu-latest, Node 24)` | success |
+| `test (macos-latest, Node 24)` | success |
+| `test (windows-latest, Node 24)` | success |
+| `Make Docs contract (pinned range bounds)` | success |
+| `OSV scan of package-lock.json` | success |
+
+This closes P7-O7. The review round 2 changes below need a new run after a push (P7-O12).
+
+## P7 Review Round 2
+
+On 2026-11-24, a second independent review of W1 R7 P7 Stages 4 and 5 (`3bced49`) gave 10 findings. Each was reproduced or checked before the fix, fixed at its root cause, and covered by a test that fails without the fix (each new test was run once against the code without the fix and failed). Built on macOS with Node 26.13.1, Python 3.14.10 (capture only), and Make Docs 2.0.9. Nothing is staged, committed, or pushed. Stages 1 to 3 stay out of scope.
+
+| ID | Severity | Disposition | Tests |
+| --- | --- | --- | --- |
+| P7-R2-01 | Blocker | Fixed. One detector, `isInstalledLayout` in `src/core/shared/buildos-layout.ts`, serves discovery, design, and intake (the intake copy of the five-folder check is gone). Rule below. PRD 05 states it | `test/installed-layout.test.ts`: the rule table, and `entities validate`, `intake index playbooks`, a discovery dry run, `validate`, and a design promotion against real `buildos init --skip-make-docs` output from the built package, and the same output with the committed Make Docs 2.0.9 companion files (4 of these failed without the fix) |
+| P7-R2-02 | Blocker | Fixed. Design inputs, current and legacy, are read through `GoFiles.readContained`: a port bound to the root, `readFileLimited` with the new `followLinkInRoot` option, 4 MiB. Decision for in-root links: read only when the real path is a regular file inside the root, and the link must still lead there after the read; a link out of the root is refused (exit 3) unless `--allow-outside-root` is given (PE-012 keeps Go's read through the link, so the approved edge golden `design-designs-link-outside-allowed` still equals Go). Every other read now has a required size bound (`FsPort.readBytes(path, limit)`, `READ_LIMITS`). Audit below | `test/design.test.ts` "P7-R2-02: ..." (4 tests: in-root link read; link out of the root refused for a current and a legacy input, allowed with the flag; dangling link and folder are missing; over 4 MiB); `test/fs-port.test.ts` "bounded reads (P7-R2-02)" (5 tests, one a 3 GiB sparse file past Node's own 2 GiB read limit); `test/read-bounds.test.ts` (one read site per domain one byte over its bound) |
+| P7-R2-03 | Major | Fixed. The stop reuses `makeDocsForeignRouters` (the `buildos init` router rule, now exported from `plan.ts`) and `npxMakeDocsDisplay` (the command `buildos init` shows for a later setup), targets the content root (`<root>/system` in the repository layout), and names Command Prompt on Windows. Three cases, below. Each printed command was run for real: against a stub that models the 2.0.9 refusal in the tests, and against real Make Docs 2.0.9 in [Check Results (Review Round 2)](#check-results-review-round-2) | `test/installed-layout.test.ts` "the printed Make Docs command works where BuildOS shows one (P7-R2-03)" (repair, setup, repository layout) and the `--skip-make-docs` stop (no command; the npx command fails there against the stub) |
+| P7-R2-04 | Major | Fixed. Split at the first `#`; the fragment must not be empty and may hold `#`; the `system/` prefix is checked as written and folded; a last part that is empty, `.`, or `..` names a folder. PRD 13 constrains the spelling only ("names a file ... relative to its root" with a list of spelling rules; no existence rule), so the check never looks up the file or the fragment, and PRD 13 now says so. VD-18 | `test/validate.test.ts` "P7-R2-04: ..." (10 rows: `docs/designs/#overview`, `system/../docs/a.md#x`, `docs/terms.md#C#` passes, `assets/sample/.#x`, `assets/a.md#`, `docs/a/..#x`, `./system/docs/a.md#x`, a backslash folder, a document not written yet passes, `docs/a.md##` passes) |
+| P7-R2-05 | Minor | Fixed. `- key: value` checks the depth when it opens the mapping, also for a last item | `test/validate.test.ts` "P7-R2-05: ..." |
+| P7-R2-06 | Minor | Fixed. The environments, collection, minted, and `dataset_refs` loops are breakable `for ... of` loops that stop once the budget is spent. VD-14 and SECURITY.md now say every loop breaks | `test/validate.test.ts` "P7-R2-06: ..." counts `room()` calls: under 20 for 20,000 bad entries with a 2-finding budget (the review measured 20,003 before the fix) |
+| P7-R2-07 | Minor | Fixed. Only a regular file (its folder entry, not followed) gets the note | `test/init.test.ts` "P7-R2-07: a folder or a link named validate_config.py ..." |
+| P7-R2-08 | Minor | Fixed. PE-017 states six behaviors (the three the review named, plus the input read rule, the installed-root rule, and the read bounds from this round) and limits "equals Go byte for byte" to legacy-layout projects with no link at an input, files within the bounds, and a Go layout. Still proposed | `test/golden/proposed-exceptions.json` (the harness holds it as pending) |
+| P7-R2-09 | Minor | Fixed. `--check` compares only `$comment`, `make_docs`, `command`, `files`, and `make_docs_system_files` (`record.ts`); `capture_os` stays as provenance | `test/golden/companion-record.test.ts` (a record from `win32 x64` with the same files has no difference; a changed digest, version, or file list does) |
+| P7-R2-10 | Minor | Recorded; port behavior kept. New VD-23 and parity case `version-4301-digits` (captured: the script crashed with `ValueError: Exceeds the limit (4300 digits) for integer string conversion`; `buildos validate` passes, as PRD 13 allows an integer of any size) | `test/validate-parity.test.ts` case `version-4301-digits` |
+
+### Installed-Root Rule (P7-R2-01)
+
+- All five of `.os/`, `assets/`, `docs/`, `playbooks/`, and `workspace/` are folders: installed (Go's rule, kept first, so every Go-era project and every installed golden is unchanged).
+- Else a root `.os/` folder means installed, unless `system/.os/` is also a folder and `.os/manifest.json` is not a file (then the source layout, as Go read it). Both present with the manifest: installed.
+- Else the source layout (Go). With neither `.os/` nor `system/.os/`, a command fails where it first reads BuildOS data under `system/` (for example the entity graph or an index), as before; a command that reads only files the user names, such as `intake convert` of a source file, still works, as in Go. (Wording corrected in review round 3, P7-R3-11: an earlier version said every command fails at its first read.)
+
+Go parity: no golden root has `.os/` without all five folders, so all 167 goldens are unchanged. A root with `.os/` and not all five folders now reads as installed where Go read it as a checkout and failed with exit 1; this is behavior (5) of proposed PE-017.
+
+### Make Docs Stop Cases (P7-R2-03)
+
+Established with Make Docs 2.0.9 on this machine (sandbox off for the Make Docs Store):
+
+- After `buildos init --make-docs`, with `.make-docs/system/templates/design.md` deleted, `make-docs setup --target <project> ... --project-resources all --yes` exits 0 and writes the file again (`"action":"create"`). The root routers hold the Make Docs section and the BuildOS section.
+- After `buildos init --skip-make-docs`, the same command exits 1: `This target requires an explicit backup-and-reinstall migration flow ...` (`missing-manifest-recognizable`), because the root `AGENTS.md` and `CLAUDE.md` hold only the BuildOS section.
+- The same project with the root `AGENTS.md` and `CLAUDE.md` removed: the command exits 0 and writes the design inputs and `docs/designs/AGENTS.md`.
+
+The stop (exit 3) for a missing or empty input, for the content root:
+
+| Case | Condition | Code | Message after "the Make Docs `<label>` `<path>` is missing or empty, so BuildOS cannot write the design." |
+| --- | --- | --- | --- |
+| (c) | A root `AGENTS.md` or `CLAUDE.md` with no Make Docs section (`makeDocsForeignRouters`) | `make_docs_setup_blocked` | "Make Docs is not set up in this folder, and it cannot be set up here." (or, with `.make-docs/`, "Make Docs cannot put its files back in this folder.") then `MAKE_DOCS_LIMIT`, "This folder has such a file: AGENTS.md and CLAUDE.md. BuildOS changed nothing." No command |
+| (a) | Else, `.make-docs/` is a folder | `make_docs_input_missing` | "Make Docs is set up in this folder, but this file is missing. To put the Make Docs files back, run this[ in Command Prompt], then run this command again: `npx -y @brucewaynedecoy/make-docs@~2.0.9 setup --target <content root> ... --yes --json`" |
+| (b) | Else | `make_docs_not_set_up` | "Make Docs is not set up in this folder. To set up Make Docs, run this[ in Command Prompt], then run this command again: `<the same command>`" |
+
+### Read-Site Audit (P7-R2-02)
+
+Every read of file content in `src/core/**` and `src/adapters/**`. "Volume port" is the read rule PE-010 and PE-012 approve (a path a flag or an index names may be outside the root, as Go read it).
+
+| Read site | What it reads | Result |
+| --- | --- | --- |
+| `design/promote.ts` `requireDesignRouterInputs`, `validLocalBody` (`GoFiles.readContained`) | Make Docs design inputs, current and legacy | Fixed now: bounded (4 MiB) and contained, in-root link rule; with `--allow-outside-root`, bounded on the volume port (PE-012) |
+| `design/promote.ts` `readFindingRows`, the rollback copy, `landed` (`GoFiles.readFile`) | findings index | Fixed now: bounded (128 MiB), volume port |
+| `design/promote.ts` `validateQualificationAnchor`, finding record (`GoFiles.readFile`) | qualification file, `finding.md` | Fixed now: bounded (64 MiB), volume port |
+| `discovery/discovery.ts` `activeDiscoveryPlaybook`, `nextJsonlId`, `appendJsonl`, `readRunIndexRow` (`GoFiles.readFile`, `mustReadFile`) | playbook index, run and finding indexes | Fixed now: bounded (128 MiB), volume port |
+| `discovery/discovery.ts` raw finding text, raw finding reference (`GoFiles.mustReadFile`, `readFile`) | evidence and raw finding files the user names | Fixed now: bounded (64 MiB), volume port |
+| `discovery/discovery.ts` evidence copy (`GoFiles.copyNewFile`, `FsPort.openRead`) | an evidence file the user names | Justified because it streams 8 MiB at a time and never holds the file (memory is bounded); the user names the file, its bytes go only to a new file in the project, and Go's `io.Copy` had no bound |
+| `shared/go-files.ts` `openEntityRoot`, `entities/graph.ts` `loadGraph` (`FsPort.readBytes`) | the eight governed datasets | Fixed now: bounded (128 MiB) |
+| `entities/index.ts` `checkIndex`, `applyIndex`; `entities/consolidate.ts` datasets and manifest (`go-fs.ts` `readFile`; the manifest on the volume port) | entity-resolution index, datasets, consolidation manifest | Fixed now: bounded (128 MiB) |
+| `intake/io.ts` `IntakeFs.readFile`, `tryReadFile` (all of `convert.ts` and `index/index.ts`) | sources, HTML folder files and their hashes, twins, playbooks, the references index | Fixed now: bounded (512 MiB), volume port; each format's own limits then apply |
+| `init/shared-files.ts` `readShared`; `init/plan.ts` `snapshot`, `readManifest`; `validate/validate.ts` `readChecked` (`FsPort.readFileLimited`) | shared files, replaced files, manifest, validate inputs | Bounded and contained (unchanged) |
+| `init/apply.ts` (`FsPort.matchesEntry`) | a shared file compared before a write | Bounded (expected length + 1) and contained (unchanged) |
+| `shared/go-files.ts` `link`, `linkText`; `init` (`FsPort.readLink`) | the text of a symlink | Justified because it is link text, which the OS bounds (`PATH_MAX`), and the link is never followed |
+| `FsPort.readDir`, `list` (every domain) | folder entry names | Justified because it reads names, not file content; `buildos validate` bounds file count and depth |
+| `adapters/node-fs.ts` `readBounded` (`readBytes`, `readText`), `readLimited` (`readFileLimited`), `matchesAt`, `openRead` | the port itself | Fixed now (`readBounded`, `followLinkInRoot`); `matchesAt` and `openRead` as above |
+| `adapters/package-content.ts` `loadPackagedContent`, `loadSourceContent`, `isScript` | BuildOS's own `dist/system.json` and `dist/system/` (each SHA-256 checked), or the checkout's own `system/` in a source run | Justified because it is BuildOS's own package content, not user content |
+| `adapters/node-process.ts` | no file content (a `stat` per `PATH` entry) | Not a read |
+
+No unbounded read of user content remains. TypeScript enforces the bound: `readBytes` and `readText` have no form without a limit.
+
+### Changed User-Facing Messages (Review Round 2)
+
+- Design promotion stop: the three messages in the table above (new codes `make_docs_not_set_up` and `make_docs_setup_blocked`; the command is now the `npx` form for the content root, with "in Command Prompt" on Windows).
+- `buildos-design: error: <input> is a link that leads outside the root <root>; pass --allow-outside-root to allow a read outside the repository root` (exit 3).
+- `read <path>: file too large: BuildOS reads at most <bound> from one such file` (exit 1 in intake, discovery, and design; in `entities`, `cannot read governed dataset <name>: read <path>: file too large: ...`).
+- `buildos validate`: `"<value>" must name a file before the #, not a folder. [anchor_format]`; the `system/` message now suggests the folded path (`such as docs/a.md#x`); `docs/terms.md#C#` is no longer a finding.
+- `buildos init` adoption: no `legacy_validator_kept` note for a folder or a link named `validate_config.py`.
+
+### Divergence and Exception Updates (Review Round 2)
+
+- VD-14: also the `- key: value` depth and the breakable loops. VD-18: the first-`#` split, the fragment, the folder rule, the raw `system/` rule, spelling only. New VD-23: an integer `version` over 4,300 digits.
+- PE-017 (proposed): six behaviors; goldens unchanged. No approved exception changed.
+
+### Check Results (Review Round 2)
+
+From `toolkits/buildos/` unless noted. macOS, Node 26.13.1.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm run build` | exit 0; `dist/buildos.js` 3,272,880 bytes |
+| `npm test` | exit 0; 2,111 tests, 2,099 pass, 0 fail, 12 skipped (the same Windows-only and POSIX-only cases) |
+| `npm run check:deps` and `check:deps:installed` | both `dependency policy: ok` |
+| `npm pack` (npm cache in a temporary folder), offline install of the tarball, then `BUILDOS_GOLDEN_BIN_DIR=<installed .bin> node --test test/golden/compare.test.ts` | 109 files (873,919 bytes packed, 3,614,905 unpacked in this build); 167 tests, 167 pass; `git status` of `test/golden/buildos*`, `os/`, `evidence/`, `cases.json`, and `parity-exceptions.json`: no change |
+| `node test/golden/validate/capture.ts --check` | 85 cases match, Python 3.14.10 (84 earlier goldens unchanged; `version-4301-digits` added) |
+| `node test/golden/make-docs-companion/capture.ts --check` (sandbox off, Make Docs Store) | 6 files match, make-docs 2.0.9 |
+| Scratch 1, installed tarball: `buildos init --skip-make-docs`, then `entities validate --mode compat`, `intake index playbooks`, a discovery dry run (discovery fixture index and data laid over it), `validate`, and a promotion dry run (design fixture data laid over it) | init 0 (no `docs/`); entities 0; intake 0 (`.os/indexes/playbooks.json`); discovery 0 (`would write workspace/runs/RUN-003/`); validate 0; promotion 3 with case (c), no command |
+| Scratch 2, installed tarball, sandbox off: `buildos init --make-docs`, `validate`, a promotion dry run, then `.make-docs/system/templates/design.md` deleted, the printed `npx` command run in `sh`, and the dry run again | init 0 (`Make Docs: set up.`); validate 0; promotion 0; with the file deleted 3, case (a); the printed command exit 0; promotion 0 |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | `passed`, 16 PRD files |
+| `make-docs project path-hygiene validate --target-root .` (repository root) | valid, 0 failing findings |
+| `git diff HEAD --check` (new files included with intent-to-add, then reset) | exit 0 |
+
+### P7 Open Items After Review Round 2
+
+- P7-O1, P7-O2, P7-O5, P7-O6: unchanged.
+- P7-O3: partly closed (owner decisions of 2026-11-24). Open: D-006 items 2 and 3, D-007 items 3 and 4.
+- P7-O8: owner question on the design write format (R-009), unchanged.
+- P7-O9: owner decision on proposed PE-017, now with its full scope.
+- P7-O10: when Stage 1 imports the adopter skills, check whether any skill writes `dataset_refs: null`; if one does, return to the owner (orchestrator follow-up to the D-007 item 1 decision).
+- P7-O11: the RFC 3339 `extracted_at` profile is an orchestrator decision; the owner may veto it (D-007 item 3).
+- P7-O12: CI on three operating systems for the review round 2 changes, after the orchestrator commits and pushes.
+
+## P7 Stages 1 to 3
+
+On 2026-11-24, W1 R7 P7 Stages 1 to 3 (t1 to t11, A54 to A59) were built on `rewrite/ts-cli` from `2b50f91`, on macOS with Node 26.13.1. Nothing is staged, committed, or pushed. The owner supplied the skills in `https://github.com/brucewaynedecoy/build-os-skills` (folder `skills/`, commit `ef12985`); the copy was read only and never written.
+
+### Skill Count (A54)
+
+`system/.os/skills/` holds 21 skill folders, not 24. The three repository skills in the old top-level `skills/` folder (`capability-matrix`, `fit-gap-analysis`, `buildos-export-azure-boards`) are three of the 21 adopter skills, under the same names. Each pair was reviewed (t3, below) and became one folder, so the count is 21 + 3 − 3 = 21.
+
+### Newest-Copy Decisions (t3, A55)
+
+| Skill | Copies compared | Choice | Notable differences |
+| --- | --- | --- | --- |
+| `capability-matrix` | repository `skills/capability-matrix/` (`521326d`) and adopter `skills/capability-matrix/` (`ef12985`) | Either: the two copies are byte for byte the same (`diff -r` shows no difference) | None |
+| `fit-gap-analysis` | repository `skills/fit-gap-analysis/` (`de3ef4b`) and adopter copy | Adopter copy | The adopter copy is a strict superset: an optional delivery plan (tracks, owners, owner roles, a to-do list, and the Roadmap and To-Dos sheets), objective `rank`, a `descoped` mark and verdict, and a review-round rule. The repository copy has nothing the adopter copy lacks. The adopter copy also brought an owner color table with client names in code, removed under t5 |
+| `buildos-export-azure-boards` | repository `skills/buildos-export-azure-boards/` (`34e18f7`) and adopter copy | Adopter copy | The adopter copy is a cleanup of the same skill: example prefixes and environments marked as illustrative, the reserved adapter ID list removed, the base-contract deviation reworded without source-specific text, and neutral backlog paths. Scripts, assets, and references are otherwise the same. Its synthetic manifest, golden CSV, and one validator message still held the old example identifiers, cleaned under t6 |
+
+### Import Table (t2)
+
+Source for every row: `https://github.com/brucewaynedecoy/build-os-skills` `skills/<skill>/` at `ef12985`. "Kept as is" means no change except the removal of local clutter.
+
+| Skill | Choice | Notable changes |
+| --- | --- | --- |
+| `buildos-browser-to-playwright` | Imported | Kept as is |
+| `buildos-bulk-extract` | Imported | Two `.pyc` files and their `__pycache__` folders left out; commands use `.os/skills/buildos-bulk-extract/scripts/work.py` (was an app folder path); a Python and 0.2.0 note; `work.py` accepts a `doc_anchor` under `docs/` (was `system/docs/`, which `buildos validate` rejects) and no `system/docs/` reference prefix; client-like evidence examples and one adopter file name made neutral |
+| `buildos-design-planning` | Imported | `buildos-design` → `.os/scripts/buildos design promote`; Windows note |
+| `buildos-discovery` | Imported | `buildos-discovery` → `.os/scripts/buildos discovery`; Windows note |
+| `buildos-discovery-qualification` | Imported | Kept as is |
+| `buildos-docs-handoff` | Imported | Kept as is |
+| `buildos-export-azure-boards` | Adopter copy (t3) | Neutral topic in the Dynamics 365 CE adapter files, its synthetic manifest, and its golden CSV (rebuilt with the skill's own `emit`, passes the adapter `validate`); neutral example environments, prefix, namespaces, backlog path, and time zone; commands use `.os/skills/buildos-export-azure-boards/scripts/`; a Go source path example replaced |
+| `buildos-extract` | Imported | `buildos-intake` → `.os/scripts/buildos intake`; `/` in the output path; Windows note |
+| `buildos-extraction-plan` | Imported | Kept as is |
+| `buildos-intake` | Imported | Commands through the wrapper; `/` in output paths; Windows note |
+| `buildos-intake-convert` | Imported | Same as `buildos-intake` |
+| `buildos-playbook-drafting` | Imported | Command through the wrapper; `/` in the output path; Windows note |
+| `buildos-preflight` | Imported | Checks the project wrapper and `buildos version` instead of the three legacy names on `PATH` |
+| `buildos-reference-review` | Imported | Kept as is |
+| `buildos-reporting` | Imported | A PowerShell report script and dashboard that BuildOS does not ship replaced with an honest read-only step |
+| `buildos-row-drafting` | Imported | Kept as is |
+| `buildos-row-maintenance` | Imported | Kept as is |
+| `buildos-validation-reporting` | Imported | Two PowerShell scripts that BuildOS does not ship replaced with `buildos validate`, `buildos entities validate`, the index commands, and a `SKILL.md` frontmatter check |
+| `buildos-workflow` | Imported | Kept as is |
+| `capability-matrix` | Either copy (t3) | Neutral topic in the examples; the counts of a real run removed; a Python note |
+| `fit-gap-analysis` | Adopter copy (t3) | Owner names and colors from config (t5); new `config/owner-colors.json`; neutral topic, system codes, and objective confirmer in the examples; Python and 0.2.0 note |
+
+Added: `system/.os/skills/AGENTS.md` and `CLAUDE.md` (t10). Files: 61 adopter files imported (63 less the 2 omitted `.pyc` bytecode files): 25 changed and 36 identical, plus 3 new files, so 64 files under `system/.os/skills/` (corrected in [P7 Skills Review Round 1](#p7-skills-review-round-1), P7S-R1-14; it said 26 changed). The top-level `skills/` folder (24 files) is deleted (t4).
+
+### Client Content Removal (t5, t6)
+
+Method: the skills were taken from the read-only copy with `git archive ef12985 skills` into a scratch folder outside the repository, the clutter was deleted there, and every change below was made there. Only then was the cleaned tree copied into `system/.os/skills/`. No raw client file entered the working tree, no file was staged, and no client name was written to any file of this repository. The scratch folder is outside the repository and is not shipped.
+
+- Kinds of content neutralized: client names in an example owner list, a to-do example, and an owner color table in code; a client-like business topic throughout the Dynamics 365 CE examples, the capability-matrix and fit-gap examples, and the bulk-extract evidence examples; publisher prefixes and code namespaces formed from client initials; client environment names; a dated client backlog folder path; a real person's name as the objectives confirmer; the counts of a real assessment run; an adopter-specific file name; a time zone.
+- Source files that held a listed name: 2 of 61. Source files that held the client-like topic: 7 of 61. Together: 8 files, all cleaned.
+- Neutral topic, used in every skill: **a community library's book-lending system** (books, book copies, loans, holds, patrons, lending policies, fines, branches, a circulation desk). The examples keep their structure: the Dynamics 365 CE examples still show global choices, a plug-in with branches, a scheduled flow, data migration, and security; the fit-gap examples still show a replacement frame, marks, and a to-do list.
+- t5: `fitgap.py` holds no owner name and no owner color. The To-Dos sheet colors each owner from the frame's optional `owner_colors`, else from the skill-local neutral palette `config/owner-colors.json`, in owner order; an owner with no color is plain. Owner names come from the frame, which the skill tells the agent to fill from `owners[].name` in `.os/config/instance.yaml` (PRD 13 owners; no parallel schema). The `frame` check rejects an `owner_colors` entry for an unknown owner or a value that is not two `RRGGBB` colors. `test/skills.test.ts` checks the code and the palette (A57).
+- Kept on purpose: public product names (Microsoft Dynamics 365 CE, Azure Boards, Azure DevOps, Power Automate), generic finance words (currency, hours, cost), and the scope alias `pricing class` in the capability-matrix tool code (a generic term that changes tool behavior). Listed here because they were reviewed.
+- Other identifying material searched for across all files, names included: e-mail addresses, URLs, GUIDs, Azure DevOps organization or project names, tenant IDs, absolute user paths, and people's names. None remains. The skills hold no image, archive, Office, or PDF file.
+- Outside the skills: the root `USE_CASES.md` (1 line) and `USE_CASES_TESTING.md` (2 lines, with an absolute user path) held listed names before this task. The deny-list check found them; they now hold neutral values and a `<demo-root>` placeholder. Older commits in git history still hold them and the old `skills/` text (owner question below).
+
+Proof scan (t8 script, the real list given only in the environment of one command, never printed or written): 2,394 files and 66 archive entries checked in the final run, 49 binary files read as raw bytes (12 PDF files with inflated streams), the `npm pack` file list included: before the `USE_CASES*.md` fix, 3 matches (those 3 lines); after it, 0 matches and 0 shipped files not fully scanned. A search of `system/.os/skills/` for the client-like topic word finds 0 files.
+
+### Local Clutter (t7, A57)
+
+`system/.os/skills/` has no `.DS_Store`, `__pycache__`, `.pyc`, or `.pyo` file. The root `.gitignore` already ignored `.DS_Store`, `__pycache__/`, and `*.py[oc]`. The package rules already left out `.DS_Store`, `__pycache__`, and `*.pyc`, now also `*.pyo`. `test/skills.test.ts` checks the source folder and the rule.
+
+### Deny-List Check (t8, t9, A56)
+
+`toolkits/buildos/scripts/check-deny-list.mjs`; full design in `toolkits/buildos/SECURITY.md` (Client-Name Deny-List Check).
+
+- List: `BUILDOS_DENY_LIST`, one term per line or comma separated, from the repository secret of that name in CI; `--list-file <path>` outside the repository for local use. Never committed, written, or printed.
+- No list or an empty list: exit 2, "deny list not provided" (fail closed). `--allow-missing` skips with a notice outside CI only.
+- Scan set: the whole tracked tree plus untracked files that `.gitignore` does not exclude (so `system/`, `docs/`, and every test fixture), plus the `npm pack --dry-run` file list with the built `dist/system/` (`--pack`).
+- Matching: case-insensitive substring after NFKC folding, white space runs read as one space (a term split across lines matches), file and folder names too, ZIP-based files opened with the bundled dev package `fflate`, PDF streams inflated, other binary files read as raw bytes; such a binary file in `system/` or the package fails. Substring, not whole word, so a term inside an identifier, path, or URL is found; the cost is a possible false positive in a longer word, which a maintainer rewords.
+- Output: path and line only; a matching path part is shown as `[name on the deny list]`; no term, no line text, and an internal error names only its kind.
+- CI: job `deny-list` in `.github/workflows/buildos-ci.yml`. The workflow lost its path filters, so it runs on every push and pull request. Fork pull requests get no secrets: that one case skips with a `::notice`. Every other run without the secret fails.
+- A56 tests (`test/deny-list.test.ts`, 13 tests, invented terms only): the check passes on a clean tree and on this repository with a random term; it fails on a planted term (any letter case, split across lines, inside a `.docx` entry, in a folder name, in binary metadata); each failing case shows the file and line and no part of the term; a missing, empty, or too-short list fails; `--allow-missing` works only outside CI; a list file inside the repository is refused.
+
+**Owner action needed before the next push.** The secret does not exist yet, so the `deny-list` job fails closed on the next push. Create it so that the names never appear on a command line, in shell history, or in a file:
+
+```sh
+gh secret set BUILDOS_DENY_LIST --repo brucewaynedecoy/build-os
+```
+
+`gh` asks for the value in a hidden prompt. Paste the names on one line, separated by commas (the check accepts commas or line breaks), then press Enter.
+
+### Skills Router (t10)
+
+`system/.os/skills/AGENTS.md` lists all 21 skills with a one-line purpose, says what a skill needs (the wrapper and Node.js 24; Python 3 for three skills), says how to install one skill (copy the one folder unchanged; project and personal locations for Claude Code, Codex, and GitHub Copilot; for any other app, its own documentation or read the skill in place), and says what to do when `buildos init` exits `10`: ask the question in the CLI's words, give the Make Docs limit in the CLI's words (`MAKE_DOCS_LIMIT` in `src/core/init/init.ts`), and run the printed command. `CLAUDE.md` points to it, and `.os/AGENTS.md` routes to it. `test/skills.test.ts` checks that the router names every packaged skill, that its question, limit, and commands are the CLI's own text, and that a real exit-10 run prints the same words.
+
+Skill locations, from each app's own documentation (2026-11-24): Codex reads `.agents/skills` from the current folder up to the repository root and `$HOME/.agents/skills` (OpenAI "Build skills", section "Where Codex loads local skills"); GitHub Copilot reads project skills from `.github/skills`, `.claude/skills`, or `.agents/skills` and personal skills from `~/.copilot/skills` or `~/.agents/skills` (GitHub Docs, "Agent skills", section "Finding and storing skills"); Claude Code reads `.claude/skills/` and `~/.claude/skills/`. The router names no other app's path.
+
+CLI references fixed in the skills: the legacy names `buildos-intake`, `buildos-discovery`, and `buildos-design` (7 skills) now run as `.os/scripts/buildos <domain>`; Windows `\` index paths now use `/` with a Windows note; app-folder script paths (`buildos-bulk-extract`) and source-checkout script paths (`buildos-export-azure-boards`) now use `.os/skills/<skill>/`; three PowerShell scripts that BuildOS does not ship are gone; a Go source path example is replaced. No skill names `validate_config.py` (A61 still holds). `test/skills.test.ts` fails on any of these forms.
+
+### Python-Dependent Skills
+
+| Skill | Needs | Planned replacement |
+| --- | --- | --- |
+| `buildos-bulk-extract` | Python 3 (standard library) for `scripts/work.py` | `buildos extract bulk` in 0.2.0 (P9 t4) |
+| `fit-gap-analysis` | Python 3 for `scripts/fitgap.py`; `openpyxl` for the workbook step | `buildos fitgap` in 0.2.0 (P9 t5) |
+| `capability-matrix` | Python 3 for the `cm_build.py` tool it writes from its own appendix | None planned: P9 names no command for it (open item P7-O13) |
+
+`buildos-export-azure-boards` needs Node.js only. No script was ported (design decision 15 and P9 own that). Each of these skills and the router say what they need. The bulk-extract helper's own 24 tests pass with Python 3.14.10.
+
+### `dataset_refs` and Validate Consistency (P7-O10)
+
+- A search of `system/.os/skills/` finds no skill that writes `dataset_refs` at all, so none writes `null`; `test/skills.test.ts` keeps it so. No owner question is needed.
+- The skills ship no entity rows. The only row writer is the bulk-extract helper. Rows in its exact shape (a requirement, a capability, a finding, and its extraction row with `extracted_at` as `YYYY-MM-DDTHH:MM:SSZ` and no `dataset_refs`) pass `buildos validate` (exit 0) and `buildos entities validate --mode compat` (valid) in a project from `buildos init --skip-make-docs`. The helper now accepts a `doc_anchor` only under `docs/`, as `buildos validate` requires; no skill uses the sentinel `both`.
+- The Azure Boards synthetic and Dynamics 365 CE goldens are rebuilt byte for byte from a fresh project root with the commands the skill gives.
+
+### `buildos init` and Skills (t11, A58)
+
+The init code already copied every `system/` file, so `.os/skills/` arrives with the package; no code change was needed. Decisions, from PRD 20 Project Initialization and Adoption (adoption writes only the manifest, the wrappers, and `.os/skills/`; a rerun writes no BuildOS file):
+
+- New project: every packaged skill file.
+- Adoption of a Go-era project: every packaged skill file is created, or replaced when the same path exists (BuildOS owns those paths); any other file under `.os/skills/`, such as the adopter's own skill, stays byte for byte.
+- Rerun: nothing under `.os/skills/` is written; a changed or removed skill file stays as the user left it. W2 update owns refreshes.
+- No app folder (`.claude/`, `.agents/`, `.github/`, `.copilot/`, `.codex/`, `.cursor/`) is created in any case.
+
+Tests: `test/skills.test.ts` (new project byte for byte, adoption, rerun, no app folder), and `test/init.test.ts` A43 now expects every packaged skill file in the adoption's added set. PRD 20 Packaged Skills states the three rules.
+
+### Human Experience Review (router part, A59)
+
+The agent read `.os/skills/AGENTS.md` in a project made by the installed tarball (`buildos init --skip-make-docs`), as an agent would. To install `fit-gap-analysis` for Claude Code, it says: copy `.os/skills/fit-gap-analysis/` unchanged to `.claude/skills/fit-gap-analysis/`, check for Python 3 first, and tell the user what was copied. After exit `10`, it says: ask "Set up Make Docs in this project?", explain what Make Docs adds and the limit in the CLI's words, and run the printed `--make-docs` or `--skip-make-docs` command. Result: `satisfied`. Limit: in a new folder, the first `buildos init` stops before it writes anything, so `.os/skills/AGENTS.md` is not there yet; at that moment the agent has only the CLI's own exit-10 output, which gives the same question and commands. The router helps in later runs and in other folders.
+
+### Acceptance Criteria (Stages 1 to 3)
+
+| Case | Result | Evidence |
+| --- | --- | --- |
+| A54 | Pass (21, explained) | [Skill Count](#skill-count-a54) |
+| A55 | Pass | [Newest-Copy Decisions](#newest-copy-decisions-t3-a55) |
+| A56 | Pass on macOS; CI pending the secret and a push at this round. Passed later in [deny-list run 45489679281](https://github.com/brucewaynedecoy/build-os/actions/runs/45489679281) and [CI run 45489678572](https://github.com/brucewaynedecoy/build-os/actions/runs/45489678572); see [P7 CI Runs 45489678572 and 45489679281](#p7-ci-runs-45489678572-and-45489679281) | `test/deny-list.test.ts`; the proof scan |
+| A57 | Pass | `test/skills.test.ts` |
+| A58 | Pass | `test/skills.test.ts`, `test/init.test.ts` |
+| A59 | Pass (`satisfied`, one noted limit) | [Human Experience Review](#human-experience-review-router-part-a59) |
+
+### Check Results (Stages 1 to 3)
+
+From `toolkits/buildos/` unless noted. macOS, Node 26.13.1. npm uses a cache folder under the sandbox temporary folder.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm run build` | exit 0; `dist/buildos.js` 3,272,905 bytes |
+| `npm test` | exit 0; 2,135 tests, 2,123 pass, 0 fail, 12 skipped (the same Windows-only and POSIX-only cases); 24 new tests (13 deny-list, 11 skills) |
+| `npm run check:deps` and `check:deps:installed` | both `dependency policy: ok` |
+| `npm pack`, offline install, `BUILDOS_GOLDEN_BIN_DIR=<installed .bin> node --test test/golden/compare.test.ts` | 173 files (163 under `dist/system/`, 64 of them skills); 167 tests, 167 pass |
+| Deny-list check, real list in the environment of one command, `--root ../.. --pack .` | 0 matches, 0 shipped files not fully scanned (after the `USE_CASES*.md` fix) |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | `passed`, 16 PRD files, no diagnostics |
+| `make-docs project path-hygiene validate --target-root .` (repository root) | valid, 0 failing findings |
+| Link check over `system/` and `docs/prd/` (`test/system-content.test.ts`) | pass, the new router included |
+| `git diff HEAD --check` (new files included with intent-to-add, then reset; nothing left staged) | exit 0 |
+| Installed tarball: `buildos init --skip-make-docs` in an empty folder, then `.os/skills/` inspected, `buildos validate`, `buildos entities validate --mode compat` | init exit 0; 21 skill folders plus the router; no app folder; no clutter; validate exit 0; entities valid |
+
+Other files changed for Stages 1 to 3: the root `README.md` and `AGENTS.md`, `docs/assets/user/build-os-getting-started.md`, `guide/content/14-export-to-a-work-tracker.md` and `19-a-worked-walkthrough.md` (the exporter now lives in `.os/skills/`; `guide/BuildOS-Guide.html` rebuilt with `node tools/build-guide.mjs`), PRD 03 (R-009), PRD 06 and PRD 20 (requirement history), `SECURITY.md`, `system/.os/AGENTS.md`, the two `USE_CASES*.md` files, the CI workflow, and the root `.gitattributes` (the two Azure Boards golden CSV files keep their CRLF bytes under `-text -whitespace`, because the `system/**` rule would turn them into LF and the skill compares them byte for byte; `test/skills.test.ts` rebuilds both). The PRD text that names `system/.os/skills/` as a code anchor was already right; no PRD named the old top-level `skills/` folder.
+
+### P7 Open Items After Stages 1 to 3
+
+- P7-O1: Closed. No imported skill names `validate_config.py`; A61 holds for `system/.os/skills/`.
+- P7-O2: Unchanged for the other guide chapters (P8). Chapters 14 and 19 no longer name the top-level `skills/` folder.
+- P7-O3, P7-O5, P7-O6, P7-O11: unchanged.
+- P7-O8: Decided on 2026-11-24 (option B). Build it in P7 Stage 6 (t20, t21) in the next implementation pass, with a new parity exception.
+- P7-O9: Closed. PE-017 approved on 2026-11-24.
+- P7-O10: Closed. No skill writes `dataset_refs`; the helper's rows pass `buildos validate`.
+- P7-O12: CI on three operating systems for review round 2 and for Stages 1 to 3, after the orchestrator commits and pushes. It needs P7-O14 first, or the `deny-list` job fails closed.
+- P7-O13: `capability-matrix` writes and runs a Python tool from its own text, and P9 plans no command for it, so the PRD 20 promise "after 0.2.0 an adopter needs Node and nothing else" does not yet cover this skill. P9 planning must add a command or record an exception.
+- P7-O14: **Owner action.** Create the repository secret `BUILDOS_DENY_LIST` before the next push (command above).
+- P7-O15: Older commits in git history still hold the listed names that this pass removed from `USE_CASES*.md`, and the old top-level `skills/` text. This pass rewrote no history.
+- P7-O16: The workflow now runs on every push and pull request, with no path filter, so a documentation-only push also runs the three-OS test matrix. A later pass may split the deny-list job into its own workflow if CI time matters.
+
+## P7 CI Run 45456513930
+
+[CI run 45456513930](https://github.com/brucewaynedecoy/build-os/actions/runs/45456513930) (`buildos-ci`) ran on `2b50f91` (W1 R7 P7 review round 2 fixes). Every job passed (checked with `gh run view`):
+
+| Job | Result |
+| --- | --- |
+| `test (ubuntu-latest, Node 24)` | success |
+| `test (macos-latest, Node 24)` | success |
+| `test (windows-latest, Node 24)` | success |
+| `Make Docs contract (pinned range bounds)` | success |
+| `OSV scan of package-lock.json` | success |
+
+This closes P7-O12 for the review round 2 code. Stages 1 to 3 (`d1f315b`) and the changes below need a new run after a push, with the secret `BUILDOS_DENY_LIST` in place (P7-O14).
+
+## P7 Review Round 3
+
+On 2026-11-24, a third independent review of W1 R7 P7 Stages 4 and 5 gave 11 findings (7 blockers and majors, 4 minors). Each blocker and major was reproduced, fixed at its root cause, and covered by a test that fails without the fix (each new test in `test/review-round-3.test.ts` was run against the code of `d1f315b`: 12 failed, and the 3 that passed are checks that Go's behavior is kept). Built on macOS with Node 26.13.1, Python 3.14.10 (capture only), and Make Docs 2.0.9. Nothing is staged, committed, or pushed. `system/.os/skills/` and the deny-list script were not changed (a separate review of `d1f315b` ran at the same time).
+
+| ID | Severity | Disposition | Tests |
+| --- | --- | --- | --- |
+| P7-R3-01 | Blocker | Fixed. A relative path the user names is used as written (`userPathRel` in `src/core/shared/buildos-layout.ts`): only in an installed project with no `system` entry at its root is a leading `system/` dropped, as Go did (it cannot name a real file there). BuildOS-owned defaults (`--assets-root system/assets` and the default index paths, also when typed) keep Go's translation. Audit below. Proposed PE-019 (1) | `test/review-round-3.test.ts` "P7-R3-01: ..." (5 tests: the rule, intake `--source`, the legacy spelling kept, an explicit `--assets-root`, discovery `--evidence`) |
+| P7-R3-02 | Blocker | Fixed. A local HTML image is read only through a port bound to the folder that holds the HTML file (or the selected HTML folder), then one bound to the project root: inside as spelled and by real path, so no link leads out (`IntakeFs.readDependent`). Anything else is not read; Go's `[Uncopied image: ...]` link stays, and stderr gets one line per image with the reason; exit 0. `--allow-outside-root` does not widen it. Go behavior below. Proposed PE-018 | `test/review-round-3.test.ts` "P7-R3-02: ..." (6 tests); golden `intake-convert-html` unchanged |
+| P7-R3-03 | Major | Fixed. `GoFiles.readContained` no longer switches to a volume read with `--allow-outside-root`; the one write-destination case the approved edge golden `design-designs-link-outside-allowed` pins (the router in a designs folder that is a link out) is `readInWriteFolder`, documented in PRD 11 and SECURITY.md. Discovery and design load the entity graph through a root-bound port (`openEntityRoot`), except a link at the index the command replaces (PE-014 edge goldens). A refused read no longer offers the write switch (`refusalMessage`; the port marks refused content reads) | `test/review-round-3.test.ts` "P7-R3-03: ..." (2 tests); `test/design.test.ts` "P7-R2-02, P7-R3-03: ..."; `test/p5-edge.test.ts` (32 of 32, the pinned PE-012 and PE-014 results unchanged) |
+| P7-R3-04 | Major | Fixed. Every writer of a file BuildOS reads back checks the result against that file's read bound before its first write and stops with exit 4 (`file_too_large_to_read_back`), the dry run too. Writer list below. Proposed PE-019 (2) | `test/review-round-3.test.ts` "a runs.jsonl at exactly 128 MiB ..." (exit 4 for the dry run and the run; tree and index unchanged; before the fix: exit 0 and a 128 MiB + 182-byte index) |
+| P7-R3-05 | Major | Fixed. "Missing" and "empty" are told apart (`makeDocsInputStop`): an empty file gets its own message (Make Docs keeps a changed managed file, BuildOS does not change it) and the steps delete, then setup (`make_docs_input_empty`). The copied-project case gets Make Docs' own words. The test stub now models `"status": "blocked"`. Each was checked with Make Docs 2.0.9 (below) | `test/installed-layout.test.ts` "P7-R3-05: Make Docs set up, one file empty ..." (the command alone stays blocked; delete then the command repairs) and "P7-R3-05: a copied project ..."; `test/design.test.ts` "P7-R3-05: an empty local body ..." |
+| P7-R3-06 | Major | Fixed. A file at a 2.0.9 input location decides: over 4 MiB stops with the size message (exit 1) and never falls back to a legacy body; an empty one stops as above. An over-limit HTML image follows the rule for other unreadable images in Go parity (skip with a link, exit 0), now with the reason and the bound on stderr; PE-013 is not involved, because the convert does not fail | `test/design.test.ts` "P7-R2-02, P7-R3-06: ..."; `test/review-round-3.test.ts` "P7-R3-06: an image over the read bound ..." |
+| P7-R3-07 | Major | Fixed. `buildos init` applies `isInstalledLayout` before it plans (`checkProjectFolder` in `src/core/init/init.ts`): the source checkout stops with exit 10 (`init_source_checkout`); an `.os/` folder with no manifest is adopted only with `.os/data/` or all five Go folders, else exit 10 (`init_unknown_os_folder`); nothing is written. PRD 05 states the `entities --root` and `validate --root` content-root contracts | `test/review-round-3.test.ts` "P7-R3-07: ..." (2 tests); the adoption fixtures of 5 test files gained the `.os/data/` folder a Go-era project has |
+| P7-R3-08 | Minor | Follow-up F-P7-01 (a second open after a folder is identified in `readBounded`) and F-P7-02 (`package-content.ts` reads the source `system/` when `dist/system.json` is missing) | — |
+| P7-R3-09 | Minor | Follow-up F-P7-03 (`system#overview` for a real root file named `system`; `.//system/../docs/a.md#x`) | — |
+| P7-R3-10 | Minor | Follow-up F-P7-04 (the installed-index test starts with the index present; the intake bounds test asserts no output state; the companion capture reads files before it checks `result.make_docs.status` and probes the version with a bare program name) | — |
+| P7-R3-11 | Minor | Fixed now: VD-03, VD-06, and VD-08 in `divergences.json` carry the owner decisions of 2026-11-24 in place of the open questions; the installed-root rule text (here and in `buildos-layout.ts`) no longer says every command fails at its first read; SECURITY.md states that the `.os/templates/` listing does not check the findings budget. The code change for that listing is follow-up F-P7-05 | `test/validate-parity.test.ts` (85 cases) |
+
+### Go Behavior (P7-R3-01, P7-R3-02)
+
+Go is not installed on this machine. Both findings were settled from the Go source in the repository:
+
+- P7-R3-01: `resolvePath` (`toolkits/buildos-intake/internal/intake/convert.go`) and `resolveRepoPath` (`toolkits/buildos-discovery/internal/discovery/discovery.go`) apply `installedRootRel` / `layout.rel` to every relative path, explicit ones included, when all five of `.os/`, `assets/`, `docs/`, `playbooks/`, and `workspace/` are folders. So Go also remapped `--source system/inputs/report.csv` to `inputs/report.csv` in a five-folder project. The reported case (a project from `init --skip-make-docs`, no `docs/`) was installed only through the port's rule (PE-017 behavior 5). The new rule differs from Go only in an installed project with a `system` entry at its root (PE-019 (1)); no golden names such a path.
+- P7-R3-02: `readImageSource` (`toolkits/buildos-intake/internal/intake/html.go`) cuts `?` and `#`, rejects an empty path and any `://` (so `file://` too), joins a relative path to `filepath.Dir(sourcePath)` (an absolute one is used as given), and reads it with `os.ReadFile`, which follows links; any read error gives the uncopied link. So Go copied any readable file: `../../../x`, an absolute path, or a link out. A real export case that now differs: a document outside the project that names `../shared/img.png` above its own folder. Images in the document's folder tree (an export's `_files` folder) and anywhere in the project are byte for byte as in Go. Proposed PE-018; owner question below.
+
+### Paths the User Names: Audit (P7-R3-01)
+
+| Command | Path | Rule now |
+| --- | --- | --- |
+| `intake convert` | `--source` | As written (`userPathRel`) |
+| `intake convert`, `intake index references` | `--assets-root` | The default spelling `system/assets`: BuildOS-owned, translated. Any other value: as written |
+| `intake index references`, `intake index playbooks` | `--output` | The default spellings: translated. Any other value: as written |
+| `intake index playbooks` | `--playbooks-root` | The default `system/playbooks`: translated. Any other value: as written |
+| `discovery run discovery` | `--evidence`, `--raw-finding` | As written; the run record and raw findings name the path as written. Correction (review round 4, P7-R4-01): this was true of `run.md` and the copied bytes, but `runs.jsonl` `source_refs` applied the layout rule a second time to the already resolved raw finding path, so in a project that owns `system/` it named the other file. Fixed; see [P7 Review Round 4](#p7-review-round-4-closing-check) |
+| `discovery qualify finding` | `--confirmation-test`, `--confirmation-evidence` | As written |
+| `discovery qualify finding` | `--raw-finding-ref` | Kept as Go: it names a BuildOS run record (a saved reference under `workspace/runs/`), not a user file |
+| `discovery run discovery` | `--dataset-ref` | Kept as Go: saved text only, never read |
+| `design promote finding`, every domain | `--repo-root` | As written (the root itself; the layout rule applies below it) |
+| `entities *`, `validate` | `--root` | As written: the content root that holds `.os/` (PRD 05) |
+| `init` | `--root` | As written |
+| Saved references in data (finding paths, anchors, `designs`, `related`) | — | Kept as Go (`BuildOsLayout.rel`): a saved `system/` reference is the earlier spelling of BuildOS data |
+
+### Writers Checked Before Write (P7-R3-04)
+
+| Writer | File | Read back by | Bound |
+| --- | --- | --- | --- |
+| `discovery run discovery` | `.os/data/runs.jsonl` | the next run and `qualify finding` | 128 MiB |
+| `discovery run discovery` | `workspace/runs/<id>/raw-findings.md` | `qualify finding` (raw finding reference) | 64 MiB |
+| `discovery qualify finding` | `.os/data/findings.jsonl` | the next qualify, `design promote` | 128 MiB |
+| `discovery qualify finding` | `workspace/findings/<id>/finding.md`, `qualification.md` | `design promote` | 64 MiB |
+| `design promote finding` | `.os/data/findings.jsonl` | the next promotion, discovery | 128 MiB |
+| `design promote finding` | `workspace/findings/<id>/finding.md` | the next promotion | 64 MiB |
+| `intake convert` | each converted twin | `intake index references` | 512 MiB |
+| `intake index references` | the references index | the next `index references` | 512 MiB |
+| `intake index playbooks` | the playbooks index | discovery | 128 MiB |
+| `entities consolidate` | each changed canonical dataset, and the entity-resolution index it rebuilds (checked before the canonical write) | every domain | 128 MiB |
+| `entities rebuild-index` | `.os/indexes/entity-resolution.json` | `entities` index check | 128 MiB |
+
+Not checked, because no BuildOS command reads them back: `run.md`, copied evidence and confirmation files, intake side artifacts, the design file, and the `buildos init` package files and manifest (fixed package content; the manifest is about 100 bytes).
+
+### Make Docs 2.0.9 Checks (P7-R3-05)
+
+Run on 2026-11-24 with Make Docs 2.0.9 in scratch projects made by `buildos init --make-docs` (sandbox off for the Make Docs Store):
+
+- `.make-docs/system/templates/design.md` emptied, then the setup command BuildOS shows (`make-docs setup --target <project> ... --project-resources all --yes --json`): exit 0, `"status": "blocked"`, the file `skip-conflict`, `failedCondition` "Non-interactive make-docs runs cannot apply unresolved managed-file diffs." The file stays empty.
+- The file deleted, then the same command: exit 0, `"status": "complete"`, the file `create`; the body is byte for byte the companion fixture (SHA-256 `20e86692...`).
+- The same two steps for an empty `docs/designs/AGENTS.md`: blocked, then complete after the delete.
+- The project folder copied to a new path, the template deleted there, then the command: exit 0, `"status": "blocked"`, "Checkout identity needs a path choice.", `nextAction` "Review the saved paths. Use an interactive setup to choose Move or Register separate, or use project checkout-move preview/apply with its exact digest." Nothing is written. The project holds no saved path (the identity is in the Make Docs Store), so BuildOS cannot detect this case; the message names Make Docs' own answer instead of promising the command.
+
+### Changed User-Facing Messages (Review Round 3)
+
+- Design promotion: "the Make Docs `<label>` `<path>` is missing, so BuildOS cannot write the design." (was "missing or empty"); new "... is empty, so BuildOS cannot write the design. Make Docs keeps a changed copy of a file it manages, and BuildOS does not change this file either. ... To get the Make Docs file back, delete `<path>`, then run this, then run this command again: `<command>`" (`make_docs_input_empty`); with Make Docs set up, both add "If this project folder was copied or moved, Make Docs stops that command with "Checkout identity needs a path choice." and gives its own next step; do that step first."
+- A refused content read: "`<path>` is a link that leads outside the root `<root>`; BuildOS reads this file only inside the project, so move it into the project or replace the link with the file" (was "pass --allow-outside-root to allow a read outside the repository root").
+- A design template of an unknown form (Stage 6): "the Make Docs design template `<path>` has a form this BuildOS version does not know (`<reason>`), so BuildOS cannot write the design. BuildOS changed nothing. Use the BuildOS version that matches your Make Docs version, or put back the Make Docs ~2.0.9 template." (exit 3, `make_docs_design_form_unknown`).
+- `buildos-intake: warning: did not copy image <src> from <document>: the file is outside the folder that holds the document and outside the project, so BuildOS did not read it. The converted file links to the image instead.` and the same with "the file is larger than 512 MiB, the most BuildOS reads from one file" (stderr, exit 0).
+- "`<path>` would be `<n>` bytes, more than the `<bound>` BuildOS reads from one such file, so later commands could not read it. BuildOS wrote nothing." (exit 4, `file_too_large_to_read_back`).
+- `buildos init`: "`<root>` looks like the BuildOS source code, not a project: it has a system/.os/ folder and no .os/manifest.json. BuildOS changed nothing." (exit 10, `init_source_checkout`) and "`<root>` has an .os/ folder that the earlier BuildOS tools did not set up: ..." (exit 10, `init_unknown_os_folder`).
+
+### CI Workflow Split
+
+- New `.github/workflows/buildos-deny-list.yml` (workflow `buildos-deny-list`): runs on every push and pull request and on `workflow_dispatch`, with no path filter. It holds the job exactly as it was: id `deny-list`, name "Client-name deny list", the secret only in the environment of the one check step, and the fork rule (a fork pull request skips with a notice; every other run without the secret fails). The job name is unchanged, so a branch protection rule that names "Client-name deny list" still matches; only the workflow that holds it changed. No job was renamed.
+- `.github/workflows/buildos-ci.yml` has its path filter back, for push and pull request alike. The filter before `d1f315b` was `toolkits/buildos/**`, `system/**`, and `.github/workflows/buildos-ci.yml`: it already covered `system/**`. It now also covers `docs/prd/**` (the link check in `test/system-content.test.ts` reads it), `.github/workflows/buildos-golden-capture.yml` (two golden tests read it), and `.github/workflows/buildos-deny-list.yml` (the new workflow test reads it). Not covered: a change elsewhere under `docs/` that breaks a link from `docs/prd/` is found on the next run that the filter starts.
+- `test/package.test.ts` "CI: the deny-list workflow and the test workflow's path filter" checks both.
+
+### Divergence and Exception Updates (Review Round 3)
+
+- New proposed PE-018 (HTML images) and PE-019 (explicit paths; read-back sizes). New approved PE-020 (Stage 6). No approved exception changed; every golden is unchanged.
+- VD-03, VD-06, VD-08: `owner_question` replaced by `owner_decision` (decided 2026-11-24).
+
+## P7 Stage 6
+
+W1 R7 P7 Stage 6 (t20, t21), built on 2026-11-24 with review round 3 under the owner's option B for R-009. Code: `src/core/design/make-docs-form.ts` (the form) and `src/core/design/promote.ts` (`requireDesignRouterInputs` now returns the inputs it read; the form follows the template's source).
+
+### The 2.0.9 Form
+
+Established from the committed companion fixture (byte copies of what Make Docs 2.0.9 writes; same SHA-256 as a fresh 2.0.9 project) and the installed `make-docs` 2.0.9:
+
+- Path: `docs/designs/YYYY-MM-DD-<slug>.md` (the contract's Required Path; unchanged from Go).
+- Frontmatter: the template's keys, in order: `title`, `kind: "design"`, `status: "draft"`, `follow_on` with `route`, `next_prompt` (`make-docs://system/prompt/<prompt>`), `why`, `coordinate_handoff`. The template's comment lines (`coordinate`, `source`, `lifecycle`) are left out: the prompts say to add such keys only when their conditions apply, and BuildOS cannot fill them.
+- Sections: the template's `##` sections in its order: Purpose, Context, Human Experience Intent, Performance Evidence Candidates, Decision, Alternatives Considered, Consequences, Intended Follow-On. The contract's Required Headings (7) are all among them; Human Experience Intent sits after Context and before Decision, as the contract says.
+- Next Prompt: the contract asks for "a relative Markdown link to the matching prompt template" that resolves; the workflow names the `make-docs://system/prompt/<prompt>` URI and says not to require a local projection; the template's line is `- Next Prompt: {{NEXT_PROMPT_LINK}}. Read \`make-docs://system/prompt/{{PROMPT_FILE}}\` with \`make-docs resource read\`.` BuildOS fills it with a relative link to the prompt file it read (`../../.make-docs/system/prompts/<prompt>` in a standard project, where `--project-resources all` projects the prompts), so the link resolves, and keeps the URI. The contract's literal example `../prompts/<prompt>` does not resolve from `docs/designs/` in a 2.0.9 project, so it is not used.
+- Human Experience Intent: the template's own section text (its instruction comment and placeholders), unfilled, so the planner fills it under the human experience contract; BuildOS makes no claim there. Performance Evidence Candidates is handled the same way.
+- No text names `system/docs/`: the Alternatives Considered line names the `docs/designs/` router.
+
+### Field Mapping (Go Form to 2.0.9 Form)
+
+| Go form | 2.0.9 form |
+| --- | --- |
+| `# <title>` | frontmatter `title` and `# <title>` |
+| `## Purpose` (finding ID) | `## Purpose`, the same text |
+| `## Context`: finding link, origin run, qualification link, raw anchor link, systems, environments, owners, summary, observed | `## Context`, the same lines and links (relative to the design) |
+| — | `## Human Experience Intent`: the template's text, for the planner |
+| — | `## Performance Evidence Candidates`: the template's text, for the planner |
+| `## Decision` | `## Decision`, the same text |
+| `## Alternatives Considered` (names `system/docs/designs/`) | `## Alternatives Considered`, with `docs/designs/` |
+| `## Consequences` | `## Consequences`, the same text |
+| Intended Follow-On: Route | frontmatter `follow_on.route` and the template's Route line |
+| Intended Follow-On: Next Prompt `../assets/prompts/<prompt>` | frontmatter `follow_on.next_prompt` (`make-docs://` URI) and the template's Next Prompt line with a relative link to the prompt file read |
+| Intended Follow-On: Why | frontmatter `follow_on.why` and the Why line |
+| Intended Follow-On: Coordinate Handoff | frontmatter `follow_on.coordinate_handoff` and the Coordinate Handoff line |
+| Finding record `## Designs` list and findings index row | unchanged (byte for byte the same as for the Go form) |
+
+### Which Projects Get Which Form
+
+The form follows the design template that promotion read: a template from `.make-docs/system/templates/design.md` gives the 2.0.9 form; a template from `docs/assets/templates/design.md` gives Go's bytes. A mixed project (2.0.9 template, legacy prompt) gets the 2.0.9 form with a link to the legacy prompt it read, which resolves. Every design golden uses the legacy layout, so all 167 goldens are unchanged (A63b).
+
+### Version Awareness (Fail Safe)
+
+The form is built from the project's template and checked against its contract, not from text in BuildOS. A template or contract this version does not know stops promotion with exit 3 (`make_docs_design_form_unknown`) before any write: no frontmatter block, a frontmatter key other than the eight 2.0.9 keys, a placeholder BuildOS cannot fill, no `# {{TITLE}}` line, a repeated heading, a missing section that BuildOS fills, a heading the contract requires that the template lacks, or a missing Route, Next Prompt, Why, or Coordinate Handoff line. A new section that the template adds is copied as the template's text (unfilled), which keeps the document valid. The pinned range (`~2.0.9`) and `scripts/make-docs-contract.ts` stay the release gate for the Make Docs commands; this check guards the document form inside one project.
+
+### Validator Result
+
+Make Docs 2.0.9 has no command that validates a design document: `make-docs run --help` lists PRD, performance, work, backlog, lifecycle, and UAT operations only, and the design workflow names `validateDesignBody` and `validateGeneratedDocumentMetadata` as internal TypeScript APIs, not CLI or MCP commands. In a real project (`buildos init --make-docs`, the design fixture's data, a dry run and a real promotion), `make-docs project path-hygiene validate --target-root .` checked 85 files: valid, 0 findings. `buildos validate` there reports 12 findings, all in the synthetic fixture data copied in (missing anchors and IDs not in the default config), none in the design. The written design (frontmatter and headings):
+
+```text
+---
+title: "Coupon drops tax from cart total"
+kind: "design"
+status: "draft"
+follow_on:
+  route: "change-plan"
+  next_prompt: "make-docs://system/prompt/designs-to-plan-change.prompt.md"
+  why: "This design should feed additive planning from qualified evidence into the active Build OS planning path."
+  coordinate_handoff: "unresolved; planner must resolve before writing."
+---
+# Coupon drops tax from cart total
+## Purpose
+## Context
+## Human Experience Intent
+## Performance Evidence Candidates
+## Decision
+## Alternatives Considered
+## Consequences
+## Intended Follow-On
+```
+
+### Tests (t21)
+
+`test/design.test.ts` "design promote writes the Make Docs 2.0.9 form (Stage 6, PE-020)": both routes (frontmatter, section order, the unfilled sections equal the template's, the Next Prompt line), every relative link and every `make-docs://` URI resolves against the companion fixture and its capture record, the dry run shows the 2.0.9 form and equals the written file, the legacy layout keeps Go's form and a mixed project links the prompt it read, five fail-safe cases, and PE-014 rollback. Tests need no Make Docs.
+
+### Acceptance Criteria (Stage 6)
+
+| Case | Result | Evidence |
+| --- | --- | --- |
+| A63a | Pass | Stage 6 tests; the real promotion above |
+| A63b | Pass | 167 of 167 golden cases, source and installed tarball; golden folders unchanged |
+
+### Check Results (Review Round 3 and Stage 6)
+
+From `toolkits/buildos/` unless noted. macOS, Node 26.13.1. npm uses a cache folder under the sandbox temporary folder.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm run build` | exit 0; `dist/buildos.js` 3,295,627 bytes |
+| `npm test` | exit 0; 2,166 tests, 2,154 pass, 0 fail, 12 skipped (the same Windows-only and POSIX-only cases); 31 new tests |
+| `npm run check:deps` and `check:deps:installed` | both `dependency policy: ok` |
+| `npm pack`, offline install, `BUILDOS_GOLDEN_BIN_DIR=<installed .bin> node --test test/golden/compare.test.ts` | 173 files (1,024,749 bytes packed, 4,156,103 unpacked in this build); 167 tests, 167 pass; `git status` of `test/golden/buildos*`, `os/`, `evidence/`, and `cases.json`: no change |
+| `node test/golden/validate/capture.ts --check` | 85 cases match, Python 3.14.10 |
+| `node test/golden/make-docs-companion/capture.ts --check` (sandbox off, Make Docs Store) | 6 files match, make-docs 2.0.9 |
+| `node scripts/make-docs-contract.ts --expect-version 2.0.9 -- make-docs` | `make-docs contract: pass (make-docs 2.0.9)` |
+| Deny-list check | Not run against the real list: `BUILDOS_DENY_LIST` is not set in this environment. `test/deny-list.test.ts`: 13 pass |
+| Real end to end with Make Docs 2.0.9 (sandbox off): `buildos init --make-docs`, design fixture data, a promotion dry run and a real promotion, `make-docs project path-hygiene validate` | init 0 (`Make Docs: set up.`); dry run 0; promotion 0 (the 2.0.9 form above); path hygiene valid, 0 findings |
+| Installed tarball: `buildos init --skip-make-docs`, then `validate`, `entities validate --root . --mode compat`, `intake index playbooks`, a discovery dry run, a promotion dry run | 0, 0, 0, 0, 0, and 3 (no Make Docs here: the stop that names the case and shows no command) |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | `passed`, 16 PRD files, no diagnostics |
+| `make-docs project path-hygiene validate --target-root .` (repository root) | valid, 0 failing findings |
+| `git diff HEAD --check` (new files included with intent-to-add, then reset; nothing left staged) | exit 0 |
+
+## P7 Open Items After Review Round 3
+
+- P7-O2, P7-O3, P7-O5, P7-O6, P7-O11, P7-O13, P7-O15: unchanged.
+- P7-O8: Closed. Stage 6 built (PE-020). The R-009 write path (a public Make Docs design-create operation) stays open in the register.
+- P7-O12: Closed for review round 2 (CI run 45456513930). A three-OS run of `d1f315b` and of this round is needed after the orchestrator commits and pushes (P7-O17).
+- P7-O14: **Owner action**, unchanged: create the repository secret `BUILDOS_DENY_LIST` before the next push, or the new `buildos-deny-list` workflow fails closed.
+- P7-O16: Closed. The deny-list job has its own workflow; `buildos-ci.yml` has its path filter back.
+- P7-O17: CI on three operating systems for review round 3 and Stage 6, after a push.
+- P7-O18: Owner decision on proposed PE-018 (HTML images). Owner question in the report.
+- P7-O19: Owner decision on proposed PE-019 (explicit paths; read-back sizes).
+- Follow-ups from review round 3: F-P7-01 (`readBounded` opens a file a second time after it identifies a folder), F-P7-02 (`package-content.ts` falls back to the source `system/` when `dist/system.json` is missing), F-P7-03 (`buildos validate` anchors: `system#overview` for a real root file named `system`, and `.//system/../docs/a.md#x`), F-P7-04 (test gaps: the installed-index test starts with the index present; the intake bounds test asserts no output state; the companion capture reads files before it checks `result.make_docs.status` and probes the version with a bare program name), F-P7-05 (`buildos validate` lists `.os/templates/` without checking the findings budget).
+
+## P7 CI Run 45462792437
+
+[CI run 45462792437](https://github.com/brucewaynedecoy/build-os/actions/runs/45462792437) (`buildos-ci`) ran on `d1f315b` (Stages 1 to 3, skills import and deny-list check), before the deny-list job moved to its own workflow. Checked with `gh run view`:
+
+| Job | Result |
+| --- | --- |
+| `test (ubuntu-latest, Node 24)` | success |
+| `test (macos-latest, Node 24)` | success |
+| `test (windows-latest, Node 24)` | failure: `test/skills.test.ts`, "the router lists every skill and gives the exit 10 question, limit, and both commands as buildos init does" |
+| `Client-name deny list` | success (the secret was set; the orchestrator reports 0 matches) |
+| `Make Docs contract (pinned range bounds)` | success |
+| `OSV scan of package-lock.json` | success |
+
+The Windows failure is a test defect, not a CLI defect: the test expected the temporary folder path unquoted, and the CLI quotes it for Command Prompt. Fixed in the next section (P7S-R1-06).
+
+## P7 Skills Review Round 1
+
+On 2026-11-24 an independent review of `d1f315b` (Stages 1 to 3) gave 14 findings. Each was reproduced, fixed at its root cause, and covered by a test that fails without the fix: the new tests were run against the code of `HEAD` (`81ac077`) and failed there (`test/deny-list.test.ts`: 14 of the 26 tests fail on the old script, the rest pass because they check behavior that was already right; the skills path, cap, and report tests: 4 fail; the helper's 5 new tests all fail on the old `work.py`). Built on macOS with Node 26.13.1 and Python 3.14.10. Nothing is staged, committed, or pushed. No client name, client-derived code, person's name, or account name was written to any file; hits are named by path and category only.
+
+| ID | Disposition | Test |
+| --- | --- | --- |
+| P7S-R1-01 | Fixed. The two committed Go binaries held a personal build path (2 and 24 occurrences). Nothing runs them (see [Binaries Decision](#binaries-decision-p7s-r1-01)); both are deleted, `/toolkits/buildos-*/bin/` is ignored, and the two user guides that named the repo-local binary now describe the current wrapper. The deny-list script now fails on any home-folder path shape in any file, member, or name, binaries included | `test/deny-list.test.ts` "home-folder paths" (3 tests), and the repository self-scan |
+| P7S-R1-02 | Fixed. One function, `labelOf`, prints every location: each path part of the file, of every archive member, and of every nested archive member is hidden when it matches a term (or is a home folder name). Unread members go through it too | `test/deny-list.test.ts` "labels" (5 tests) |
+| P7S-R1-03 | Fixed. The adoption test prints counts only. Assertions on shipped files, whole trees, long path lists, and full command output now fail with sizes, counts, and at most five names (see [Log-Output Audit](#log-output-audit-p7s-r1-03)) | The changed assertions in the files listed there |
+| P7S-R1-04 | Fixed. Every member over the member limit is counted as unread and named through the redaction; in a shipped path it fails the run. XML members of ZIP files are also read as visible text (runs joined per paragraph, cell, row, or shared string; character references decoded). An archive that cannot be opened, or that is nested too deep, is also read as raw bytes and counted | `test/deny-list.test.ts` "no silent skips" (3 tests) |
+| P7S-R1-05 | Fixed. Cross-line matching runs at any size in 1 Mi-character windows that keep the longest term plus 2 characters; the 8 Mi limit is gone. Every skip has a reason in the summary counts | `test/deny-list.test.ts` (a split term on a window edge and past 9 Mi characters) |
+| P7S-R1-05 (cheap items) | Fixed. UTF-16 text with a byte order mark is decoded as text; raw bytes are read as UTF-16BE too, at both alignments. A failing run with a term in a file name, an archive member name, a nested member, file content, and a path part prints no term. An unknown argument is not echoed. `NODE_DEBUG` and `--trace-uncaught` add no term and no stack; uncaught errors and rejections print the kind only; `git` and `npm` run without the list in their environment | `test/deny-list.test.ts` (5 tests) |
+| P7S-R1-06 | Fixed. The test takes the two commands from the structured JSON `choices` and checks that the human output prints the same commands; the project folder name has a space. The CLI quoting is unchanged | `test/skills.test.ts` router test; also run with `TMPDIR` holding a space |
+| P7S-R1-07 | Fixed in the skills, not in `init`: PRD 05 Installed Project Paths lists `.os/`, `assets/`, `playbooks/`, and `workspace/` and no staging folder, and `docs/` only with Make Docs. Preflight checks `docs/` only with Make Docs and treats a staging folder as optional; both intake skills use the source paths the user gives and create a staging folder only when the user wants one | `test/skills.test.ts` skill path sweep |
+| P7S-R1-08 | Fixed. Project routers are conditional ("if present"); docs routers follow the installed `docs/AGENTS.md`; no skill names `docs/guides/AGENTS.md`. All 21 skills swept (see [Skill Path Sweep](#skill-path-sweep-p7s-r1-08)) | `test/skills.test.ts` "paths they name exist in the installed layouts" (2 tests) |
+| P7S-R1-09 | Fixed. `work.py` applies the `buildos validate` anchor rules (`saved_anchor_issue`: first `#`, non-empty fragment, no URI scheme, relative, inside the project, not folding to it, no `system/`, not a folder, under `docs/` or `assets/`) to `doc_anchor` and source anchors before staging and publication; refuses the reserved `both` and the legacy scoped fields; target IDs need three or more digits; the extraction row is checked (`extracted_at` UTC profile, minted ID pattern, `dataset_refs` never `null`) before it is written. Cross-check: 22 `doc_anchor` values, the helper and `buildos validate` agree on all 22 (16 refused) | `tests/test_work.py`: 4 new tests |
+| P7S-R1-10 | Fixed. `"references": null`, as `buildos intake index references` writes it, is an empty queue; a missing key, a string, an object, a list root, and a bad record are still refused | `tests/test_work.py` "empty index from the CLI" |
+| P7S-R1-11 | Fixed. "Fine Cap" is a maximum: the logic is now "IF Fine Cap contains data AND the calculated value is above Fine Cap: set it to Fine Cap", in the manifest and the worked example; the field description says empty means no cap; a new acceptance criterion has amounts on both sides of the cap. The golden CSV was rebuilt with the skill's `emit` (CRLF kept) and both goldens pass `validate` | `test/skills.test.ts` "Fine Cap as a maximum"; the existing byte-for-byte golden rebuild test |
+| P7S-R1-12 | Fixed. A progress report reads indexes and records by default and writes nothing; a project's generator runs only when the user asks for its files | `test/skills.test.ts` "read-only defaults" |
+| P7S-R1-13 | Fixed. The linked scenario and its source references are replaced together with the library book-lending topic in `USE_CASES.md`, `USE_CASES_TESTING.md`, and the guide; the guide HTML is rebuilt with `node tools/build-guide.mjs` (see [Neutralized Guide Content](#neutralized-guide-content-p7s-r1-13)) | A search for the old topic word in `guide/`, `USE_CASES*.md`, `toolkits/`, and `system/`: 0 files |
+| P7S-R1-14 | Fixed. The count reads 25 changed, 36 identical, 3 new, 2 omitted bytecode files, 64 in all | Not applicable (evidence text) |
+
+### Binaries Decision (P7S-R1-01)
+
+- Committed binaries: `git ls-files` lists two, `toolkits/buildos-discovery/bin/buildos-discovery` and `toolkits/buildos-intake/bin/buildos-intake`. A byte scan of every tracked file for the three home-folder path shapes found them and no other binary. Four text files match the raw shape but hold only generic names (CI runner accounts in two test files, a placeholder in one test, and an elided path in this report); the guard allows those names.
+- Nothing runs them: the P6 wrappers in `system/.os/scripts/` call `.os/scripts/buildos`, which never looks in `toolkits/`; `test/golden/capture.mjs` builds every Go tool from source into a temporary folder (`go build -trimpath`), and `buildos-golden-capture.yml` runs that script; no test, script, or workflow names a path under `toolkits/buildos-*/bin/`; the `justfile` builds into `$HOME/.local/bin`. Two user guides still described the Go-era fallback to the repo-local binary; both now describe the current wrapper.
+- Done (P8 t12 work brought forward): both binaries deleted from the working tree (not staged), their empty `bin/` folders removed, and `/toolkits/buildos-*/bin/` added to `.gitignore`. The Go source stays for P8. Go is not installed here, and no rebuild was needed.
+- Guard: `scripts/check-deny-list.mjs` now fails on a home-folder path in any file, archive member, or name; the repository self-scan in `test/deny-list.test.ts` runs it on every CI test run and in the `buildos-deny-list` workflow. The test builds its sample paths at run time, so the repository holds no such path.
+- Old commits still hold both binaries; the owner decision of 2026-11-24 (private repository, history unchanged for now) covers that.
+
+### Log-Output Audit (P7S-R1-03)
+
+Node's test runner prints an assertion's `actual` value even when a message is given, so a failing `assert.equal`, `assert.match`, or `assert.deepEqual` on a shipped file or a whole tree prints all of it. New helpers in `test/helpers.ts` (`assertSameBytes`, `assertSameList`, `assertSameTree`, `assertOutputMatches`, `assertOutputDoesNotMatch`) fail with sizes, counts, the first differing byte, and at most five names; `assertIncludes` no longer prints a text over 400 characters.
+
+| File | What it could print | Change |
+| --- | --- | --- |
+| `test/init.test.ts` | The full 123-entry skill path list on every run (`console.log`); the full project tree; the full `init` output, which lists every shipped path (13 assertions) | Counts only; `assertSameTree`, `assertSameList`, `assertOutputMatches` |
+| `test/init-review.test.ts`, `init-review-2.test.ts`, `init-review-3.test.ts`, `init-review-4.test.ts` | The full `init` output (26 assertions); the shipped `buildos` wrapper text | `assertOutputMatches`, `assertOutputDoesNotMatch`, `assertSameBytes` |
+| `test/skills.test.ts` | Every skill file's bytes, the skill file list, `SKILL.md` frontmatter, the `fitgap.py` source, `CLAUDE.md` | `assertSameBytes`, `assertSameList`, `assert.ok` with a label |
+| `test/package.test.ts` | The 173-entry `npm pack` list; fixture file text | `assertSameList`; `assert.ok` with the file name |
+| `test/bundle.test.ts`, `test/go-tool-cli.test.ts` | The 3 MB bundle; the entry file | `assert.ok` with a label; `assertIncludes` capped |
+| `test/system-content.test.ts` | Every broken link | `assertSameList` |
+| `test/design.test.ts` | Every fixture file as base64 | `assertSameTree` |
+
+Reviewed and left: the golden capture scripts print case IDs, counts, and Go build errors, never a golden body; `npm pack --json` in CI writes its file list to a pipe, and npm 11 prints no notice lines with `--json` (checked: 0 lines on stderr); the CI diagnostics on a failed installed-tarball step list folders and npm's own logs; no workflow prints the environment or uses `set -x` around a secret; `check-deny-list.mjs` prints paths and lines only. Tests that compare invented fixture text keep plain asserts.
+
+### Skill Path Sweep (P7S-R1-08)
+
+Every project path in the 21 skills' Markdown (`SKILL.md` and reference files) was checked against a fresh `buildos init --skip-make-docs` project and a fresh `buildos init --make-docs` project with Make Docs 2.0.9 (a real run; Make Docs 2.0.9 creates `docs/AGENTS.md` and the `designs`, `plans`, `prd`, and `work` routers, and no guides router).
+
+| Count | Before | After |
+| --- | --- | --- |
+| Skill and path pairs | 133 | 134 |
+| In both layouts | 85 | 86 |
+| Only with Make Docs (`docs/`, its routers, `.make-docs/`) | 21, 6 of them required without a condition | 22, each in a skill that says what to do without Make Docs |
+| In neither layout | 27 | 26 |
+
+The 26 in neither layout: 6 are skill-local files of the Azure Boards skill (now marked as inside the skill folder), 8 are worked examples of an adopter's own files, 2 are written by a command or workflow (`.os/indexes/references.json`, `workspace/findings/FIND-NNN/`), and 4 are optional and conditional (`assets/_incoming/` in three skills, a project test router, a Playwright folder); `docs/guides/AGENTS.md` is gone. `test/skills.test.ts` keeps the classification: a new path that is in neither layout and not classified fails, a Make Docs path must be one that 2.0.9 creates, and a skill that names a Make Docs or optional path must say what to do without it.
+
+### Neutralized Guide Content (P7S-R1-13)
+
+All of `USE_CASES.md`, `USE_CASES_TESTING.md`, and the 22 `guide/content/*.md` files were read. Line numbers are those of `81ac077`. Categories: S, the linked scenario, its process and module combination, and its example records (replaced by one invented topic, a community library's book-lending system on a general-purpose business platform); F, source file names (invented neutral names); N, counts, timings, and dates from real work (general wording or invented values); Q, quotes from people and sessions (paraphrased); A, meeting anecdotes and backlog references (removed or made general); R, a sentence saying a shipped example held a real organisation's identifier (replaced by the rule only).
+
+| File | Lines changed | Categories |
+| --- | --- | --- |
+| `USE_CASES.md` | 51-52, 62, 69, 80, 97, 122, 124 | S, F |
+| `USE_CASES_TESTING.md` | 331 | S |
+| `guide/content/03-before-you-start.md` | 211, 247 | N |
+| `guide/content/04-install-and-configure-your-instance.md` | 77, 89, 95-96, 99-104, 110-111, 116, 118-122, 134, 318 | S |
+| `guide/content/05-bring-in-source-material.md` | 106, 108, 113, 119, 125, 131, 163 | S, F, N |
+| `guide/content/06-sources-the-converter-cannot-read.md` | 101, 105, 176 | S, N |
+| `guide/content/07-pull-knowledge-out-of-it.md` | 52 to 181 (the worked records) | S, N |
+| `guide/content/08-write-and-run-a-playbook.md` | 108, 205, 212, 283, 302 | S, Q |
+| `guide/content/09-qualify-what-you-found.md` | 56, 60, 80, 139 | S, N |
+| `guide/content/10-compare-two-systems.md` | 29, 31, 56, 66, 68, 122, 146, 150-155, 157, 172, 194, 199, 203 | S, N, Q, A |
+| `guide/content/11-keep-the-record-clean.md` | 13, 48, 51, 84, 86, 137, 140 | S, N |
+| `guide/content/12-designs-plans-and-prds.md` | 11, 80, 82, 145, 149, 151, 155, 190, 195, 197, 250, 294 | S, N, Q, A |
+| `guide/content/13-build-the-work-backlog.md` | 15, 17, 19, 41, 118 | S, N, Q |
+| `guide/content/14-export-to-a-work-tracker.md` | 120, 134, 178, 203 | S, N |
+| `guide/content/15-working-with-your-agent.md` | 108, 116, 145, 149, 165, 167 | N, Q |
+| `guide/content/16-harness-independence-and-trust.md` | 112 | R |
+| `guide/content/17-when-things-go-wrong.md` | 141, 145 | N |
+| `guide/content/19-a-worked-walkthrough.md` | 20, 92-93, 168, 208, 276, 310, 312, 322, 324, 326, 328, 356, 366, 386 | S, N, A |
+| `guide/content/20-glossary.md` | 509, 585 | S, Q |
+
+Also changed: a converter test diagram in `toolkits/buildos/test/intake-core.test.ts` and its Go twin `toolkits/buildos-intake/internal/intake/convert_test.go` used the same topic; both now use the lending topic (no assertion reads the names). `guide/BuildOS-Guide.html` was rebuilt with `node tools/build-guide.mjs` (22 documents).
+
+### Check Results (Skills Review Round 1)
+
+From `toolkits/buildos/` unless noted. macOS, Node 26.13.1, Python 3.14.10. npm uses a cache folder under the sandbox temporary folder.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm run build` | exit 0 |
+| `npm test` | exit 0; 2,183 tests, 2,171 pass, 0 fail, 12 skipped (the same Windows-only and POSIX-only cases); 17 new tests (13 deny-list, 4 skills) |
+| `npm test` with `TMPDIR` holding a space | exit 0; 2,183 tests, 2,171 pass, 0 fail, 12 skipped |
+| `npm run check:deps` and `check:deps:installed` | both `dependency policy: ok` |
+| `npm pack`, offline install, `BUILDOS_GOLDEN_BIN_DIR=<installed .bin> node --test test/golden/compare.test.ts` | 167 tests, 167 pass |
+| Bulk-extract helper tests (`python3 -B -m unittest tests/test_work.py`) | 29 tests, OK (5 new) |
+| Azure Boards `validate` on both goldens (`--profile target17-new`; the Dynamics 365 CE one with `--adapter dynamics-365-ce`) | both `valid: true`; the CE golden rebuilt with `emit`, CRLF kept |
+| Fit-gap smoke run (`fitgap.py frame` and `packages` on two invented one-capability models) | `frame OK`; 1 package written |
+| `buildos init --skip-make-docs` and `buildos init --make-docs` (Make Docs 2.0.9, sandbox off) scratch projects | both exit 0; used for the path sweep |
+| Deny-list check with the real list | Not run: `BUILDOS_DENY_LIST` is not set in this environment. The orchestrator runs it (P7-O20). `test/deny-list.test.ts`: 26 pass |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | `passed`, 16 PRD files |
+| `make-docs project path-hygiene validate --target-root .` (repository root) | valid, 0 failing findings |
+| `git diff HEAD --check` (new file with intent-to-add, then reset; nothing left staged) | exit 0 |
+
+### P8 Open Items From P7
+
+- The repository is private since 2026-11-24 and git history is unchanged. Before the P8 release, the owner decides on a history rewrite (old commits hold the removed client text and the two removed Go binaries with a personal build path) and on visibility (npm provenance needs a public repository). This is a P8 entry-gate item.
+- P8 t12 deletes the Go source; the committed Go binaries are already gone (P7S-R1-01).
+- The guide chapters still describe the Go-era install and the Python validator (P7-O2); P8 t8 owns that rewrite.
+
+### P7 Open Items After Skills Review Round 1
+
+- P7-O2, P7-O3, P7-O5, P7-O6, P7-O11, P7-O13, P7-O18, P7-O19: unchanged.
+- P7-O14: Closed. The secret exists; the deny-list job passed in CI run 45462792437.
+- P7-O15: Superseded by the owner decision of 2026-11-24 (private repository; history unchanged for now; returns before P8).
+- P7-O17: CI on three operating systems for review round 3, Stage 6, and this round, after a push.
+- P7-O20: The orchestrator runs the deny-list check with the real list on this round: `BUILDOS_DENY_LIST` is not set in the implementer's environment.
+
+## P7 CI Runs 45474800315 and 45474800265
+
+Both ran on `4d067ba` (skills review round 1 fixes). Checked with `gh run view` by the orchestrator:
+
+| Run | Workflow | Result |
+| --- | --- | --- |
+| [45474800315](https://github.com/brucewaynedecoy/build-os/actions/runs/45474800315) | `buildos-ci` | success: `test` on ubuntu, macOS, and Windows (Node 24), the OSV scan, and the Make Docs contract job |
+| [45474800265](https://github.com/brucewaynedecoy/build-os/actions/runs/45474800265) | `buildos-deny-list` | failure: 0 listed-term matches; the home-folder guard flagged `toolkits/buildos/dist/buildos.js:1189` |
+
+Cause: the bundled PDF reader (unpdf 2.1.0's pdf.js build) runs a WebAssembly image decoder whose generated runtime defines a simulated environment with a fixed `HOME` value under `/home/`. The local build has the same line (`dist/buildos.js:1189`, the same bytes). The local run passed because the self-scan in `test/deny-list.test.ts` ran the script with `--root` only: `dist/` is gitignored, so the tree scan never read it, while the CI step adds `--pack .`, which lists the built bundle. Reproduced here: the `4d067ba` script with `--root ../.. --pack .` on a fresh build exits 1 with that one line; with `--root ../..` only it finds 0 home-folder paths. Fixed in [P7 Skills Review Round 2](#p7-skills-review-round-2) (P7S-R2-04).
+
+## P7 Skills Review Round 2
+
+On 2026-11-24 a second independent review of the skills work (`4d067ba`) gave 8 findings. Each was verified, fixed at its root cause, and covered by a test that fails without the fix: the new deny-list tests were run against the `4d067ba` script (7 of the 10 new tests fail there; the other 3 pin behavior that was already right: two paragraphs are not joined, placeholders stay allowed, and the dependency text is still in unpdf), the helper tests against the old `work.py` (5 failures), the guide test against the old chapter 7 (2 failures), and the path-filter test against the old filter. Built on macOS with Node 26.13.1 and Python 3.14.10. Nothing is staged, committed, or pushed. No client name, client-derived code, person's name, or account name was written to any file; every test term, account, and server name is invented.
+
+| ID | Disposition | Test |
+| --- | --- | --- |
+| P7S-R2-01 | Fixed. An XML file or member is read in its declared encoding (byte order mark; UTF-16 from a leading `<` and a zero byte; the declaration's `encoding`; else UTF-8) and checked as full text and as visible text. Visible text joins the actual text nodes (`w:t`, `a:t`, `t` in shared and inline strings, ODF paragraphs) of each paragraph, cell, row, or string item and ignores the white space between elements; generic XML joins mixed content. The raw scan stays | `test/deny-list.test.ts` "XML encodings and indentation" (2 tests: compact, indented, UTF-16LE, UTF-16BE without a mark, a term split across runs and indentation, in docx, xlsx shared and inline strings, pptx, and generic XML; and two paragraphs are not joined) |
+| P7S-R2-02 | Fixed. The ZIP archive comment, member comments, and central and local extra fields are read in every raw reading and never printed (`:archive comment <n>`, `!<member>:member comment <n>`, `:extra field <n>`). `docProps/*.xml` are members: confirmed, read as XML. PDF string objects are decoded (literal with escapes, hex, UTF-16BE with a mark): the Info dictionary; inflated streams cover XMP and object streams. PNG `zTXt` and `iTXt` are decoded and inflated; JPEG `COM`, EXIF, and XMP are read as raw bytes in UTF-8, Latin-1, and UTF-16 at both alignments. Not decoded: other compressed data, a term split across two JPEG segments, PDF text in a font's own encoding | `test/deny-list.test.ts` "metadata channels" (3 tests) |
+| P7S-R2-03 | Fixed. The list helpers in `test/helpers.ts` (`assertSameList`, `assertSameTree`) print counts and tags only: `#` and the first 8 hex digits of the SHA-256 of the name; `assertNoProblems` prints problem lines built from tags. `node scripts/locate-hash.ts <tag> [--root <folder>]` finds the item on the developer's machine. The skills test compares the folder list with the 21 expected names; every assertion of the round 1 audit that printed a discovered name now prints a tag (`test/skills.test.ts`, `test/system-content.test.ts`; `init*`, `package`, `design` use the helpers, so their lists print tags too) | `test/skills.test.ts` "failure messages never print a discovered name" (2 tests: an invented extra folder fails with its tag only; the helper finds the tag) |
+| P7S-R2-04 | Fixed. See [P7 CI Runs 45474800315 and 45474800265](#p7-ci-runs-45474800315-and-45474800265). The guard reads the whole profile component in any script for POSIX, drive, and UNC shapes (`\\<server>\Users\<name>`, `\\<server>\<drive>$\Users\<name>`, escaped, or `//<server>/Users/<name>`); placeholders and generic runner accounts stay allowed. The simulated `HOME` text is allowed only as that exact text in the package file `dist/buildos.js`. The self-scan now runs with `--pack` on a freshly built package, as CI does | `test/deny-list.test.ts` "home-folder path shapes" (2), "the allowed dependency path" (2: the exact text only in that file; a changed text or another file fails; unpdf still defines it once), and "the repository and the built package, as CI runs it" (2) |
+| P7S-R2-05 | Fixed. Chapter 7's capability uses `vendor-baseline`, as chapter 4 configures. The guide HTML is rebuilt (`node tools/build-guide.mjs`, 22 documents). The guide commands were run against the built CLI (below); the ones that failed are fixed | `test/guide-examples.test.ts` (2 tests: the maintained block list loads into a new project and `buildos validate` exits 0; every scoped ID the records use is configured) |
+| P7S-R2-06 | Fixed. `buildos-ci.yml` filters on `toolkits/buildos/**`, `system/**`, `docs/**`, `guide/**`, `*.md`, and `.github/workflows/**`: whole folders, because the link check reads targets anywhere under `docs/` and the guide test reads `guide/`, and a list of single paths drifts | `test/system-content.test.ts` "every repository path a test reads is inside the path filter" (each resolved link target and each repository path a test source names) and its self-test; `test/package.test.ts` checks the filter text |
+| P7S-R2-07 | Fixed. The router test checks that each JSON choice ends with `init --root <the temporary project, quoted for the platform> --make-docs` or `--skip-make-docs`, quoted in the test itself (single quotes on POSIX, double quotes on Windows), not through the CLI's quoting code | `test/skills.test.ts` router test |
+| P7S-R2-08 | Fixed. Every ID, target-ID, and timestamp pattern in `work.py` uses `[0-9]` (25 patterns); the extraction row's own `id` is now checked too | `tests/test_work.py` "ids and timestamps take ascii digits only" (full-width digits in a minted ID, the row ID, a target ID, the UTC year, and fraction) |
+
+### Guide Commands Run (P7S-R2-05)
+
+Run in a project made by `buildos init --skip-make-docs` with the built CLI (`dist/`), offline:
+
+| Guide command | Result before | Change |
+| --- | --- | --- |
+| `buildos-intake --help`, `buildos-discovery --help` | exit 0 (the legacy-name notice first) | None |
+| `python3 .os/scripts/validate_config.py`, `... --self-test` (chapters 4, 7, 11, 17, 19) | fails: P7 deleted the script | `buildos validate` and `buildos validate --help`, with the real pass and fail output and exit 4 |
+| `--skip-frontmatter`, `--skip-data` (chapter 4) | `buildos validate` has no such flags | Sentence removed |
+| `buildos entities validate --root system --mode compat` / `--mode strict` (chapters 11, 19) | exit 3 in a project: there is no `system/` | `--root .`: exit 0 with `valid: true`, 3 records, and the `index_stale` warning; strict exit 4, as the guide says |
+| `buildos-intake index playbooks`, `index references`, `convert --source <file> --dry-run` | exit 0 | None |
+
+Not run: `buildos-intake convert` on a real source document, `buildos entities consolidate --apply` (needs a reviewed manifest), the discovery and promotion commands with real placeholders (`<PB-NNN>`, `<path>`), and `git` commands. The chapters still describe the Go-era install and the unified tool as "not distributed"; that rewrite is P8 t8 (P7-O2).
+
+### Deny-List Check Runs (Skills Review Round 2)
+
+- Fresh build exactly as CI: `npm ci --ignore-scripts && npm run build && BUILDOS_DENY_LIST=<two invented terms> node scripts/check-deny-list.mjs --root ../.. --pack .`: exit 0; 2,400 files, 66 archive members, 61 XML files or members, 12 PDF and 32 PNG files decoded, 1 allowed dependency home path, 0 matches, 0 home-folder paths, 0 shipped files not fully scanned.
+- The same build with the `4d067ba` script: exit 1, `home folder path in toolkits/buildos/dist/buildos.js:1189` (the CI failure).
+- A planted invented term in each new channel (UTF-16 and indented XML, archive and member comments, extra fields, PDF Info hex and literal strings, XMP, PNG `zTXt` and `iTXt`, JPEG `COM`, EXIF, and XMP, UNC and non-ASCII profiles): exit 1 each, the location only, no term or folder name printed (`test/deny-list.test.ts`, 36 tests).
+
+## P7 Review Round 4 (closing check)
+
+On 2026-11-24 the closing check of W1 R7 P7 Stages 4 to 6 gave 5 findings. Each was reproduced, fixed at its root cause, and covered by a test in `test/review-round-4.test.ts`; that file was run against the `4d067ba` code of the six changed source files: 12 of its 18 tests fail there, and the 6 that pass pin behavior that was already right (a fitting row still promotes; three ordinary titles; two helper checks run on the new helpers only).
+
+| ID | Severity | Disposition | Test |
+| --- | --- | --- | --- |
+| P7-R4-01 | Blocker | Fixed. `runs.jsonl` `source_refs` gets the layout rule for the BuildOS-owned playbook path only; each raw finding source keeps the path `userRef` resolved. Audit below; the round 3 audit row is corrected | "P7-R4-01: discovery records the raw finding it read" |
+| P7-R4-02 | Major | Fixed. One shared check (`checkRowReadBack`, `checkRowsReadBack`, `jsonlRowLimit` in `src/core/shared/read-limits.ts`) runs before dry-run success and before any write; a row of the reader's line limit or more stops with exit 4 (`row_too_long_to_read_back`) and writes nothing. Writers below | "P7-R4-02: ..." (4 tests: the shared check; a 65,520-byte row that promotion grows past the limit, dry run and real, tree unchanged; a fitting row still promotes twice; a discovery run with a 70,000-character title); `tests/test_work.py` (the skill helper) |
+| P7-R4-03 | Major | Fixed. A local image address is percent-decoded once (`decodeImagePath`: an invalid escape or non-UTF-8 result keeps the address as written; a zero byte is refused) before the containment check; when no file has the decoded name, the address as written is tried, as Go read it. Go did not decode (`readImageSource` passes the address to `os.ReadFile`), so decoding is a change for in-tree images too: it is now in PE-018's scope. The warning now says the converted file has an "Uncopied image" marker with the address relative to the document | "P7-R4-03: ..." (3 tests: decoding rules; `my%20image.png` copied and a literal `lit%41.png` still copied; an encoded `../` refused, a `%00` refused, and the new warning) |
+| P7-R4-04 | Major | Fixed. Before any value is put in, the template's frontmatter lines must be the 2.0.9 lines exactly (each filled value double-quoted), the contract's required headings must be the 2.0.9 list in its order, and the template must hold them in that order; else exit 3, tree intact. After rendering, the frontmatter is read back with the YAML subset reader and a strict double-quoted reader, and the headings are compared with the template's; a failure writes nothing (exit 3, `design_self_check_failed`). The title escape now also covers characters outside YAML's printable set (a raw U+2028 broke the YAML subset reader before) | "a template whose title is single-quoted ...", "a template that moves Human Experience Intent ...", the six title tests |
+| P7-R4-05 | Major | Fixed. Placeholders are checked on the template; values are put in once and never scanned again. The YAML title keeps the value (escaped); the `# ` line is one line (line breaks as spaces, a leading `#` escaped). In each section BuildOS fills (title, summary, observed text, references, scope names, why, handoff), a line start that opens a heading, setext underline, code fence, or HTML block is escaped | the six title tests (apostrophe, colon, `{{x}}`, multi-line with `# heading`, Unicode with U+2028, quotes and backslash), "user text in the finding cannot add or hide a section", the helper test |
+
+### Stored Paths After Resolution: Audit (P7-R4-01)
+
+| Domain | Stored path | Translation now |
+| --- | --- | --- |
+| discovery run | `source_refs`: the playbook path | `layout.ref` once (BuildOS-owned) |
+| discovery run | `source_refs`: each `--raw-finding` | `userRef` once; kept as resolved (was translated a second time: the defect) |
+| discovery run | `run.md` evidence link text | `userRef` once |
+| discovery run | `path`, `source_anchor`, `outputs.evidence`, `outputs.raw_findings` | BuildOS paths, `layout.rel` once |
+| discovery run | `dataset_refs` | `layout.refs` once (saved text, never read; as Go) |
+| discovery qualify | `raw_anchor`, `source_anchor`, `basis_refs`, `source_refs` | `normalizeRawFindingRef` (`layout.rel` once; a BuildOS run record) |
+| discovery qualify | `confirmation_test`, `confirmation_evidence`, `qualification_test`, `path` | the copy targets under the finding folder, `layout.rel` once |
+| design promote | the finding row fields (`normalizeFindingRow`) | `layout.rel` or `layout.ref` again, as Go; every value there is a BuildOS path that qualify already translated, so the second pass changes nothing, except a saved legacy `system/` spelling, which Go also translated |
+| design promote | `designs` | `layout.rel` once |
+| intake convert | twin `source` | `repoRelative` of the resolved path, once |
+| intake index | `converted`, playbook `path` | `repoRelative` of the walked path, once |
+| entities, validate, init | none from a user path | — |
+
+### JSONL Writers With a Row Limit (P7-R4-02)
+
+| Writer | File | Reader and line limit |
+| --- | --- | --- |
+| `discovery run discovery` | the new `.os/data/runs.jsonl` row | the next run's ID scan and `qualify finding`'s run lookup: 64 KiB |
+| `discovery qualify finding` | the new `.os/data/findings.jsonl` row | the next qualify's ID scan and `design promote`: 64 KiB |
+| `design promote finding` | every row of the rewritten `.os/data/findings.jsonl` | the next promotion and discovery: 64 KiB |
+| `entities consolidate` | every row of the dataset it rewrites | 64 KiB for `runs.jsonl` and `findings.jsonl`; 16 MiB for any other governed dataset (the entity graph) |
+| `buildos-bulk-extract` helper (`work.py`, not a CLI command) | each new or replaced data row | the same limits, before it publishes |
+
+No other command writes a JSONL file. Consolidation already failed a row over 16 MiB through its prospective graph load; the explicit check adds the 64 KiB limit and the exit-4 wording.
+
+### Parity Exception Scope (Owner Approval and Round 4)
+
+PE-018 (approved 2026-11-24, changed in this round): an HTML image is read only from the HTML file's own folder tree or from the project, after its address is percent-decoded once (the address as written is the fallback); any other image, and an address that decodes to a zero byte, is skipped with a warning, exit 0. The decoding is new in this round: an in-tree image whose address held a percent escape was left uncopied by Go and is copied now.
+
+PE-019 (approved 2026-11-24, changed in this round): (1) a typed source path is not remapped when the project has its own `system` entry; (2) writers stop with exit 4 before a write that would exceed the file's own read limit, and before writing a JSONL row its reader could not read (64 KiB a line for `runs.jsonl` and `findings.jsonl`, 16 MiB for any other governed dataset). The row limit is new in this round.
+
+PE-020 (approved under option B, unchanged in intent): the 2.0.9 form now also requires the exact 2.0.9 frontmatter lines and heading order, escapes the title and block openers in finding text, and reads the result back. A design for an ordinary title and finding is byte for byte as before.
+
+Every golden is unchanged: 167 of 167, source and installed tarball.
+
+### Changed User-Facing Messages (Review Round 4)
+
+- `<path>: <the new row | line <n>> would be <size> bytes, and BuildOS reads at most <limit-1> bytes in one line of this file, so later commands could not read it. BuildOS wrote nothing.` (exit 4, `row_too_long_to_read_back`).
+- The image warning now ends: `The converted file has an "Uncopied image" marker with the address as the document gives it; that address is relative to the document, not to the converted file.` (was: `The converted file links to the image instead.`); new reason: `the image address holds an encoded zero byte, which no file name can hold, so BuildOS did not read it`.
+- New design-form reasons inside the existing exit-3 message (`make_docs_design_form_unknown`): `its frontmatter line for <key> is not the Make Docs 2.0.9 line ...`, `its frontmatter value for title is not a double-quoted "{{...}}" value, the form BuildOS fills`, `the design contract requires the headings ..., not the Make Docs 2.0.9 list ...`, `its sections ... are not in the order the design contract gives (...)`.
+- New: `the design BuildOS made for <path> did not pass its own check (<reason>), so BuildOS wrote nothing. This is a BuildOS fault; the finding is unchanged.` (exit 3, `design_self_check_failed`).
+
+### Check Results (Skills Review Round 2 and Review Round 4)
+
+From `toolkits/buildos/` unless noted. macOS, Node 26.13.1, Python 3.14.10, Make Docs 2.0.9. npm uses a cache folder under the sandbox temporary folder.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm run build` | exit 0 |
+| `npm test` (after the build, so `dist/` exists) | exit 0; 2,218 tests, 2,206 pass, 0 fail, 12 skipped (the same Windows-only and POSIX-only cases). New test cases: deny-list 10, skills 2, system-content 2, guide examples 2, review round 4 18, golden self-test 1 |
+| `npm test` with `TMPDIR` holding a space | exit 0; 2,217 tests, 2,205 pass, 0 fail, 12 skipped (run before the last golden self-test case was added) |
+| `npm run check:deps` and `check:deps:installed` | both `dependency policy: ok` |
+| `npm pack`, offline install, `BUILDOS_GOLDEN_BIN_DIR=<installed .bin> node --test test/golden/compare.test.ts` | 173 files (1,034,682 bytes packed, 4,190,665 unpacked); 167 tests, 167 pass; `git status` of `test/golden/`: only the two exception files |
+| Deny-list check on a fresh build, invented list | exit 0 (see [Deny-List Check Runs](#deny-list-check-runs-skills-review-round-2)) |
+| Bulk-extract helper tests (`python3 -B -m unittest tests/test_work.py`) | 31 tests, OK (2 new) |
+| Guide example test (`node --test test/guide-examples.test.ts`) | 2 pass |
+| Real Make Docs 2.0.9 end to end (sandbox off for the Make Docs Store): `buildos init --make-docs`, the design fixture's finding, a dry run and a real promotion for each of five titles (apostrophe, colon, `{{x}}`, multi-line with `## Decision` and `# heading`, Unicode) | init 0; each dry run 0 and each promotion 0; each design's frontmatter parses with Ruby's YAML (`YAML.safe_load`) to the exact title; each has one `# ` line and 8 `## ` sections; `make-docs project path-hygiene validate`: valid, 0 failing findings |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | `passed`, 16 PRD files, no diagnostics |
+| `make-docs project path-hygiene validate --target-root .` (repository root) | valid, 0 failing findings (one sample UNC path in this report was first written with a generic name and flagged; it now uses placeholders) |
+| `git diff HEAD --check` (new files with intent-to-add, then reset; nothing left staged) | exit 0 |
+
+### P7 Open Items After Review Round 4
+
+- P7-O2, P7-O3, P7-O5, P7-O6, P7-O11, P7-O13: unchanged. P7-O2 now covers only the guide's Go-era install narrative; its validator commands and the `--root system` examples were fixed in this round.
+- P7-O18 and P7-O19: Closed. The owner approved PE-018 and PE-019 on 2026-11-24; both are in `parity-exceptions.json` with this round's additions.
+- P7-O17: CI on three operating systems for review rounds 3 and 4, Stage 6, and both skills review rounds, after the orchestrator commits and pushes. Closed later: [CI run 45489678572](https://github.com/brucewaynedecoy/build-os/actions/runs/45489678572) on `42b9782`; see [P7 CI Runs 45489678572 and 45489679281](#p7-ci-runs-45489678572-and-45489679281).
+- P7-O20: The orchestrator runs the deny-list check with the real list on this round (`BUILDOS_DENY_LIST` is not set in the implementer's environment). Closed later: [deny-list run 45489679281](https://github.com/brucewaynedecoy/build-os/actions/runs/45489679281) on `42b9782`; see [P7 CI Runs 45489678572 and 45489679281](#p7-ci-runs-45489678572-and-45489679281).
+- Follow-ups F-P7-01 to F-P7-05: unchanged.
+
+## P7 CI Runs 45483759496 and 45483759525
+
+Both ran on `d2e45e6` (skills review round 2 and closing check fixes). Reported by the orchestrator:
+
+| Run | Workflow | Result |
+| --- | --- | --- |
+| [45483759525](https://github.com/brucewaynedecoy/build-os/actions/runs/45483759525) | `buildos-deny-list` | success, with the real list |
+| [45483759496](https://github.com/brucewaynedecoy/build-os/actions/runs/45483759496) | `buildos-ci` | ubuntu, macOS, the OSV scan, and the Make Docs contract job passed; Windows failed 1 of 1,776 tests: `test/deny-list.test.ts` "passes on this repository's tracked and untracked files and the package file list with a term that is in none of them" |
+
+Windows cause: the self-test stages the built package in the runner's temporary folder (drive `C:`) and scans the checkout (drive `D:`). The script built each package file's disk path from its printed label: `relative(root, <package file>)` between two drives returns an absolute path, and joining that under the checkout gave a path that does not exist. The scan opened none of the 173 package files, counted them as "listed path(s) missing from the working tree", reported 0 shipped files not fully scanned, and exited 0; the test failed only because it expected the one allowed dependency path, which is inside the unread bundle. So on Windows the package scan could pass after reading nothing. Fixed in [P7 Final Check](#p7-final-check) (P7-F-01).
+
+## P7 Final Check
+
+On 2026-11-24 the final check of `d2e45e6` gave 7 findings (4 blockers, 3 majors). This is the last fix pass of P7: under the project stop rule there is no further review round, and the orchestrator verifies through CI and this evidence. Each finding was reproduced, fixed at its root cause, and covered by a test that fails without the fix: the P7-F-04 tests were run with the separator removed from `appendedIndex` (4 of 7 fail; the 3 that pass pin a CRLF file, an empty file, and blank lines, which were already right); the P7-F-05 and P7-F-06 tests were run against the `d2e45e6` `make-docs-form.ts` (10 of 11 fail; the stock-template test passes there too, as it must); the P7-F-03 meta-test was run with the `d2e45e6` versions of the four test files it runs (it fails: 3 planted values appear in the output). Built on macOS with Node 26.13.1 and Python 3.14.10. Nothing is staged, committed, or pushed. Every test term, account, server, owner key, and ID is invented.
+
+| ID | Severity | Disposition | Test |
+| --- | --- | --- | --- |
+| P7-F-01 | Blocker | Fixed. `scripts/deny-list-paths.mjs` (`packEntries`) keeps each package file's absolute disk path apart from its printable label (root-relative when the package folder is inside `--root`, else `[package]/<packed path>`); the disk path is never derived from the label. With `--pack`, a listed file that cannot be opened (missing, a link, not a regular file, or a read error) is a shipped file not fully scanned, and the check fails when the list is empty or the number of package files read differs from the list length. The summary ends `<n> of <m> package files read` | `test/deny-list.test.ts` "package files are read from their own disk paths (P7-F-01)" (3 tests: the cross-drive case with `path.win32` rules, on every OS, and the old derivation shown wrong; a package folder outside the root read and a term found in it, `3 of 3`; a fake `npm` listing a missing file and an empty list, both exit 1, POSIX only); the end-to-end self-test now also requires `N of N package files read` with N above 0 |
+| P7-F-02 | Blocker | Fixed. Every text the check reads, in any file type, is scanned raw, then once with character references decoded (named `amp`, `lt`, `gt`, `quot`, `apos`, `nbsp`, any letter case; decimal and hex numeric), then once percent-decoded (`%XX` runs as UTF-8, `+` as a space). A decoded line break becomes a space, so line numbers stay. Term and text are folded the same way (NFKC, lower case, white space runs as one space). Names and every printed path part are matched and redacted in the decoded forms too. A match only in a decoded form prints `:decoded <line>` or `:url-decoded <line>`; a line the raw pass reported is not repeated. One pass each | `test/deny-list.test.ts` "character references and percent-encoding (P7-F-02)" (3 tests: `&amp;` in an `.xlsx` sheet name attribute, an HTML-escaped CSV field, decimal and hex references, a word written only in numeric references; a percent-encoded Markdown link, a `+` query, and a percent-encoded file name, redacted; clean encoded text passes and a raw match is not reported twice) |
+| P7-F-03 | Blocker | Fixed. New helpers in `test/helpers.ts`: `assertSame` and `assertDifferent` compare first and fail through `assert.fail` with the label, the sizes, and the first differing offset (Node's `AssertionError` keeps `actual` and `expected`, and the test reporter prints both even when a message is given); `shape(text)` gives a captured output's size only. `assertIncludes` no longer prints a short text; `assertMatchObject` uses `assertSame`. The sweep and its counts are below. The deny-list self-test prints only the numbers of the scanner's summary line | `test/test-output-safety.test.ts` "failing tests never print a planted value" (a temporary copy of the repository with an owner key planted in the palette code and the palette file, an unknown environment ID in the chapter 7 guide example, an extra named file in a skill with an unclassified path and a broken link, and an invented term in a shipped file name with a home-folder path; it runs `skills`, `guide-examples`, `system-content`, and the deny-list self-test in child processes, checks that the six expected tests fail, and that the output holds none of the 7 planted values) |
+| P7-F-04 | Blocker | Fixed. `appendedIndex` (`src/core/discovery/discovery.ts`) builds the exact bytes of an append: the existing bytes, a line feed when they are not empty and do not end in one, then the row and its line feed. `checkAppendSize` (before dry-run success) and `appendJsonl` (again, just before the write) run the row-limit and file-limit checks on those bytes. Go also appended with no separator (below), so this is a behavior change, recorded in PE-019 | `test/final-check.test.ts` "P7-F-04" (7 tests: the helper; a small last row with no line feed; a CRLF-terminated index; an index ending in several line feeds (refused before any write, as before); an empty index; a valid 65,000-byte last row with no line feed; `qualify finding` on a findings index with no final line feed) |
+| P7-F-05 | Major | Fixed. Before anything is filled, every `{{...}}` of the template body must be a 2.0.9 placeholder in the section where the 2.0.9 template has it (`{{TITLE}}` only as the `# {{TITLE}}` line; the Human Experience Intent and Performance Evidence Candidates placeholders in their sections; `NEXT_PROMPT_LINK` and `PROMPT_FILE` only on the Next Prompt line), a stray `{{` or `}}` is unknown, each follow-on line is there exactly once, and the Next Prompt line is the 2.0.9 line exactly; else exit 3, nothing written, the dry run too. After rendering, the Next Prompt line of Intended Follow-On must be the relative link (`renderedNextPromptLine`), else exit 3 (`design_self_check_failed`). BOM and CRLF handling is unchanged | `test/final-check.test.ts` "P7-F-05" (9 tests: the committed 2.0.9 companion template in LF, CRLF, BOM, and BOM with CRLF is accepted with the relative link; the placeholder inside inline code, unknown placeholders on the Why and Route lines, in a filled section, and in a kept section, a known placeholder in another section, a second Next Prompt line, and `{{TITLE}}` outside the title line each exit 3 with the tree unchanged) |
+| P7-F-06 | Major | Fixed. `neutralizeBlocks` keeps a balanced fenced code block (``` or `~~~`, length 3 or more, with its info string; closed by the same character at least as long with only white space after) byte for byte. Outside such blocks it escapes, as before, an ATX heading, a setext underline, an HTML block opener, and a fence with no closer, so an unbalanced fence cannot swallow the template's next sections. The section self-check reads fences by the same rules | `test/final-check.test.ts` "P7-F-06" (2 tests: YAML, JSON, and shell examples, a nested longer fence, an unbalanced fence, a shorter closer, a heading inside a fence kept and outside escaped, CRLF; a promotion with a fenced YAML example and a fake `## Decision` and unbalanced fence: the example is kept, the 8 template sections appear once each, the Next Prompt link is right) |
+| P7-F-07 | Major | Fixed. The A63 link check names a broken link by its source file's tag and line (`#<tag> line <n>: a link to a missing file`) and the count, through `assertNoProblems`. `scripts/locate-hash.ts` now also hashes each line (as is and trimmed) and each word-like token of every text file, so value tags (an ID in a guide example, a key in skill code, a `.cmd` line) are found with their file and line; output is `<tag> <path>[:<line>] (<form>)`. Every failure message that prints tags ends with the one-line usage: `find a tag and its line with, from toolkits/buildos/: node scripts/locate-hash.ts <tag>` | `test/test-output-safety.test.ts` "the locator finds every tag form the tests print" (9 tests: one per tag-producing helper or form, each planted in a temporary root and found; and the command line) |
+
+### Go Behavior for a Missing Final Line Feed (P7-F-04)
+
+`toolkits/buildos-discovery/internal/discovery/discovery.go` `appendJSONL` opens the index with `os.O_CREATE|os.O_WRONLY|os.O_APPEND` and writes `json.Marshal(row)` plus `\n`. It writes no separator, so when the file does not end in a line feed Go joins the new row to the last row on one line, and the next discovery command fails (exit 1). With a valid 65,000-byte last row, Go writes one 66,392-byte line, over its own 64 KiB scanner limit. The port now writes the separator: this is the only behavior that keeps the index readable, and it is the intent of the owner-approved PE-019 ("stop before a write BuildOS cannot read back"). PE-019's summary in `test/golden/parity-exceptions.json` has a new part (3) for it; the orchestrator should flag it to the owner with this closeout. No golden case has an index without a final line feed, so every golden is unchanged.
+
+JSONL append paths, all through `appendedIndex`: `discovery run discovery` (`.os/data/runs.jsonl`) and `discovery qualify finding` (`.os/data/findings.jsonl`). The other JSONL writers do not append: `design promote finding` rewrites `findings.jsonl` whole and checks every line (`checkRowsReadBack`), `entities consolidate` replaces lines in place (`updateJsonlRows`) and checks every line of each dataset it rewrites, and no entity command appends. An index ending in blank lines is refused before any write by the entity graph check (`blank JSONL row`), as before.
+
+### Assertion Sweep (P7-F-03)
+
+A sweep script (kept outside the repository) lists every `assert.*` call in `toolkits/buildos/test/**` that runs on shipped, imported, or guide content: a test or hook that reads `system/` (`SYSTEM`, `SKILLS`, `loadSourceContent`, `listSourceContent`), the guide, the repository (`REPO`), the built or packed package, or runs `buildos init`, `buildos validate`, or the deny-list scanner on such content, plus the top-level helpers of those files. It flags a call when the actual or expected operand of a binary assertion can carry content (an output, a file text, a list of paths or names, a parsed record), or when its message is not a fixed text, `tag(...)`, `shape(...)`, or a template whose parts are counts.
+
+| Sweep | Flagged calls |
+| --- | --- |
+| Before (`d2e45e6`) | 381 in 14 files: `init.test.ts` 87, `init-review.test.ts` 75, `init-review-2.test.ts` 42, `init-review-3.test.ts` 36, `wrappers.test.ts` 30, `init-review-4.test.ts` 24, `installed-layout.test.ts` 22, `skills.test.ts` 21, `package.test.ts` 14, `helpers.ts` 9, `review-round-3.test.ts` 8, `deny-list.test.ts` 6, `guide-examples.test.ts` 6, `system-content.test.ts` 1 |
+| After | 0 that can print a value. 12 calls stay flagged by the text rule and were reviewed as safe: 10 are the `assert.fail` calls inside the helpers, whose messages are built from the caller's label, counts, sizes, and tags; 2 are the deny-list self-test messages built from the numbers of the scanner's summary line |
+
+372 calls were rewritten mechanically and checked by hand: a content operand goes through `assertSame`, `assertDifferent`, `assertOutputMatches`, or `assertOutputDoesNotMatch`; a captured output in a message goes through `shape`; a discovered value in a message goes through `tag`. The rest were fixed by hand. The test count is unchanged by the sweep, and every test passes.
+
+### Changed User-Facing Messages (Final Check)
+
+- Deny-list summary: `...; <n> shipped file(s) not fully scanned; <n> of <m> package files read.`, and `<n> decoded text form(s) (character references, percent-encoding)` in the counts. New lines: `deny-list: only <n> of <m> package files could be read`, `deny-list: \`npm pack --dry-run\` listed no package files, so nothing in the package was checked`, and the reasons `package file could not be opened`, `package file is a link, not a regular file`, and `file could not be opened`. New match labels `:decoded <line>` and `:url-decoded <line>`; a package file outside `--root` is labelled `[package]/<path>`.
+- New design-form reasons inside the existing exit-3 message (`make_docs_design_form_unknown`): `it has a placeholder BuildOS does not know`, `its placeholder <NAME> is not where the Make Docs 2.0.9 template has it`, `its {{TITLE}} placeholder is not the one "# {{TITLE}}" title line`, `its Next Prompt line is not the Make Docs 2.0.9 line "..."`, `its Intended Follow-On section has more than one "- <line>:" line`. New self-check reason (`design_self_check_failed`): `the Next Prompt line is not the relative link the Make Docs 2.0.9 design contract requires`.
+- Discovery: no new message; an index with no final line feed now gets the separator.
+
+### Check Results (Final Check)
+
+From `toolkits/buildos/` unless noted. macOS, Node 26.13.1, Python 3.14.10, Make Docs 2.0.9. npm uses a cache folder under the sandbox temporary folder.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm run build` | exit 0 |
+| `npm test` (after the build) | exit 0; 2,252 tests, 2,240 pass, 0 fail, 12 skipped (the same Windows-only and POSIX-only cases). New: 34 (deny-list 6, `final-check.test.ts` 18, `test-output-safety.test.ts` 10) |
+| `npm test` with `TMPDIR` holding a space | exit 0; 2,252 tests, 2,240 pass, 0 fail, 12 skipped |
+| `npm run check:deps` and `check:deps:installed` | both `dependency policy: ok` |
+| `npm pack`, offline install, `BUILDOS_GOLDEN_BIN_DIR=<installed .bin> node --test test/golden/compare.test.ts` | 173 files (1.0 MB packed, 4.2 MB unpacked); 167 tests, 167 pass; `git status` of `test/golden/`: only `parity-exceptions.json` (PE-019 and PE-020 scope text) |
+| Deny-list check as the workflow runs it (`--root ../.. --pack .`), invented list of three terms | exit 0; 2,405 files, 66 archive members, 61 XML files or members, 12 PDF and 32 PNG files decoded, 258 decoded text forms, 1 allowed dependency home path, 0 matches, 0 home-folder paths, 0 shipped files not fully scanned, `173 of 173 package files read` |
+| Each new planted channel (`&amp;` in a CSV field, a percent-encoded link; plus the test cases above) | exit 1, the location only (`:decoded 1`, `:url-decoded 1`), no term printed |
+| Meta-test (`node --test test/test-output-safety.test.ts`) | 10 pass; with the `d2e45e6` test files it fails (3 planted values in the output) |
+| Bulk-extract helper tests (`python3 -B -m unittest tests/test_work.py`) | 31 tests, OK |
+| Real Make Docs 2.0.9 (sandbox off for the Make Docs Store): `buildos init --make-docs` in a temporary folder, the design fixture's findings, FIND-001's summary with a fenced YAML example, a fake `## Decision`, and an unbalanced fence; then the stock template as LF, CRLF, and with a byte order mark | init 0; each dry run 0 and each promotion 0; the fenced example kept (one `` ```yaml `` line, its `## not a section` line inside the fence), `\## Decision` escaped, one Next Prompt line, the relative link, which resolves; the installed template equals the committed companion fixture; `make-docs project path-hygiene validate`: 0 failing findings |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | `passed`, 16 PRD files, no diagnostics |
+| `make-docs project path-hygiene validate --target-root .` (repository root) | valid, 0 failing findings |
+| `git diff HEAD --check` (new files with intent-to-add, then reset; nothing left staged) | exit 0 |
+
+### Windows-Sensitive Parts Not Run Here
+
+- The end-to-end self-test with the package on another drive runs only on the Windows CI runner; here it is covered by the `path.win32` unit test and by a package folder outside the root.
+- The fake-`npm` tests (a missing package file, an empty list) are POSIX only; the `path.win32` test and the `N of N` check of the self-test cover the Windows path.
+- The meta-test makes a directory junction for `node_modules` on Windows; it ran here with a symbolic link only.
+
+## P7 CI Runs 45489678572 and 45489679281
+
+Both ran on `42b9782` (P7 with the final check fixes and the closeout notes). Reported by the orchestrator; the conclusion, head commit, and job results were confirmed with `gh run view`.
+
+| Run | Workflow | Result |
+| --- | --- | --- |
+| [45489678572](https://github.com/brucewaynedecoy/build-os/actions/runs/45489678572) | `buildos-ci` | success. All five jobs passed |
+| [45489679281](https://github.com/brucewaynedecoy/build-os/actions/runs/45489679281) | `buildos-deny-list` | success. Job "Client-name deny list" passed with the real list from the repository secret |
+
+| Job of run 45489678572 | Result |
+| --- | --- |
+| `test (ubuntu-latest, Node 24)` | success. Tests: 1,952 tests, 1,944 pass, 0 fail, 8 skipped. Installed-tarball golden step: 167 of 167. Conversion and eval suite: 287 tests, 0 fail |
+| `test (macos-latest, Node 24)` | success. Tests: 1,952 tests, 1,945 pass, 0 fail, 7 skipped. Installed-tarball golden step: 167 of 167. Conversion and eval suite: 287 tests, 0 fail |
+| `test (windows-latest, Node 24)` | success. Tests: 1,810 tests, 1,713 pass, 0 fail, 97 skipped (POSIX-only cases). Installed-tarball golden step, through npm's `.cmd` shims: 167 of 167. Conversion and eval suite: 287 tests, 0 fail |
+| Make Docs contract (pinned range bounds) | success |
+| OSV scan of `package-lock.json` | success |
+
+- A56: the deny-list check passes on the tree with the real list (run 45489679281), and the deny-list tests and the end-to-end self-test pass on all three systems; on Windows the self-test stages the package on another drive, so P7-F-01 is proven there.
+- A57, A58, A61, A62, and A63: the skills, `init`, system-content, package, and link tests pass on all three systems.
+- A60: the validate parity test passes for every fixture on all three systems.
+- A63a and A63b: the design tests, with the P7-F-05 and P7-F-06 cases, pass on all three systems, and the installed-tarball golden step is 167 of 167 on each.
+- This closes P7-O17 and P7-O20 and the condition in [P7 Closeout](#p7-closeout).
+
+## P7 Closeout
+
+On 2026-11-24 P7 is closed for review on `rewrite/ts-cli` (this pass builds on `d2e45e6`). Stages 4 and 5 had three full review rounds and the closing check; Stages 1 to 3 had two skills review rounds and the final check; Stage 6 had the closing check and the final check. The review loop is closed under the project stop rule: there is no further review round, and the orchestrator verifies this pass through CI and this evidence (see [P7 Review](#p7-review)). P7 was done when a three-OS `buildos-ci` run and a `buildos-deny-list` run of the commit with this pass were green. Closed: [CI run 45489678572](https://github.com/brucewaynedecoy/build-os/actions/runs/45489678572) and [deny-list run 45489679281](https://github.com/brucewaynedecoy/build-os/actions/runs/45489679281) on `42b9782` passed every job (see [P7 CI Runs 45489678572 and 45489679281](#p7-ci-runs-45489678572-and-45489679281)). Phase status: Done.
+
+### Acceptance Criteria (P7)
+
+| ID | Result | Evidence |
+| --- | --- | --- |
+| A54 | Pass (21 folders, explained) | [Skill Count](#skill-count-a54); `test/skills.test.ts` on three systems in [CI run 45489678572](https://github.com/brucewaynedecoy/build-os/actions/runs/45489678572) |
+| A55 | Pass | [Newest-Copy Decisions](#newest-copy-decisions-t3-a55) |
+| A56 | Pass | Before this pass, a Windows package scan could pass after reading no package file (P7-F-01), a name written with character references or percent-encoding was not found (P7-F-02), and a failing self-test printed the scanner's captured output (P7-F-03). Now the check passes on the tree with `173 of 173 package files read`, fails on every planted channel with the location only, and a failing test prints counts and tags only (the meta-test). The real-list run on `d2e45e6` ([45483759525](https://github.com/brucewaynedecoy/build-os/actions/runs/45483759525)) passed, and on `42b9782` [deny-list run 45489679281](https://github.com/brucewaynedecoy/build-os/actions/runs/45489679281) passed with the repository secret; the deny-list tests and self-test pass on three systems in [CI run 45489678572](https://github.com/brucewaynedecoy/build-os/actions/runs/45489678572) |
+| A57 | Pass | `test/skills.test.ts` on three systems in [CI run 45489678572](https://github.com/brucewaynedecoy/build-os/actions/runs/45489678572) |
+| A58 | Pass | `test/skills.test.ts`, `test/init.test.ts` on three systems in [CI run 45489678572](https://github.com/brucewaynedecoy/build-os/actions/runs/45489678572) |
+| A59 | Pass (`satisfied`, one noted limit) | [Human Experience Review](#human-experience-review-router-part-a59) |
+| A60 | Pass on three operating systems | [CI run 45489678572](https://github.com/brucewaynedecoy/build-os/actions/runs/45489678572) on `42b9782`; before it, CI runs 45443040059 and 45483759496 (the Windows job of the latter failed only on the deny-list self-test; the validate parity tests passed) |
+| A61 | Pass | `test/system-content.test.ts` on three systems in [CI run 45489678572](https://github.com/brucewaynedecoy/build-os/actions/runs/45489678572) |
+| A62 | Pass | `npm pack`: 173 files, none under `dist/system/docs/` or `dist/system/.make-docs/` (`test/package.test.ts`, `test/system-content.test.ts`, on three systems in [CI run 45489678572](https://github.com/brucewaynedecoy/build-os/actions/runs/45489678572)) |
+| A63 | Pass | The matrix decision; the link check passes on three systems in [CI run 45489678572](https://github.com/brucewaynedecoy/build-os/actions/runs/45489678572) and now names a broken link by its file tag and line (P7-F-07) |
+| A63a | Pass | Before this pass, an edited template could put the next-prompt link inside inline code (no usable link) and drop an unknown placeholder, and a fenced example in a finding lost its meaning (P7-F-05, P7-F-06). Now the template is checked against the 2.0.9 placeholder positions and the exact Next Prompt line, the rendered link is checked, and fenced examples are kept; the real Make Docs 2.0.9 promotion above (LF, CRLF, byte order mark, a fenced example) gives the 2.0.9 frontmatter, the Human Experience Intent section, and a Next Prompt link that resolves; the design tests pass on three systems in [CI run 45489678572](https://github.com/brucewaynedecoy/build-os/actions/runs/45489678572) |
+| A63b | Pass | 167 of 167 golden cases, source and installed tarball, on three systems in [CI run 45489678572](https://github.com/brucewaynedecoy/build-os/actions/runs/45489678572); no golden file changed |
+
+### P7 Follow-ups
+
+These stay open and carry forward. None blocks the P7 closeout.
+
+- F-P7-01: `readBounded` opens a file a second time after it identifies a folder ([P7 Review Round 3](#p7-review-round-3)).
+- F-P7-02: `package-content.ts` falls back to the source `system/` when `dist/system.json` is missing.
+- F-P7-03: `buildos validate` anchors: `system#overview` for a real root file named `system`, and `.//system/../docs/a.md#x`.
+- F-P7-04: test gaps: the installed-index test starts with the index present; the intake bounds test asserts no output state; the companion capture reads files before it checks `result.make_docs.status` and probes the version with a bare program name.
+- F-P7-05: `buildos validate` lists `.os/templates/` without checking the findings budget.
+- F-P7-06 (new): the assertion sweep of P7-F-03 is a one-time script outside the repository, and the meta-test covers four planted channels. A new test can still pass content to `assert.equal` or print a captured output in a message; a lint-style guard in the suite would keep the rule.
+- F-P7-07 (new): the deny-list check decodes each encoded form once; a name encoded twice (for example `&amp;amp;`) or with HTML named references other than the six it reads is not found.
+
+### Items Carried to P8
+
+- Git history and visibility: the repository is private and its history unchanged. Before the release and npm provenance (which needs a public repository), the owner decides on a history rewrite (old commits hold the removed client text and the two removed Go binaries with a personal build path) and on visibility. P8 entry gate ([P8 Open Items From P7](#p8-open-items-from-p7)).
+- The guide rewrite for the Node CLI: the guide chapters still describe the Go-era install (P7-O2); P8 t8.
+- PE-019 part (3), the separator line feed before an added JSONL row (P7-F-04), and the PE-018 decode-once extension (P7-R4-03): the orchestrator told the owner on 2026-11-24; no objection at closeout time, veto open ([Owner Decisions](#owner-decisions)). A veto would reopen the matching behavior before the P8 release.
+- Unchanged: P7-O3 (D-006 items 2 and 3, D-007 items 3 and 4), P7-O5 (the Go golden check needs Go), P7-O6, P7-O11 (the RFC 3339 `extracted_at` profile is an orchestrator decision the owner may veto).
+- P7-O17 and P7-O20: closed by [CI run 45489678572](https://github.com/brucewaynedecoy/build-os/actions/runs/45489678572) and [deny-list run 45489679281](https://github.com/brucewaynedecoy/build-os/actions/runs/45489679281) on `42b9782` ([P7 CI Runs 45489678572 and 45489679281](#p7-ci-runs-45489678572-and-45489679281)).
+- The `PERF-001` recheck ([P8](./08-release-0-1-0.md)); the last P7 bundle size recorded here is 3,259,444 bytes (Stages 4 and 5).
+
+### Items Carried to P9
+
+- Python-dependent skills: `buildos-bulk-extract` and `fit-gap-analysis` run Python scripts; their move to CLI commands is planned for 0.2.0 ([P9](./09-skill-script-commands-0-2-0.md)).
+- `capability-matrix` has no planned command (P7-O13): the skill writes and runs a Python tool from its own text; P9 planning must add a command or record an exception.
+
+## P8 Release 0.1.0
+
+This section covers P8 Stage 1 (release workflow, t2 to t6) and Stage 3 (Go removal, t11 to t14), built on 2026-11-24 on `rewrite/ts-cli` from `e8a1ec7`. Nothing was published, staged, tagged, or released, and no `npm publish` or `npm stage` command ran against the registry. t1 (trusted publishing setup) needs the maintainer and stays open. Stages 2, 4, and 5 are later tasks.
+
+Order departure: the phase lists Stage 2 as a dependency of Stage 3. On the orchestrator's instruction, Stage 3 (Go removal) ran before Stage 2 (security document, guide, and README). Stage 3 fixed only references that the deletion made dangling or false, and lists the rest for Stage 2 below.
+
+### Verified npm Facts
+
+PRD 20 names `npm stage publish --provenance`. The implementing agent checked it against npm 11.20.0 (`npm help stage`, `npm help trust`, `npm stage publish --help`, and npm's own code in `lib/commands/stage/publish.js`, `lib/utils/oidc.js`, and `libnpmpublish` 11.2.1) and against docs.npmjs.com (Trusted publishing for npm packages; Staged publishing for npm packages), read on 2026-11-24. The Make Docs release workflow and `RELEASING.md` (public repository `brucewaynedecoy/make-docs`, read with `gh`) served as the model only.
+
+| Fact | Source | Effect |
+| --- | --- | --- |
+| `npm stage publish [<package-spec>]` exists with `--provenance`, `--access`, `--tag`; it packs or reads the given spec, so a tarball path stages exactly that tarball (Make Docs stages a tarball the same way) | npm 11.20.0 help and `lib/commands/stage/publish.js` (it extends `publish` with `stage: true`) | The workflow stages the checked tarball, not a fresh pack |
+| Staging needs no 2FA; approval (`npm stage approve`, or npmjs.com Staged Packages) needs 2FA | `npm help stage`, docs.npmjs.com staged publishing | Matches PRD 20 step 6 |
+| Staged publishing needs npm 11.15.0 or newer and Node 22.14.0 or newer; trusted publishing needs npm 11.5.1 or newer | docs.npmjs.com | The reference npm 11.19.1 (bundled with Node 24.22.3) is new enough |
+| A trusted-publisher (OIDC) token can run `npm stage publish` and `npm publish` only; `npm stage list`, `view`, `approve`, and `reject` need interactive authentication | `npm help stage`, docs.npmjs.com trusted publishing | The workflow cannot check the stage after it stages it; P8 t18 (staged provenance and digest) is a maintainer step |
+| A trusted-publisher configuration can allow `npm stage publish` only; configurations made after 2026-09-03 allow it by default | docs.npmjs.com | t1 should allow staging only, not `npm publish` |
+| Provenance with trusted publishing is made only for a public repository and a public package; a private repository gets none | docs.npmjs.com; `lib/utils/oidc.js` checks `repository_visibility === 'public'` | The provenance gate stops a release before staging when the repository is not public |
+| `package.json` `repository.url` must equal the GitHub repository | docs.npmjs.com troubleshooting | Added `repository` to `package.json` |
+| A trusted publisher can only be configured for a package that already exists on npm (`npm trust` prerequisites; the setting is on the package page). `@brucewaynedecoy/buildos` returns 404 today. Staging a package that does not exist yet creates a public placeholder version `0.0.0-stage` | `npm help trust`, `npm help stage`, docs.npmjs.com staged publishing; `npm view @brucewaynedecoy/buildos` (404) | **Differs from PRD 20**: the first release cannot start with trusted publishing. Owner question 1 |
+| A new trusted-publisher configuration expires unless its first publish succeeds within 2 days | docs.npmjs.com | t1 timing: configure it close to the first staged release |
+| `npm sbom --omit dev` lists no component for this package; plain `npm sbom` lists every lockfile package as a development package | `npm sbom` runs on this package | The SBOM is post-processed (see [SBOM Decision](#sbom-decision)) |
+
+### Reproducibility (t2)
+
+Sources of difference found and how each is held:
+
+| Source | Finding | Fix or reason it holds |
+| --- | --- | --- |
+| esbuild path comments | esbuild writes each input path relative to its working folder. A build started outside `toolkits/buildos/` wrote `../../../<absolute checkout path>/...` comments into the bundle (a home-folder path and different bytes) | `scripts/build.ts` sets `absWorkingDir` to the package root; `test/release.test.ts` builds from two folders and compares bytes and checks that the checkout path is absent |
+| File times, owners | npm pack writes every entry with the fixed time 1985-10-26T08:15:00Z and no owner | npm behavior; two packs give the same bytes |
+| File order | npm pack sorts the file list; `dist/system.json` lists files in a fixed order | Covered by the two-build check |
+| Build time stamps | None: the version comes from `package.json` and the source revision from git | t6 design |
+| Line endings | `.gitattributes` checks `system/**` out with LF (CRLF for the `.cmd` wrappers) on every OS | Existing rule; the cross-OS report shows any drift |
+| Modes | npm keeps file modes; Windows has no POSIX modes | Byte identity claimed on the reference environment only |
+| gzip | Node's zlib can compress differently between builds and CPUs | Byte identity claimed on the reference environment only |
+| npm and Node versions | Pack layout and gzip can change between versions | Both pinned in the reference environment and recorded in each candidate entry |
+
+Scope claimed: the same commit gives the same tarball bytes on the reference build environment: GitHub runner `ubuntu-24.04` (`ImageOS` `ubuntu24`), Node `v24.22.3`, and the npm it bundles, `11.19.1` (`scripts/release-lib.ts`; the release workflow checks all three). Reason: the release is built on one runner, gzip output is not promised across zlib builds, and Windows has no POSIX modes. CI checks it on all three systems (`scripts/reproducible-pack.ts`: two release builds, each from an empty `dist/`, same SHA-256) and a report-only job compares the tarball contents of the three systems with Linux (`pack-compare` in `buildos-ci.yml`). Whether the file contents are also identical across systems is shown by the first CI run.
+
+Local result (macOS arm64, Node v26.13.1, npm 11.20.0, `--allow-dirty` because the work is not committed; revision `e8a1ec7d02b0bfdf838d556c45f69e2b4e2ec1bb-dirty`):
+
+```text
+reproducible pack: first  ca26a7e811e5d597f6da682ace0b8bbc9fb6bd8ceac2c86d683883b6acd7987a
+reproducible pack: second ca26a7e811e5d597f6da682ace0b8bbc9fb6bd8ceac2c86d683883b6acd7987a
+reproducible pack: pass: 173 entries, version 0.0.0-dev, revision e8a1ec7d02b0bfdf838d556c45f69e2b4e2ec1bb-dirty, Node v26.13.1, npm 11.20.0, darwin-arm64
+```
+
+The local dry runs below rebuilt the tarball nine more times with the same SHA-256.
+
+### Release-Candidate Mechanism (t3)
+
+- `toolkits/buildos/release-candidates.json`: `{"schema_version": 1, "candidates": []}`. It holds no entry: no build has been reviewed. Each entry needs every field: `version`, `tag` (`v<version>`), `tarball_name`, `tarball_sha256`, `source_commit` (full SHA), `node_version`, `npm_version`, `runner_image`, `reviewed_by`, `reviewed_on`, `review_evidence`. No other field is allowed and a tag appears once.
+- `scripts/release-candidate.ts`: `check` (the file), `compute` (prints the entry for a reference build; refuses a dirty build or one outside the reference environment; never writes the file), `verify` (a tarball against the entry of a tag), and `self` (dry runs only: an entry for this run's build that says it is not a review).
+- Source commit and tag commit: the entry is committed after the review, so the release commit differs from the reviewed one. The release build therefore reports the entry's `source_commit` as its revision, and both `scripts/release-build.ts` and the identity gate refuse a release commit whose files differ from the reviewed commit anywhere except `toolkits/buildos/release-candidates.json`, which does not ship.
+- Maintainer steps: in the header of `scripts/release-candidate.ts` and in `toolkits/buildos/AGENTS.md`, Release. Tests use fixture entries only (version `9.8.7`).
+
+### Release Workflow and Gates (t4)
+
+`.github/workflows/buildos-release.yml`. Triggers: a published GitHub Release (release mode); `workflow_dispatch` with `tag`, `candidates` (`self` or `committed`), and `plant` (dry run); a push to `release-dry-run/**` (dry run, `self`), because GitHub runs `workflow_dispatch` only for a workflow on the default branch. A branch named `release-dry-run/<name>-plant-<gate>` plants that gate's failure; an unknown gate name stops the job. Jobs: `verify` (every gate; `contents: read`), `stage` (release mode only; `contents: read`, `id-token: write`; re-checks the downloaded tarball's digest and the provenance preconditions with OIDC, then `npm stage publish <tarball> --provenance --access public --tag latest|next`), and `sbom` (release mode only, after `stage`; `contents: write`; uploads the SBOM to the GitHub Release with `gh release upload`). Actions are pinned to commit SHAs; no npm token exists; the deny list comes from the secret `BUILDOS_DENY_LIST` in one step's environment; no `pull_request_target`. `actionlint` 1.7.12 (release binary, checksum checked) reports no problem in any workflow; shellcheck was not installed, so the shell parts were reviewed by hand.
+
+Every gate is `node scripts/release-gate.ts <gate>` and runs the same way locally; `node scripts/release-dry-run.ts` runs them in workflow order and stops at the first failure. A dry run has no staging step.
+
+| Gate | Script | What fails it | Planted failure (`--plant`) | Local dry run |
+| --- | --- | --- | --- | --- |
+| Tag and version | `release-gate.ts identity` | Tag not `v<package.json version>`; no reviewed entry for the tag; entry version differs; reviewed commit's files differ outside the candidates file; prerelease flag disagrees; (release) not the reference Node, npm, runner, or not on `main` | `tag` (tag gets `-planted`), `version` (entry version gets `-planted`) | Both stop at `identity`; agreement passes |
+| Digest | `release-gate.ts digest` | Rebuilt tarball SHA-256 is not the reviewed one | `digest` (the reviewed SHA-256 is changed) | Stops at `digest`; agreement passes |
+| Build identity (A66) | `release-gate.ts version` | The packed CLI does not report the package version and the expected revision | none | Passes: `0.0.0-dev at e8a1ec7…-dirty` |
+| Tests | `npm run typecheck` and the test suites (workflow step) | Any failure | none | `npm test` below |
+| Conversion eval | `release-gate.ts eval` | Any eval file below the PRD 07 gate | `eval` (`test/fixtures/release/planted-converter.ts`) | Stops at `eval` (7 passed, 1 failed); agreement 8 passed |
+| npm audit | `release-gate.ts audit` | A high or critical advisory; an npm error; a report it cannot read | `audit` (`test/fixtures/release/npm-audit-high.json`) | Stops at `audit`; real audit: 0 of every level |
+| OSV | `release-gate.ts osv` (uses `osv-gate.ts`) | As the CI OSV gate: high, critical, unscored, or a scanner error (fail closed) | `osv` (`test/fixtures/osv/findings-above-threshold.json`) | Stops at `osv`; real scan (osv-scanner 2.7.1, checksum checked): 54 packages, exit 0, 0 findings |
+| Deny list | `release-gate.ts deny-list` (uses `check-deny-list.mjs`) | A listed name in the repository tree or the tarball's files; no list (fail closed); (release) no tarball | `deny-list` (an invented term added to the list and written to a file in the tree, then removed) | Stops at `deny-list`; agreement with an invented two-term list passes, `173 of 173 package files read` |
+| SBOM | `release-gate.ts sbom` (uses `sbom.ts`) | The SBOM disagrees with the bundle, lockfile, `SECURITY.md`, or notices | none | Passes, 57 components |
+| Provenance | `release-gate.ts provenance` | (release) repository not public; `repository.url` wrong; (stage job) no OIDC | none; a dry run prints problems as warnings | Passes with a warning: the repository is private |
+
+A planted failure is refused in release mode (exit 2). The local runs used `--allow-dirty`, an invented deny list in a file outside the repository, `--visibility private`, and the real OSV scan result (the sandbox blocked the scanner's network, so the scan ran once outside it; in the sandbox the gate failed closed on exit 127, as designed).
+
+```text
+plant none:      identity pass, digest pass, version pass, eval pass, audit pass, osv pass, deny-list pass, sbom pass, provenance pass (warning); every gate passed; a dry run never stages or publishes
+plant tag:       identity FAIL: the tag v0.0.0-dev-planted and the package.json version 0.0.0-dev disagree; stopped before staging
+plant version:   identity FAIL: the reviewed entry for v0.0.0-dev has version 0.0.0-dev-planted, but package.json has 0.0.0-dev; stopped before staging
+plant digest:    digest FAIL: the rebuilt tarball SHA-256 ca26a7e8… is not the reviewed ca26a7e8…79870; stopped before staging
+plant eval:      eval FAIL: the conversion eval gate failed (exit 1, 7 passed, 1 failed) with the planted converter; stopped before staging
+plant audit:     audit FAIL: npm audit reports 1 high and 0 critical advisories; stopped before staging
+plant osv:       osv FAIL: 2 high, critical, or unscored finding(s); stopped before staging
+plant deny-list: deny-list FAIL: the client-name deny-list check failed (exit 1); stopped before staging
+```
+
+Acceptance evidence:
+
+| ID | Shown locally | Needs GitHub |
+| --- | --- | --- |
+| A64 | Yes: the dry run passes on agreement and fails on tag, version, and digest disagreement (above), and the unit tests cover each case | Dry runs on the reference runner: push the commit to `release-dry-run/<short-sha>` (agreement), then to `release-dry-run/<short-sha>-plant-tag`, `-plant-version`, and `-plant-digest` |
+| A65 | Yes: each of `eval`, `audit`, `osv`, and `deny-list` stops the flow before staging | Pushes to `release-dry-run/<short-sha>-plant-eval`, `-plant-audit`, `-plant-osv`, and `-plant-deny-list`, with the real deny-list secret |
+| A66 | Yes: the packed release build reports `version` `0.0.0-dev` and `source_revision` `e8a1ec7…-dirty` (local, dirty); a bundle built with `0.1.0` and a full SHA reports both, and `buildos init` writes `0.1.0` as the project pin, which the wrapper helper reads back (`test/release.test.ts`) | The `version` gate of a clean dry run on the reference runner |
+
+`workflow_dispatch` works only after the workflow is on the default branch, so the GitHub evidence uses `release-dry-run/**` pushes until then. Each push starts one run; delete each branch after its run.
+
+### SBOM Decision
+
+`npm sbom` cannot express the bundle: `--omit dev` lists nothing, and the full output marks every lockfile package, build tools and platform packages too, as a development package. `scripts/sbom.ts` therefore starts from `npm sbom --sbom-format cyclonedx --package-lock-only` (CycloneDX 1.5, with npm's licenses, SHA-512 hashes, and registry URLs) and then:
+
+- marks the packages the esbuild metafile shows in the bundle (`fflate`, `parse5`, `entities`, `unpdf`) with scope `required` and `buildos:delivery` = bundled, and the other 50 lockfile packages with scope `excluded` (CycloneDX: not part of the runtime) and `buildos:delivery` = build-time only;
+- adds pdf.js 6.4.299 inside `unpdf`, with its six inlined components, and the ported Go sources (Go 1.24.1 standard library, `golang.org/x/net` v0.48.0, `github.com/ledongthuc/pdf`) as `required` components marked as ported code;
+- puts the tarball SHA-256 and the source revision in `metadata.component`, and replaces npm's random serial number and clock time with values from the tarball digest and the commit time.
+
+`sbomProblems` checks every lockfile package, every bundled package against `SECURITY.md` (Bundled npm Packages table) and `THIRD_PARTY_NOTICES.md`, the pdf.js inner components, and the Go ports; `test/release.test.ts` runs it and proves it finds a planted gap. This goes beyond PRD 20's wording ("generate a CycloneDX SBOM with `npm sbom`"): npm still makes the document, and the post-processing is recorded in PRD 20 Release.
+
+### Version and Revision (t6)
+
+- `npm run build` stays a development build: `version` `dev`, `source_revision` `unknown`.
+- `scripts/release-build.ts` removes `dist/`, builds with the `package.json` version and the full commit SHA of HEAD (or the reviewed `--revision`), packs, and prints the tarball SHA-256. No clock value enters the build.
+- Dirty tree: a release build refuses any `git status` change or untracked file in the repository, or any ignored file under `system/` (the build copies `system/` from disk). `--allow-dirty` (local trials only) reports `<commit>-dirty`, so such a build can never pass the version or digest gate for a reviewed commit.
+- Wrappers and `init`: `buildos init` writes the release version into `.os/manifest.json` (`buildos_version`), and `pinned-version.cjs` reads `0.1.0` back unchanged; the `sh` wrapper's character check accepts it. Tested in `test/release.test.ts`.
+
+### Go Removal (t11 to t14)
+
+t11, parity gates passed (evidence in this report):
+
+| Domain | Gate | Three-OS CI |
+| --- | --- | --- |
+| entities | [Entities Gate (t8)](#entities-gate-t8): 27/27 | [P3 CI Run](#p3-ci-run), run 45312281279 |
+| intake | [Intake Gate (t12, A29)](#intake-gate-t12-a29): 55/55 | [P4 CI Run](#p4-ci-run), run 45340971690 |
+| discovery and design | [Discovery and Design Gates (t4, t8)](#discovery-and-design-gates-t4-t8): 43/43 and 25/25 | [P5 CI Run](#p5-ci-run), run 45340971690 |
+| All golden cases, source and installed tarball | 167 of 167 | [P7 CI Runs 45489678572 and 45489679281](#p7-ci-runs-45489678572-and-45489679281) on `42b9782` |
+
+t12, deleted (65 tracked files): `toolkits/buildos/cmd/`, `toolkits/buildos/internal/`, `toolkits/buildos/pkg/`, `toolkits/buildos/go.mod`, `toolkits/buildos-intake/` (with its `go.sum`), `toolkits/buildos-discovery/`, `toolkits/buildos-design/`, `.github/workflows/buildos-golden-capture.yml`, and the two Go build-output lines of `.gitignore`. `toolkits/buildos-entities/` never existed. `testdata/persona-pilot/` stays (golden fixture). A search finds no `.go`, `go.mod`, or `go.sum` file (A69, first part).
+
+Frozen baseline: the goldens were captured from the Go sources at `263f5ca76082b42ed9a3fb43bab67929889010ed`; `e8a1ec7d02b0bfdf838d556c45f69e2b4e2ec1bb` is the last commit that holds them (between the two, one line of one Go test file and the removal of two binaries). `test/golden/CAPTURE.md` (Frozen Go Baseline) records both and how to recover the Go tools with `git worktree add`. `capture.mjs` keeps `--verify-artifact`, `--derive`, and `--record`; its Go modes exit 2 with that message. `scripts/capture-*.ts` keep their case lists (the tests import them) with a note on where the Go binary comes from. Comments that cite Go files carry the frozen commit. A history rewrite would change both SHAs.
+
+t13: the `justfile` recipes keep their names and use npm: `build-buildos`, `test-buildos`, `install-toolkits` (global install of the packed tarball), `check-toolkits`, `uninstall-toolkits`, plus `release-dry-run`. No `go` command remains (A69, second part). `toolkits/AGENTS.md`, `toolkits/README.md`, `toolkits/buildos/AGENTS.md`, and `toolkits/buildos/README.md` describe the npm package.
+
+t14: the package ships exactly three Python files, all skill scripts that P9 removes: `buildos-bulk-extract/scripts/work.py`, `buildos-bulk-extract/tests/test_work.py`, and `fit-gap-analysis/scripts/fitgap.py`. `test/package.test.ts` fails on any other Python file in the package.
+
+References fixed: root `README.md` and `AGENTS.md`; PRD 03 code anchors (D-002, D-004, D-008) and an R-003 note; PRD 20 Compatibility and Release, with two requirement-history entries; five dangling links and their front-matter entries in `docs/assets/`; a removal notice on seven `docs/assets/` pages whose Go build steps no longer work. Left for Stage 2 or a later documentation pass: the body text of those seven pages (`docs/assets/maintainer/buildos-toolkit-cli-development.md`, `upgrade-existing-buildos-installation.md`, `operating-layer-entities-consolidation-and-resolution.md`, `operating-layer-contracts-maintenance.md`; `docs/assets/user/upgrade-an-existing-buildos-project.md`, `entities-consolidation-curate-and-resolve-records.md`, `promote-qualified-findings-to-designs.md`), `USE_CASES_TESTING.md` (its `just` recipes still work), the guide, `SECURITY.md`'s full release text, and the npm README. Historical records (`docs/work/`, `docs/plans/`, `docs/designs/`, `.make-docs/archive/`, PRD requirement history, recorded fixture and exception text) keep their Go paths.
+
+### Check Results (P8 Stage 1 and Stage 3)
+
+Run on macOS arm64 with Node v26.13.1 and npm 11.20.0, from `toolkits/buildos/` unless noted, on the uncommitted tree:
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Pass |
+| `npm run build` | Pass |
+| `npm test` | 2,291 tests, 2,279 pass, 0 fail, 12 skipped (2,252 before) |
+| `npm run check:deps`, `check:deps:installed` | Pass |
+| Reproducible pack, two clean builds | Same SHA-256 `ca26a7e8…7987a` (above) |
+| Offline install of the packed tarball, then the golden compare from the installed `.bin` | 167 of 167; no golden file changed |
+| Deny-list check as the workflow runs it (`--root ../.. --pack .`), invented two-term list | 0 matches, exit 0 |
+| Release dry run: agreement and one planted failure per gate | As above |
+| `buildos version` of the release-candidate build | `0.0.0-dev`, `e8a1ec7d02b0bfdf838d556c45f69e2b4e2ec1bb-dirty` |
+| Search for the removed Go paths | Only historical citations (with the frozen commit), recorded data, and the noticed `docs/assets/` pages |
+| `actionlint` 1.7.12 on `.github/workflows/*.yml` | No problem |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | `passed` |
+| `make-docs project path-hygiene validate --target-root .` | Valid, 0 findings |
+| `git diff HEAD --check` | Clean |
+
+### P8 Open Items
+
+- t1: needs the maintainer, and first the answer to owner question 1 (the package does not exist on npm, so trusted publishing cannot be configured yet).
+- The repository is private: every release stops at the provenance gate until the owner makes it public (P8 entry gate; history rewrite open).
+- GitHub evidence for A64 and A65 (dry runs) and the first CI run of the reproducibility check and the cross-OS report.
+- Stages 2, 4, and 5 (t7 to t10, t15 to t25). t18 (provenance and digest of the stage) is a maintainer check, because OIDC tokens cannot run `npm stage view` or `download`.
+- Each release: check again whether the esbuild install-script exception is still needed (SECURITY.md).
+
+### Owner Questions (P8 Stage 1)
+
+1. First publish. npm can only configure trusted publishing for a package that exists, and `@brucewaynedecoy/buildos` does not. Options: (A) the maintainer reserves the package first with a placeholder that is not `0.1.0` (for example `npm stage publish` of a minimal `0.0.0-reserved.0` with dist tag `reserved`, approved with 2FA, then deprecated), configures trusted publishing with staging only, and `0.1.0` goes through the full workflow with provenance; (B) the maintainer stages `0.1.0` from their own machine from the reviewed tarball, without provenance, and trusted publishing starts at `0.1.1`. Recommendation: A, because `0.1.0` then gets provenance and every PRD 20 check.
+2. Repository visibility for provenance (open since P7). npm makes provenance only for a public repository, and the release workflow stops before staging while the repository is private. Options: (A) make the repository public after the history rewrite decision, as PRD 20 assumes; (B) keep it private and change PRD 20 to release without provenance. Recommendation: A, because PRD 20 and the enterprise reviewer promise depend on provenance.
+
+## P8 Stage 2
+
+This section covers P8 Stage 2 (t7 to t10: security document, user guide, READMEs, release notes), built on 2026-11-24 on `rewrite/ts-cli` from `548f4ea`. Nothing was committed, published, staged, tagged, or released. A read-only review of `548f4ea` ran at the same time; this pass changed no release workflow, gate script, or source file (`git diff HEAD -- toolkits/buildos/src toolkits/buildos/scripts toolkits/buildos/package-lock.json .github/` is empty). Every command a document shows was run against the built CLI: the source build, a packed tarball installed offline, or a local trial build that reports `0.1.0` (below).
+
+Trial build for real output: the guide, the READMEs, and `SECURITY.md` show version `0.1.0`. To paste real output with that version, a local trial package was built in a scratch folder outside the repository: `bundle()` from `scripts/build.ts` with version `0.1.0` and revision `548f4ea…`, packed as `brucewaynedecoy-buildos-0.1.0.tgz` (SHA-256 `72b72f70…eb282`), and installed with `npm install -g --offline`. It is not a release candidate: it is not built on the reference environment, and its digest is not a reviewed digest. Shown absolute paths were replaced by `<project folder>` or `<commit>`, and the guide says so.
+
+### Changes by Task
+
+- t7: `toolkits/buildos/SECURITY.md` rewritten for the released state, in this order: Summary; How to Check a Release (registry signature and provenance with `npm audit signatures`, the provenance statement with `npm view … dist.attestations.provenance.predicateType`, the tarball SHA-256 with `npm pack` and `shasum`, `sha256sum`, or `certutil`, compared with `release-candidates.json` and the SBOM, and how to read the SBOM with a real listing); Rollback by Version Pin; Release Checks (every step of the three jobs of `buildos-release.yml` as it is, plus the maintainer checklist with the esbuild exception re-check); Admission Rules; Bundling (with reproducibility); Package Contents (wrappers and skills); Started Programs; Bundled Runtime Code (the three machine-checked tables kept byte for byte); Build-Time Tools; Install-Script Exception; CI Checks; OSV Gate; Client-Name Deny-List Check (described without any name); Input Limits; Read Safety; Write Safety; Known Limits and Out of Scope; Reporting a Vulnerability; Admission Checklist; Scan Record; Lockfile Inventory. The accumulated review-round notes were regrouped under topic headings and their round tags removed; every guarantee and every stated limit was kept. The limits now sit together in Known Limits and Out of Scope: the four time-of-check windows, crash or power loss, the ACL and extended-attribute limit (F-P6-01), the Windows folder permission check, the Windows hard link count, the Windows wrapper and shown-command limits, the pdf.js long-string limit, the validate findings-budget gap (F-P7-05), the deny-list blind spots (F-P7-07 added), git history, skill scripts, and what is out of scope. `Coming in P8` is gone (its five items are now in the document); the one link to it, in this report's P1 section, now points to Release Checks. The pending OSV Scan Record row was replaced by the real CI result ([run 45489678572](https://github.com/brucewaynedecoy/build-os/actions/runs/45489678572), 54 packages, gate pass) and two local scans of 2026-11-24. `THIRD_PARTY_NOTICES.md`: a new introduction lists every notice, says what ships and what does not (build-time tools, project files), and names the checks; two round tags removed; every machine-checked heading and license text unchanged.
+- t8: guide chapters (below), `guide/BuildOS-Guide.html` rebuilt (662 KB, 22 documents), `test/guide-examples.test.ts` extended, the seven noticed `docs/assets/` pages and three more pages with false lines, `USE_CASES.md` (the two broken links now point to `docs/prd/00-index.md` and `docs/prd/04-glossary.md`), and `USE_CASES_TESTING.md` (preflight with `buildos init --make-docs`, wrapper commands, npm uninstall).
+- t9: the repository `README.md` gained a "Use BuildOS" section (Node 24, `npx … init`, the Make Docs question, the wrapper, the `0.3.0` notice, links to the guide, the npm README, `SECURITY.md`, and the release notes), lost its semantic line breaks, and names the current design. `toolkits/buildos/README.md` is the npm page: three sentences on what BuildOS is, requirements, setup with `npx`, a global install, an install without registry access, the command table, the legacy-name notice, security, and the license. `package.json` `files` already ships `README.md`, `SECURITY.md`, `THIRD_PARTY_NOTICES.md`, and `LICENSE`; `npm pack` still lists 173 files (the contents of three of them changed, so the tarball digest changed, as expected). `RELEASE_NOTES.md` is not in `files` and does not ship.
+- t10: `toolkits/buildos/RELEASE_NOTES.md`, section `0.1.0`, marked as a draft. Location: neither PRD 20 nor the phase file names one; release notes are package documentation next to `SECURITY.md` and `THIRD_PARTY_NOTICES.md`, not a Make Docs artifact under `docs/`, and the GitHub Release body can be copied from it. It holds what is new against the Go tools, how to move a Go-era project (`init` adoption), the user-visible effect of PE-001 to PE-020, the `0.3.0` notice with the real notice line, known limits (Make Docs 2.0.9, Python skills until `0.2.0`, ACLs, Windows, a global `buildos` wins over the pin, the measured start time), and how to check the package and roll back.
+
+Guide chapters:
+
+| Chapter | Change |
+| --- | --- |
+| 00 Start here | Chapter 04 summary: setup with one command |
+| 01 What BuildOS is | File counts of the shipped folder (163 files, recounted from `dist/system.json`); no Go binaries; the npm package |
+| 02 How it works | Design promotion needs Make Docs; the wrapper row; chapter 03 summary |
+| 03 Before you start | Rewritten prerequisites (git, agent, Node.js 24, registry access or the package file, version control); environment variable example without a Go variable; "Shell" replaces "POSIX shell" (Command Prompt works); runtime table (Node.js 24, Python only for three skills until `0.2.0`, no Go); "Get BuildOS into your project" now chooses a project folder; Windows `echo %ERRORLEVEL%`; the npm registry row in the corporate-environment table; checklist |
+| 04 Install and configure your instance | Rewritten: what you need; the one command; the Make Docs question with the real no-TTY output and the 2.0.9 limit; what `init` does with the real end of output and a real manifest; Go-era adoption; the wrapper (macOS, Linux, Windows) and the Node-missing message; `version` output; the `system/` help-path note; the `0.3.0` notice with the real line; configuration (unchanged, the worked example kept); validation with real output (21 problems, shortened and marked so); the legacy-field output replaced by the real `buildos validate` output; the folder map (wrappers, skills, manifest, Make Docs folders only with Make Docs); skills and how an agent installs one; Python until `0.2.0`; install without registry access (tested); update and rollback by version pin, with the global-install exception |
+| 05 Bring in source material | Wrapper commands; "project folder" for "checkout" |
+| 06 Sources the converter cannot read | Wrapper commands |
+| 07 Pull knowledge out of it | Wrapper commands |
+| 08 Write and run a playbook | Wrapper commands; the quoted error line keeps the real `buildos-discovery:` prefix (parity) |
+| 09 Qualify what you found | Wrapper commands |
+| 11 Keep the record clean | The "not distributed" note replaced by the real strict-validation fix (`rebuild-index`); checklist |
+| 12 Designs, plans and PRDs | Design promotion needs Make Docs, writes the 2.0.9 form, stops with exit 3 otherwise; the Make Docs prompt location |
+| 15 Working with your agent | Skills: BuildOS ships 21 skills and a router |
+| 16 Harness independence and trust | File counts; one runtime; Windows wrapper |
+| 17 When things go wrong | Node missing (exit 127), registry blocked, manifest error (exit 3), Windows wrapper; the Go and POSIX entries removed |
+| 18 What is not built yet | Gap register: Make Docs 2.0.9 limit, no update or uninstall, Python skills, legacy names; removed rows about undistributed binaries and the old scripts router; the work-tracker row names the shipped skill; the command count stated as not redone |
+| 19 A worked walkthrough | Hop 2 rewritten as `buildos init`; table rows; strict validation and design notes |
+| 20 Glossary | Wrapper command |
+
+No chapter was merged or removed. Chapters 10, 13, 14, and 21 needed no change.
+
+`docs/assets/` pages: the seven pages with the Go removal notice are now correct for the Node CLI. Rewritten: `maintainer/buildos-toolkit-cli-development.md` (now "BuildOS CLI Development"), `maintainer/upgrade-existing-buildos-installation.md`, `user/upgrade-an-existing-buildos-project.md`. Updated in place (notice removed, Go build and test steps replaced with npm and wrapper commands, `validate_config.py` replaced with `buildos validate`, history kept as history): `maintainer/operating-layer-entities-consolidation-and-resolution.md`, `maintainer/operating-layer-contracts-maintenance.md`, `user/entities-consolidation-curate-and-resolve-records.md` (section "Current Source-Build Workflow" is now "Copied-Root Workflow"; the one link to it was updated), `user/promote-qualified-findings-to-designs.md` (three dead `system/docs/` related links replaced). Also fixed: false lines in `user/build-os-getting-started.md` (binary overrides, the Python validator) and `user/convert-source-material-with-buildos-intake.md` (W1 R4 binary advice). Each page keeps `status: draft`.
+
+### A67 Search Proof
+
+`test/guide-examples.test.ts`, describe "A67", searches every `guide/content/*.md` file and `README.md` line by line for `validate_config.py`, Homebrew (`homebrew`, `brew install|tap|upgrade`), an archive download (`.tar.gz`, "archive download", "download the release archive"), `go build|install|run`, and the Go-era toolkit install (`just install-toolkits`, `BUILDOS_*_BIN`, `toolkits/buildos-`). It finds none (23 files). It also requires the `0.3.0` notice next to `buildos-intake` in chapter 4 and in `README.md` (both found), and a planted-line test proves each pattern finds a planted instruction. Before this pass the same search found 29 lines (chapters 03, 04, 18, and `README.md`).
+
+### A68 Security Document Comparison
+
+Inputs: the bundle built from `548f4ea` (`dist/buildos.js`, 3,310,039 bytes, `sha256:c3cb48fc…3919e7`) and its esbuild metafile; the SBOM generated by `scripts/sbom.ts` from a tarball packed at `548f4ea` (57 components, "checked against the bundle, lockfile, SECURITY.md, and THIRD_PARTY_NOTICES.md"); `npm audit --audit-level=high` (npm 11.19.1, Node 24.22.3): 0 vulnerabilities; `osv-scanner` 2.7.1 (`osv-scanner_darwin_arm64`, checksum matched the release `sums` file) on the lockfile: 54 packages, exit 0, then `scripts/osv-gate.ts`: `scanner exit 0, 0 finding(s), 0 blocking: pass`; and the CI OSV job of [run 45489678572](https://github.com/brucewaynedecoy/build-os/actions/runs/45489678572): 54 packages, the same gate line. The local OSV scan needed the network: in the sandbox the scanner failed with a TLS error and exit 127, and the gate failed closed as designed; the scan then ran once outside the sandbox.
+
+| Item | `SECURITY.md` | Bundle (metafile) | SBOM | Scans | Result |
+| --- | --- | --- | --- | --- | --- |
+| `fflate` 0.8.3, MIT | Bundled npm Packages row | in the bundle (9,150 bytes) | `required`, bundled, SHA-512 | npm audit 0, OSV 0 | agree |
+| `parse5` 8.1.1, MIT | row | in the bundle (260,042 bytes) | `required`, bundled | 0, 0 | agree |
+| `entities` 9.0.0, BSD-2-Clause | row | in the bundle (46,608 bytes) | `required`, bundled | 0, 0 | agree |
+| `unpdf` 2.1.0, MIT, with pdf.js 6.4.299 (Apache-2.0) | row, and Components Inside pdf.js (6 rows) | in the bundle (2,410,510 bytes); the six component markers found (`test/notices.test.ts`) | `required`, bundled; pdf.js with 6 inner components | 0, 0 | agree |
+| Go 1.24.1 standard library, `golang.org/x/net` v0.48.0, `github.com/ledongthuc/pdf` | Other Bundled Code (7 rows) | ported TypeScript in `src/` (579,615 bytes of BuildOS code in all) | 3 `required` components, ported | not npm packages | agree |
+| 50 build-time packages (TypeScript, esbuild, `@types/node`, 47 transitive) | Build-Time Tools and Lockfile Inventory | absent from the bundle | 50 `excluded`, build-time only | 0, 0 | agree |
+| Lockfile total | 54 npm packages in the inventory | 4 bundled | 54 npm components plus 3 ported | 54 scanned | agree |
+| Release gates | Release Checks table | — | — | — | each step matched against `.github/workflows/buildos-release.yml` and `scripts/release-gate.ts` at `548f4ea` |
+
+No gap. Limits: the comparison uses a local pack of `548f4ea`, not a reviewed candidate on the reference runner; the release SBOM is the one the release workflow makes. The machine checks still pass on the new text: `test/notices.test.ts`, `test/release.test.ts` (with the SBOM cross-check and its planted gap), and `test/bundle.test.ts`, 60 tests, 0 failures, before the full suite below.
+
+### Facts That Depend on the Release
+
+Each of these is written in its final form and must be checked when `0.1.0` is released:
+
+| Place | Fact | Today |
+| --- | --- | --- |
+| `README.md`, `toolkits/buildos/README.md`, guide chapters 03, 04, 19, `RELEASE_NOTES.md`, `docs/assets/user/upgrade-an-existing-buildos-project.md` | `npx -y @brucewaynedecoy/buildos@0.1.0 …`, `npm install -g @brucewaynedecoy/buildos@0.1.0`, `npm pack @brucewaynedecoy/buildos@0.1.0`, file name `brucewaynedecoy-buildos-0.1.0.tgz` | The package is not on npm (404). The file name is npm's rule for this scope and version; the trial pack gave exactly that name |
+| `SECURITY.md` How to Check a Release; `RELEASE_NOTES.md` Check the package | `npm audit signatures` reports a verified registry signature and a verified attestation for BuildOS; `predicateType` `https://slsa.dev/provenance/v1`; the npm page shows the repository, `buildos-release.yml`, and the tag commit | Commands checked on npm 11.19.1 against `@brucewaynedecoy/make-docs@2.0.9`, which has provenance; BuildOS has none until a release from a public repository |
+| `SECURITY.md`, `RELEASE_NOTES.md`, chapter 04, npm README | The reviewed digest is the `tarball_sha256` of the `v0.1.0` entry in `release-candidates.json` and the SBOM's `metadata.component` hash | `release-candidates.json` has no entry |
+| `SECURITY.md` How to Check a Release | SBOM file `buildos-0.1.0.cdx.json` on `https://github.com/brucewaynedecoy/build-os/releases/tag/v0.1.0` | No release; the repository is private |
+| `SECURITY.md` Reporting a Vulnerability | GitHub private vulnerability reporting at `https://github.com/brucewaynedecoy/build-os/security/advisories/new` | Not available: the repository is private and the feature is not enabled (the GitHub API returns 404 for the setting). Owner action |
+| `SECURITY.md` Rollback | The maintainer marks a bad version with `npm deprecate` | A maintainer practice, not yet used |
+| `RELEASE_NOTES.md` first line | "Status: draft" | Remove at publication |
+| npm README "Learn more" | `https://github.com/brucewaynedecoy/build-os` | Private today |
+| `SECURITY.md` Summary, Scan Record | Scans "on 2026-11-24" | Each release adds its own scan rows |
+
+### Human Experience Review
+
+`SECURITY.md` (reviewer path): the A68 comparison above found no package, version, license, or scan disagreement; each release gate in the document matches the workflow. A reviewer can trace one package (for example `parse5`) from the Bundled npm Packages row to the SBOM component with scope `required` and to its notice. Limit: the provenance and SBOM-download steps cannot be run on BuildOS until a release exists, so they were run on another package with provenance. Verdict: `satisfied`, with that limit.
+
+Chapter 4 as a non-technical adopter's agent would read it: the agent was given only chapter 4 and an empty folder, and followed it with the trial package: `node --version` (v24.22.3), the `init` command (exit 10 with the question; the agent can ask it in plain words because the chapter quotes it), `init --skip-make-docs` (exit 0, output as shown), `.os/scripts/buildos version` (as shown), the worked config pasted in, `.os/scripts/buildos validate` (21 problems as shown), the six files updated, and `validate` again (`OK. No problems found.`). Each shown output matched, and `test/guide-examples.test.ts` now keeps five of them matched. The chapter alone is enough to set up a project. Limits: the `npx` fetch from the registry and the Make Docs Yes path were not run from the chapter (the package is not published; the Yes path is evidenced in [P6 Captures](#p6-captures-t26)); the offline steps were run with a local tarball, not one downloaded with `npm pack` from the registry. One weakness found and fixed while reading: the first draft named the old validator file twice, which a literal A67 search would flag; the chapter now describes it without the file name. Verdict: `satisfied`, with those limits.
+
+### Findings (Stage 2)
+
+- F-P8-S2-01 (documentation fact, no code change): a project wrapper runs the first `buildos` program on `PATH` before it reads the pin, so a global install (or a Go-era `buildos` binary) overrides `.os/manifest.json`. PRD 06 and the wrapper router state this order; register `R-003` describes rollback only by the pin. The guide, `SECURITY.md`, and the release notes now say it. Owner question 2 below. Resolved on 2026-11-25: the owner chose pin-first (`Q-015`), and the wrappers changed; see [Owner Decisions 2026-11-25](#owner-decisions-2026-11-25).
+- F-P8-S2-02 (observation): the project wrappers `.os/scripts/buildos-intake`, `buildos-discovery`, and `buildos-design` call `.os/scripts/buildos <domain>`, so they print no legacy notice and do not stop at `0.3.0` by themselves; only the npm `bin` names do. The guide tells users to use `.os/scripts/buildos <domain>`. Whether `0.3.0` also removes these three project wrappers is not decided anywhere (W2 owns refreshing project files). Resolved on 2026-11-25 (`Q-016`): they print the notice and are removed in `0.3.0`; see [Owner Decisions 2026-11-25](#owner-decisions-2026-11-25).
+- F-P8-S2-03 (observation): `buildos help intake` and the other Go-shaped help texts show Go defaults such as `--assets-root system/assets` (parity), which are source-checkout paths. The guide explains them.
+
+## Startup Recheck (PERF-001, P8)
+
+### Execution Packet (t19)
+
+Rendered from the [`PERF-001` profile](./01-typescript-package-foundation.md#perf-001-profile) before the pass. The profile is the only authority; this packet binds the recheck to it.
+
+- Profile binding: `PERF-001`, version `1.1`, source digest `sha256:67de4a287df0a5f6d7cd648181c8751ff2a26ecb73aa3b3bde09363b79c00761` (recomputed on 2026-11-24 over the profile section from its heading to the end of the Lineage And Traceability table: it matches, so the profile is unchanged).
+- Budget event: `PERF-001-P8-B1`, authorized by entry to P8 (phase file, Performance candidate `PERF-001` recheck).
+- Workload: unchanged (Node control, `buildos version`, `buildos help`, `buildos version --json`). The workload does not have to change to include ported commands: the question is the cost of loading the bundle, which now holds every ported domain and the PDF reader, and these commands pay that cost in full. So no profile version increment.
+- Build: the profile's method (`npm run build`, no release define) on a clean commit, `548f4ea`, with Node 24.22.3 first on `PATH`. The release build (`scripts/release-build.ts`) differs only by the version and revision define (a trial release-define bundle is 3,309,964 bytes against 3,310,039); it was not used, because the profile names the default build. The Product Build row of the profile names the P1 working tree; the fingerprint below records this build.
+- Run command, from `toolkits/buildos/` with Node 24.22.3 first on `PATH`: `npm run build`, then `node scripts/measure-startup.ts --warmup 5 --repetitions 50`.
+- Decision rule from the profile: BuildOS overhead is the difference of medians against the Node control; it counts as distinguishable from noise only when the workload's median interval lies wholly above the control's. No target is set.
+
+#### Evidence Fingerprint
+
+- Profile ID, version, and digest: `PERF-001` v1.1, `sha256:67de4a287df0a5f6d7cd648181c8751ff2a26ecb73aa3b3bde09363b79c00761`.
+- Product build and relevant code state: `dist/buildos.js`, 3,310,039 bytes, `sha256:c3cb48fc890062c4e5133bd7ac8a0aff7d7862076a4e445c8c600cd8ac3919e7`; clean tree at commit `548f4eaa4422e2f85d74477edd1b5520be75ce01`; `src/` tree digest `sha256:e15a0177f0bbae8c16274e511f462eac11ce6a7c0a5e4d58191b2465ddc4225b` (84 files; SHA-256 of the `shasum -a 256` lines of every file under `src/`, in byte order of path).
+- Dependency and configuration state: `package-lock.json` `sha256:9c6176bccf5c7b2473a4fe1dd4b8757d9619aaccaaa1b4e95ffda855d93e0504`; esbuild 0.28.2; bundled `unpdf` 2.1.0 (2,410,510 bytes of the bundle), `parse5` 8.1.1, `entities` 9.0.0, `fflate` 0.8.3; default build with no release define.
+- Qualified environment: Apple M2 Pro, 10 cores, 16 GiB, macOS 27.2.1 (Darwin 27.2.0) arm64, AC power; Node 24.22.3 (official darwin-arm64 archive, SHA-256 matching `SHASUMS256.txt`). Load average 4.71 at the start and 4.45 at the end of the pass; the pass waited until the load fell from 17.85, when another session's work was running.
+- Workload and fixture or dataset: the four workloads above; no fixture.
+- Instrument version: `toolkits/buildos/scripts/measure-startup.ts`, `sha256:688d7030efd3f7a40c2ae1ff172bfa853c2565cf0fb766900c1db07f923c7fd2` (unchanged since P1).
+- Analysis method: median, p90, IQR, and the order-statistic 95% median interval, as the instrument computes them.
+- Comparability result and reasons: within-pass comparison with the Node control only, as the profile requires. `not-comparable` with the P1 result as a measurement, because the build differs; the P1 figures are cited below as context only.
+
+### Reason for the Rerun (t20)
+
+The build changed materially since P1, which the profile lists as material change triggers: every domain is ported into the bundle (entities, intake, discovery, design, init, validate), four outside packages are bundled (one of them the PDF reader), and the bundle grew from 12,810 to 3,310,039 bytes. The P1 result expired at this recheck by its own expiry rule.
+
+### Budget Ledger
+
+- Authorizing scope and budget event: [W1 R7 P8 Stage 5](./08-release-0-1-0.md#stage-5---performance-evidence-and-publication-review), `PERF-001-P8-B1`.
+- Requalification authorization: the P8 phase entry (a new budget, not a renewal of `PERF-001-P1-B1`).
+- Declared limits: 2 passes, 1 correction attempt, 1 review cycle, one working day, one maintainer machine plus the CI matrix, no external spend.
+- Materially distinct attempts: pass 1 only (2026-11-24, 22:16:25 to 22:16:38 UTC). No correction attempt.
+- Affected checks: all four workloads.
+- Time, compute, and external spend: under one hour; one maintainer machine; no CI use; no external spend.
+- Review cycles used: 1 (the agent review below).
+- Remaining budget: 1 pass, 1 correction attempt, 0 review cycles.
+- Unchanged evidence reused: none.
+- Stop reason and escalation: diminishing return. A second pass on the same fingerprint would be a reuse case, and no result it could give would change the decision below. Escalation: owner question 1.
+
+### Pass 1 Result (t21)
+
+- Result ID: `PERF-001-P8-R1`.
+- Exact profile binding: `PERF-001` v1.1, `sha256:67de4a287df0a5f6d7cd648181c8751ff2a26ecb73aa3b3bde09363b79c00761`.
+- Build and evidence fingerprint: as in the packet. The instrument reported the same bundle and instrument digests.
+
+| Workload | n | Excluded | Min | p25 | Median | p75 | p90 | Max | IQR | Median 95% interval |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Node control | 50 | 0 | 27.00 | 27.72 | 28.46 | 28.94 | 29.68 | 31.68 | 1.23 | 28.03 to 28.81 |
+| `buildos version` | 50 | 0 | 65.28 | 67.57 | 68.24 | 69.87 | 71.48 | 74.09 | 2.31 | 67.85 to 68.64 |
+| `buildos help` | 50 | 0 | 66.38 | 68.05 | 68.72 | 70.38 | 72.29 | 77.80 | 2.34 | 68.30 to 69.50 |
+| `buildos version --json` | 50 | 0 | 66.95 | 67.70 | 68.41 | 69.60 | 72.52 | 74.07 | 1.90 | 67.82 to 69.13 |
+
+All times are milliseconds of wall-clock time, from spawn to exit.
+
+- Observed distribution: BuildOS overhead over the Node control, as a difference of medians, is 39.78 ms for `version`, 40.26 ms for `help`, and 39.95 ms for `version --json`: about 58% of each run. Node startup itself is about 28.5 ms. As context only (not comparable): P1 measured 1.25 to 1.66 ms of overhead with a 12,810-byte bundle.
+- Uncertainty and exclusions: each BuildOS median interval lies wholly above the control interval, so the overhead is distinguishable from noise. The overhead is a difference of two medians, and no interval of that difference was computed. The two median intervals bound it loosely: for `version`, the control interval (28.03 to 28.81 ms) and the `version` interval (67.85 to 68.64 ms) leave an overhead between 39.0 and 40.6 ms (review round 2 wording: an earlier text said "uncertain to about 1 ms", which no computed interval supports). No run was excluded and no trimming was applied.
+- Where the time goes (static facts, not a measurement): the PDF reader (`unpdf` with pdf.js) is 2,410,510 of the bundle's 3,310,039 bytes (73%). `src/adapters/intake-parsers.ts` imports `unpdf` statically, so every command loads and compiles it, also `version`. One CPU profile of `buildos version` (`node --cpu-prof`) put most of its time in Node's own module loading and compiling, which the profile cannot attribute to a package; it was not used as a result.
+- Budget ledger: above.
+- Outcome: `pass`
+- Outcome reason: the distribution and uncertainty exist for every workload, with no exclusion, and every non-sacrificable constraint held: every counted run exited 0 with the expected output; the full test suite passed on the same source (see [Check Results (P8 Stage 2)](#check-results-p8-stage-2)), and that run rebuilt a bundle with the same SHA-256; the dependency guard passed; the commands make no network call; the raw record holds timings and machine class only.
+- Findings: none against a target (there is none). Observation for the owner: the bundle-load cost is now the larger part of a short command. (Review round 2: an earlier text compared this with the P1 overhead as "about 24-fold"; the two runs have different fingerprints, a 12,810-byte bundle then, so they are not comparable, and the comparison is withdrawn.)
+- Owner or reviewer disposition: agent review below; owner decision through owner question 1.
+- Supported-scope limit: the three commands from the bundle, Node 24.22.3, this one Apple M2 Pro macOS arm64 machine, warm file cache. It says nothing about Linux, Windows, x64, a cold cache, the `npx` path, or a long-running domain command.
+- Expiry: at any material change trigger in the profile, or at the next release that changes the bundle.
+- Later result: none yet.
+
+### Decision
+
+Characterization only. No target is set, and this pass by itself does not require a change before `0.1.0`. The P1 decision named the change to consider if the overhead became a large share of the run: lazy loading inside the one bundle. The overhead is now about 58% of a short command, so that question goes to the owner (owner question 1). Context for it: about 40 ms per command is small next to an agent tool call and next to the `npx` resolution that every wrapper call goes through, which PERF-001 does not measure and `PERF-002` measures only for the first run. A lazy load of the PDF reader would be the obvious candidate, because it is 73% of the bundle and only `intake convert` of a PDF needs it; its saving is not measured, because this task changes no code and the profile spends no correction attempt on a product change.
+
+### Agent Review
+
+- Deterministic method: `make-docs run performance evidence validate --target-root .` (see [Check Results (P8 Stage 2)](#check-results-p8-stage-2)).
+- `PERF-RULE-015`: `characterize-now` still fits: the release candidate exists and a decision on bundling is due before `0.1.0`.
+- `PERF-RULE-016`: the environment supports only the within-pass comparison with the Node control on this machine. The P1 figures are context, not a comparison.
+- `PERF-RULE-017`: impact moderate at most (tens of milliseconds per call), no finding against a target, no waiver. Supported scope as stated.
+- Limits: the review is by the implementing agent, not an independent reviewer. It certifies no other proof mode.
+
+### Raw Samples
+
+Samples in milliseconds, rounded to 0.01 ms. `null` marks an excluded run (none in this pass).
+
+```json
+{"node":"v24.22.3","platform":"darwin 27.2.0 arm64","cpu":"Apple M2 Pro","cpu_count":10,"memory_gib":16,"bundle_bytes":3310039,"bundle_sha256":"c3cb48fc890062c4e5133bd7ac8a0aff7d7862076a4e445c8c600cd8ac3919e7","instrument_sha256":"688d7030efd3f7a40c2ae1ff172bfa853c2565cf0fb766900c1db07f923c7fd2","warmup":5,"repetitions":50,"warmup_samples_ms":{"node-control":[30.25,28.69,29.44,30.03,27.68],"buildos-version":[71.59,67.05,69.73,67.67,69.71],"buildos-help":[68.9,68.51,69.25,69.81,71.53],"buildos-version-json":[67.28,70.72,67.61,68.89,69.91]},"samples_ms":{"node-control":[29.17,28.66,29.68,27.35,28.44,27.18,31.01,29.68,27.52,28.58,29.4,30.7,28.89,27.38,28.67,28.12,27.2,28,28.49,27,28.16,28.49,28.78,27.42,27.38,27.48,28.96,31.68,28.52,29.56,28.34,27.54,29.16,30.53,28.81,27.97,28.29,28.44,27.32,28.36,28.86,29.21,29.43,27.84,27.58,28.82,28.89,28.03,27.84,27.68],"buildos-version":[66.7,68.6,66.82,66.48,67.69,68.56,68.64,71.31,69.04,68.23,72,70.07,71.75,67.83,68.41,67.82,66.74,66.32,65.28,66.71,66.38,67.31,68.83,67.94,67.63,67.03,68.42,71.45,74.09,73.65,69.3,68.24,71.41,71.42,70.94,67.55,68.09,70.43,71.42,68.33,68.04,72.08,67.85,66.8,68.07,68.21,66.69,69.23,67.91,68.5],"buildos-help":[69.14,68.91,68.48,67.99,69.21,68.56,70.34,69.02,69.5,67.93,71.97,72.46,71.29,70.83,68.07,68.08,67,67.01,66.38,67.41,67.08,67.64,68.04,68.17,70.4,69,67.77,72.16,73.92,75.47,70.96,71.62,69.99,73.04,68.45,67.54,72.27,68.54,77.8,67.87,68.33,68.1,69.85,70.17,68.43,68.44,67.79,69.1,68.89,68.3],"buildos-version-json":[67.7,67.71,67.66,72.99,67.75,67.81,67.6,69.48,68.28,68.32,72.66,72.18,68.08,67.87,68.7,69.02,69.89,67,67.21,67.16,66.95,67.27,67.52,67.37,69.19,71.93,69.54,72.51,74.07,70.51,68.08,71.63,72.54,73.08,67.82,67.38,67.95,67.05,69.86,69.16,69.13,69.62,68.39,68.91,68.43,68.81,68.64,67.78,67.61,68.43]}}
+```
+
+### Check Results (P8 Stage 2)
+
+Run on macOS arm64 with Node v24.22.3 and npm 11.19.1, from `toolkits/buildos/` unless noted, on the uncommitted tree:
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Pass |
+| `npm run build` | Pass; `dist/buildos.js` `sha256:c3cb48fc…3919e7`, the bundle the `PERF-001` pass measured |
+| `npm test` | 2,299 tests, 2,287 pass, 0 fail, 12 skipped (2,291 before; 8 new in `test/guide-examples.test.ts`: 5 output blocks, 3 for A67) |
+| `npm run check:deps`, `check:deps:installed` | Pass |
+| `npm pack` | 173 files (unchanged count); SHA-256 `e0474ddf…96d3c0b` for this dirty tree |
+| Offline install of that tarball (`npm install --offline --ignore-scripts --prefix`), then the golden compare from the installed `.bin` | 167 of 167; no golden file changed |
+| Reproducible pack, two clean builds (`--allow-dirty`) | Same SHA-256 `bb6432a3…cf4456`, 173 entries, revision `548f4ea…-dirty` |
+| Deny-list check as the workflow runs it (`--root ../.. --pack .`), invented two-term list | 0 matches, 0 home folder paths, 173 of 173 package files read, exit 0 |
+| Guide build (`node tools/build-guide.mjs` in `guide/`) | 662 KB from 22 documents |
+| Guide example test | Pass (in `npm test`) |
+| Link check (files and `#anchors`) over `guide/`, `docs/assets/`, root `*.md`, `toolkits/buildos/*.md`, and `system/` | 146 files, 985 links; one target missing, `system/.os/scripts/AGENTS.md` to `../manifest.json`, a project-only file that `test/system-content.test.ts` allows |
+| Offline install paths of the guide and npm README (trial tarball): `npm install -g --offline ./<file>.tgz` with an empty npm cache, and `npx -y --offline --package ./<file>.tgz -- buildos version` | Both run `buildos` and report the trial version |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | `passed` |
+| `make-docs project path-hygiene validate --target-root .` | Valid, 0 failing findings |
+| `make-docs run performance evidence validate --target-root .` | `passed`; `PERF-001` v1.1 `valid`, outcome `pass`; 11 `PERF-RULE-014` warnings (numeric text without a `PERF-###` link) |
+| `git diff HEAD --check` | Clean |
+
+### Owner Questions (P8 Stage 2)
+
+1. Startup cost before `0.1.0`. A short command now takes about 68 ms on the measured machine, about 40 ms of it loading the 3.3 MB bundle; the PDF reader is 73% of the bundle and loads on every command. Options: (A) ship `0.1.0` as it is and plan a lazy load of the PDF reader (dynamic `import()` inside the one bundle) for a later release, with a new `PERF-001` recheck then; (B) make that change before `0.1.0`, which needs a code change, a new golden and reproducibility run, and another `PERF-001` budget event. Recommendation: A, because 40 ms is small next to an agent tool call and the `npx` resolution of each wrapper call, and a bundling change now would reopen the release evidence. `PERF-002` (first run through `npx`) may still change this answer.
+2. A global `buildos` overrides the project pin (F-P8-S2-01). Options: (A) keep the wrapper order (`PATH` first, which makes offline installs work) and document it, as this pass does; (B) change the wrappers to prefer the pinned version and run a `PATH` `buildos` only when its version equals the pin. Recommendation: A for `0.1.0`, because B is a wrapper change after the P6 reviews and the offline path relies on A; record B for W2 update.
+
+Owner actions needed:
+
+- Turn on GitHub private vulnerability reporting for `brucewaynedecoy/build-os` once the repository is public (repository Settings, Security, "Private vulnerability reporting"). `SECURITY.md` names it as the only report channel; there is no other contact method today.
+- At release: check each place in [Facts That Depend on the Release](#facts-that-depend-on-the-release), and remove the draft line of `RELEASE_NOTES.md`.
+
+## P8 CI Runs 45498097577 and 45498097675
+
+The orchestrator reported both runs on commit `548f4ea` (P8 Stage 1 and Stage 3) as green: `buildos-ci` (the three-OS test matrix, the cross-OS pack comparison, the Make Docs contract, and the OSV scan) and `buildos-deny-list`. The implementing agent could not read the runs itself (the sandbox blocks the GitHub API's TLS check), so this record relays the orchestrator's report. Cross-OS pack report (report only, as designed): Linux and macOS produced the same tarball SHA-256; Windows produced the same file contents with different mode bits, because Windows has no POSIX modes. Byte identity stays claimed on the reference environment only ([Reproducibility](#reproducibility-t2)).
+
+## P8 Review Round 1
+
+An independent review of `548f4ea` (P8 Stage 1, release workflow, and Stage 3, Go removal) found eleven findings and two more items. This round fixed all of them on `rewrite/ts-cli` on 2026-11-24, from `57254f2`, not committed. Nothing was published, staged, tagged, or released; no `npm publish`, `npm stage`, or `npm trust` command ran against the registry; no repository setting changed.
+
+### Owner Decisions and Open Questions
+
+The owner answered the two P8 Stage 1 questions on 2026-11-24 with "A, A" ([Owner Decisions](#owner-decisions)):
+
+1. First publication, option A. The steps, verified against docs.npmjs.com, are in `toolkits/buildos/AGENTS.md` (First Publication) and summarized in [First Publication Facts](#first-publication-facts).
+2. Repository, option A. The orchestrator prepares a git-history rewrite on a copy that removes the removed client text and the two deleted Go binaries from old commits; the owner reviews it and force-pushes it; the owner makes the repository public before the release, so npm provenance works. This is a P8 entry-gate item and is not done yet.
+
+Consequence of the rewrite: every commit SHA changes. Tracked task (not done now, nothing was rewritten): after the force-push, add a mapping note from each old SHA cited in the docs to its new SHA. Known places: the frozen Go baseline commits `263f5ca` and `e8a1ec7` in `toolkits/buildos/test/golden/CAPTURE.md`, `toolkits/buildos/AGENTS.md`, and code comments that cite Go files; the CI run links and commit SHAs in this report (for example `548f4ea`, `42b9782`, `57254f2`); the commit SHAs in `.make-docs/archive/history/` records; the golden capture records that name their repository commit (`test/golden/CAPTURE.md` checks them); and any `source_commit` in `release-candidates.json` (none today). Old CI run pages keep their old SHAs.
+
+Open owner questions (asked on 2026-11-24, not answered yet; see [Owner Questions (P8 Stage 2)](#owner-questions-p8-stage-2)):
+
+- Lazy-load the PDF reader before `0.1.0` (`PERF-001` recheck).
+- Whether a global `buildos` on `PATH` should override the project's pinned version in the wrappers.
+
+### Findings and Dispositions
+
+| ID | Disposition | Root cause and fix | Test that fails without the fix |
+| --- | --- | --- | --- |
+| P8-R1-01 (blocker) | Fixed | Each job checked out the tag by name (a same-named branch wins in `actions/checkout`), and `stage` ran repository scripts with `id-token: write`. Now a `resolve` job runs only its own script and `git`: it validates the event values, takes `github.sha` (for a `release` event, "Last commit in the tagged release"), requires `refs/tags/<tag>^{commit}` to equal it, and requires it on the default branch, before any repository code runs. Every later job checks out that SHA. `stage` runs no build code: `scripts/release-stage-check.ts` (Node built-ins only) checks the downloaded tarball's SHA-256 against the `verify` digest and the committed reviewed entry at that SHA, then `npm stage publish` runs from an empty folder. The identity gate also checks that the checkout is the resolved commit. Trust boundary in `SECURITY.md` (Release Trust Boundary) | `test/release-workflow.test.ts` (the resolve script on scratch repositories: tag at another commit with a same-named branch, commit off the default branch, wrong ref, multi-line tag; every `ref:`; what `stage` runs); `test/release.test.ts` (checkout is not the resolved commit) |
+| P8-R1-02 (blocker) | Fixed, design below | Branch code ran with the real list. Now the real list is only in the environment `buildos-deny-list` and only jobs on the default branch or a release run reach it; those jobs run only the scanner (no `npm`, no build) over the tree and the tarball as data. Other refs use an invented list | `test/release-workflow.test.ts` (secret only in the real-list jobs, in the environment, with no `npm` or build step); `test/release-privileged.test.ts` (the scanner reads a tarball with no `npm` and no `PATH`) |
+| P8-R1-03 (blocker) | Fixed | The suite required the committed ledger to be empty. Now it checks the real ledger's schema, kinds, and unique tags and digests; the empty ledger is `test/fixtures/release/empty-ledger.json` | `test/release.test.ts` ("the committed ledger is valid ..."; a ledger with a first reviewed entry passes) |
+| P8-R1-04 (major) | Fixed | `release-gate.ts` imported the SBOM and build modules (`esbuild`) at load time. The privileged checks are in `scripts/release-stage-check.ts` and `scripts/release-ledger.ts` (Node built-ins only); `release-gate.ts` loads `sbom.ts` only in its `sbom` gate. `check-deny-list.mjs` now reads ZIP members and zlib streams with `node:zlib` instead of the dev package `fflate`, so it needs no `node_modules` either (same counts as before on the repository: 66 archive members, 2 archives not openable, in both versions). The owner's 2026-11-23 choice of `fflate` was for the bundled intake ZIP reader, which is unchanged | `test/release-privileged.test.ts` (each privileged entry point copied to a clean folder with no `node_modules` and `NODE_PATH` unset, then run; imports limited to `node:` built-ins and each other) |
+| P8-R1-05 (blocker) | Fixed | An SPDX expression was put inside `license`. `licenseChoice` now emits `[{ "expression": ... }]`. The SBOM gate validates the whole document against the official CycloneDX 1.5 JSON schema, vendored in `scripts/schemas/cyclonedx-1.5/` (tag `1.5`, commit `c320fc0f0b46873864927d9d5684eea7ba439728`, Apache-2.0; SHA-256 of each file in `SOURCES.json`), with `scripts/json-schema.ts`, a draft-07 subset validator for the keywords these schemas use that fails on any keyword it does not read | `test/sbom-schema.test.ts` (known-good and known-bad documents, the review's case gives "licenses matches 0 of the oneOf choices", vendored SHA-256 values); `test/release.test.ts` (the generated SBOM passes `sbomProblems`) |
+| P8-R1-06 (blocker) | Fixed | A self entry passed as a review. Entries have `kind` `reviewed` or `self` (ledger schema version 2); the committed ledger and release mode accept `reviewed` only; `self` writes only outside the repository; `compute` takes `--tarball` (the downloaded, inspected tarball), computes its digest, and checks it against the build record and the tarball's `package.json`. The inspection steps (contents, diff against the previous release, smoke tests) are in the `release-candidate.ts` header and `AGENTS.md` | `test/release.test.ts` (kinds; self refused in the committed ledger and in release mode; `self --out` into the repository refused; `compute` refuses a tarball that is not the build's); `test/release-privileged.test.ts` (the stage check refuses a self entry) |
+| P8-R1-07 (major) | Fixed | The artifact was uploaded on `!cancelled()` for 30 days, and the wrapper kept only the last line. Now the upload runs only when every gate passed (no `if:`), for 1 day (release) or 3 days (dry run); a `discard` job (`actions: write`) deletes it when the real deny-list check fails. The gate keeps every redacted location line and writes them to the job summary; the real-list jobs write the scanner's lines to the summary | `test/release.test.ts` (the planted location `release-plant-deny-list.txt:1` is kept, in the summary too, never the term); `test/release-workflow.test.ts` (upload condition, retention, `discard`) |
+| P8-R1-08 (major) | Fixed | The dry run built once, compared the build with itself, skipped the test gates, built before reading the entry, and took `--tag` alone as self mode. Now arguments are checked first (`--tag` and `--candidates` together, else exit 2); identity is read before any build; a self run checks build B against an entry from build A; a ledger run builds with the entry's source commit, after checking that only `toolkits/buildos/release-candidates.json` differs and that the source commit is an ancestor of HEAD (the workflow's identity gate checks the same); the `tests` and `installed` gates run in the dry run and the workflow | `test/release-dry-run.test.ts` (usage errors; a candidates-only commit verifies, another change or unrelated history fails, on real scratch repositories); `test/release.test.ts` (ancestor check) |
+| Release-stamped goldens (major) | Fixed | 32 goldens hold the development identity. With `BUILDOS_GOLDEN_EXPECT_VERSION` and `BUILDOS_GOLDEN_EXPECT_REVISION`, the harness expects the release identity in exactly four places (`version: dev`, `source revision: unknown`, `"version": "dev"`, `"source_revision": "unknown"`), in the goldens and in the exact values that parity exceptions pin; every other byte is compared as captured; no golden changed. The `installed` gate runs it on the release-stamped tarball in `verify` and in the dry run | `test/release-dry-run.test.ts` (only those four places change; a development build no longer matches) |
+| P8-R1-09 (blocker for contributors) | Fixed | The recipes assumed `node_modules`. A private `buildos-deps` recipe (policy check, `npm ci --ignore-scripts` when the lockfile hash stamp differs, installed-manifest check) runs before `build-buildos`, `test-buildos`, `install-toolkits`, and `release-dry-run`. `install-toolkits` makes its temporary folder under `TMPDIR`. `USE_CASES_TESTING.md` now says npm removes all four commands and checks all four | `test/release-dry-run.test.ts` (recipe dependencies and the guard); clean-copy run below (the old `justfile` fails `test-buildos` on missing Node types and `install-toolkits` there) |
+| P8-R1-10 (minor) | Fixed | The eval gate accepted zero passes; the audit gate accepted exit 1 with no high advisory. The eval gate now needs a positive TAP pass count, no failure, and a report that names every manifest file once, all passing; the audit gate runs `npm audit --audit-level=high --include=dev --json` and fails when the exit status and the counts disagree or npm cannot run. Nested test runs drop `NODE_TEST_CONTEXT`, so a gate started inside `node --test` reads its own TAP summary | `test/release.test.ts` (eval and audit cases) |
+| P8-R1-11 (minor) | Fixed | The maintainer steps named the artifact by SHA and said it held every gate result; the register cited the deleted Go folders as current code. The header now names `buildos-release-<run id>` and the job summary; register item `D-009` names the TypeScript domains | `test/release-workflow.test.ts` (the header matches the workflow's artifact name) |
+| Dispatch tag input (edge) | Fixed | The raw `workflow_dispatch` tag reached `$GITHUB_OUTPUT` before validation. The resolve script validates it (strict semver tag regex, at most 128 characters) before any use and writes nothing on a failure; event values reach scripts only through `env:` | `test/release-workflow.test.ts` (a multi-line tag adds no output; no `run:` script holds `${{ }}`) |
+
+### Release Job Graph After Round 1
+
+| Job | Permissions and secrets | Code it runs |
+| --- | --- | --- |
+| `resolve` | `contents: read` | Its own shell script and `git` only; outputs the one SHA, the tag, the mode, and the default-branch SHA |
+| `verify` | `contents: read`; no secret | The candidate's build, tests, and gates (`release-gate.ts`), deny-list with an invented list; uploads only on success |
+| `deny-list` (release) | `contents: read`; real list from environment `buildos-deny-list` | The default branch's `check-deny-list.mjs` and `release-stage-check.ts digest`, Node built-ins only; candidate tree and tarball as data |
+| `stage` (release) | `contents: read`, `id-token: write`; environment `buildos-npm-stage` | `release-stage-check.ts stage` (Node built-ins) from a sparse checkout of the SHA, then `npm stage publish` from an empty folder |
+| `sbom` (release) | `contents: write` | `gh release upload` |
+| `discard` (release, on a deny-list failure) | `actions: write` | `gh api -X DELETE` of the run's artifact |
+
+### Deny-List Secret Design
+
+Choice: the real list lives in a GitHub environment whose deployment refs are the default branch and the `v*` tags, and the jobs that receive it run only trusted code (option b, with the trusted-code rule of option a). Why: GitHub states that "any user with write access to your repository has read access to all secrets configured in your repository" (docs.github.com, Secure use reference), because a writer can change the workflow file on their own branch. Running the scanner from the default branch (option a alone) cannot stop that: the edited workflow on the branch decides what runs. An environment's deployment-ref rule is checked by GitHub before the job gets a runner, and the job reads the environment's secrets only after that ("Any protection rules configured for the environment must pass before a job referencing the environment is sent to a runner", docs.github.com, Deployment environments). So only the protected default branch and release tags can reach the list. Inside those jobs, nothing from the candidate runs: no `npm` (so no `.npmrc` or `package.json` scripts are read by npm), no build, only the scanner with Node built-ins, which reads the tree and the tarball as data. In the release run the scanner comes from the default branch at the SHA that `resolve` found, and it first checks that the tarball is the reviewed one, so the list is checked against exactly the bytes that are staged. Fail closed stays: a missing or empty list fails both real-list jobs. Every other push and pull request, from a fork too, runs the scanner with an invented list (home-folder paths, unread files, the self-test) and shows a notice that the real list runs after merge; dry-run branches plant the deny-list failure with an invented list. Cost: a client name on a feature branch is found when it reaches the default branch or a release, not on the branch; a maintainer can run the check before pushing with `--list-file`. The environment and its rules are owner actions (below); until they exist, the default-branch job runs in an environment that GitHub creates with no rules and fails closed without the secret.
+
+### First Publication Facts
+
+Read on docs.npmjs.com on 2026-11-24; these steps are in `toolkits/buildos/AGENTS.md` (First Publication).
+
+| Fact | Source | Effect on the steps |
+| --- | --- | --- |
+| "The package you're configuring must already exist on the npm registry"; `npm trust` needs write access and account 2FA | `npm-trust` (cli v11) | The placeholder comes first |
+| "Staged publishing will allow you to create a new package if it does not exist"; npm then shows a placeholder version `0.0.0-stage` | `npm-stage` (cli v11); Staged publishing | The placeholder is staged and approved by hand; `0.0.0-stage` may also appear and is deprecated too |
+| Staging works with a session login (not only OIDC) and needs account 2FA; `npm stage publish` itself never asks for 2FA; approval asks for 2FA on the CLI and on npmjs.com | `npm-stage` | The maintainer stages from their machine and approves with 2FA |
+| "The tag is an immutable property of the staged package" | `npm-stage` | The placeholder is staged with `--tag reserved` from the start |
+| npm 11 refuses to publish a prerelease version without an explicit `--tag` (npm/cli pull request 7910) | npm/cli on GitHub | `0.0.0-reserved.0` needs `--tag reserved`, so it never gets `latest` on purpose |
+| "Publishing a package sets the `latest` tag to the published version unless the `--tag` option is used"; nothing is documented for a first publish with `--tag` | `npm-dist-tag` | Not verified: the maintainer checks `npm view ... dist-tags` after each approval and runs `npm dist-tag add @brucewaynedecoy/buildos@0.1.0 latest` if needed; the workflow stages `0.1.0` with `--tag latest` |
+| "A newly created trusted publisher configuration must complete its first successful publish within 2 days", else it "expires and can no longer be used or edited" | Trusted publishing | Configure it on the day of the `0.1.0` release run |
+| OIDC tokens can run `npm stage publish` and `npm publish` only; list, view, approve, and reject need interactive login; "Allow npm dist-tag" is off by default | Trusted publishing | Trusted publisher: `buildos-release.yml`, environment `buildos-npm-stage`, staging only, dist-tag off |
+| After trusted publishing, npm "strongly recommend[s] restricting traditional token-based publishing access": package Settings > Publishing access > "Require two-factor authentication and disallow tokens" | Trusted publishing | Step 5 |
+| "Provenance generation is not supported for private repositories"; `repository` must match (case-sensitive) | Trusted publishing; Generating provenance statements | The repository is public before `0.1.0` (owner decision A) |
+| `npm deprecate <package-spec> <message>` works on single versions; unpublish is allowed within 72 hours, later only with conditions, and "Once `package@version` has been used, you can never use it again" | `npm-deprecate`; Unpublish policy | The placeholder is deprecated, not unpublished |
+
+The placeholder is built by `toolkits/buildos/scripts/reserved-placeholder.ts` in a folder outside the repository: `package.json` (version `0.0.0-reserved.0`, no `bin`, `scripts`, or dependencies, the real repository URL), a `README.md` that says it only reserves the name, and `LICENSE`. A local build gave three files and SHA-256 `232a8cc2f026f175651542672242e20752a64d1bd71cea1fd4722c1752a6d7f8` (npm 11.20.0; the maintainer's build may differ with another npm). `test/release.test.ts` checks its contents.
+
+### Owner Actions
+
+Settings paths from docs.github.com, read on 2026-11-24. No agent changes these settings. They are also in `SECURITY.md` (Owner Settings for Releases).
+
+- History rewrite and visibility (owner decision A): review the orchestrator's rewritten copy, force-push it, then make the repository public (Settings > General > Danger Zone > Change repository visibility). Then do the SHA mapping task above.
+- Default branch: Settings > Rules > Rulesets > New ruleset > New branch ruleset; target the default branch; "Block force pushes" and "Require status checks to pass" (the three-OS test jobs and "Client-name deny list"). Do this after the force-push of the rewrite.
+- Release tags: Settings > Rules > Rulesets > New ruleset > New tag ruleset; target `v*`; "Restrict creations", "Restrict updates", "Restrict deletions"; only the maintainer on the bypass list. GitHub has no separate release permission: write access can manage releases, so the tag rules decide who can make a release tag.
+- Immutable releases: Settings, section Releases > "Enable release immutability" (generally available since 2025-10-28).
+- Environments: Settings > Environments > New environment `buildos-deny-list`; Deployment branches and tags > "Selected branches and tags" > the default branch and tag rule `v*`; add the secret `BUILDOS_DENY_LIST` there. New environment `buildos-npm-stage` with tag rule `v*` only. Then delete the repository secret `BUILDOS_DENY_LIST` (Settings > Secrets and variables > Actions).
+- Private vulnerability reporting, after the repository is public: Settings > Security and quality > Advanced Security > "Private vulnerability reporting" > Enable.
+- npm: the First Publication steps in `toolkits/buildos/AGENTS.md` (placeholder, trusted publisher, publishing access, `latest` check, deprecation).
+
+### Release Gates After Round 1
+
+This table replaces the gate table in [Release Workflow and Gates (t4)](#release-workflow-and-gates-t4) for the current state.
+
+| Gate | Script | What fails it | Planted failure |
+| --- | --- | --- | --- |
+| Resolve (job `resolve`) | the workflow's own script | An event value that is not valid; the tag does not peel to the event commit; (release) the commit is not on the default branch | none |
+| Tag, version, entry | `release-gate.ts identity` | As before, plus: (release) the entry is not `reviewed`; the checkout is not the resolved commit; the source commit is not an ancestor | `tag`, `version` |
+| Digest | `release-gate.ts digest` | Rebuilt SHA-256 is not the entry's; (release) the entry is not `reviewed` | `digest` |
+| Build identity | `release-gate.ts version` | The packed CLI does not report the version and revision | none |
+| Tests | `release-gate.ts tests` | Typecheck, unit, or golden failure, or no test ran | none |
+| Installed parity | `release-gate.ts installed` | The installed release-stamped tarball misses any golden case | none |
+| Conversion eval | `release-gate.ts eval` | No test ran; the report does not name every manifest file; a file below the gate | `eval` |
+| npm audit | `release-gate.ts audit` | High or critical; exit status and counts disagree; npm cannot run | `audit` |
+| OSV | `release-gate.ts osv` | As before | `osv` |
+| Deny list (invented, `verify`) | `release-gate.ts deny-list --invented-list` | A home-folder path or an unread shipped file; the planted term | `deny-list` |
+| SBOM | `release-gate.ts sbom` | Not valid against CycloneDX 1.5; disagrees with the bundle or the documents | none |
+| Provenance | `release-gate.ts provenance`; `release-stage-check.ts stage` | (release) private repository, wrong `repository.url`, (stage) no OIDC | none |
+| Real deny list (job `deny-list`) | `check-deny-list.mjs` from the default branch | A listed name in the candidate tree or the tarball; no list | none |
+| Stage check (job `stage`) | `release-stage-check.ts stage` | The tarball is not the verify digest and the reviewed ledger digest; its `package.json` is not this package and version | none |
+
+### Local Dry Runs After Review Round 1
+
+Scratch clone of the working tree (outside the repository, a fresh git repository) with version `0.1.0` in `package.json` and `package-lock.json`, committed as the reviewed source commit `80082e6`. macOS arm64, Node v26.13.1, npm 11.20.0 (not the reference environment, so the identity gate only notes the environment), the real `npm audit`, a saved osv-scanner 2.7.1 result (54 packages, 0 findings, exit 0; the sandbox blocks the scanner's TLS check, so the scan ran once outside it), an invented list in a file outside the clone, and `--visibility private`.
+
+| Run | Result |
+| --- | --- |
+| Self (no `--tag`, no `--candidates`) | Build A and build B, each from an empty `dist/`, both SHA-256 `c7893f96…8863f`; every gate passed: identity, digest, version (`0.1.0` at `80082e6…`), tests (typecheck; unit 2,035 passed; golden 286 passed), installed (167 of 167, expecting `0.1.0` at `80082e6…`), eval (12 of 12 files), audit (0 of every level), osv (0 findings), deny-list (invented list, 0 matches, 173 of 173 package files read), sbom (57 components, valid against CycloneDX 1.5), provenance (warning: private) |
+| Fixture `reviewed` entry on a candidates-only commit | The ledger entry (kind `reviewed`, the build's digest, source commit `80082e6`) committed alone on top; `release-candidate.ts check` passes; the dry run with `--tag v0.1.0 --candidates release-candidates.json` builds with the source commit as the revision and every gate passes |
+| `self` entry in release mode | `release-gate.ts identity --mode release` and `digest --mode release` with a self ledger: FAIL, "a dry-run self entry; the committed ledger holds reviewed entries only" (exit 1) |
+| Plant `tag` | identity FAIL before any build: tag `v0.1.0-planted` and version `0.1.0` disagree |
+| Plant `version` | identity FAIL before any build: entry version `0.1.0-planted` |
+| Plant `digest` | digest FAIL: `c7893f96…8863f` is not the changed reviewed digest |
+| Plant `eval` | eval FAIL: 7 passed, 1 failed, every eval file below the gate with the planted converter |
+| Plant `audit` | audit FAIL: 1 high and 0 critical advisories |
+| Plant `osv` | osv FAIL: 2 blocking findings (fixture `lodash@4.17.20`) |
+| Plant `deny-list` | deny-list FAIL; the location `toolkits/buildos/release-plant-deny-list.txt:1` is printed, the planted term is not; the planted file is removed and the clone is clean after |
+
+Each failing run printed "stopped before staging" (or "stopped before any build"); no run stages or publishes.
+
+### Check Results (Review Round 1)
+
+Run on macOS arm64 with Node v26.13.1 and npm 11.20.0, from `toolkits/buildos/` unless noted, on the uncommitted tree:
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck`, `npm run build` | Pass |
+| `npm test` | 2,347 tests, 2,335 pass, 0 fail, 12 skipped (2,299 before this round) |
+| `npm run check:deps`, `check:deps:installed` | Pass |
+| Reproducible pack, two clean builds | Same SHA-256 `8cc179fa…78dbe`, 173 entries |
+| Development tarball: `npm pack`, offline install, installed golden compare | 167 of 167 |
+| Release-stamped tarball (`0.1.0`): offline install, installed golden compare with the release identity expected | 167 of 167 (and 135 of 167 without the expected identity, the reviewer's 32 cases); no golden file changed |
+| Privileged entry points with no `node_modules` and no `NODE_PATH` | `test/release-privileged.test.ts`, 5 of 5 |
+| SBOM against the vendored CycloneDX 1.5 schema | The generated SBOM: 0 errors; the previous output (an expression inside `license`): rejected |
+| Deny-list script with an invented list | `--root ../.. --pack .` and `--root ../.. --tarball <dev tarball>`: 0 matches, 173 of 173 package files read; same archive counts as the `fflate` version |
+| `actionlint` 1.7.12 with shellcheck 0.11.0 (release binaries, checksums checked) on all workflows | No problem |
+| `just` recipes from a clean copy (no `node_modules`, own npm prefix and cache, `NODE_PATH` unset) | `test-buildos` exit 0 (2,346 tests, 0 fail); `install-toolkits` exit 0 (four commands in the prefix); `check-toolkits` exit 0; `build-buildos` exit 0 without a reinstall; `uninstall-toolkits` exit 0, no command left. The old `justfile` fails `test-buildos` (Node types missing) and `install-toolkits` there |
+| Release dry runs (scratch clone) | As in [Local Dry Runs After Review Round 1](#local-dry-runs-after-review-round-1) |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | `passed` |
+| `make-docs project path-hygiene validate --target-root .` | Valid, 0 failing findings |
+| `git diff HEAD --check` | Clean |
+
+### Still Needs a GitHub Run
+
+- The first CI run of this round on all three systems (`buildos-ci`, `buildos-deny-list`), including `actionlint`-clean workflows on GitHub and the new tests.
+- A64 and A65 on the reference runner: push the commit to `release-dry-run/<short-sha>` (agreement, self), then `release-dry-run/<short-sha>-plant-tag`, `-plant-version`, `-plant-digest`, `-plant-eval`, `-plant-audit`, `-plant-osv`, and `-plant-deny-list` (now with the invented list). Delete each branch after its run.
+- The `deny-list`, `stage`, `sbom`, and `discard` jobs run only for a published release, after the owner actions above.
+
+## P8 CI Runs and Dry Runs on b3430d9
+
+GitHub runs on commit `b3430d9` (the review round 1 fixes), 2026-11-24.
+
+| Run | Workflow and trigger | Outcome |
+| --- | --- | --- |
+| [45510596967](https://github.com/brucewaynedecoy/build-os/actions/runs/45510596967) | `buildos-ci`, push | ubuntu, macOS, OSV, and Make Docs contract passed. Windows failed in `test/guide-examples.test.ts` (chapter 4, "The one question: Make Docs", text block 1): Windows prints the Command Prompt form, which the POSIX example did not show (P8-D-01). |
+| [45510597002](https://github.com/brucewaynedecoy/build-os/actions/runs/45510597002) | `buildos-deny-list`, push | Failed in "Build and pack": `npm pack --pack-destination $RUNNER_TEMP/pack` gave ENOENT, because the folder did not exist (P8-R2-03). |
+| [45510645253](https://github.com/brucewaynedecoy/build-os/actions/runs/45510645253) | `buildos-release`, dry run (agreement) | Every gate passed; build B equalled the self entry from build A; release-only jobs skipped. |
+| [45510648082](https://github.com/brucewaynedecoy/build-os/actions/runs/45510648082) | dry run, plant `tag` | Stopped at the identity gate, before any build. |
+| [45510650434](https://github.com/brucewaynedecoy/build-os/actions/runs/45510650434) | dry run, plant `version` | Stopped at the identity gate. |
+| [45510653401](https://github.com/brucewaynedecoy/build-os/actions/runs/45510653401) | dry run, plant `digest` | Stopped at the digest gate. |
+| [45510656388](https://github.com/brucewaynedecoy/build-os/actions/runs/45510656388) | dry run, plant `eval` | Stopped at the eval gate. |
+| [45510660339](https://github.com/brucewaynedecoy/build-os/actions/runs/45510660339) | dry run, plant `audit` | Stopped at the audit gate. |
+| [45510663900](https://github.com/brucewaynedecoy/build-os/actions/runs/45510663900) | dry run, plant `osv` | Stopped at the OSV gate. |
+| [45510666162](https://github.com/brucewaynedecoy/build-os/actions/runs/45510666162) | dry run, plant `deny-list` | Stopped at the deny-list gate (invented list). |
+
+A64 and A65 are closed for the `verify` stage on the reference runner: the agreement run passed, and each of the seven planted failures stopped at its own gate. The prepare, attach, and stage paths of the round 2 workflow have not run on GitHub yet (see [Still Needs a GitHub Run (Round 2)](#still-needs-a-github-run-round-2)).
+
+## P8 Review Round 2
+
+An independent review of `b3430d9` found nine release-workflow findings (P8-R2-01 to P8-R2-09), ten documentation findings (P8-D-01 to P8-D-10), and reviewer notes; CI on `b3430d9` had two failures (above). This round fixed them on `rewrite/ts-cli` on 2026-11-24, from `b3430d9`, not committed. Nothing was published, staged, tagged, or released; no registry-writing npm command ran; no repository or npm setting changed.
+
+### Findings and Dispositions (Round 2)
+
+| ID | Disposition | Root cause and fix | Test that fails without the fix |
+| --- | --- | --- | --- |
+| P8-R2-01 (blocker) | Fixed | `stage` checked out the candidate and ran its `release-stage-check.ts` and `release-ledger.ts` with `id-token: write`. Now `deny-list`, `attach`, `stage`, and `discard` check out the trusted default-branch SHA (`sparse-checkout: toolkits/buildos/scripts`, full history) and run only `release-stage-check.ts`, `release-github.ts`, `release-ledger.ts`, `tar-reader.mjs`, and the scanner; the ledger is read by commit and path from git. The provenance precheck runs first in `stage`, and `resolve` already stops a release from a repository that is not public. The workflow file of a release run comes from the tagged commit: SECURITY.md states that boundary, `.github/CODEOWNERS` covers `.github/`, the release scripts, the scanner, and the ledger, and the owner settings (required reviewer on `buildos-npm-stage`, tag ruleset, branch ruleset with code-owner review, immutable releases) make it enforceable. GitHub documents the environment, deployment-branch-policy, and run-approval endpoints under the Actions read permission, so `stage` reads them with `actions: read` and fails closed when it cannot, when there is no required reviewer, when the run has no approval for the environment, or when the deployment refs are not exactly `tag:v*`. Rulesets and branch protection cannot be read from the job; they rely on the owner settings and the npm 2FA approval. | `test/release-workflow.test.ts` (trusted jobs run only trusted scripts from `trusted_sha`; the ledger is read with `--repo trusted --commit`; precheck first; the token only in API steps); `test/release-privileged.test.ts` (environment check: no reviewer, no approval, wrong refs, unreadable) |
+| P8-R2-02 (blocker) | Fixed | npm merges a packed `publishConfig` into its settings (npm 11.19.1 `lib/commands/publish.js`, `#getManifest`; CLI flags win only for the keys given). The trusted check refuses a `package.json` with `publishConfig`, a top-level `tag`, `private`, `workspaces`, any dependency field, any lifecycle script (npm's list and any `pre`/`post` hook), or a name or version other than the entry's, and a tarball with a link, a path outside `package/`, or a repeated path. `publish` runs `npm stage publish <tarball> --provenance --access public --tag <latest|next> --registry https://registry.npmjs.org/ --ignore-scripts` from an empty folder, with every `npm_config_*` value, `NPM_ID_TOKEN`, `NODE_AUTH_TOKEN`, `NPM_TOKEN`, `NODE_OPTIONS`, and `NODE_PATH` removed, `NPM_CONFIG_USERCONFIG` and `NPM_CONFIG_GLOBALCONFIG` pointed at empty files, and a refusal when a builtin `npmrc` sits next to npm; setup-node no longer gets `registry-url` (it writes an npmrc). Verified against npm 11.19.1 (packed from the registry into a temporary folder): `npm stage publish --help` lists `--tag`, `--access`, `--provenance`; `registry`, `userconfig`, `globalconfig`, and `ignore-scripts` are definitions in `@npmcli/config`; `StagePublish` extends `Publish` with the same params; npm reads `npm_config_*` case-insensitively. | `test/release-privileged.test.ts` (eight manifest cases; publish with a recorder for npm: exact argv, dropped hostile variables, empty npmrc files, builtin npmrc refused, reused work folder refused, no npm run after a failed check) |
+| P8-R2-03 (blocker, CI) | Fixed | The pack folder did not exist. The step now runs `scripts/pack-for-scan.ts --out "$RUNNER_TEMP/pack"`, which creates the folder (refusing one with files), builds, packs with a private npm cache, checks the tarball, and prints `tarball=<path>` to the step output. | `test/release-workflow.test.ts` (the YAML calls the script; the script in a clean temp folder whose path has spaces and does not exist yet) |
+| P8-R2-04 (blocker) | Fixed; owner actions | `secrets.BUILDOS_DENY_LIST` resolved to a repository secret of that name. The workflows now read `secrets.BUILDOS_DENY_LIST_ENV`, which must exist only in the environment `buildos-deny-list`; the scanner's missing-list message names that environment and secret; the real-list jobs check through the API that the environment deploys from exactly the default branch and `v*` tags, and fail closed. Until the owner creates the environment secret (and, on GitHub Free, makes the repository public, since a private Free repository cannot use environments), the real-list scan on `main` and in prepare and release runs fails closed. | `test/release-workflow.test.ts`, `test/package.test.ts` (no reference to the repository secret name); `test/release-privileged.test.ts` (the message) |
+| P8-R2-05 (major) | Fixed; material PRD change | The SBOM was uploaded to an already published release by tag name, which immutable releases refuse, and nothing checked it. New flow, per GitHub's immutable-release procedure (create a draft, attach every asset, publish): tag and draft by the maintainer; a `prepare` dispatch from the default branch runs resolve, verify, and the real deny list, then `attach` (trusted, `contents: write`) checks the tarball against the ledger and that the SBOM records its SHA-256 and the reviewed source commit, and uploads both to the release ID; the maintainer publishes; the release run rebuilds (verify) and `stage` downloads the tarball from the published, immutable release by its release ID, checks GitHub's asset digest, the ledger digest, and the verify digest, and stages that file. The rebuild runs in the release run, so the staged bytes are both the reviewed digest and a fresh build of the tag. | `test/release-workflow.test.ts` (job graph, prepare resolve cases); `test/release-privileged.test.ts` (find-draft, attach, download-asset, SBOM binding) |
+| P8-R2-06 (blocker) | Fixed | ZIP members were kept in an object keyed by name, and the tar readers stopped quietly on a bad header. `scripts/tar-reader.mjs` checks each header's checksum and ustar magic, plain-octal sizes, bodies and padding inside the archive, an end block followed by zeros only, and pax records (a pax `size` is refused); it throws a TarError that names only the kind of problem. The scanner and `release-ledger.ts` both use it. The scanner reads every copy of a repeated tarball path or ZIP member name and counts the name as not fully scanned (a failure in a shipped path); the release reader refuses a repeated path. | `test/deny-list.test.ts` (crafted archives: a term in the first of two same-named ZIP members and tar entries; truncated body, no end block, bad size, base-256 size, bad checksum, no magic, bytes after the end, pax size) |
+| P8-R2-07 (blocker) | Fixed | `--out` could be a used folder. The placeholder is built and packed in a private temporary folder, checked to hold exactly the three regular files with the expected content (package.json as parsed JSON, the other two by SHA-256), and only then written to `--out`, which must not exist or be empty. | `test/release.test.ts` (used folder refused; extra, missing, and changed files refused) |
+| P8-R2-08 (blocker) | Fixed | The identity gate exempted any change at the ledger path, and the loader followed links. Release mode reads the ledger with `git ls-tree` and `git cat-file` at HEAD and refuses `--candidates`; the entry must be a blob with mode `100644`; the same rule holds in the trusted checks (`--repo --commit`). | `test/release-privileged.test.ts` (a link and an executable ledger commit); `test/release.test.ts` (identity gate with a link or executable mode; release mode refuses `--candidates`) |
+| P8-R2-09 (minor) | Fixed | The RFC 3339 offset was not range-checked. Hours above 23 or minutes above 59 now fail. | `test/sbom-schema.test.ts` (`+99:99`, `+24:00`, `-05:60`) |
+| Reviewer notes | Fixed | `discard` now lists the run's artifacts and deletes one only when its ID and its name `buildos-release-<run id>-<run attempt>` match; the artifact name holds the run attempt; assets go to the release ID from the release's own `upload_url`, checked against the repository and ID. | `test/release-privileged.test.ts` (discard cases); `test/release-workflow.test.ts` (names) |
+| P8-D-01 (blocker, CI) | Fixed | Chapter 4 now shows the Windows output (Command Prompt, folder in quotes) as its own block. The test compares each block with the real CLI on its own system, and the Windows block also on macOS and Linux with the init code run with the Windows platform setting in a folder whose name holds a backslash. | `test/guide-examples.test.ts` (win32 block) |
+| P8-D-02 (major) | Fixed | Make Docs 2.0.9 installs its resources under `.make-docs/system/` (11 contracts, 12 references, 19 templates, 20 prompts, plus routers) and no `docs/assets/`; guides go to `docs/assets/<persona-slug>/` when written; archives to `.make-docs/archive/`; the design template has frontmatter and eight sections (the contract requires seven). Chapters 2, 4, 12, 13, 16, 17, 19, 20, and 21 are corrected from a real `buildos init --make-docs` with Make Docs 2.0.9 (temporary Make Docs home) and its file list, now `test/fixtures/make-docs-2.0.9-layout.txt`. Chapter 12's change rules were the old change-document model; they now follow `prd-change-management.md` of 2.0.9 (update the owning document, keep `## Requirement History`). | `test/guide-walk.test.ts` (every inline-code path in either installed layout, placeholders by their fixed part, and an allow-list with reasons) |
+| P8-D-03 (major) | Fixed | `PB-005` targets two seeded `draft` records, and a run resolves every target. Chapter 8 now says to set `targets: []` and rebuild the index (the run reads targets from the index), and names the error. | `test/guide-walk.test.ts` (the whole worked path: config and renames, conversion of a DOCX, records, the three refusals, the run, qualification, and promotion with the companion fixture, then validate; commands taken from the chapters) |
+| P8-D-04 (major) | Fixed; owner question | Every place that describes the pin or rollback now states the current order (a `buildos` on `PATH` first) next to the first claim, with one marked sentence: "Current behavior, pending an owner decision" (guide chapter 4, both READMEs, release notes, SECURITY.md). Register `Q-015`. | Text only; the wrapper order itself is tested in `test/wrappers.test.ts` |
+| P8-D-05 (major) | Fixed | The guide, READMEs, release notes, and chapter 3 now state the real behavior: no replacement in a new setup (a clash stops with exit 10), adoption criteria and the replaced Go-era wrapper and skill files, undo with listed leftovers and exit 10 (`partially_applied`), Make Docs writes and crashes not undone, an empty `.os/` stopping with exit 10. | Text only; the behaviors are tested in `test/init*.test.ts` |
+| P8-D-06 (major) | Fixed docs; product gap and owner question | `--json` gives the envelope for `version`, `validate`, `init`, `entities`, `discovery`, and `design`; help prints text; `intake` refuses the flag (Go parity, recorded in the P4 evidence). PRD 20 says every command has `--json`, so this is a product gap, register `D-010`, not a doc fix only. The project scripts `.os/scripts/buildos-intake|discovery|design` run `buildos <domain>` and print no notice; PRD 20 Legacy Command Names covers the package names only, so the docs state the difference and register `Q-016` asks the owner. | Text only |
+| P8-D-07 (major) | Fixed | The required check named in SECURITY.md was skipped on every pull request. Job names are now "Deny list (invented list, every push and pull request)" and "Deny list (real list, default branch only)" (release workflow: "Release deny list (real list, trusted scanner)"); SECURITY.md lists the checks to require on pull requests and says not to require the real-list job. The CI path filter now covers `.github/**` (CODEOWNERS). | `test/release-workflow.test.ts` (job names, SECURITY.md names them); `test/package.test.ts` |
+| P8-D-08 (major) | Fixed | The SBOM check tested presence. It now compares each SHA-512 with the lockfile integrity, and versions and licenses across the SBOM, the lockfile, the Bundled npm Packages table, the Lockfile Inventory, the package counts, and the notices. SECURITY.md scopes `--ignore-scripts` to this repository's build and states that the package declares no lifecycle script. | `test/release.test.ts` (a changed hash, wrong license or version in either table, wrong notice license, wrong count; the packed `package.json` has no lifecycle script) |
+| P8-D-09 (major) | Fixed | Deprecation only warns, and an exact pin of a deprecated version installs; an owner can unpublish within 72 hours, or later with no dependents, under 300 weekly downloads, and one owner; an unpublished version does not install. AGENTS.md (placeholder step 8) and SECURITY.md (rollback) say so (docs.npmjs.com: npm-deprecate, Unpublish Policy, Deprecating packages, read 2026-11-24). | Text only |
+| P8-D-10 (major) | Fixed | PE-007 is an entity dataset link outside the root, refused with no override (`entities` has no `--allow-outside-root`). The release notes now describe each exception by its behavior, checked against `test/golden/parity-exceptions.json` (PE-006, PE-007, PE-010, PE-012, PE-013, PE-014, PE-017, PE-019 regrouped). | Text only |
+| Smaller items | Fixed | Chapter 4: `npx` keeps a copy in npm's cache; the generated `CLAUDE.md` has a heading and a link; the evidence of the `PERF-001` recheck drops the 24-fold comparison and the "uncertain to about 1 ms" claim (now a loose bound from the two median intervals). | Text only |
+
+### Release Flow After Round 2
+
+1. Maintainer: version, dry run, inspect the tarball, commit the `reviewed` entry (ledger).
+2. Maintainer: tag `v<version>` and a draft GitHub Release.
+3. `prepare` (dispatch from the default branch): `resolve` (no repository code) → `verify` (candidate code, no secret, `contents: read`) → `deny-list` (trusted code, real list, `actions: read`) → `attach` (trusted code, `contents: write`): tarball and SBOM on the draft.
+4. Maintainer: review the draft, publish it (immutable).
+5. `release` (published event): `resolve` → `verify` (rebuild must equal the reviewed digest) → `deny-list` → `stage` (trusted code, `id-token: write` and `actions: read`, environment `buildos-npm-stage` with a required reviewer who approves the job first): download the release asset, check it, `npm stage publish` with a clean npm configuration.
+6. Maintainer: approve the npm stage with 2FA after the recorded publication approval. `discard` deletes this run's artifact after a deny-list failure.
+
+### Owner Actions (Round 2)
+
+In this order; exact paths in `toolkits/buildos/SECURITY.md` (Owner Settings for Releases), verified against docs.github.com on 2026-11-24.
+
+1. Finish the history rewrite and make the repository public (Settings > General > Danger Zone > Change repository visibility). On GitHub Free, environments work only in a public repository.
+2. Create the environment `buildos-deny-list` with deployment refs branch `main` and tag `v*` (Settings > Environments > New environment).
+3. Add its environment secret `BUILDOS_DENY_LIST_ENV`: `gh secret set BUILDOS_DENY_LIST_ENV --env buildos-deny-list --repo brucewaynedecoy/build-os < <list file outside the repository>` (the value comes from stdin and is not echoed).
+4. Delete the repository secret: `gh secret delete BUILDOS_DENY_LIST --repo brucewaynedecoy/build-os`.
+5. Create the environment `buildos-npm-stage`: required reviewer the maintainer, Prevent self-review off (one maintainer), Allow administrators to bypass off, deployment ref tag `v*`.
+6. Default branch ruleset: restrict deletions, block force pushes, required pull request (1 approval, code-owner review), required checks `test (ubuntu-latest, Node 24)`, `test (macos-latest, Node 24)`, `test (windows-latest, Node 24)`, `OSV scan of package-lock.json`, `Make Docs contract (pinned range bounds)`, `Deny list (invented list, every push and pull request)`; with one maintainer, a bypass "For pull requests only".
+7. Tag ruleset on `v*`: restrict creations, updates, deletions; bypass the maintainer only.
+8. Settings > General > Releases > Enable release immutability.
+9. Private vulnerability reporting (Settings > Advanced Security), after the repository is public.
+10. npm First Publication (AGENTS.md), then the release procedure.
+
+### Open Owner Questions (Round 2)
+
+- Lazy-load the PDF reader before `0.1.0` (`PERF-001` recheck), still open.
+- Wrapper order, pin-first or global-first (`Q-015`); recommendation: pin-first.
+- Project scripts with the legacy names (`Q-016`); recommendation: print the notice and remove them in `0.3.0`.
+- `intake` without `--json` (`D-010`); recommendation: add the envelope before `0.2.0`.
+- The release flow change (draft, prepare run, required reviewer before staging) departs from the PRD 20 flow approved before this round ("a published GitHub Release starts the workflow"); PRD 20 and its history entry now state it, and the owner confirms or rejects it.
+
+### Local Dry Runs After Review Round 2
+
+Scratch clone of the round 2 working tree (outside the repository, a fresh git repository) with version `0.1.0` committed as the source commit `062c8c9`. macOS arm64, Node v26.13.1, npm 11.20.0 (not the reference environment, so the identity gate only notes it), a private npm cache, the real `npm audit`, the saved osv-scanner 2.7.1 clean output `test/fixtures/osv/clean.json` (exit 0; no fresh OSV scan ran here: the CI OSV job passed on `b3430d9`), an invented list in a file outside the clone, and `--visibility private`.
+
+| Run | Result |
+| --- | --- |
+| Self | Build A and build B both SHA-256 `dabf3660…eadc3`; every gate passed: identity, digest, version (`0.1.0` at `062c8c9…`), tests (typecheck; unit 2,075 passed; golden 286 passed), installed (167 of 167, release identity expected), eval (12 of 12), audit (0 at every level), osv (0 findings), deny-list (invented list, 0 matches, 173 of 173 package files read), sbom (57 components, valid, values compared), provenance (warning: private) |
+| Fixture `reviewed` entry on a ledger-only commit `ca315bc` | `release-candidate.ts check` passes; the dry run with `--tag v0.1.0 --candidates release-candidates.json` reads the ledger from git at HEAD and every gate passes |
+| Plant `tag` / `version` | identity FAIL before any build (`v0.1.0-planted` and `0.1.0` disagree; entry version `0.1.0-planted`) |
+| Plant `digest` | digest FAIL (`dabf3660…eadc3` is not the changed reviewed digest) |
+| Plant `eval` | eval FAIL (7 passed, 1 failed; every eval file below the gate with the planted converter) |
+| Plant `audit` | audit FAIL (1 high, 0 critical) |
+| Plant `osv` | osv FAIL (2 blocking findings in the fixture `lodash@4.17.20`) |
+| Plant `deny-list` | deny-list FAIL; the location `toolkits/buildos/release-plant-deny-list.txt:1` is printed, not the term; the clone is clean after |
+| Trusted checks on the self build's tarball and the ledger commit, from copies of the six trusted scripts in a folder with no `node_modules` | `release-stage-check.ts digest --repo <clone> --commit ca315bc …`: pass, ledger read from git; `precheck`: pass with public and an OIDC request, FAIL with private; `publish` with a recorder in place of npm and `npm_config_registry` set in the environment: the recorder got exactly `stage publish <tarball> --provenance --access public --tag latest --registry https://registry.npmjs.org/ --ignore-scripts`, and no `npm_config_*` value except the four the plan sets |
+| SBOM binding on the self run's SBOM | `sbomBindingProblems`: none for the tarball digest and source commit; "the SBOM's package hash is not the verified tarball SHA-256" for another digest |
+
+Each failing run printed "stopped before staging" (or "stopped before any build"); no run stages or publishes. The GitHub API steps (environment, find-draft, attach, download-asset, discard) ran only against a fake `fetch` in `test/release-privileged.test.ts`; they need a GitHub run.
+
+### Check Results (Review Round 2)
+
+Run on macOS arm64 with Node v26.13.1 and npm 11.20.0, from `toolkits/buildos/` unless noted, on the uncommitted tree:
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck`, `npm run build` | Pass |
+| `npm test` after the build | 2,386 tests, 2,374 pass, 0 fail, 12 skipped (2,347 before this round); the same with a space in `TMPDIR` |
+| `npm run check:deps`, `check:deps:installed` | Pass |
+| Reproducible pack (`--allow-dirty`, two clean builds) | Same SHA-256 `73a94275…28ef5`, 173 entries; in the scratch clone (clean commit) build A and build B gave the same SHA-256 |
+| Development tarball: pack, offline install, installed golden compare | 167 of 167 |
+| Release-stamped tarball (`0.1.0`): installed golden compare with the release identity expected | 167 of 167 (dry-run `installed` gate) |
+| Privileged entry points with no `node_modules` | `test/release-privileged.test.ts`, 17 of 17; and the six trusted scripts copied to a folder with no `node_modules`, run on the self build's tarball (above) |
+| `scripts/pack-for-scan.ts` in a clean temp folder | Creates a missing folder (path with spaces), writes the tarball, prints `tarball=<path>`; refuses a folder with files (also in the suite) |
+| Crafted archives | `test/deny-list.test.ts`, 4 new tests (duplicate ZIP members, duplicate tarball paths, eight malformed or truncated tarballs, the reader on a valid archive) |
+| Guide walk and inline paths | `test/guide-walk.test.ts`, 9 of 9; guide output blocks, 6 of 6 (the Windows block on macOS through the platform setting) |
+| `node guide/tools/build-guide.mjs` (repository root) | Wrote `guide/BuildOS-Guide.html` from 22 documents |
+| Link check | In the suite (`test/system-content.test.ts`): pass |
+| `just` recipes from a clean copy (no `node_modules`, own npm prefix and cache, `NODE_PATH` unset) | `test-buildos` exit 0 (2,386 tests, 0 fail) once the copy was a git repository (the SBOM tests read the commit time); `install-toolkits`, `check-toolkits`, `build-buildos`, `uninstall-toolkits` exit 0; no command left in the prefix |
+| Deny-list script with an invented list | `--root ../.. --pack .` and `--tarball <dev tarball>`: 0 matches, 173 of 173 package files read |
+| `actionlint` 1.7.12 on all workflows | No problem (shellcheck not installed) |
+| Release dry runs (scratch clone) | As in [Local Dry Runs After Review Round 2](#local-dry-runs-after-review-round-2) |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | `passed` |
+| `make-docs project path-hygiene validate --target-root .` | Valid, 0 failing findings |
+| `git diff HEAD --check` | Clean |
+
+### Still Needs a GitHub Run (Round 2)
+
+- `buildos-ci` and `buildos-deny-list` on this round's commit, on all three systems: the Windows guide block on a real Windows runner, the new tests, and the pack step. The `Deny list (real list, default branch only)` job fails closed on `main` until the owner actions 1 to 4 are done.
+- A dry run of the new workflow on the reference runner: push to `release-dry-run/<short-sha>` (agreement), and `release-dry-run/<short-sha>-plant-<gate>` for `tag`, `version`, `digest`, `eval`, `audit`, `osv`, and `deny-list`; or Actions > buildos-release > Run workflow with purpose `dry-run`.
+- The prepare path: after the owner actions, a tag and a draft release, then Run workflow from `main` with purpose `prepare`, tag `v<version>`, candidates `committed`, plant `none`. It exercises the real deny-list job, the environment check, and `attach` against GitHub.
+- The release path (`stage`, `download-asset`, the approval check, the npm call): only for a real release, after the npm First Publication steps; no agent starts it.
+
+## P8 CI Runs and Dry Runs on 6e8e226
+
+GitHub runs on commit `6e8e226` (the review round 2 fixes), 2026-11-24.
+
+| Run | Workflow and trigger | Outcome |
+| --- | --- | --- |
+| [45520462648](https://github.com/brucewaynedecoy/build-os/actions/runs/45520462648) | `buildos-ci`, push | Passed: ubuntu, macOS, and Windows tests, OSV scan, Make Docs contract (pinned range bounds), and the cross-OS pack report. |
+| [45520462693](https://github.com/brucewaynedecoy/build-os/actions/runs/45520462693) | `buildos-deny-list`, push | Passed with the invented list. |
+| [45520465018](https://github.com/brucewaynedecoy/build-os/actions/runs/45520465018) | `buildos-release`, dry run (agreement) | Passed: every verify gate; build B equalled the self entry from build A. |
+| [45520468162](https://github.com/brucewaynedecoy/build-os/actions/runs/45520468162) | dry run, plant `digest` | Stopped at the digest gate. |
+
+These runs close the Windows guide block (P8-D-01), the pack step (P8-R2-03), and A70 on three systems. The prepare and release paths have not run on GitHub.
+
+## P8 Final Check for Stages 1 to 3
+
+Review round 3 of `6e8e226` found two blockers and six majors (P8-F-01 to P8-F-08) in Stage 1 (release workflow), Stage 2 (documents), and Stage 3. This is the final fix pass: under the project stop rule no further review follows, and the orchestrator verifies through CI, dry runs, and this evidence. Fixed on `rewrite/ts-cli` on 2026-11-24, from `6e8e226`, not committed. Nothing was published, staged, tagged, or released; no registry-writing npm command ran; no repository or npm setting changed.
+
+### Findings and Dispositions (Final Check)
+
+| ID | Disposition | Root cause and fix | Test that fails without the fix |
+| --- | --- | --- | --- |
+| P8-F-01 (blocker) | Fixed | The owner checklist installed the environment secret (old step 3) before the rulesets protected the refs that could receive it, and deleted the old repository secret only at step 4. SECURITY.md (Owner Settings for Releases) now orders: delete the repository secret; finish the history rewrite (before force pushes are blocked); make the repository public; branch ruleset; tag ruleset; release immutability; verify them (`gh api .../rules/branches/main`, `.../rulesets?targets=tag`, `.../immutable-releases`); the two environments; only then the environment secret; then private vulnerability reporting; then npm trusted publishing. A trust rule states that write access is a release-trusted role and that untrusted work comes through fork pull requests, which get no secret; and that code-owner review constrains the default branch only. The old claim that rulesets cannot be read in-job was wrong: GitHub lists `GET /repos/{owner}/{repo}/rules/branches/{branch}`, `GET /repos/{owner}/{repo}/rulesets`, and `GET /repos/{owner}/{repo}/rulesets/{ruleset_id}` under the Metadata read permission, which a job token always has ("Permissions required for GitHub Apps"; "Automatic token authentication": with a `permissions` key, `metadata` always gets read). New `release-github.ts rulesets --branch <default>` runs in the release `deny-list` job before the secret step, in the `stage` job before npm, and in the real-list job of `buildos-deny-list.yml` before the secret step; it fails closed. | `test/release-workflow.test.ts` (the checklist steps are numbered without a gap; the order of the eleven named steps; only the environment-secret step sets a secret and it comes after both rulesets, immutability, and both environments; the six checks of step 4 equal `REQUIRED_CHECKS`; the trust rule; the rulesets step sits after the environment check and before the secret in both deny-list jobs and before the release asset and npm in `stage`); `test/release-privileged.test.ts` (rulesets: each missing rule, an `evaluate` ruleset, an exclusion, missing tag rules, HTTP 403, a bad branch name) |
+| P8-F-02 (blocker) | Fixed | Staging accepted an immutable release with only the tarball; the SBOM asset was never checked again. `download-asset` now requires exactly two assets, `brucewaynedecoy-buildos-<version>.tgz` and `buildos-<version>.cdx.json`, each once, `uploaded`, with GitHub's `sha256:` digest, and nothing else; downloads both; checks each size and digest; checks the tarball against the ledger at the release commit and the verify digest; and checks that the SBOM records that tarball SHA-256 and the reviewed source commit, validates against the vendored CycloneDX 1.5 schema (`scripts/json-schema.ts`, now a trusted script, built-ins only), and has the same SHA-256 as the SBOM of this run's own `verify` job (the `stage` job downloads it from the run's artifact). `attach` also validates the schema now. The SBOM generation is deterministic: serial number from the tarball digest and source commit, time stamp from the commit time, and npm's `metadata.tools` version fixed by the reference environment; two generations here gave the same SHA-256 (`6479fa05…0e3d`). "Source commit" is the reviewed source commit recorded in the ledger at the tagged commit (the build stamps it; the tagged commit may be a ledger-only commit on top of it). | `test/release-privileged.test.ts`: the old one-asset success is now a failure (`0 assets named buildos-9.8.7.cdx.json`); a missing SBOM, a missing tarball, an extra asset, a repeated tarball, an asset not uploaded, a replaced SBOM (valid and bound, other bytes), an SBOM for another digest or another source commit, a schema-invalid SBOM |
+| P8-F-03 (major) | Fixed | A direct `200` octet-stream answer was treated as a failure, and a missing GitHub `digest` passed. GitHub's "Get a release asset" says that with `Accept: application/octet-stream` the API "will either redirect the client to the location, or stream it directly if possible. API clients should handle both a 200 or 302 response." `downloadAssetBytes` takes a direct 200 body, or follows a 301, 302, 303, 307, or 308 to an `https` location by hand, with no Authorization header and no further redirect. GitHub's schema marks the asset `digest` as "string or null", so GitHub does not guarantee it; the check requires it (a null or malformed digest fails closed) and compares it, in addition to the ledger, verify, and rebuild comparisons. SECURITY.md says so. | `test/release-privileged.test.ts`: success through a redirect (no token sent to the storage host) and through a direct 200 body; a null digest in both forms; changed bytes in both forms; HTTP 403; a redirect to an `http` address |
+| P8-F-04 (major) | Fixed | `.github/CODEOWNERS` missed gate implementations and policy inputs. It now covers `/.github/`, `/toolkits/buildos/scripts/` (every build, release, and gate script, the dependency policy, and the vendored schemas), `/toolkits/buildos/test/` (the tests the CI and tests gates run, the golden harness and its identity normalization, the eval runner and corpus, the planted-failure fixtures), the ledger, `package.json`, the lockfile, `.npmrc`, `tsconfig.json`, `SECURITY.md` and `THIRD_PARTY_NOTICES.md` (read by the SBOM gate), and the five product files the scripts read or name (`src/cli/main.ts` and `src/cli/invocation.ts` for the bundle, `src/adapters/package-content.ts` for the package content, `src/core/init/make-docs.ts` and `make-docs-range.ts` for the Make Docs contract job). | New `test/codeowners.test.ts`: computes the set from every workflow `run:` line (globs expanded) and every script's imports and path references, transitively (the gate runners' imports of product code are not followed), and fails on any file outside every pattern; it also asserts the set holds the files the review named. Against the old CODEOWNERS it lists 1,355 uncovered files (most of them test fixtures and goldens). |
+| P8-F-05 (major) | Fixed | The sole-maintainer route did not work as written. New SECURITY.md section Sole Maintainer or Two Maintainers, checked against "Creating rulesets for a repository": GitHub never lets a pull request's author approve it; every CODEOWNERS pattern names one person, so a second reviewer who is not a code owner cannot give the code-owner approval for the owner's own pull request; the bypass list takes roles (Repository admin, Maintain, Write, custom), teams, apps, and Dependabot, not a person. Sole-maintainer route: branch ruleset bypass = the role Repository admin with "For pull requests only" (only the owner holds it in a personal-account repository; every change still needs a pull request; a direct push, force push, or deletion is still refused; checks still run and show, but a bypass merge is not blocked by a missing approval or a failing check); tag ruleset bypass = Repository admin, Always allow (tag rulesets have no pull request mode); Prevent self-review off on `buildos-npm-stage`, so the owner can approve the staging job. It states what this protects and what it does not (no second person; a compromised owner account leaves only the npm two-factor approval). Two-maintainer route: a second code owner on every line, no branch bypass, Prevent self-review on. | Text only; `test/release-workflow.test.ts` keeps the checklist order |
+| P8-F-06 (major) | Fixed | The `init` question and guide chapter 4 said Make Docs installs guides and templates in `docs/`. With Make Docs 2.0.9 (the pinned range `~2.0.9`; `npm view @brucewaynedecoy/make-docs@~2.0.9 version` gives `2.0.9`, so the lower and upper bounds are the same version today), `docs/designs`, `docs/plans`, `docs/prd`, and `docs/work` get `AGENTS.md` and `CLAUDE.md` routers, and the templates, contracts, prompts, and references live under `.make-docs/system/` (`test/fixtures/make-docs-2.0.9-layout.txt`). New message: "Make Docs is an optional companion tool. It adds docs/ folders for designs, plans, requirements, and work, each with instructions for agents, and keeps its templates, rules, and prompts in .make-docs/, so agents can keep project documents in order." The guide paragraph and its POSIX output block changed; the Windows block holds only the commands and is unchanged; the skills router does not repeat the text. `init` is not a Go-parity command, so no golden and no parity exception applies. | `test/init.test.ts` (the message against the 2.0.9 layout fixture; A47 output); `test/guide-examples.test.ts` (the chapter 4 block equals the real output) |
+| P8-F-07 (major) | Fixed; PRD change | PRD 20 and `toolkits/buildos/AGENTS.md` said a dry run runs every check. Now (PRD 20 Release, SECURITY.md Release Checks, AGENTS.md, the maintainer CLI guide, the `release-candidate.ts` header): a dry run runs the candidate verification gates with an invented list and reports the provenance preconditions as warnings; it does not exercise the real-list scan, the ruleset and environment checks, `attach`, the required reviewer's approval, the release-asset checks, or staging; a prepare run first exercises the real-list scan, the ruleset and environment checks, and `attach`; a release run first exercises the approval, the release-asset checks, and staging. PRD 20 Requirement History has the entry "2026-11-24 — W1 R7 P8 final check". | Text only |
+| P8-F-08 (major) | Fixed | The unpublish statement left out npm's condition for the first 72 hours, and the web approval route named the package's tab. From docs.npmjs.com, read 2026-11-24: Unpublish Policy, "For newly created packages, as long as no other packages in the npm Public Registry depend on your package, you can unpublish anytime within the first 72 hours"; later, all of: no dependents in the public registry, fewer than 300 downloads last week, a single owner or maintainer. Staged publishing: "open the Staged Packages tab in your account settings" and click Approve, or `npm stage approve <stage-id>`; both ask for 2FA. SECURITY.md, AGENTS.md, the `release-candidate.ts` header, and the workflow's job summary now say so. | Text only |
+| Reviewer note | Follow-up | Retry ergonomics after a partial draft upload: when `attach` uploads the tarball and then fails on the SBOM, the draft holds one asset, and a new prepare run refuses a draft with assets. Today the maintainer deletes the asset (or the draft) by hand and runs prepare again. A later change can let `attach` resume only when the present asset has exactly the expected name, size, and digest. Not done in this pass (stop rule: small, surgical changes). | — |
+
+### What the In-Job Checks Can and Cannot Verify
+
+With the job token (`GITHUB_TOKEN`, an installation token of the GitHub Actions app):
+
+| Item | Checked in the job | How |
+| --- | --- | --- |
+| Effective active rules of `main` (deletion, force push, pull request with 1 approval and code-owner review, the six required checks) | Yes, fail closed | `GET /repos/{owner}/{repo}/rules/branches/main`, Metadata read |
+| An active tag ruleset for `refs/tags/v*` with no exclusion that restricts creation, update, and deletion | Yes, fail closed | `GET /repos/{owner}/{repo}/rulesets?targets=tag` and each ruleset by ID, Metadata read |
+| Environment deployment refs, required reviewer, approval of this run | Yes, fail closed (since round 2) | Environment, deployment-branch-policy, and run-approval endpoints, Actions read |
+| The published release is immutable, holds exactly the tarball and the SBOM, with GitHub's digests | Yes, fail closed | Releases endpoints, Contents read |
+| Who may bypass a ruleset | No | `bypass_actors` is returned only to a user with write access to the ruleset |
+| The repository's release-immutability setting | No | `GET /repos/{owner}/{repo}/immutable-releases` needs Administration read, which a workflow cannot grant; the release's own `immutable` flag is checked instead |
+| Who holds write access; whether Prevent self-review is on | No | Owner settings; the npm two-factor approval is the last check |
+
+### Final Ordered Owner Checklist
+
+From `toolkits/buildos/SECURITY.md` (Owner Settings for Releases) and `toolkits/buildos/AGENTS.md` (First Publication). No agent does any of these.
+
+1. Delete the repository secret `BUILDOS_DENY_LIST` (`gh secret delete BUILDOS_DENY_LIST --repo brucewaynedecoy/build-os`), and check `gh secret list`.
+2. Finish the history rewrite (owner decision A) and force-push it; then add the SHA mapping note.
+3. Make the repository public.
+4. Create the branch ruleset `main` (deletions, force pushes, pull request with 1 approval and code-owner review, the six checks; bypass: Repository admin, For pull requests only).
+5. Create the tag ruleset `release tags` for `v*` (creation, update, deletion; bypass: Repository admin, Always allow).
+6. Turn on release immutability.
+7. Verify steps 1 to 6 (Rulesets page, the three `gh api` reads).
+8. Create the environment `buildos-deny-list` (deployment refs: branch `main`, tag `v*`).
+9. Create the environment `buildos-npm-stage` (required reviewer the maintainer, Prevent self-review off, administrators cannot bypass, deployment ref tag `v*`).
+10. Add the environment secret `BUILDOS_DENY_LIST_ENV` to `buildos-deny-list`.
+11. Turn on private vulnerability reporting.
+12. npm First Publication: stage and approve the placeholder `0.0.0-reserved.0`, configure the trusted publisher (staging only, environment `buildos-npm-stage`), set "Require two-factor authentication and disallow tokens".
+13. Release `0.1.0`: dry run on the reference runner, inspect the tarball, commit the `reviewed` entry, tag `v0.1.0` and a draft release, the prepare run, review and publish the draft, approve the staging job, then approve the npm stage with 2FA after the recorded publication approval; check the dist-tags and deprecate the placeholders.
+
+### First Exercised Only by a Real Prepare or Release Run
+
+- The real-list scan with the environment secret, in the release `deny-list` job and in the `buildos-deny-list.yml` real-list job on `main`.
+- The ruleset check and the environment check against the real repository settings and the real job token (only the fake API ran here).
+- `find-draft` and `attach` against a real draft (uploads by release ID, GitHub's computed digests on the uploaded assets).
+- The required reviewer's approval of `buildos-npm-stage` and the run-approval check.
+- `download-asset` against a published immutable release: which of the two response forms GitHub uses, and that GitHub lists a digest for both assets.
+- The SBOM byte comparison between the prepare run's attached SBOM and the release run's verify SBOM on the reference runner.
+- The npm OIDC token, `npm stage publish --provenance`, the provenance statement, the stage ID, and the dist-tag of the first publish.
+- `discard` after a real-list failure.
+
+### Acceptance A64 to A70 (Stages 1 to 3)
+
+| Criterion | Status | What the real release still shows |
+| --- | --- | --- |
+| A64 | Met for verification: reference runner on `6e8e226` (45520465018 agreement, 45520468162 digest plant) and on `b3430d9` (all seven plants); local after the final check (below) | The prepare run's identity and digest gates in release mode |
+| A65 | Met for the verify stage (eval, audit, OSV, invented-list deny-list plants) | The real-list deny-list job stopping a prepare or release run |
+| A66 | Met: the release-stamped build reports `0.1.0` and the source commit locally and on the reference runner (version and installed gates) | `buildos version` of the staged package (t15, t18) |
+| A67 | Met (test in `test/guide-examples.test.ts`) | — |
+| A68 | Met against a pack of `548f4ea`; the bundle and lockfile did not change since | Recheck on the reviewed candidate's SBOM and scans (t24) |
+| A69 | Met | — |
+| A70 | Met: `buildos-ci` 45520462648 on three systems | — |
+
+### Local Dry Runs After the Final Check
+
+Scratch copy of the final-check working tree (outside the repository, a fresh git repository) with version `0.1.0` committed as the source commit `8b8c1de`. macOS arm64, Node v26.13.1, npm 11.20.0 (not the reference environment, so the identity gate only notes it), a private npm cache, the real `npm audit`, the saved osv-scanner clean output `test/fixtures/osv/clean.json` (exit 0), an invented list in a file outside the copy, and `--visibility private`. The copy was clean after every run.
+
+| Run | Result |
+| --- | --- |
+| Self (agreement) | Build A and build B both SHA-256 `2d3d7ab0…5e7bb`; every gate passed: identity, digest, version, tests (typecheck; unit 2,087 passed; golden 286 passed), installed (167 of 167, release identity `0.1.0` at `8b8c1de` expected), eval (12 of 12), audit, osv (0 findings), deny-list (invented list, 0 matches, 173 of 173 package files read), sbom (57 components, valid), provenance (warning: private) |
+| Plant `tag` / `version` | identity FAIL before any build |
+| Plant `digest` | digest FAIL (the rebuilt digest is not the changed reviewed digest) |
+| Plant `eval` | eval FAIL (7 passed, 1 failed with the planted converter) |
+| Plant `audit` | audit FAIL (1 high, 0 critical) |
+| Plant `osv` | osv FAIL (2 blocking findings in the fixture `lodash@4.17.20`) |
+| Plant `deny-list` | deny-list FAIL; a location is printed, not the term |
+| Trusted copies (the seven trusted scripts and the vendored schemas, in a folder with no `node_modules`, empty environment) on the self build B tarball and a fixture `reviewed` entry on a ledger-only commit `bd8b07b` | `release-stage-check.ts digest --repo <copy> --commit bd8b07b --tag v0.1.0 …`: pass, ledger read from git |
+| The copied `release-github.ts download-asset` with a fake `fetch`, on the real tarball and the real SBOM | Redirect form: pass, no token to the storage host; direct 200 form: pass; tarball only: FAIL (`0 assets named buildos-0.1.0.cdx.json`); replaced SBOM (one field changed): FAIL (not the verify SBOM); the real SBOM passes the binding and the CycloneDX 1.5 schema in the copy |
+| SBOM determinism | The release SBOM generated again from the same tarball and source commit: the same SHA-256 (`dd44b5be…`); the development SBOM generated twice: the same SHA-256 |
+
+Each failing run printed "stopped before staging"; no run stages or publishes. The GitHub API steps ran only against a fake `fetch`.
+
+### Check Results (Final Check)
+
+Run on macOS arm64 with Node v26.13.1 and npm 11.20.0, from `toolkits/buildos/` unless noted, on the uncommitted tree:
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck`, `npm run build` | Pass |
+| `npm test` after the build | 2,398 tests, 2,386 pass, 0 fail, 12 skipped (2,386 tests before this pass); the same with a space in `TMPDIR` |
+| `npm run check:deps`, `check:deps:installed` | Pass |
+| Reproducible pack (`--allow-dirty`, two clean builds) | Same SHA-256 `355fc82a…80508`, 173 entries; in the scratch copy (clean commit) build A and build B gave the same SHA-256 |
+| Development tarball: pack, offline install, installed golden compare | 167 of 167 |
+| Release-stamped tarball (`0.1.0`): installed golden compare with the release identity expected | 167 of 167 (dry-run `installed` gate) |
+| Local dry runs, the trusted copies, the fake-API asset checks | As in [Local Dry Runs After the Final Check](#local-dry-runs-after-the-final-check) |
+| Privileged entry points with no `node_modules` | `test/release-privileged.test.ts`, 18 of 18 (`json-schema.ts` and the schemas now in the copied set); and the copies above |
+| CODEOWNERS coverage | `test/codeowners.test.ts`, 4 of 4 (1,355 files uncovered with the old file) |
+| Checklist order, workflow steps | `test/release-workflow.test.ts`, 31 of 31 |
+| `actionlint` 1.7.12 on all workflows | No problem (shellcheck not installed) |
+| Guide example and guide-walk tests | `test/guide-examples.test.ts` and `test/guide-walk.test.ts`, 20 of 20 |
+| `node guide/tools/build-guide.mjs` (repository root) | Wrote `guide/BuildOS-Guide.html` from 22 documents |
+| Link check | In the suite (`test/system-content.test.ts`): pass |
+| Deny-list script with an invented list | `--root ../.. --tarball <dev tarball>`: 0 matches, 173 of 173 package files read |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | `passed` |
+| `make-docs project path-hygiene validate --target-root .` | Valid, 0 failing findings |
+| `git diff HEAD --check` | Clean |
+
+### Open Owner Questions (Final Check)
+
+None new. All of the following were answered on 2026-11-25 ([Owner Decisions 2026-11-25](#owner-decisions-2026-11-25)); the sole-maintainer or two-maintainer route stays open. Still open then: the release flow change (draft, prepare run, required reviewer before staging) for the owner to confirm; `Q-015` wrapper order (recommendation: pin-first); `Q-016` project-local legacy wrappers and the notice (recommendation: print the notice, remove in `0.3.0`); `D-010` `intake --json` (recommendation: add the envelope before `0.2.0`); lazy-loading the PDF reader before `0.1.0` (`PERF-001` recheck). One choice the owner makes in step 4 of the checklist: the sole-maintainer route (current) or the two-maintainer route.
+
+### Follow-ups (Final Check)
+
+- Retry after a partial draft upload (reviewer note above).
+- After the history rewrite: the SHA mapping note ([P8 Review Round 1](#p8-review-round-1)).
+- When the Make Docs range moves: update `MAKE_DOCS_ABOUT`, the layout fixture, and the P8-F-06 test together.
+
+## P8 CI Runs and Dry Run on 980b67a
+
+GitHub runs on commit `980b67a` (the final check fixes for Stages 1 to 3), 2026-11-24. Reported by the orchestrator; the conclusion, head commit, branch, and job results were confirmed with `gh run view`. The dry-run branch `release-dry-run/980b67a` was deleted afterwards (`git ls-remote` lists no `release-dry-run/` branch).
+
+| Run | Workflow and trigger | Outcome |
+| --- | --- | --- |
+| [45525496472](https://github.com/brucewaynedecoy/build-os/actions/runs/45525496472) | `buildos-ci`, push to `rewrite/ts-cli` | success. All six jobs passed: `test (ubuntu-latest, Node 24)`, `test (macos-latest, Node 24)`, `test (windows-latest, Node 24)`, `OSV scan of package-lock.json`, `Make Docs contract (pinned range bounds)`, and `Cross-OS pack comparison (report only)` |
+| [45525496513](https://github.com/brucewaynedecoy/build-os/actions/runs/45525496513) | `buildos-deny-list`, push to `rewrite/ts-cli` | success. `Deny list (invented list, every push and pull request)` passed; `Deny list (real list, default branch only)` was skipped, by design, because the branch is not `main` |
+| [45525499690](https://github.com/brucewaynedecoy/build-os/actions/runs/45525499690) | `buildos-release`, push to `release-dry-run/980b67a` (dry run, agreement) | success. `Resolve the release commit` and `Release gates (candidate build, no secret)` passed (every verify gate, with build B checked against the self entry from build A); `Release deny list (real list, trusted scanner)`, `Attach the verified assets to the draft release`, `Stage on npm (approval with 2FA needed)`, and `Delete the artifact after a deny-list failure` were skipped, by design, in a dry run |
+| [45525499656](https://github.com/brucewaynedecoy/build-os/actions/runs/45525499656) | `buildos-deny-list`, push to `release-dry-run/980b67a` | success. The invented-list job passed; the real-list job was skipped, by design |
+
+- A64 and A66: the agreement dry run passed the identity, digest, version, and installed gates on the reference runner on the final commit of Stages 1 to 3. The planted runs on `b3430d9` (all seven gates) and `6e8e226` (digest) still stand; the final check changed no verify gate.
+- A65: every verify gate passed again on `980b67a`; the planted failures stand as above.
+- A67, A69, and A70: the guide test, the package tests, and the golden harness passed on three systems in `buildos-ci` run 45525496472.
+- The prepare and release paths have not run on GitHub. What only they can show is in [P8 Stages 1 to 3 Closeout](#p8-stages-1-to-3-closeout).
+
+## P8 Stages 1 to 3 Closeout
+
+On 2026-11-24 Stages 1 to 3 of P8 are closed on `rewrite/ts-cli` at `980b67a`. The review loop is closed under the project stop rule after three review rounds, all findings fixed: round 1 of `548f4ea`, 11 findings, 6 of them blockers ([P8 Review Round 1](#p8-review-round-1)); round 2 of `b3430d9`, 19 findings, 9 in the release workflow and 10 in the documents ([P8 Review Round 2](#p8-review-round-2)); round 3 of `6e8e226`, 8 findings, 2 of them blockers, fixed in the final check ([P8 Final Check for Stages 1 to 3](#p8-final-check-for-stages-1-to-3)). The orchestrator verified the final pass through CI and the dry run ([P8 CI Runs and Dry Run on 980b67a](#p8-ci-runs-and-dry-run-on-980b67a)). The remaining items are the follow-ups below. Nothing was published, staged, tagged, or released.
+
+P8 is not complete. t1, Stage 4 (t15 to t18), and Stage 5 t22 to t25 wait on owner actions and real-world steps (see the checklist below).
+
+### Acceptance Criteria (P8 Stages 1 to 3)
+
+| ID | Result | Evidence | What the real release still shows |
+| --- | --- | --- | --- |
+| A64 | Met for verification; live prepare and release behavior needs the real release | Agreement [dry run 45525499690](https://github.com/brucewaynedecoy/build-os/actions/runs/45525499690) on `980b67a`; agreement run 45520465018 and digest plant 45520468162 on `6e8e226`; the seven plants on `b3430d9` ([P8 CI Runs and Dry Runs on b3430d9](#p8-ci-runs-and-dry-runs-on-b3430d9)); local dry runs after the final check | The identity and digest gates of a prepare run in release mode |
+| A65 | Met for verification (the verify stage); live prepare and release behavior needs the real release | Plants on `b3430d9` (runs 45510656388, 45510660339, 45510663900, 45510666162); every verify gate passed on `980b67a`; invented-list [deny-list run 45525496513](https://github.com/brucewaynedecoy/build-os/actions/runs/45525496513) | The real-list deny-list job stopping a prepare or release run |
+| A66 | Met for verification | Version and installed gates in [dry run 45525499690](https://github.com/brucewaynedecoy/build-os/actions/runs/45525499690) and in run 45520465018; installed golden compare of the release-stamped tarball, 167 of 167 | `buildos version` of the staged package (t15, t18) |
+| A67 | Met | `test/guide-examples.test.ts` on three systems in [`buildos-ci` run 45525496472](https://github.com/brucewaynedecoy/build-os/actions/runs/45525496472) | — |
+| A68 | Met for verification | Comparison against a pack of `548f4ea` ([A68 Security Document Comparison](#a68-security-document-comparison)); the bundle and lockfile did not change since; OSV job passed in run 45525496472 | Recheck on the reviewed candidate's SBOM and scans (t24) |
+| A69 | Met | `git ls-files` at `980b67a`: no `.go` file, no `go.mod`; no `go` command in the `justfile` | — |
+| A70 | Met | Golden harness on three systems in [`buildos-ci` run 45525496472](https://github.com/brucewaynedecoy/build-os/actions/runs/45525496472) and run 45520462648 | — |
+
+### P8 Follow-ups
+
+These stay open and carry forward. None blocks the closeout of Stages 1 to 3.
+
+- F-P8-01: retry after a partial draft upload. When `attach` uploads the tarball and then fails on the SBOM, a new prepare run refuses the draft; today the maintainer deletes the asset or the draft by hand ([Findings and Dispositions (Final Check)](#findings-and-dispositions-final-check), reviewer note).
+- F-P8-02: closed on 2026-11-25. There is no history rewrite and no mapping note. The public repository starts from one clean commit, so old hashes in the docs point only to the private archive repository `brucewaynedecoy/build-os-archive`. The form is one sentence, stated in `toolkits/buildos/test/golden/CAPTURE.md` (Frozen Go Baseline), `toolkits/buildos/AGENTS.md`, `toolkits/buildos/SECURITY.md` (Known Limits), and the P8 phase file: "Commit hashes in these docs from before the public repository (for example the frozen Go baseline `263f5ca`) name commits of the earlier history, which exists only in the private archive repository `brucewaynedecoy/build-os-archive`: the public repository starts from one clean commit (owner decision of 2026-11-25)." ([Pin-First Wrappers Review Round 1](#pin-first-wrappers-review-round-1)).
+- F-P8-03: when the Make Docs range moves, update `MAKE_DOCS_ABOUT`, the layout fixture `test/fixtures/make-docs-2.0.9-layout.txt`, and the P8-F-06 test together.
+- F-P8-04: at each release, check again whether the esbuild install-script exception is still needed (`SECURITY.md`; [P8 Open Items](#p8-open-items)).
+- F-P8-05: at release, check each place in [Facts That Depend on the Release](#facts-that-depend-on-the-release) and remove the draft line of `RELEASE_NOTES.md`.
+- F-P8-S2-01: closed on 2026-11-25. The owner chose pin-first (`Q-015`); the wrappers, tests, and documents follow it ([Owner Decisions 2026-11-25](#owner-decisions-2026-11-25)).
+- F-P8-S2-02: closed on 2026-11-25. The project scripts with the legacy names print the notice and go away in `0.3.0` (`Q-016`).
+- F-P8-S2-03: unchanged; see [P8 Stage 2](#p8-stage-2).
+- F-P8-06: lazy-load the PDF reader in a later release, with a new `PERF-001` recheck (a new budget event) that measures the startup again (owner decision 2026-11-25, answer 5). Not in `0.1.0`.
+- F-P8-07: in `0.3.0`, remove the package legacy names and the project scripts `.os/scripts/buildos-intake`, `buildos-discovery`, `buildos-design` and their `.cmd` forms together (`Q-016`).
+- F-P8-08: the Windows long-line check of the `npx` fallback (`cmdLineTooLong` in `system/.os/scripts/pinned-version.cjs`) keeps 600 characters for npm's own paths in the `npx.cmd` line. That line holds `"<npx.cmd folder>\\node.exe" "<npx-cli.js>" <arguments>`, and npm's `npx.cmd` takes the `npx-cli.js` path from `npm prefix -g` (for example `%APPDATA%\npm\node_modules\npm\bin\npx-cli.js` after `npm install -g npm`), which the helper cannot know without starting a program. Exact failure case: with `npx.cmd` at `C:\Program Files\nodejs\npx.cmd` and no global npm, the arguments `-y`, `@brucewaynedecoy/buildos@1.2.3`, and one argument of 7,600 `x` give a real `npx.cmd` line of about 7,740 characters (`"C:\Program Files\nodejs\\node.exe" "C:\Program Files\nodejs\\node_modules\npm\bin\npx-cli.js" ` and the arguments escaped once) and a `cmd.exe` line of about 7,690 characters, both under 8,191, but the estimate is 8,308 characters and the check refuses it (exit 2); `test/wrappers.test.ts` "finding 11: knows when Command Prompt cannot take the npx line" expects that refusal. A fix reads npm's global prefix from its config files without starting npm, or measures the line in a different way ([Pin-First Wrappers Final Check](#pin-first-wrappers-final-check), finding 6).
+
+### Owner-Action Checklist (as of 980b67a)
+
+Replaced on 2026-11-25: steps 2 and 3 below are now the archive rename, the new repository with one reviewed clean commit, and its public visibility, and the list has 13 steps ([SECURITY.md](../../../toolkits/buildos/SECURITY.md#owner-settings-for-releases); [Pin-First Wrappers Review Round 1](#pin-first-wrappers-review-round-1)). The list below is kept as the record of `980b67a`.
+
+Unchanged from [Final Ordered Owner Checklist](#final-ordered-owner-checklist); the exact steps are in `toolkits/buildos/SECURITY.md` (Owner Settings for Releases) and `toolkits/buildos/AGENTS.md` (First Publication). No agent does any of these. None is done yet.
+
+1. Delete the repository secret `BUILDOS_DENY_LIST` and check `gh secret list`.
+2. Finish the git-history rewrite (owner decision A) and force-push it; then F-P8-02.
+3. Make the repository public.
+4. Create the branch ruleset for `main` (choose the sole-maintainer or the two-maintainer route here).
+5. Create the tag ruleset for `v*`.
+6. Turn on release immutability.
+7. Verify steps 1 to 6.
+8. Create the environment `buildos-deny-list`.
+9. Create the environment `buildos-npm-stage`.
+10. Add the environment secret `BUILDOS_DENY_LIST_ENV`.
+11. Turn on private vulnerability reporting.
+12. npm First Publication: the placeholder `0.0.0-reserved.0`, the trusted publisher (t1), and the publishing-access setting.
+13. Release `0.1.0`: dry run, reviewed entry, tag and draft, prepare run, publish the draft, approve the staging job; then Stage 4 and Stage 5 t22 to t24 on the staged package; then the publication decision and the npm 2FA approval (t25).
+
+### Only a Real Prepare or Release Run Can Prove
+
+As listed in [First Exercised Only by a Real Prepare or Release Run](#first-exercised-only-by-a-real-prepare-or-release-run):
+
+- The real-list scan with the environment secret, in the release `deny-list` job and in the real-list job of `buildos-deny-list.yml` on `main`.
+- The ruleset and environment checks against the real repository settings and the real job token.
+- `find-draft` and `attach` against a real draft, with GitHub's computed digests.
+- The required reviewer's approval of `buildos-npm-stage` and the run-approval check.
+- `download-asset` against a published immutable release: the response form GitHub uses, and a digest for both assets.
+- The SBOM byte comparison between the prepare run's attached SBOM and the release run's verify SBOM.
+- The npm OIDC token, `npm stage publish --provenance`, the provenance statement, the stage ID, and the dist-tag of the first publish.
+- `discard` after a real-list failure.
+
+### Open Owner Questions (Stages 1 to 3 Closeout)
+
+Unanswered as of `980b67a`. All five were answered on 2026-11-25; see [Owner Decisions 2026-11-25](#owner-decisions-2026-11-25). Still open after that: the sole-maintainer or two-maintainer route (owner checklist step 4).
+
+- Confirm or reject the release flow change: draft, then prepare run, then publish, then stage (with the required reviewer before staging).
+- `Q-015`: wrapper order, pin-first or global-first (recommendation: pin-first).
+- `Q-016`: the notice in project-local legacy wrappers (recommendation: print the notice, remove them in `0.3.0`).
+- `D-010`: `intake --json` (recommendation: add the envelope before `0.2.0`).
+- Lazy-load the PDF reader before `0.1.0` (`PERF-001` recheck; recommendation: ship as it is, plan the lazy load later).
+
+## Owner Decisions 2026-11-25
+
+The owner chose option A for each question. The orchestrating maintainer chat relayed the answers. Nothing was published, staged, tagged, or released, and no repository or npm setting changed.
+
+1. Release flow: confirmed. Draft release, then prepare run, then the maintainer publishes the release, then a required reviewer approves the environment `buildos-npm-stage`, then `npm stage publish`, then the maintainer approves on npm with 2FA. No code change. The PRD 20 requirement history records the confirmation.
+2. `Q-015`: closed, pin-first. A project wrapper (`.os/scripts/buildos`, `buildos.cmd`) always runs the version pinned in `.os/manifest.json`. A `buildos` program on `PATH` runs only when it reports exactly the pinned version; else the wrapper runs the pinned version through `npx`. Built on this branch; see [Pin-First Wrappers](#pin-first-wrappers).
+3. `Q-016`: closed. The project scripts `.os/scripts/buildos-intake`, `buildos-discovery`, `buildos-design` and their `.cmd` forms print the same one-line legacy-name notice as the package legacy names (parity exception PE-016, extended; same stream, same words; the stdout of the real command stays unchanged). They are removed in `0.3.0` together with the package legacy names (F-P8-07). Built on this branch.
+4. `D-010`: decided. `intake` gets the `--json` envelope in `0.2.0`. Not on this branch: the `0.2.0` branch `rewrite/ts-cli-p9` builds it and edits the register entry. Where the decision is recorded on this branch: this section, the row of 2026-11-25 in [Owner Decisions](#owner-decisions), and the P8 phase file (Owner Decisions 2026-11-25, item 4). The `D-010` entry in `docs/prd/03-open-questions-and-risk-register.md` is not edited on this branch, so that the two branches do not conflict.
+5. Startup cost: ship `0.1.0` as it is. The lazy load of the PDF reader is planned for a later release with a new `PERF-001` recheck (follow-up F-P8-06).
+6. Git history: before the repository becomes public, it starts fresh with one clean commit. The old history stays in a private archive. The orchestrator prepares this. This replaces the history rewrite of the 2026-11-24 repository decision, and it changes F-P8-02 and owner checklist step 2. Exact method (owner decision of 2026-11-25, relayed with the pin-first review round 1): the current repository is renamed to `build-os-archive` and stays private for good; a new repository `brucewaynedecoy/build-os` starts with one clean commit of the release tree, which the orchestrator prepares on a copy and the owner reviews before the first push; the deny-list check with the real list runs on that tree before the push; the new repository becomes public before the release; every repository setting of the release checklist is made on the new repository (`SECURITY.md`, Owner Settings for Releases, steps 1 to 13).
+7. PE-021 approved: `.xlsx` parity is checked by workbook content, not by file bytes. Built on the `0.2.0` branch `rewrite/ts-cli-p9`, which records the exception.
+8. SD-04 accepted: `fitgap` (and `export azure-boards`) read only files inside the project. Built on the `0.2.0` branch `rewrite/ts-cli-p9`.
+
+### Pin-First Wrappers
+
+Replaced by [Pin-First Wrappers Review Round 1](#pin-first-wrappers-review-round-1): the version check below started the program on `PATH`, and it is gone. This section is kept as the record of `f6adf5f`.
+
+- How the wrapper learns the version: it runs `buildos version --json` on the first `buildos` on `PATH` that is not a project wrapper, with no input and its stderr not shown. It uses that program only when the command exits `0` within 20 seconds and the JSON envelope reports `ok` true, command `version`, and exactly the pinned version. Another version, a failure, no output, output that is not the envelope, more than 64 KiB of output, or no answer in time: the wrapper runs the pinned version through `npx`. The `version --json` envelope is the stable automation contract and the same in the Go tools, so the check reads no free text.
+- Cost: one extra start of the program on `PATH`, and only when one is there. With no program on `PATH`, nothing changes.
+- A `dev` pin (a source build) has no published version: it runs only a program that reports `dev`, else the dev message and exit `3`.
+- Safety rules kept: the PATH search skips the wrapper itself and every project wrapper; an empty or unsafe pin is refused; the Node.js version message is the same; `!` handling in the `.cmd` forms; exact exit code pass-through. The loop guard stays set during the check, so a program that only calls a project wrapper again fails the check.
+- On macOS and Linux, a `buildos` on `PATH` now needs Node.js 24 or newer for the wrapper to read the pin. An npm-installed `buildos` needs it anyway.
+- Code: `system/.os/scripts/buildos`, `buildos.cmd`, `pinned-version.cjs`, and the three legacy scripts with their `.cmd` forms. `buildos init` installs them from the `system/` package content (`WRAPPER_FILES` in `toolkits/buildos/src/core/init/content.ts`); the file list and the package file list did not change.
+- Tests: `toolkits/buildos/test/wrappers.test.ts` (a PATH program with the pinned version runs; another version does not run and `npx` runs; six failed version checks; dev pin both ways; the legacy notice once, first on stderr, with arguments, stdout, and exit code unchanged; Windows-only cases for a folder name with `!` and a legacy `.cmd` script), and `toolkits/buildos/test/init-review-4.test.ts` (P6-R4-09 now pins a version first).
+
+## Pin-First Wrappers Review Round 1
+
+Review of `f6adf5f` (the pin-first wrappers). The orchestrator accepted every finding and decided the design change on 2026-11-25: the wrapper no longer starts the program on `PATH` to learn its version. All checks below ran on 2026-11-25 on one Apple M2 Pro macOS arm64 machine with Node 26.13.1 and npm 11.20.0. Windows CI did not run on this round. Nothing was pushed, published, staged, tagged, or released, and no repository or npm setting changed.
+
+### Wrapper Design (Final)
+
+- The wrapper never starts a program to learn its version. `pinned-version.cjs` reads `package.json` files only.
+- Order, after the Node.js check and the manifest contract: (1) a local npm install, `node_modules/@brucewaynedecoy/buildos` in the project folder (the parent of `.os/`), then in npm's local project folder (the first folder up from the current folder with a `package.json` file or a `node_modules` folder, as npm's own config finds it); (2) the first `buildos` on `PATH` that is not this wrapper and not a project wrapper, when it is an npm install; (3) `npx -y @brucewaynedecoy/buildos@<pin>` with `npm_config_bin_links=true`.
+- macOS and Linux: the `sh` wrapper finds the `PATH` candidate (POSIX `PATH` rules; a relative entry gets a leading `./`). The helper follows all links of the candidate (`realpath`), walks up to the nearest `package.json`, and accepts it only when the package's `buildos` bin file has that same real path.
+- Windows: the helper searches `PATH` (quotes and `;` handled as Windows does). It accepts a `.cmd` shim only when `node_modules\@brucewaynedecoy\buildos` is next to it (a global install), or, for a shim in `node_modules\.bin`, when the package is in that `node_modules` folder. The shim never runs.
+- A package counts only when its `package.json` is a regular file (no link), at most 256 KiB, valid UTF-8 with no byte order mark, strict JSON, with the name `@brucewaynedecoy/buildos` and exactly the pinned version, and its `buildos` bin file (a string or object `bin`) is a relative path to a regular file inside the package after all links are followed.
+- Dispatch: `node <bin file> <arguments>` with the same Node.js that ran the helper (`process.execPath`), in the caller's working folder. The `sh` wrapper gets three lines (`run`, the Node.js path, the bin file) and `exec`s them only when both paths are absolute; a path with a control character is never accepted. On Windows the helper starts Node.js directly, with no `cmd.exe` in between. Verification and dispatch use the same package folder, so there is no second `PATH` lookup, no probe process, no timeout, and no output limit.
+- `dev` pin: the same no-execute rule. It accepts an install of a source build, whose `package.json` version is `0.0.0-dev` (the version in `toolkits/buildos/package.json`; for example `npm link` from the source folder, or `npm install <source folder>` in the project). Else exit `3` with a message that names the two ways that work. This is simpler than a `dev`-only probe with a process-tree kill and an output limit, and it runs no code from `PATH`.
+- Kept: the `PATH` search skips the wrapper itself (file identity) and every project wrapper; the loop guard; an empty or unsafe pin is refused; the Node.js message; exact arguments and exit code; `!`, `%`, space, and quote handling in `.cmd`; no bashisms (checked with `dash`).
+- Residual risk, stated in `SECURITY.md` (Project wrappers): a copy of the pinned version that npm finds and the wrapper does not accept (a nested copy, a workspace root, a `prefix` setting, a `package.json` that the strict read refuses, a global `bin/buildos` that is not the package's bin file, an npx cache made with bin links off). Then npm can start another `buildos` from `PATH`.
+
+### Findings and Dispositions (Pin-First Round 1)
+
+| Finding | What was done | Test |
+| --- | --- | --- |
+| 1 (major) `npx` fallback runs a `buildos` from `PATH` | Confirmed with real npm 11.20.0: with the pinned version installed with `--no-bin-links`, `npx -y @brucewaynedecoy/buildos@<pin>` printed the output of a planted `buildos` on `PATH`. The wrapper now runs a local install of the pinned version itself (project folder, then npm's local project folder), and sets `npm_config_bin_links=true` for `npx`. Residual risk in `SECURITY.md`. | `test/package.test.ts` "runs a local install of the pinned version that has no bin link, never a buildos on PATH (npx alone runs the planted one)" (real npm, offline; it also shows the hazard with `npx` alone) and "runs a global npm install of the pinned version on PATH directly, with no npx on PATH"; `test/wrappers.test.ts` "runs a local install of the pinned version in the project's node_modules ...", "... in npm's local project folder ...", "does not run a local install of another version" |
+| 2 (major) the probe had no process-tree kill | The probe is gone (design change). | `test/wrappers.test.ts` "has no version check that starts a program"; every refused-layout case checks that nothing on `PATH` started |
+| 3 (major) the probe's stderr had no limit | The probe is gone (design change). | as for 2 |
+| 4 (major) verification and dispatch could use different programs | One package folder: the bin file that the check reads is the file that runs, with the same Node.js. | the per-wrapper "runs the npm install on PATH of the pinned version with the same node, the same working folder ..." (checks `process.execPath` and `process.cwd()` of the bin file, and that the Windows shim never runs) |
+| 5 (major) quoted Windows `PATH` entry split at `;` | `splitWindowsPath` splits only outside double quotes and removes the quotes. | "splits a Windows PATH on ; outside double quotes only" (every system); "finds buildos.cmd and npx.cmd in a quoted PATH entry whose folder name holds a ;" (Windows only) |
+| 6 (minor) relative `PATH` entry with a leading `-` | The `sh` wrapper writes every relative entry with a leading `./`. Nothing on `PATH` is `exec`ed by its path any more; `npx` and `node` run by name. | "finds an npm install and npx through relative PATH entries that start with -" |
+| 7 (minor) the other-wrapper test could pass with that wrapper used | The other project's wrapper records any start; an accepted install after it on `PATH` must run, and the record must be absent. | "skips another project's wrapper on PATH without starting it, and runs the npm install after it" |
+| 8 (minor) Windows argument test too weak | New Windows test: project and `PATH` folders named with `%TEMP%` (a variable that is set), an argument with double quotes, and an empty argument, through the real wrappers on both paths (bin file and `npx`, the latter through a legacy `.cmd` script). The caller names the wrapper from the project folder, and no recorder holds a fixture folder name. Documented limit (`SECURITY.md` Known Limits, `system/.os/scripts/AGENTS.md`, release notes): an argument with an odd number of double quotes changes Command Prompt's quote state for the rest of the wrapper's `%*` line, so a later `&`, `|`, `<`, `>`, or `^` is read as a command character. | "keeps folder names with %TEMP%, an argument with a double quote, and an empty argument unchanged, through the bin file and through npx" (Windows only; not run in this round) |
+| 9 (major) docs still said to change or remove a global install | Rollback is the manifest edit alone, in every copy: `toolkits/buildos/README.md`, `RELEASE_NOTES.md`, `SECURITY.md`, `docs/assets/user/upgrade-an-existing-buildos-project.md`, `docs/assets/maintainer/upgrade-existing-buildos-installation.md`, `docs/prd/03` (R-003), guide chapter 4. README and release notes now say the legacy project scripts print the notice. Grep of the repository (not `node_modules`, not `.make-docs/archive`) found and fixed the old order also in `README.md`, `docs/prd/04-glossary.md`, PRD 06, the intake and discovery user guides, the getting-started guide, the entities maintainer guide, the preflight skill, and a note in the 2026-11-23 design. Requirement history, closed register questions, and earlier evidence keep their wording as records. | doc change; `make-docs` validators |
+| 10 (major) release checklist said to rewrite history and force-push | `SECURITY.md` Owner Settings for Releases now has 13 steps with the owner decision of 2026-11-25: delete the old secret; rename the current repository to `build-os-archive`, private for good; create `brucewaynedecoy/build-os` empty, review the one clean commit, run the real-list deny-list check on that tree, then the first push; make it public; then every setting on the new repository. The history limit in Known Limits, `toolkits/buildos/AGENTS.md` (First Publication), the P8 phase file, R-003, and `test/golden/CAPTURE.md` follow. F-P8-02 is now one sentence (below). | `test/release-workflow.test.ts` (the checklist order test, updated to the new steps) |
+| 11 (minor) evidence owner decisions | Answers 7 and 8 are recorded separately with their substance; this report says where `D-010` is recorded. The `D-010` register entry was not edited. | doc change |
+| 12 (minor) `dev` pin text and a recovery message that loops | PRD 20 states both branches; the message names the matching development build and a published version pin. | "with a dev pin and only a release on PATH, stops with the dev message that names working steps (exit 3)", "with a dev pin, runs an npm install of a source build", "with a dev pin, runs a local install of a source build" |
+| 13 (minor) shipped routers told adopters to run legacy names | `.os/AGENTS.md`, `.os/indexes/AGENTS.md`, `assets/AGENTS.md`, `workspace/AGENTS.md`, `workspace/findings/AGENTS.md`, `workspace/runs/AGENTS.md`, the manual intake playbook, and the intake translation contract now name `.os/scripts/buildos intake ...` and `.os/scripts/buildos discovery ...`, with relative links that resolve from the installed layout. A grep of `system/` (skills too) found no other legacy command use; skill names such as `buildos-intake-convert` are skill names, not commands. No init plan, golden, or hash list holds these files' bytes (the build computes `dist/system.json`). | full test suite |
+
+F-P8-02, as of 2026-11-25: the public repository starts from one clean commit, so no mapping note from old to new hashes exists. The form is one sentence, stated in `test/golden/CAPTURE.md` (Frozen Go Baseline), `toolkits/buildos/AGENTS.md`, `SECURITY.md` (Known Limits), and the P8 phase file: "Commit hashes in these docs from before the public repository (for example the frozen Go baseline `263f5ca`) name commits of the earlier history, which exists only in the private archive repository `brucewaynedecoy/build-os-archive`: the public repository starts from one clean commit (owner decision of 2026-11-25)."
+
+### Check Results (Pin-First Round 1)
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm run build` | exit 0 |
+| `npm test` (includes the golden compare) | 2437 tests: 2421 pass, 0 fail, 16 skipped (Windows-only cases and others that skip on macOS) |
+| `test/wrappers.test.ts` | 76 tests: 71 pass, 5 skipped (Windows only) |
+| `test/package.test.ts`, real npm cases | 2 pass |
+| The new wrapper tests against the wrappers of `f6adf5f` | 31 of 70 fail (the old wrappers swapped in, then restored); both real-npm cases fail |
+| `npm run check:deps` | `dependency policy: ok` |
+| `make-docs run prd authority validate --target-root .` | exit 0 |
+| `make-docs project path-hygiene validate` | valid, 0 findings |
+
+### Not Verified in This Round
+
+- Windows: no Windows CI ran. The `.cmd` wrapper and the Windows-only tests (the `%TEMP%`, double-quote, and empty-argument test; the quoted `PATH` entry test; the `!` tests; the `.exe` refusal case; the real-npm tests through `cmd.exe`) were read line by line but not run.
+- Linux: not run locally; the `sh` wrapper ran under macOS `/bin/sh` and `/bin/dash`.
+- The npx cache case with bin links off, and npm's handling of `npm_config_bin_links` in that cache, were not exercised with a real registry install.
+
+## Pin-First Wrappers Review Round 2
+
+Review of `9913d62` (the pin-first wrappers after round 1). CI on `9913d62`: Windows passed; ubuntu failed ([run 45720263841](https://github.com/brucewaynedecoy/build-os/actions/runs/45720263841), finding 1). The orchestrator accepted every finding and decided on 2026-11-25 that the program that runs checks itself, instead of a perfect file inspection by the wrapper. All checks below ran on 2026-11-25 on one Apple silicon Mac (macOS, Node.js 26.13.1, npm 11.20.0). CI run links in this file from before the repository cutover name runs of the earlier repository; after the cutover, those runs are in the private archive repository `brucewaynedecoy/build-os-archive`.
+
+### Self-Check Design
+
+- Variable: `BUILDOS_REQUIRE_VERSION`. Every project wrapper sets it on every start (a local install, a `buildos` on `PATH`, `npx`) to the pinned version, or `dev` for a `dev` pin. The code base has no other naming rule; the name follows `BUILDOS_WRAPPER_ACTIVE`.
+- Check: `src/cli/required-version.ts`, called first in `src/cli/main.ts`. The command modules (`run.ts`, `io.ts`) load only after the check, so no command code, output, or file access comes before it. The legacy-name entry files import the same bundle, so they go through the same check, before their notice line.
+- Refusal: when the variable is set, not empty, and not exactly the build identity that `buildos version` reports (a release version or `dev`). Nothing on stdout. Stderr: `BuildOS stopped: this project needs BuildOS <required>, but BuildOS <started> started. Nothing ran.` and `Fix the BuildOS install so that version <required> runs, then run the project wrapper (.os/scripts/buildos) again. Or set buildos_version in .os/manifest.json to the version that you want to use.` Exit code `3` (PRD 20: a required input, the pinned version, cannot be loaded; the wrapper already uses `3` for a pin it cannot use). A required value with characters outside `[0-9A-Za-z.+-]` is shown JSON-quoted.
+- JSON form: with `--json` on the command line, stdout has the failure envelope (`ok` false, `command` the first argument after legacy-name mapping, the program's own `version` and `source_revision`, `root` and `mode` empty, `write_status` `not_requested`, `result` null, one diagnostic `version_mismatch` with the message and the fixes as `correction`), and stderr is empty.
+- No fallback after a refusal. After the check, the program removes `BUILDOS_REQUIRE_VERSION` from its own environment. An unset or empty variable means no check, so a direct `buildos` run and the golden compare are unchanged.
+- Bin links (finding 12): the override stays, because without it a user with `npm_config_bin_links=false` would get a refusal or a loop stop instead of a working run. The wrapper keeps the caller's own settings in `BUILDOS_SAVED_npm_config_bin_links` and `BUILDOS_SAVED_NPM_CONFIG_BIN_LINKS` (on Windows, every case and spelling) and sets `BUILDOS_NPM_BIN_LINKS_OVERRIDE=1`. The program, in the same place where it removes `BUILDOS_REQUIRE_VERSION`, removes the override and puts the caller's values back. Saved values without the override mark are removed and not applied.
+- The wrapper's `package.json` read stays as the cheap way to choose a candidate. It is no longer a security boundary. The threat model is stated in `SECURITY.md` (Project wrappers) and PRD 06.
+
+### Findings and Dispositions (Pin-First Round 2)
+
+| Finding | What was done | Test |
+| --- | --- | --- |
+| 1 (blocker) dash read `-tools/npx` as options | The `sh` wrapper finds `node` and `npx` with `command -v` and starts them by path (a relative result gets a leading `./`), never by bare name. The `PATH` search for `buildos` moved into `pinned-version.cjs` (finding 9), which uses absolute paths. | `test/wrappers.test.ts` "finds an npm install, node, and npx through relative PATH entries that start with -", once with `/bin/sh` and once with `/bin/dash` (the dash case fails on the old wrapper) |
+| 2 (blocker) npm runs a local `<pin>+local` | Closed by the self-check: the program that npx starts reports `<pin>+local` and refuses itself. | `test/package.test.ts` "finding 2: npx starts a local install of <pin>+local" (real npm 11.20.0, offline, both human and JSON forms); `test/wrappers.test.ts` "finding 2: when npx starts another version than the pin" (simulated npx) |
+| 3 (blocker) release bump: `package.json` says `0.1.0`, a plain build reports `dev` | For a `dev` pin the helper takes a package with the right name of any version; the program decides. A release pin still needs the exact `package.json` version, and a development bundle refuses itself. | `test/package.test.ts` "finding 3" (four cases: linked development build with `package.json` `0.1.0` runs for a `dev` pin and refuses for a `0.1.0` pin; packed release build refuses for a `dev` pin and runs for a `0.1.0` pin); `test/wrappers.test.ts` "with a dev pin, a package of any version counts"; manual: `node scripts/release-build.ts --allow-dirty` with a temporary bump to `0.1.0`, installed in two projects: `dev` pin exit 3 with the message, `0.1.0` pin exit 0 |
+| 4 (blocker) real-npm tests pinned `0.0.0-dev` | The staged package and its bundle have the fixture version `0.0.0-fixture.1` (bundle built with that version), the staged `package.json` drops `devDependencies`, and every pin and assertion uses it. | With a temporary bump of `package.json` to `0.1.0` (reverted, not committed): `test/package.test.ts`, `test/release.test.ts`, and `test/wrappers.test.ts` 176 pass, 0 fail; the round-1 `test/package.test.ts` real-npm cases with the same bump: 2 of 2 fail |
+| 5 (major) concurrent upgrade between the read and the start | Closed by the self-check. | `test/wrappers.test.ts` "finding 5" for each of the four wrappers (`package.json` says `1.2.3`, the program is `1.2.4`: exit 3, stdout empty, the message, no `npx`; the JSON envelope), and the same install runs when the program is `1.2.3` |
+| 6 (major) `9007199254740992.0.0` is a tag to npm | Both manifest readers (`pinned-version.cjs`, `src/core/init/manifest.ts`) bound `MAJOR`, `MINOR`, and `PATCH` to 9007199254740991 (string compare, no number overflow). | Six new rows in `test/fixtures/manifest-contract.json` (both readers); `test/manifest-contract.test.ts` "accepts only versions that npm's own semver reads as exactly that version" (npm's bundled `semver`) |
+| 7 (major) bin under a nested `node_modules`; Windows case compare | The helper refuses a bin path with a `node_modules` component below the package folder (any case). No file-identity ancestry code; the case point is stated in the threat model. | "finding 7: refuses a bin file inside a node_modules folder below the package"; the refused-layout case "a package whose bin file is inside a node_modules folder below it" (POSIX and Windows) |
+| 8 (major) old clones push to the reused name | `SECURITY.md` Owner Settings: new step 3 retargets every clone, worktree, and automation to `build-os-archive` and checks `git remote -v`; step 4 adds the `cutover` branch ruleset (Restrict creations, Repository admin bypass) before the first push, keeps it until the cutover is checked, and starts the new work from a fresh clone; later steps renumbered (14 in all); a sentence on CI run links. `08-release-0-1-0.md` Entry Gate has the same prerequisite before the new repository; `toolkits/buildos/AGENTS.md` step numbers follow. | `test/release-workflow.test.ts` (step order, numbering, one secret step) passes |
+| 9 (minor) four unbounded `read` calls before the Node.js check | The `PATH` search is in `pinned-version.cjs`, after the Node.js check, the manifest, and the local lookup, and it reads at most 1,024 bytes of a candidate. | "finding 9: with a local install, never reads a PATH candidate" (a 1 GiB sparse `buildos` first on `PATH`; the old wrapper timed out after 30 s); "finding 9: reads at most 1024 bytes of a PATH candidate" (counts bytes read) |
+| 10 (minor) file named `node_modules`; unreadable bin | npm's local project folder needs `package.json` as a file and `node_modules` as a folder. The bin file needs read access (`fs.accessSync` `R_OK`), else the fallback. | "finding 10: a file named node_modules in the current folder does not stop the local lookup"; "finding 10: a file named node_modules is not npm's local project folder"; refused-layout case "a package whose bin file cannot be read" (skipped as root) |
+| 11 (minor) Windows line over 8,191 characters | Smaller change: the helper checks the `cmd.exe` line and the line that npm's `npx.cmd` builds (twice the `npx.cmd` path, 600 characters for npm's own paths, and the arguments escaped once) before it starts `npx.cmd`; over 8,191, one plain message and exit `2` (usage), nothing starts. A local install has no limit. Documented in `SECURITY.md` Known Limits, PRD 06, and `.os/scripts/AGENTS.md`. | "finding 11: knows when Command Prompt cannot take the npx line" (every system); "finding 11: an npx command line too long for Command Prompt stops with a plain message (exit 2)" (Windows only, not run here) |
+| 12 (minor) `npm_config_bin_links=true` leaks to child programs | Kept the override, and the program restores the caller's value (see Self-Check Design). | `test/required-version.test.ts` (five `takeVersionRequirement` cases); `test/wrappers.test.ts` "finding 12" (a companion started by `buildos init --make-docs` after `npx` sees the caller's setting, unset and `false`, and no `BUILDOS_` variable; one from a local install sees no `BUILDOS_REQUIRE_VERSION`); helper environment unit test |
+| 13 (minor) global test depends on host npm config | The fixture install sets `npm_config_bin_links=true` and removes `NPM_CONFIG_BIN_LINKS`, checks that npm made the bin link, and the `PATH` holds only a tools folder with `node` (and `npx` where needed), `sh`, and `env`; no system folder on macOS and Linux. | `test/package.test.ts` "runs a global npm install of the pinned version on PATH directly, with no npx on PATH" |
+| 14 (minor) two tests did not exercise their check | POSIX: the wrong-bin link target is executable. Windows: the current folder is a `node_modules\.bin` folder with its own `package.json`, an npm-style shim, and an acceptable package in the parent `node_modules`; the same folder on `PATH` runs it (so the check is real), and as the current folder only it does not. | the refused-layout case "a link to a file in the package that is not its buildos bin file"; "never uses a buildos.cmd from the current folder that is not on PATH" (Windows only, not run here) |
+| 15 (minor) docs | `upgrade-an-existing-buildos-project.md` no longer describes the probe; the intake, discovery, workspace, playbook-index, and validate guides and a maintainer page use `.os/scripts/buildos <domain>`; guide chapter 4, `toolkits/buildos/README.md`, and `RELEASE_NOTES.md` describe acceptance by layout (a `node_modules/@brucewaynedecoy/buildos` folder with a matching `package.json` counts whatever tool made it; a shim script does not); PRD 03 `Q-015` marks the first design as historical. Grep of `docs/assets`, `guide/content`, `system/`, and the READMEs: the only remaining legacy names are the old-to-new table in the upgrade guide and the chapter 4 notice about the legacy scripts. | doc change; `guide/BuildOS-Guide.html` rebuilt |
+
+### Check Results (Pin-First Round 2)
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm run build` | exit 0 |
+| `npm run check:deps` | `dependency policy: ok` |
+| `npm test` (includes the golden compare) | 2488 tests: 2471 pass, 0 fail, 17 skipped (Windows-only cases and others that skip on macOS) |
+| `test/wrappers.test.ts` | 102 tests: 96 pass, 6 skipped (Windows only) |
+| `test/required-version.test.ts` (new) | 13 pass |
+| `test/manifest-contract.test.ts` | 96 pass |
+| `test/package.test.ts` | 30 pass (7 real-npm wrapper cases) |
+| The new and changed tests against the code of `9913d62` (wrappers, helper, `main.ts`, `manifest.ts` swapped in, then restored) | `wrappers`, `required-version`, and `manifest-contract`: 48 of 205 fail; `package`: 4 of 30 fail (the positive release-build case passes, as it should) |
+| Temporary bump to `0.1.0` (reverted) | see finding 4 |
+| `make-docs run prd authority validate` | exit 0, `passed` |
+| `make-docs project path-hygiene validate` | exit 0, valid, 0 failing findings |
+
+### Not Verified in This Round
+
+- Windows: no Windows run. The `.cmd` wrapper changed only in a comment (two `rem` lines, CRLF kept). The helper's Windows path changed: `programEnvironment` for the bin-file start, `npxEnvironment` with the saved settings, and the long-line check before `npx.cmd`. The Windows-only tests (finding 11 end to end, finding 14 current folder, and the junction form of the finding 3 link) did not run here.
+- Linux: not run locally. The `sh` wrapper ran under macOS `/bin/sh` (bash) and `/bin/dash`; ubuntu CI is the first Linux run.
+- `gh run view 45720263841 --log-failed` could not run in the sandbox (TLS error); the dash test reproduces the failure locally instead.
+- The orchestrator's review has not seen this round.
+
+## Pin-First Wrappers Final Check
+
+Review round 3 of `a474c45` (the pin-first wrappers after round 2) is the last round. The three-round review limit is reached, and this pass closes the review: no further review round follows. Each fix below is the small form that the orchestrator set, with a regression test that fails on the code of `a474c45`. One finding (6) is not fixed and is follow-up F-P8-08. All checks ran on 2026-11-25 on one Apple silicon Mac (macOS, Node.js 26.13.1, npm 11.20.0, and Node.js 20.18.0 for the old-Node check).
+
+### Findings and Dispositions (Pin-First Final Check)
+
+| Finding | What was done | Test |
+| --- | --- | --- |
+| 1 (major) a `--no-bin-links` install that npm hoisted to a workspace root was not found, and `npx` started `buildos` by name from `PATH` | `pinned-version.cjs` `localEntry` looks in the `node_modules` folder of the project folder and of each folder above it, then of npm's local project folder and of each folder above it, as Node.js module resolution does, and takes the first package that passes the existing package test. It then starts the bin file with the checked `node`, as before. No package marker: no BuildOS release exists without the self-check (nothing is published yet); `SECURITY.md` says so in one sentence. | `test/wrappers.test.ts` "runs a local install of the pinned version in a folder above the project (hoisted to an npm workspace root)"; `test/package.test.ts` "finding 1: runs a --no-bin-links install that npm hoisted to the workspace root" (real npm `install --workspace app --no-bin-links`, a planted `buildos` on `PATH`) |
+| 2 (major) a fresh `npx` fetch from a subfolder of a workspace member ran `init` in the member folder | Both wrappers run `npx -y --prefix <current folder> --workspaces=false @brucewaynedecoy/buildos@<version>` (`npxArguments` in `pinned-version.cjs`; on macOS and Linux through the new `--npx` mode, see finding 5). Reproduced first with real npm 11.20.0: without the flags, `init --json` reported the root `packages/app` and wrote `packages/app/.os/`. | `test/package.test.ts` "finding 2: a fresh npx fetch from a project inside an npm workspace member runs in the project folder" and "finding 2: a fresh npx fetch still works in a plain project (no workspace) whose path holds spaces": real npm against a small registry on `127.0.0.1` in a worker thread (it serves the staged tarball at the fixture version; an empty npm cache for each case), so `npx` really fetches. `test/wrappers.test.ts`: every `npx` case checks `--prefix <caller's folder> --workspaces=false` (`npxRecorded`), also from folders with spaces, `!`, `%TEMP%`, and letters outside ASCII (Windows quoting: on Windows CI only) |
+| 3 (major) a project's `node_modules/.bin/node` at Node.js 20 ran the BuildOS that `npx` fetched, with exit 0 | `src/cli/required-version.ts` `nodeRefusal`, called first in `src/cli/main.ts`, before the version check and before the command modules load. Below 24 (`MINIMUM_NODE_MAJOR`, tested against `package.json` `engines`): nothing on stdout, a plain message on stderr with the needed and the found version, exit code `3`; with `--json`, the failure envelope with diagnostic `node_version`. Exit code: the wrapper's Node.js message uses `127`, but the CLI exit-code table (PRD 20, and the rule of this pass) allows only `0` to `6` and `10`, so the check uses `3`, as the version self-check does. The single bundle reaches the check on old Node.js: the real `/usr/local/bin/node` 20.18.0 ran `dist/buildos.js version` (exit 3, the message, empty stdout), `version --json` (exit 3, the envelope, empty stderr), and `dist/buildos-intake.js status` (exit 3). No restructuring was needed. | `test/required-version.test.ts` "nodeRefusal" (four cases) and "finding 3 (final check): on Node.js older than 24 it stops before the version check, any command, or a file write"; `test/wrappers.test.ts` "finding 3 (final check): when npx starts BuildOS with Node.js older than 24" (a simulated `npx` starts the real CLI with a Node 20 preload) |
+| 4 (major, docs) the checklist needed a branch ruleset on a private repository, which GitHub Free does not have, and a branch rule does not stop an old tag | `SECURITY.md` Owner Settings for Releases, 17 steps: 1 secret deleted, 2 rename to `build-os-archive`, 3 retarget every clone, worktree, and automation, 4 create the new repository private and empty, 5 one commit in a fresh folder (`git init -b main`, copy the reviewed tree, real-list deny-list check, `git push origin refs/heads/main:refs/heads/main`, never `--all`, `--mirror`, or `--tags`), 6 check the remote (`git ls-remote --heads --tags` prints one line `<commit> refs/heads/main`; a mirror clone has `rev-list --all --count` `1` and only `refs/heads/main`; `gh api` branches `main` only, tags `0`), 7 public, 8 to 15 at once: branch ruleset, tag ruleset, immutable releases, verification, both environments, the environment secret, private vulnerability reporting, 16 check the remote again, 17 npm trusted publishing. The `cutover` ruleset is gone. The same steps are in `08-release-0-1-0.md` (Entry Gate) and `toolkits/buildos/AGENTS.md` (First Publication prerequisites). | `test/release-workflow.test.ts` "finding 4: pushes only main from a fresh folder, checks the remote before it is public and again, and adds no ruleset while private" (fails on the `SECURITY.md` of `a474c45`); the order tests pass |
+| 5 (minor) the `sh` wrapper saved only two spellings of the bin-links variable | The `sh` wrapper ends with `exec "$node_cmd" pinned-version.cjs --npx "$program" "$version" "$@"`. The helper starts `npx` with `npxEnvironment` (the case-insensitive save, as on Windows) and exits with its exit code. | `test/wrappers.test.ts` "finding 12: a program that BuildOS starts after npx gets the caller's npm bin-links setting (npm_config_Bin_Links=false)" (npx gets only `npm_config_bin_links=true`; the companion gets `npm_config_Bin_Links=false` back); the helper unit test with `npm_config_Bin_Links` and `npm_config_bin-links` |
+| 6 (minor) the Windows long-line check refuses some lines that fit | Not changed. The real expanded length needs npm's global prefix (`npm prefix -g`, which npm's `npx.cmd` runs), and the helper starts no program to learn it. Follow-up F-P8-08 has the exact failure case. `SECURITY.md` Known Limits says that the 600 characters are an estimate. | The existing test keeps its expectation (F-P8-08) |
+| 7 (minor) the `dev` refusal did not say how to recover | For a `dev` pin, the correction adds: in the project folder, replace the local install with the built development package (`npm install <path to toolkits/buildos>`), or remove it (`npm uninstall @brucewaynedecoy/buildos`) so that the linked build on `PATH` runs. | `test/required-version.test.ts` "finding 7 (final check)"; the `dev` cases in `test/package.test.ts` and `test/required-version.test.ts` compare the full text |
+| 8 (minor) `test/package.test.ts` depended on the host npm config | The fixture installs and the `npx` runs that need shims pass `--bin-links=true` (a command-line flag wins over the environment and `.npmrc`); `--no-bin-links` stays where it is the case under test. | `npm_config_bin_links=false node --test test/package.test.ts`: on `a474c45` 30 tests, 6 fail (A40, three A39, two `npx` cases); now 33 pass, 0 fail |
+| 9 (minor) two tests missed their target | The nested-call test calls another project with the pin `1.2.4` and its own local install, and checks the reported version `1.2.4`. The test "from a local install" uses `npmLocal` (no `buildos` on `PATH`) and checks that `npx` does not run. | the two tests in `test/wrappers.test.ts` (also under `dash`) |
+| 10 (minor) a maintainer page said to record the version with bare `buildos version` | `docs/assets/maintainer/operating-layer-entities-consolidation-and-resolution.md`: `.os/scripts/buildos version`, and on Windows `.os\scripts\buildos.cmd version`. | doc change |
+
+Also changed: PRD 06 (steps 3 and 5) and PRD 20 (the Node.js check and the `dev` recovery) with requirement history; `.os/scripts/AGENTS.md`; guide chapter 4 (`guide/BuildOS-Guide.html` rebuilt); the PRD 03 step numbers. `buildos.cmd` is unchanged.
+
+### Check Results (Pin-First Final Check)
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm run build` | exit 0 |
+| `npm run check:deps` | `dependency policy: ok` |
+| `npm test` (includes the golden compare), outside the sandbox for the local registry | 2501 tests: 2488 pass, 0 fail, 13 skipped (Windows-only cases and others that skip on macOS) |
+| `test/wrappers.test.ts` | 105 tests: 99 pass, 0 fail, 6 skipped (Windows only); the same with every `sh` run under `/bin/dash` (a temporary test change, reverted): 99 pass, 0 fail |
+| `test/required-version.test.ts` | 19 pass |
+| `test/package.test.ts` | 33 pass; with `npm_config_bin_links=false`: 33 pass |
+| `test/release-workflow.test.ts` | 32 pass |
+| The new and changed tests against the code of `a474c45` (`buildos`, `pinned-version.cjs`, `main.ts`, `required-version.ts` swapped in, then restored) | `wrappers`, `required-version`, and `package`: 38 of 139 fail (`required-version` fails at its import); the `SECURITY.md` of `a474c45`: 1 of 32 fails (finding 4) |
+| Real Node.js 20.18.0 on the bundle | see finding 3 |
+| `make-docs run prd authority validate` | exit 0, no diagnostics |
+| `make-docs project path-hygiene validate` | exit 0, valid, 0 failing findings |
+
+### Follow-ups (Pin-First Final Check)
+
+- F-P8-08: the Windows long-line estimate (finding 6); see [P8 Follow-ups](#p8-follow-ups).
+
+### Not Verified in This Pass
+
+- Windows: no Windows run. The `.cmd` wrapper is unchanged. The helper's Windows path changed in two places: the walk-up local lookup and the `npx` arguments (`--prefix <current folder>` goes through the same `escapeCmdArg` as every argument, and the long-line check counts it). The Windows `npx` cases, the `%TEMP%` and `!` folder cases, and the real-npm registry and workspace cases run on Windows CI only.
+- Linux: not run locally. The `sh` wrapper ran under macOS `/bin/sh` and `/bin/dash`.
+- The real-npm registry cases need a local port. The sandbox here blocks local ports, so `test/package.test.ts` and `npm test` ran outside it. CI runners allow local ports.
+- Node.js older than 20 was not available here; the check is proven on 20.18.0 only. A later source change with syntax that Node.js 20 cannot parse would stop an old Node.js with a syntax error before the check.
+- The orchestrator has not seen this pass. No review round follows (the three-round limit).
+
+### CI After the Final Check
+
+CI run 45763347158 on `4f8d9a7`: ubuntu and macOS passed; Windows failed in one test, "never uses a buildos.cmd from the current folder that is not on PATH". The product was correct and the test was out of date. Since finding 1 of this pass, the local lookup walks up from the current folder, so the verified package above the test's current folder (`outer/node_modules/@brucewaynedecoy/buildos`) now runs as a local install, and `npx` does not run. The test now asserts that: the package entry runs, the shim file never runs, and `npx` never runs. No product file changed. The next CI run is the proof on Windows.
+

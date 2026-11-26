@@ -1,0 +1,15 @@
+---
+source: "inputs/pdf/repair-cafe-handbook.pdf"
+sha256: "3b245f91168d52f4355e56f8fdbcb9862e28c112507432c9bd72cef0396332e4"
+converter: "buildos-intake/0.1.0"
+timestamp: "{TIMESTAMP}"
+type: "text"
+status: "converted"
+---
+
+Repair Cafe Handbook
+The repair cafe meets on the first Saturday of each month.
+Volunteers fix lamps, toasters, and bicycles for free.
+Visitors sign in at the front table before they wait.
+Page two lists the tools on the repair bench.
+Solder, screwdrivers, and a multimeter are shared.

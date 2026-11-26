@@ -1,0 +1,28 @@
+{
+  "ok": false,
+  "command": "entities.consolidate",
+  "version": "dev",
+  "source_revision": "unknown",
+  "root": "{ROOT}\\root",
+  "mode": "strict",
+  "write_status": "planned",
+  "result": {
+    "consolidation": {
+      "manifest_version": 0,
+      "mapping_count": 0,
+      "change_count": 0,
+      "no_op_count": 0,
+      "affected_files": null,
+      "changes": null,
+      "applied": false
+    }
+  },
+  "diagnostics": [
+    {
+      "code": "input_contract",
+      "severity": "error",
+      "message": "cannot read consolidation manifest: open manifests/absent.json: The system cannot find the file specified.",
+      "correction": "provide a readable UTF-8 JSON manifest"
+    }
+  ]
+}

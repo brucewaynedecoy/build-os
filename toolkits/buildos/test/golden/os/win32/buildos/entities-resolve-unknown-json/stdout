@@ -1,0 +1,19 @@
+{
+  "ok": false,
+  "command": "entities.resolve",
+  "version": "dev",
+  "source_revision": "unknown",
+  "root": "{ROOT}\\root",
+  "mode": "strict",
+  "write_status": "not_requested",
+  "result": null,
+  "diagnostics": [
+    {
+      "code": "entity_not_found",
+      "severity": "error",
+      "message": "requested entity PER-999 does not exist",
+      "entity_id": "PER-999",
+      "correction": "use an existing governed entity ID or restore the missing canonical row"
+    }
+  ]
+}

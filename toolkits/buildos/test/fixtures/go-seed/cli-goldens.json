@@ -1,0 +1,815 @@
+{
+  "source": "Go seed toolkits/buildos/cmd/buildos, default build identity",
+  "capture": "node scripts/capture-go-goldens.ts <go-seed-binary>",
+  "cases": [
+    {
+      "args": [],
+      "stdout": "BuildOS deterministic project tooling\n\nUsage:\n  buildos help\n  buildos version [--json]\n  buildos entities <command> [flags]\n\nEntity commands:\n  resolve        Resolve an entity ID to its active canonical record\n  validate       Validate the complete governed entity graph\n  consolidate    Plan or apply a reviewed consolidation manifest\n  rebuild-index  Check or rebuild the derived entity-resolution index\n\nRun \"buildos entities help\" for entity command details.\n",
+      "stderr": "",
+      "exit": 0
+    },
+    {
+      "args": [
+        "help"
+      ],
+      "stdout": "BuildOS deterministic project tooling\n\nUsage:\n  buildos help\n  buildos version [--json]\n  buildos entities <command> [flags]\n\nEntity commands:\n  resolve        Resolve an entity ID to its active canonical record\n  validate       Validate the complete governed entity graph\n  consolidate    Plan or apply a reviewed consolidation manifest\n  rebuild-index  Check or rebuild the derived entity-resolution index\n\nRun \"buildos entities help\" for entity command details.\n",
+      "stderr": "",
+      "exit": 0
+    },
+    {
+      "args": [
+        "--help"
+      ],
+      "stdout": "BuildOS deterministic project tooling\n\nUsage:\n  buildos help\n  buildos version [--json]\n  buildos entities <command> [flags]\n\nEntity commands:\n  resolve        Resolve an entity ID to its active canonical record\n  validate       Validate the complete governed entity graph\n  consolidate    Plan or apply a reviewed consolidation manifest\n  rebuild-index  Check or rebuild the derived entity-resolution index\n\nRun \"buildos entities help\" for entity command details.\n",
+      "stderr": "",
+      "exit": 0
+    },
+    {
+      "args": [
+        "-h"
+      ],
+      "stdout": "BuildOS deterministic project tooling\n\nUsage:\n  buildos help\n  buildos version [--json]\n  buildos entities <command> [flags]\n\nEntity commands:\n  resolve        Resolve an entity ID to its active canonical record\n  validate       Validate the complete governed entity graph\n  consolidate    Plan or apply a reviewed consolidation manifest\n  rebuild-index  Check or rebuild the derived entity-resolution index\n\nRun \"buildos entities help\" for entity command details.\n",
+      "stderr": "",
+      "exit": 0
+    },
+    {
+      "args": [
+        "help",
+        "--json"
+      ],
+      "stdout": "BuildOS deterministic project tooling\n\nUsage:\n  buildos help\n  buildos version [--json]\n  buildos entities <command> [flags]\n\nEntity commands:\n  resolve        Resolve an entity ID to its active canonical record\n  validate       Validate the complete governed entity graph\n  consolidate    Plan or apply a reviewed consolidation manifest\n  rebuild-index  Check or rebuild the derived entity-resolution index\n\nRun \"buildos entities help\" for entity command details.\n",
+      "stderr": "",
+      "exit": 0
+    },
+    {
+      "args": [
+        "help",
+        "x"
+      ],
+      "stdout": "BuildOS deterministic project tooling\n\nUsage:\n  buildos help\n  buildos version [--json]\n  buildos entities <command> [flags]\n\nEntity commands:\n  resolve        Resolve an entity ID to its active canonical record\n  validate       Validate the complete governed entity graph\n  consolidate    Plan or apply a reviewed consolidation manifest\n  rebuild-index  Check or rebuild the derived entity-resolution index\n\nRun \"buildos entities help\" for entity command details.\n",
+      "stderr": "",
+      "exit": 0
+    },
+    {
+      "args": [
+        "help",
+        "version"
+      ],
+      "stdout": "BuildOS deterministic project tooling\n\nUsage:\n  buildos help\n  buildos version [--json]\n  buildos entities <command> [flags]\n\nEntity commands:\n  resolve        Resolve an entity ID to its active canonical record\n  validate       Validate the complete governed entity graph\n  consolidate    Plan or apply a reviewed consolidation manifest\n  rebuild-index  Check or rebuild the derived entity-resolution index\n\nRun \"buildos entities help\" for entity command details.\n",
+      "stderr": "",
+      "exit": 0
+    },
+    {
+      "args": [
+        "help",
+        "help"
+      ],
+      "stdout": "BuildOS deterministic project tooling\n\nUsage:\n  buildos help\n  buildos version [--json]\n  buildos entities <command> [flags]\n\nEntity commands:\n  resolve        Resolve an entity ID to its active canonical record\n  validate       Validate the complete governed entity graph\n  consolidate    Plan or apply a reviewed consolidation manifest\n  rebuild-index  Check or rebuild the derived entity-resolution index\n\nRun \"buildos entities help\" for entity command details.\n",
+      "stderr": "",
+      "exit": 0
+    },
+    {
+      "args": [
+        "bogus"
+      ],
+      "stdout": "",
+      "stderr": "buildos: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: unknown command \"bogus\"\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "bogus",
+        "--json"
+      ],
+      "stdout": "",
+      "stderr": "buildos: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: unknown command \"bogus\"\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "--json"
+      ],
+      "stdout": "",
+      "stderr": "buildos: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: unknown command \"--json\"\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "-x"
+      ],
+      "stdout": "",
+      "stderr": "buildos: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: unknown command \"-x\"\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "Version"
+      ],
+      "stdout": "",
+      "stderr": "buildos: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: unknown command \"Version\"\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version"
+      ],
+      "stdout": "version: ok\nroot: not_applicable\nmode: not_applicable\nversion: dev\nsource revision: unknown\nwrite status: not_requested\n{\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\"\n}\n",
+      "stderr": "",
+      "exit": 0
+    },
+    {
+      "args": [
+        "version",
+        "-json"
+      ],
+      "stdout": "{\n  \"ok\": true,\n  \"command\": \"version\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"not_applicable\",\n  \"mode\": \"not_applicable\",\n  \"write_status\": \"not_requested\",\n  \"result\": {\n    \"version\": \"dev\",\n    \"source_revision\": \"unknown\"\n  },\n  \"diagnostics\": []\n}\n",
+      "stderr": "",
+      "exit": 0
+    },
+    {
+      "args": [
+        "version",
+        "--json"
+      ],
+      "stdout": "{\n  \"ok\": true,\n  \"command\": \"version\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"not_applicable\",\n  \"mode\": \"not_applicable\",\n  \"write_status\": \"not_requested\",\n  \"result\": {\n    \"version\": \"dev\",\n    \"source_revision\": \"unknown\"\n  },\n  \"diagnostics\": []\n}\n",
+      "stderr": "",
+      "exit": 0
+    },
+    {
+      "args": [
+        "version",
+        "-json=true"
+      ],
+      "stdout": "{\n  \"ok\": true,\n  \"command\": \"version\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"not_applicable\",\n  \"mode\": \"not_applicable\",\n  \"write_status\": \"not_requested\",\n  \"result\": {\n    \"version\": \"dev\",\n    \"source_revision\": \"unknown\"\n  },\n  \"diagnostics\": []\n}\n",
+      "stderr": "",
+      "exit": 0
+    },
+    {
+      "args": [
+        "version",
+        "--json=true"
+      ],
+      "stdout": "{\n  \"ok\": true,\n  \"command\": \"version\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"not_applicable\",\n  \"mode\": \"not_applicable\",\n  \"write_status\": \"not_requested\",\n  \"result\": {\n    \"version\": \"dev\",\n    \"source_revision\": \"unknown\"\n  },\n  \"diagnostics\": []\n}\n",
+      "stderr": "",
+      "exit": 0
+    },
+    {
+      "args": [
+        "version",
+        "-json=false"
+      ],
+      "stdout": "version: ok\nroot: not_applicable\nmode: not_applicable\nversion: dev\nsource revision: unknown\nwrite status: not_requested\n{\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\"\n}\n",
+      "stderr": "",
+      "exit": 0
+    },
+    {
+      "args": [
+        "version",
+        "--json=false"
+      ],
+      "stdout": "version: ok\nroot: not_applicable\nmode: not_applicable\nversion: dev\nsource revision: unknown\nwrite status: not_requested\n{\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\"\n}\n",
+      "stderr": "",
+      "exit": 0
+    },
+    {
+      "args": [
+        "version",
+        "--json=1"
+      ],
+      "stdout": "{\n  \"ok\": true,\n  \"command\": \"version\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"not_applicable\",\n  \"mode\": \"not_applicable\",\n  \"write_status\": \"not_requested\",\n  \"result\": {\n    \"version\": \"dev\",\n    \"source_revision\": \"unknown\"\n  },\n  \"diagnostics\": []\n}\n",
+      "stderr": "",
+      "exit": 0
+    },
+    {
+      "args": [
+        "version",
+        "--json=T"
+      ],
+      "stdout": "{\n  \"ok\": true,\n  \"command\": \"version\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"not_applicable\",\n  \"mode\": \"not_applicable\",\n  \"write_status\": \"not_requested\",\n  \"result\": {\n    \"version\": \"dev\",\n    \"source_revision\": \"unknown\"\n  },\n  \"diagnostics\": []\n}\n",
+      "stderr": "",
+      "exit": 0
+    },
+    {
+      "args": [
+        "version",
+        "-json=0"
+      ],
+      "stdout": "version: ok\nroot: not_applicable\nmode: not_applicable\nversion: dev\nsource revision: unknown\nwrite status: not_requested\n{\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\"\n}\n",
+      "stderr": "",
+      "exit": 0
+    },
+    {
+      "args": [
+        "version",
+        "--json="
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: invalid boolean value \"\" for -json: parse error\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--json=maybe"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: invalid boolean value \"maybe\" for -json: parse error\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "-json=yes"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: invalid boolean value \"yes\" for -json: parse error\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--json",
+        "--json=false"
+      ],
+      "stdout": "version: ok\nroot: not_applicable\nmode: not_applicable\nversion: dev\nsource revision: unknown\nwrite status: not_requested\n{\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\"\n}\n",
+      "stderr": "",
+      "exit": 0
+    },
+    {
+      "args": [
+        "version",
+        "-json",
+        "true"
+      ],
+      "stdout": "{\n  \"ok\": false,\n  \"command\": \"buildos version\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"\",\n  \"mode\": \"\",\n  \"write_status\": \"not_requested\",\n  \"result\": null,\n  \"diagnostics\": [\n    {\n      \"code\": \"usage_error\",\n      \"severity\": \"error\",\n      \"message\": \"version accepts only --json\",\n      \"correction\": \"Run buildos help for command syntax.\"\n    }\n  ]\n}\n",
+      "stderr": "",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--bad"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: flag provided but not defined: -bad\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "-bad"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: flag provided but not defined: -bad\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--bad",
+        "--json"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: flag provided but not defined: -bad\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--json",
+        "--bad"
+      ],
+      "stdout": "{\n  \"ok\": false,\n  \"command\": \"buildos version\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"\",\n  \"mode\": \"\",\n  \"write_status\": \"not_requested\",\n  \"result\": null,\n  \"diagnostics\": [\n    {\n      \"code\": \"usage_error\",\n      \"severity\": \"error\",\n      \"message\": \"flag provided but not defined: -bad\",\n      \"correction\": \"Run buildos help for command syntax.\"\n    }\n  ]\n}\n",
+      "stderr": "",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "-json",
+        "--bad"
+      ],
+      "stdout": "{\n  \"ok\": false,\n  \"command\": \"buildos version\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"\",\n  \"mode\": \"\",\n  \"write_status\": \"not_requested\",\n  \"result\": null,\n  \"diagnostics\": [\n    {\n      \"code\": \"usage_error\",\n      \"severity\": \"error\",\n      \"message\": \"flag provided but not defined: -bad\",\n      \"correction\": \"Run buildos help for command syntax.\"\n    }\n  ]\n}\n",
+      "stderr": "",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "x"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: version accepts only --json\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--json",
+        "x"
+      ],
+      "stdout": "{\n  \"ok\": false,\n  \"command\": \"buildos version\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"\",\n  \"mode\": \"\",\n  \"write_status\": \"not_requested\",\n  \"result\": null,\n  \"diagnostics\": [\n    {\n      \"code\": \"usage_error\",\n      \"severity\": \"error\",\n      \"message\": \"version accepts only --json\",\n      \"correction\": \"Run buildos help for command syntax.\"\n    }\n  ]\n}\n",
+      "stderr": "",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "x",
+        "--json"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: version accepts only --json\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "-"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: version accepts only --json\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--"
+      ],
+      "stdout": "version: ok\nroot: not_applicable\nmode: not_applicable\nversion: dev\nsource revision: unknown\nwrite status: not_requested\n{\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\"\n}\n",
+      "stderr": "",
+      "exit": 0
+    },
+    {
+      "args": [
+        "version",
+        "--",
+        "x"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: version accepts only --json\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--json",
+        "--",
+        "x"
+      ],
+      "stdout": "{\n  \"ok\": false,\n  \"command\": \"buildos version\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"\",\n  \"mode\": \"\",\n  \"write_status\": \"not_requested\",\n  \"result\": null,\n  \"diagnostics\": [\n    {\n      \"code\": \"usage_error\",\n      \"severity\": \"error\",\n      \"message\": \"version accepts only --json\",\n      \"correction\": \"Run buildos help for command syntax.\"\n    }\n  ]\n}\n",
+      "stderr": "",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "---json"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: bad flag syntax: ---json\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--=x"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: bad flag syntax: --=x\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "-=x"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: bad flag syntax: -=x\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "-help"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: flag: help requested\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--help"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: flag: help requested\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "-h"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: flag: help requested\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "help"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: version accepts only --json\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--json=constructor"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: invalid boolean value \"constructor\" for -json: parse error\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--json=toString"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: invalid boolean value \"toString\" for -json: parse error\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "-json=__proto__"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: invalid boolean value \"__proto__\" for -json: parse error\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--json=hasOwnProperty"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: invalid boolean value \"hasOwnProperty\" for -json: parse error\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--json=valueOf"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: invalid boolean value \"valueOf\" for -json: parse error\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--json",
+        "--json=toString"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: invalid boolean value \"toString\" for -json: parse error\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--constructor"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: flag provided but not defined: -constructor\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "-toString"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: flag provided but not defined: -toString\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--__proto__"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: flag provided but not defined: -__proto__\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--hasOwnProperty"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: flag provided but not defined: -hasOwnProperty\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--valueOf"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: flag provided but not defined: -valueOf\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "-constructor=1"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: flag provided but not defined: -constructor\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--__proto__=x"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: flag provided but not defined: -__proto__\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--json",
+        "--__proto__"
+      ],
+      "stdout": "{\n  \"ok\": false,\n  \"command\": \"buildos version\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"\",\n  \"mode\": \"\",\n  \"write_status\": \"not_requested\",\n  \"result\": null,\n  \"diagnostics\": [\n    {\n      \"code\": \"usage_error\",\n      \"severity\": \"error\",\n      \"message\": \"flag provided but not defined: -__proto__\",\n      \"correction\": \"Run buildos help for command syntax.\"\n    }\n  ]\n}\n",
+      "stderr": "",
+      "exit": 2
+    },
+    {
+      "args": [
+        "constructor"
+      ],
+      "stdout": "",
+      "stderr": "buildos: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: unknown command \"constructor\"\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "__proto__"
+      ],
+      "stdout": "",
+      "stderr": "buildos: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: unknown command \"__proto__\"\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "toString",
+        "--json"
+      ],
+      "stdout": "",
+      "stderr": "buildos: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: unknown command \"toString\"\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--json=🫩"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: invalid boolean value \"\\U0001fae9\" for -json: parse error\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--json=😀"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: invalid boolean value \"😀\" for -json: parse error\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--json=ࢗ"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: invalid boolean value \"\\u0897\" for -json: parse error\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--json=͸"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: invalid boolean value \"\\u0378\" for -json: parse error\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--json=󠀁"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: invalid boolean value \"\\U000e0001\" for -json: parse error\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--json=\u0001\u001b"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: invalid boolean value \"\\x01\\x1b\\x7f\" for -json: parse error\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--json=\u0007\b\f\n\r\t\u000b"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: invalid boolean value \"\\a\\b\\f\\n\\r\\t\\v\" for -json: parse error\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--json=é"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: invalid boolean value \"é\" for -json: parse error\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--json= ­​‍ "
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: invalid boolean value \"\\u00a0\\u00ad\\u200b\\u200d\\u2028\" for -json: parse error\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--json=�"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: invalid boolean value \"�\" for -json: parse error\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "version",
+        "--json=\"\\"
+      ],
+      "stdout": "",
+      "stderr": "buildos version: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: invalid boolean value \"\\\"\\\\\" for -json: parse error\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "🫩"
+      ],
+      "stdout": "",
+      "stderr": "buildos: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: unknown command \"\\U0001fae9\"\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "boguś​"
+      ],
+      "stdout": "",
+      "stderr": "buildos: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: unknown command \"boguś\\u200b\"\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "entities"
+      ],
+      "stdout": "Usage:\n  buildos entities resolve --root <path> --mode compat|strict --id <entity-id> [--json]\n  buildos entities validate --root <path> --mode compat|strict [--json]\n  buildos entities consolidate --root <path> --mode compat|strict --manifest <path> [--apply] [--json]\n  buildos entities rebuild-index --root <path> --mode compat|strict [--check|--apply] [--json]\n\nMutation commands are dry-run/check-only unless --apply is supplied.\nEvery entity command requires an explicit BuildOS root and validation mode.\n",
+      "stderr": "",
+      "exit": 0
+    },
+    {
+      "args": [
+        "entities",
+        "--help"
+      ],
+      "stdout": "Usage:\n  buildos entities resolve --root <path> --mode compat|strict --id <entity-id> [--json]\n  buildos entities validate --root <path> --mode compat|strict [--json]\n  buildos entities consolidate --root <path> --mode compat|strict --manifest <path> [--apply] [--json]\n  buildos entities rebuild-index --root <path> --mode compat|strict [--check|--apply] [--json]\n\nMutation commands are dry-run/check-only unless --apply is supplied.\nEvery entity command requires an explicit BuildOS root and validation mode.\n",
+      "stderr": "",
+      "exit": 0
+    },
+    {
+      "args": [
+        "entities",
+        "-h"
+      ],
+      "stdout": "Usage:\n  buildos entities resolve --root <path> --mode compat|strict --id <entity-id> [--json]\n  buildos entities validate --root <path> --mode compat|strict [--json]\n  buildos entities consolidate --root <path> --mode compat|strict --manifest <path> [--apply] [--json]\n  buildos entities rebuild-index --root <path> --mode compat|strict [--check|--apply] [--json]\n\nMutation commands are dry-run/check-only unless --apply is supplied.\nEvery entity command requires an explicit BuildOS root and validation mode.\n",
+      "stderr": "",
+      "exit": 0
+    },
+    {
+      "args": [
+        "entities",
+        "help"
+      ],
+      "stdout": "Usage:\n  buildos entities resolve --root <path> --mode compat|strict --id <entity-id> [--json]\n  buildos entities validate --root <path> --mode compat|strict [--json]\n  buildos entities consolidate --root <path> --mode compat|strict --manifest <path> [--apply] [--json]\n  buildos entities rebuild-index --root <path> --mode compat|strict [--check|--apply] [--json]\n\nMutation commands are dry-run/check-only unless --apply is supplied.\nEvery entity command requires an explicit BuildOS root and validation mode.\n",
+      "stderr": "",
+      "exit": 0
+    },
+    {
+      "args": [
+        "entities",
+        "bogus"
+      ],
+      "stdout": "",
+      "stderr": "entities.bogus: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: --root is required\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "entities",
+        "resolve",
+        "--root"
+      ],
+      "stdout": "",
+      "stderr": "entities.resolve: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: flag needs an argument: -root\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "entities",
+        "resolve",
+        "--json",
+        "--bad"
+      ],
+      "stdout": "{\n  \"ok\": false,\n  \"command\": \"entities.resolve\",\n  \"version\": \"dev\",\n  \"source_revision\": \"unknown\",\n  \"root\": \"\",\n  \"mode\": \"\",\n  \"write_status\": \"not_requested\",\n  \"result\": null,\n  \"diagnostics\": [\n    {\n      \"code\": \"usage_error\",\n      \"severity\": \"error\",\n      \"message\": \"flag provided but not defined: -bad\",\n      \"correction\": \"Run buildos help for command syntax.\"\n    }\n  ]\n}\n",
+      "stderr": "",
+      "exit": 2
+    },
+    {
+      "args": [
+        "entities",
+        "resolve",
+        "-json",
+        "--bad"
+      ],
+      "stdout": "",
+      "stderr": "entities.resolve: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: flag provided but not defined: -bad\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "entities",
+        "resolve",
+        "-root=/x",
+        "--mode",
+        "strict",
+        "--id",
+        "a",
+        "--bad"
+      ],
+      "stdout": "",
+      "stderr": "entities.resolve: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: flag provided but not defined: -bad\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "entities",
+        "validate",
+        "--root",
+        "a",
+        "--mode",
+        "bad"
+      ],
+      "stdout": "",
+      "stderr": "entities.validate: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: --mode must be compat or strict\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    },
+    {
+      "args": [
+        "entities",
+        "rebuild-index",
+        "--check",
+        "--apply",
+        "--root",
+        "a",
+        "--mode",
+        "compat"
+      ],
+      "stdout": "",
+      "stderr": "entities.rebuild-index: error\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nERROR [usage_error]: --check and --apply are mutually exclusive\n  action: Run buildos help for command syntax.\n",
+      "exit": 2
+    }
+  ]
+}

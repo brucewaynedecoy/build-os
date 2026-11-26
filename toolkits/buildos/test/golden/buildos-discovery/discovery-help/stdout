@@ -1,0 +1,3 @@
+Usage:
+  buildos-discovery run discovery --playbook-id <PB-NNN> --outcome positive|negative|inconclusive [--title <text>] [--target <ID>] [--dataset-ref <path>] [--evidence <path>] [--raw-finding <path>] [--repo-root <path>] [--dry-run]
+  buildos-discovery qualify finding --run-id <RUN-NNN> --raw-finding-ref <path#anchor> --outcome positive|negative [--title <text>] --confirmation-test <path> --confirmation-evidence <path> [--repo-root <path>] [--dry-run]

@@ -1,0 +1,1 @@
+buildos-design: error: finding entity graph is invalid: input_contract: invalid JSON object: json: cannot unmarshal array into Go value of type map[string]json.RawMessage; replace the row with one complete JSON object

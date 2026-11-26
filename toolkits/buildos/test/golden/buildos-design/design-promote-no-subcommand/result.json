@@ -1,0 +1,16 @@
+{
+  "id": "design-promote-no-subcommand",
+  "tool": "buildos-design",
+  "invocation": "buildos-design",
+  "args": [
+    "promote"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "b5552f31346082f1214b29604372520d6c2f00135b891569695aa56359b9890f",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

@@ -1,0 +1,4 @@
+# Validate fixtures are read byte for byte on every OS. Git never converts
+# their line endings (CRLF and byte order mark cases), and whitespace checks
+# do not apply: blank lines, tabs, and CR are what some cases test.
+* -text whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab,cr-at-eol

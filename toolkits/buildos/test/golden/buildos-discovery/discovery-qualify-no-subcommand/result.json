@@ -1,0 +1,17 @@
+{
+  "id": "discovery-qualify-no-subcommand",
+  "tool": "buildos-discovery",
+  "invocation": "buildos-discovery",
+  "args": [
+    "qualify",
+    "bogus"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "504cd1447c4a3350d005dd2ba52238f3179e2ae30cedd88d44f7545db4eefcf5",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

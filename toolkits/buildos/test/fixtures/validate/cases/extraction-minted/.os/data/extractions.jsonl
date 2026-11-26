@@ -1,0 +1,3 @@
+{"id":"EXT-001","type":"extraction","status":"draft","source_anchor":"assets/sample/sample.md#fact-1","dataset_refs":["workspace/datasets/sample.csv"],"extracted_by":"fixture","extracted_at":"2026-01-15T10:00:00Z"}
+{"id":"EXT-002","type":"extraction","status":"draft","source_anchor":"assets/sample/sample.md#fact-1","minted":"REQ-001","dataset_refs":["workspace/datasets/sample.csv"],"extracted_by":"fixture","extracted_at":"2026-01-15T10:00:00Z"}
+{"id":"EXT-003","type":"extraction","status":"draft","source_anchor":"assets/sample/sample.md#fact-1","minted":["BAD-001","",4,"REQ-1","PB-002"],"dataset_refs":["workspace/datasets/sample.csv"],"extracted_by":"fixture","extracted_at":"2026-01-15T10:00:00Z"}

@@ -1,0 +1,22 @@
+{
+  "id": "design-promote-missing-finding-record",
+  "tool": "buildos-design",
+  "invocation": "buildos-design",
+  "args": [
+    "promote",
+    "finding",
+    "--finding-id",
+    "FIND-005",
+    "--route",
+    "baseline-plan",
+    "--slug",
+    "store-name"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "cfc57023ef7f065d85970bfb453fb879435af5a490d982960a3c698f4d1eccec",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {}
+}

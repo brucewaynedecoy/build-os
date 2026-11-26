@@ -1,0 +1,22 @@
+{
+  "id": "entities-rebuild-plan-json",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "entities",
+    "rebuild-index",
+    "--root",
+    "root",
+    "--mode",
+    "strict",
+    "--json"
+  ],
+  "exit": 0,
+  "stdout_sha256": "0cb9e1747f91254e1473a8ca11798aad9c3d7938d1c24123c2fa9f321a6a9aeb",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

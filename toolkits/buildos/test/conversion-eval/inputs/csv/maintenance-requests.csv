@@ -1,0 +1,14 @@
+Request ID,Opened,Building,Unit,Category,Summary,Priority,Status,Closed
+MR-1041,2026-09-02,North,N-104,Plumbing,"Kitchen tap drips, worse at night",Medium,Closed,2026-09-05
+MR-1042,2026-09-03,North,N-210,Electrical,Hall light flickers,Low,Closed,2026-09-10
+MR-1043,2026-09-08,South,S-003,Heating,"Radiator cold; member says ""no heat since Sunday""",High,Closed,2026-09-09
+MR-1044,2026-09-11,South,S-115,Doors,"Front door closer sticks
+Needs a new arm",Medium,Closed,2026-09-19
+MR-1045,2026-09-15,Annex,A-2,Pest control,Ants near the back step,Low,Closed,2026-09-22
+MR-1046,2026-09-21,North,,Grounds,Fallen branch by the bike shed,Medium,Closed,2026-09-21
+MR-1047,2026-10-01,South,S-207,Plumbing,Shower drain slow,Low,Open,
+MR-1048,2026-10-04,Annex,A-5,Electrical,Outlet by the window is dead – breaker checked,High,Open,
+MR-1049,2026-10-09,North,N-301,Windows,Sash cord broken,Medium,Open,
+MR-1050,2026-10-12,South,S-118,Appliances,"Fridge seal torn, about 30 cm",Medium,Open,
+MR-1051,2026-10-17,North,N-112,Heating,Thermostat reads 3° high,Low,Open,
+MR-1052,2026-10-20,Annex,,Common room,Café table wobbles,Low,Open,

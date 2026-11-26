@@ -1,0 +1,7 @@
+{
+  "case": "instance-id-missing",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/config/instance.yaml:instance.id: must be a string\nFAIL: 1 validation error(s)\n",
+  "crashed": false
+}

@@ -1,0 +1,17 @@
+{
+  "id": "cli-version-help",
+  "tool": "buildos",
+  "invocation": "buildos",
+  "args": [
+    "version",
+    "--help"
+  ],
+  "exit": 2,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "615d12b3b5b0eaab3c2e6bc317e95d445298a0b752ae7bb15004c6ed334c3815",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {},
+  "modes": {}
+}

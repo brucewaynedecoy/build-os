@@ -1,0 +1,10 @@
+---
+source: "inputs/stock.csv"
+sha256: "9318e2fbd8f36c4f491d289c29f18a8f7e7502c94f292d42f5605ffc743d15f7"
+converter: "buildos-intake/0.1.0"
+timestamp: "{TIMESTAMP}"
+type: "csv"
+status: "converted"
+---
+item,count
+rake,3

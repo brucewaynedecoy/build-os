@@ -1,0 +1,38 @@
+{
+  "case": "persona-v1-normalization-collision",
+  "records": [
+    {
+      "id": "PER-004",
+      "type": "persona",
+      "status": "active",
+      "description": "Coordinates finance operations for North America.",
+      "goals": [],
+      "needs": [],
+      "identity": {
+        "scheme": "persona-v1",
+        "key": "finance lead | north america"
+      }
+    },
+    {
+      "id": "PER-005",
+      "type": "persona",
+      "status": "active",
+      "description": "A second proposed finance operations persona.",
+      "goals": [],
+      "needs": [],
+      "identity": {
+        "scheme": "persona-v1",
+        "key": " Finance   LEAD | North America "
+      }
+    }
+  ],
+  "expected": {
+    "outcome": "validation_error",
+    "errors": [
+      "persona_identity_key_not_normalized",
+      "persona_identity_collision"
+    ],
+    "normalized_key": "finance lead | north america",
+    "mutated": false
+  }
+}

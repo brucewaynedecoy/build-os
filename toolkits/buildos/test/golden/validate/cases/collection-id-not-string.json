@@ -1,0 +1,7 @@
+{
+  "case": "collection-id-not-string",
+  "exit": 1,
+  "stdout": "",
+  "stderr": ".os/config/instance.yaml:systems[1].id: must be a string\n.os/config/instance.yaml:owners[0].id: is required\n.os/config/instance.yaml:owners[0].id: must be a string\n.os/config/instance.yaml:environments[1].systems[1]: unknown configured ID 'second-system'\n.os/data/requirements.jsonl:line 1.owners[0]: unknown configured ID 'sample-team'\nFAIL: 5 validation error(s)\n",
+  "crashed": false
+}

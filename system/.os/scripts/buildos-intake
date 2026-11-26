@@ -1,0 +1,13 @@
+#!/usr/bin/env sh
+# BuildOS project wrapper for `buildos intake`. It writes one notice line to
+# stderr (the name goes away in 0.3.0; PRD 20 Legacy Command Names), then runs
+# the `buildos` wrapper in this folder, which finds BuildOS (see that file).
+set -u
+
+case "$0" in
+  */*) script_dir=$(CDPATH= cd -- "${0%/*}" && pwd) ;;
+  *) script_dir=$(pwd) ;;
+esac
+
+printf '%s\n' 'Note: the command name "buildos-intake" goes away in BuildOS 0.3.0. Use "buildos intake" instead.' >&2
+exec sh "$script_dir/buildos" intake "$@"

@@ -1,0 +1,2 @@
+{"id":"EXT-001","type":"extraction","status":"draft","source_anchor":"https://example.com/assets/sample.md#fact-1","minted":["REQ-001"],"extracted_by":"fixture","extracted_at":"2026-01-15T10:00:00Z"}
+{"id":"EXT-002","type":"extraction","status":"draft","source_anchor":"assets/..#fact-1","minted":["REQ-001"],"extracted_by":"fixture","extracted_at":"2026-01-15T10:00:00Z"}

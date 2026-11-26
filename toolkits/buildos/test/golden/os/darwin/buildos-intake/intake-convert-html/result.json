@@ -1,0 +1,66 @@
+{
+  "id": "intake-convert-html",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert",
+    "--source",
+    "inputs/handbook.html"
+  ],
+  "exit": 0,
+  "stdout_sha256": "d059d44e860dd608db5b6074574ba725557ad67f8dde290ae1e4b28d064debcf",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "added": [
+    {
+      "path": "system/assets/handbook",
+      "kind": "dir"
+    },
+    {
+      "path": "system/assets/handbook/diagrams",
+      "kind": "dir"
+    },
+    {
+      "path": "system/assets/handbook/diagrams/handbook-mermaid-001.mmd",
+      "kind": "file"
+    },
+    {
+      "path": "system/assets/handbook/diagrams/handbook-svg-001.svg",
+      "kind": "file"
+    },
+    {
+      "path": "system/assets/handbook/handbook.md",
+      "kind": "file"
+    },
+    {
+      "path": "system/assets/handbook/media",
+      "kind": "dir"
+    },
+    {
+      "path": "system/assets/handbook/media/handbook-image-001.png",
+      "kind": "file"
+    },
+    {
+      "path": "system/assets/handbook/media/handbook-image-002.png",
+      "kind": "file"
+    }
+  ],
+  "changed": [],
+  "removed": [],
+  "files": {
+    "system/assets/handbook/diagrams/handbook-mermaid-001.mmd": "ab8691049d75187c582b6a02959f9c6ff119444363748403b2ecf7a3f54ab443",
+    "system/assets/handbook/diagrams/handbook-svg-001.svg": "44398db11b55fd3c1e95695b29f44305163d59bee9b1743d73b6f742ea769c5b",
+    "system/assets/handbook/handbook.md": "6ef4353b163d0e66217f35480c100c9bcf1bbc0291361eb8a0529d54bc5c44c0",
+    "system/assets/handbook/media/handbook-image-001.png": "23f6a2fb5077657d159c733ac1adf4294dc55f6626175c64e1f5b9c5fb70d72a",
+    "system/assets/handbook/media/handbook-image-002.png": "3df16a5d759ffd517822317db57f6c69646965b0dfd3ee55ec55cd65077aa772"
+  },
+  "modes": {
+    "system/assets/handbook": "0755",
+    "system/assets/handbook/diagrams": "0755",
+    "system/assets/handbook/diagrams/handbook-mermaid-001.mmd": "0644",
+    "system/assets/handbook/diagrams/handbook-svg-001.svg": "0644",
+    "system/assets/handbook/handbook.md": "0644",
+    "system/assets/handbook/media": "0755",
+    "system/assets/handbook/media/handbook-image-001.png": "0644",
+    "system/assets/handbook/media/handbook-image-002.png": "0644"
+  }
+}

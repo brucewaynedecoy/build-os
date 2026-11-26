@@ -1,0 +1,19 @@
+{
+  "id": "intake-convert-missing-root",
+  "tool": "buildos-intake",
+  "invocation": "buildos-intake",
+  "args": [
+    "convert",
+    "--source",
+    "inputs/team-roster.csv",
+    "--repo-root",
+    "absent"
+  ],
+  "exit": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "19514510c517c03ac65888954f6c2c415fd25bf0c48af7c0733cfe1b55c8bd72",
+  "added": [],
+  "changed": [],
+  "removed": [],
+  "files": {}
+}
