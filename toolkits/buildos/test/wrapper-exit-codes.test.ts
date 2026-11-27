@@ -31,7 +31,12 @@
 // The "cmd.exe exit code" probes (Windows) are small batch files with one
 // shape each (a program, then `exit /b`; a program at the end of the file;
 // `exit /b %ERRORLEVEL%`; and so on). They show the cmd.exe rule that the
-// wrapper meets, apart from BuildOS.
+// wrapper meets, apart from BuildOS. The first Windows run of these tests
+// (buildos-ci run 46066863403, before the fix) showed the defect: through
+// `cmd /c` with no `call`, and from PowerShell, every wrapper exited 0 for a
+// program code of 1; with `call`, and the helper started directly, the code
+// was kept. Under one cmd.exe, %ERRORLEVEL% was 1 after the helper and after
+// `call` of the wrapper, and 0 after a nested `cmd /c` of the wrapper.
 
 import assert from "node:assert/strict";
 import { spawnSync, type SpawnSyncReturns } from "node:child_process";
@@ -310,35 +315,45 @@ describe("F-P9-17: under one cmd.exe, %ERRORLEVEL% after the helper started dire
   }
 });
 
-describe("F-P9-17: the cmd.exe exit code rule, apart from BuildOS (record only)", { skip: !windows && "Windows only" }, () => {
-  // Each probe ends with a program that exits 2. Its batch shape decides what cmd.exe gives back.
+describe("F-P9-17: the cmd.exe exit code rule, apart from BuildOS", { skip: !windows && "Windows only" }, () => {
+  // Each probe ends with a program that exits 2. Its batch shape decides what cmd.exe gives back. The expected codes are
+  // those of the first Windows run (buildos-ci run 46066863403, windows-latest): started as cmd /c with no call, cmd.exe
+  // gives the code of the last command that ran, and a bare exit /b or goto :eof is that command, with code 0; with
+  // call, the code is the ERRORLEVEL. exit /b %ERRORLEVEL% gives the program's code in both, unless the caller has
+  // set a variable named ERRORLEVEL, which hides the real one; set "ERRORLEVEL=" in the batch file removes it.
   const program = `"${process.execPath}" -e "process.exit(2)"`;
-  const PROBES: Record<string, string[]> = {
-    "program, then exit /b": [program, "exit /b"],
-    "program at the end of the file": [program],
-    "program, then goto :eof": [program, "goto :eof"],
-    "program, then exit /b %ERRORLEVEL%": [program, "exit /b %ERRORLEVEL%"],
-    "setlocal DisableDelayedExpansion, program, then exit /b": ["setlocal DisableDelayedExpansion", program, "exit /b"],
-    "setlocal DisableDelayedExpansion, program, then exit /b %ERRORLEVEL%": ["setlocal DisableDelayedExpansion", program, "exit /b %ERRORLEVEL%"],
-    'setlocal, set "ERRORLEVEL=", program, then exit /b %ERRORLEVEL%': ["setlocal DisableDelayedExpansion", 'set "ERRORLEVEL="', program, "exit /b %ERRORLEVEL%"],
+  // Each probe: its lines, and the codes [cmd /c, cmd /c call, cmd /c with ERRORLEVEL=0 set by the caller].
+  const PROBES: Record<string, { lines: string[]; want: [number, number, number] }> = {
+    "program, then exit /b": { lines: [program, "exit /b"], want: [0, 2, 0] },
+    "program at the end of the file": { lines: [program], want: [2, 2, 2] },
+    "program, then goto :eof": { lines: [program, "goto :eof"], want: [0, 2, 0] },
+    "program, then exit /b %ERRORLEVEL%": { lines: [program, "exit /b %ERRORLEVEL%"], want: [2, 2, 0] },
+    "setlocal DisableDelayedExpansion, program, then exit /b": { lines: ["setlocal DisableDelayedExpansion", program, "exit /b"], want: [0, 2, 0] },
+    "setlocal DisableDelayedExpansion, program, then exit /b %ERRORLEVEL%": { lines: ["setlocal DisableDelayedExpansion", program, "exit /b %ERRORLEVEL%"], want: [2, 2, 0] },
+    'setlocal, set "ERRORLEVEL=", program, then exit /b %ERRORLEVEL% (the shape of the fixed buildos.cmd)': { lines: ["setlocal DisableDelayedExpansion", 'set "ERRORLEVEL="', program, "exit /b %ERRORLEVEL%"], want: [2, 2, 2] },
   };
-  it("records the exit code of cmd.exe for each batch shape, without and with call, and with a caller variable ERRORLEVEL=0", (t) => {
+  it("gives the exit code of cmd.exe for each batch shape, without and with call, and with a caller variable ERRORLEVEL=0", (t) => {
     const dir = join(scratch, "probes");
     mkdirSync(dir, { recursive: true });
     const rows: string[] = [];
     let index = 0;
-    for (const [shape, lines] of Object.entries(PROBES)) {
+    const wrong: string[] = [];
+    for (const [shape, { lines, want }] of Object.entries(PROBES)) {
       const file = join(dir, `probe-${++index}.cmd`);
       writeFileSync(file, ["@echo off", ...lines, ""].join("\r\n"));
       const codes: string[] = [];
+      const got: (number | null)[] = [];
       for (const [label, line, extra] of [["cmd /c", `""${file}""`, {}], ["cmd /c call", `"call "${file}""`, {}], ["cmd /c, ERRORLEVEL=0 set", `""${file}""`, { ERRORLEVEL: "0" }]] as const) {
         const env = { SystemRoot: process.env["SystemRoot"] ?? "C:\\Windows", PATH: system32, TEMP: scratch, TMP: scratch, ...extra };
         const result = spawnSync(join(system32, "cmd.exe"), ["/d", "/s", "/c", line], { env, encoding: "utf8", windowsVerbatimArguments: true, timeout: 60_000 });
         codes.push(`${label}: ${String(result.status)}`);
+        got.push(result.status);
       }
       rows.push(`probe ${index} (${shape}): ${codes.join("; ")}`);
+      if (got.join(",") !== want.join(",")) wrong.push(`probe ${index} (${shape}): got ${got.join(", ")}, expected ${want.join(", ")}`);
     }
     for (const row of rows) t.diagnostic(row);
     console.log(["F-P9-17 cmd.exe probes (the program exits 2):", ...rows].join("\n"));
+    assert.deepEqual(wrong, [], "the cmd.exe exit code rule changed");
   });
 });
