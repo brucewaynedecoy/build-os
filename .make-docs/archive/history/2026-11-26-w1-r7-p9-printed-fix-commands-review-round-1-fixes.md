@@ -30,6 +30,8 @@ Framing: [W1 R7 backlog](../../../docs/work/2026-11-23-w1-r7-buildos-node-typesc
 | Smoke | `scripts/published-smoke.ts` step 10 |
 | Records | PRD 20, the risk register (R-003), the evidence report, the user guide, guide chapters 4 and 18, the guide app, `RELEASE_NOTES.md`, `SECURITY.md` |
 
+CI: the first run of the fixes failed only in one Windows test that did not expect the new label; commit `14113c8` fixed it, and every job then passed on three systems, with the new Windows shell runs in Command Prompt and through the PowerShell route (`buildos-ci` run 45937038942, `buildos-smoke` run 45937038854).
+
 Deferred obligations and Unassisted Goal Testing: `not-needed-now`; no `O-###` or `NUAT-###` applies. Guide coverage: `update-existing`; the entity consolidation user guide and guide chapters 4 and 18.
 
 ## Documentation

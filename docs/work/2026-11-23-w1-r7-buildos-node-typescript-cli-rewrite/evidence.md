@@ -6820,3 +6820,16 @@ For a release build the command starts with `npx -y build-os@<version>`; `remedi
 Golden cases that change: one, under PE-023 (owner decision 2026-11-26), on win32 only: `entities-validate-missing-index-strict` gets the label on its human `action:` line. PE-023 gets a `label` list for it, and `test/golden/harness.ts` states the label rule on its own (`windowsLabel`), only in the text as printed. Golden files changed: 0. For the owner: the shell label is new text on a Go-golden line, recorded under PE-023 as a direct consequence of making the printed command safe to run; it needs no new decision unless the owner wants another wording.
 
 A machine-readable shell field for the rebuild command (as `buildos init` has, `shell`: `sh` or `cmd`) is not added: a new field in the entity result or the diagnostic would change the Go-parity JSON shape, which PE-023 keeps. A proposal for the owner: an optional `shell` field in a later minor version, under its own parity exception.
+
+#### Checks and CI (Review Round 1)
+
+Local, from `toolkits/buildos/` (macOS arm64, Node 26.13.1, npm 11.20.0), at `14113c8`: `npm ci --ignore-scripts`, `npm run typecheck`, and `npm run build` exit 0; `npm test` exit 0, 2,794 tests, 2,781 pass, 0 fail, 13 skipped; the release-identity golden comparison (`installedGate`) of a locally stamped tarball, 167 passed, 0 failed; `node scripts/published-smoke.ts --version 0.1.0`, passed, 13 of 13 steps; `make-docs project paths validate` valid; `make-docs check prd` no diagnostics; the deny-list check with the real list, 0 matches and 0 home folder paths.
+
+CI of commit `62767a7` (the fixes): every job passed except `test (windows-latest)`, which failed on one test that did not expect the new label (`test/entities-cli.test.ts`, the human-output test); every new Windows shell run passed in that job. Commit `14113c8` fixes that test. CI of `14113c8`: `buildos-ci` run 45937038942 (pull request) and 45937033634 (push), `buildos-smoke` run 45937038854, `buildos-deny-list` runs 45937038835 and 45937033637: all passed.
+
+| Job (run 45937038942) | Result |
+| --- | --- |
+| `test` on windows-latest | Unit tests 2,341, 2,225 pass, 0 fail, 116 skipped (POSIX-only); "each quoted folder word reaches the program exactly, also with a trailing backslash" and the labelled command run for all 8 folder names in Command Prompt and through the PowerShell route passed. Golden harness 299, 294 pass, 0 fail, 5 skipped, with `entities-validate-missing-index-strict` matched under the label rule; the installed-tarball comparison through npm's `.cmd` shims 167 of 167 |
+| `test` on ubuntu-latest and macos-latest | Unit tests 2,482, 0 fail (15 and 12 skipped); golden harness 299, 298 pass, 0 fail; installed tarball 167 of 167 |
+| `no Python` (three systems), the image job, the deny list (invented list), the Make Docs contract, the OSV scan | passed |
+| `buildos-smoke` for `0.1.0` | passed: Linux 13 of 13 steps, macOS 13 of 13, Windows 12 of 12 |
