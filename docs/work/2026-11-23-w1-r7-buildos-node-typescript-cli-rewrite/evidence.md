@@ -8884,10 +8884,58 @@ Not changed: `SECURITY.md`, the workflows (the smoke default stays `0.2.0` until
 | --- | --- | --- |
 | `README.md`, `toolkits/buildos/README.md`, guide chapters 03, 04, 19, `docs/assets/user/upgrade-an-existing-buildos-project.md` | `npx -y build-os@0.2.1 …`, `npm install -g build-os@0.2.1`, `npm pack build-os@0.2.1`, file name `build-os-0.2.1.tgz` | Not true until `0.2.1` is published: npm has no `0.2.1` |
 | Guide chapter 4, "From 0.1.0 to 0.2.0" (and `test/rollback-smoke.test.ts`) | "BuildOS `0.2.1` fixes the wrapper" | True only after `0.2.1` is published |
-| Guide chapter 4, "From 0.2.0 to 0.2.1" and "Roll back from 0.2.1 to 0.2.0"; `RELEASE_NOTES.md`, "Update a project from 0.2.0" and "Roll back"; the upgrade doc's update item | A clean `npx -y build-os@0.2.1 init` copy holds the fixed `buildos.cmd`; the checks print `version: 0.2.1`, and `echo %ERRORLEVEL%` prints `2` after `cmd /d /c .os\scripts\buildos.cmd no-such-command` | Not run: `0.2.1` is not published. The fixed wrapper is `system/.os/scripts/buildos.cmd` on `main`, and `buildos init` copies it byte for byte. The steps have run in no shell yet |
+| Guide chapter 4, "From 0.2.0 to 0.2.1" and "Roll back from 0.2.1 to 0.2.0"; `RELEASE_NOTES.md`, "Update a project from 0.2.0" and "Roll back"; the upgrade doc's update item | A clean `npx -y build-os@0.2.1 init` copy holds the fixed `buildos.cmd`; the checks print `version: 0.2.1`, and `echo %ERRORLEVEL%` prints `2` after `cmd /d /c .os\scripts\buildos.cmd no-such-command` | Not run with the registry: `0.2.1` is not published. The fixed wrapper is `system/.os/scripts/buildos.cmd` on `main`, and `buildos init` copies it byte for byte. The `sh` steps ran on macOS with a release build of this branch in place of the registry `0.2.1` ([Review Round 1 (Pull Request 17)](#review-round-1-pull-request-17-2026-11-27)); the Command Prompt steps have run in no shell yet |
 | `RELEASE_NOTES.md`, "Known limits" | "The Command Prompt forms of the `0.2.0` to `0.2.1` steps above have not run yet." | True today; check it before the tag |
 | `RELEASE_NOTES.md`, the `0.2.1` status line | Draft | Removed when `0.2.1` is published |
 | `RELEASE_NOTES.md`, "Check the package" | The `0.2.1` signature, attestation, SBOM file `buildos-0.2.1.cdx.json`, and the `v0.2.1` ledger entry | Not true until the reviewed entry, the tag, and the release exist |
 | `.github/workflows/buildos-smoke.yml` and its test; `SECURITY.md` examples | Default and examples `0.2.0` | Unchanged here; after publication, the release process decides |
+| `SECURITY.md`, "How to Check a Release" and the `buildos-smoke` source list | "`0.2.0` ... was the `latest` version on 2026-11-27"; "`0.2.0` (the latest published version on 2026-11-27 ...)" | Dated in review round 1 of pull request 17, so both stay true. After publication, `latest` is `0.2.1`: the release process decides whether these sentences and the examples move to `0.2.1` |
 
 The release steps for `0.2.1` wait for the owner's decision on the release process (the owner asked for the Make Docs pattern; a separate task proposes it).
+
+## Review Round 1 (Pull Request 17) (2026-11-27)
+
+The reviewer's verdict on pull request 17 at `a32be79` was FAIL, with four should-fix findings and two minor findings. The reviewer ran the `sh` steps for real: the upgrade and the rollback work for a stock project, and fresh inits of `0.2.0` and of this branch differ only in `.os/scripts/buildos.cmd`, `.os/scripts/AGENTS.md`, and `.os/manifest.json`. This round fixes the findings on the same branch, with new commits. Nothing is tagged, released, staged, or published; no setting, workflow, release procedure step, or `release-candidates.json` changed; no workflow was started by hand.
+
+| Finding | What the reviewer found | What changed |
+| --- | --- | --- |
+| 1 (should fix) | A pin-only rollback could restore another project's files. The notes and the guide put the backup copies before the exception for macOS and Linux users who changed only the pin; with two sibling projects, following that order replaced the second project's manifest with the first project's backup. An offline npm install that is not put back to `0.2.0` stops with `ENOTCACHED`. | Guide chapter 4, "From 0.2.0 to 0.2.1": the work folder name is shared by sibling projects, the first `mkdir` is the guard, and the later steps and the rollback copy from the work folder only when that command made it for this project. "Roll back from 0.2.1 to 0.2.0" now starts with the cases that have no work folder of this project: only the version changed (copy nothing, set the version back), and someone else did the upgrade or the folder is gone (copy nothing; `git checkout <commit>~1 -- .os/manifest.json .os/scripts/buildos.cmd`). Only then comes the copy from the backup. Step 2 puts back the npm install in every case, also an install from a file without registry access, and names `ENOTCACHED`. `RELEASE_NOTES.md`, "Update a project from 0.2.0" and "Roll back": the same, with the macOS and Linux pin-only paragraph moved before the steps. |
+| 2 (should fix) | The guide's Command Prompt backup block put the guard `mkdir` and both backup copies in one pasteable block; Command Prompt goes on after a failed `mkdir`, and with `COPYCMD=/Y` an earlier backup is overwritten. | The guide's first `mkdir` is a block of its own, in `sh` and in Command Prompt, as in the notes, and both say to run the next commands only when it printed nothing. The other blocks run only after the guard made a new folder, so their `mkdir` and copies cannot meet an earlier backup; the rollback blocks copy only into the project and come after the cases without a backup. |
+| 3 (should fix) | The guide told users to reapply their own wrapper changes and then required an empty diff against the stock wrapper; one `rem` line made the check fail. | Guide step 3 says to make the own change again after the copy; step 5 keeps the empty `--stat` diff only for a project without own changes, and for own changes shows the full `git --no-pager diff --no-index` (git exits `1`) to read and confirm that it shows only those changes; the Windows exit-code check runs also after own changes. The notes say the same. |
+| 4 (should fix) | `echo %ERRORLEVEL%` prints a variable named `ERRORLEVEL` of the calling prompt, even when the child exits `2`. | The guide and the notes show the check as a Command Prompt block of three lines: `set "ERRORLEVEL="`, `cmd /d /c .os\scripts\buildos.cmd no-such-command`, `echo %ERRORLEVEL%`, at the prompt or in a batch file, not inside a block in parentheses. |
+| 5 (minor) | The notes said the Windows rollback smoke ran "once"; runs 2, 3, and 4 passed. | "once" is removed. |
+| 6 (minor) | `SECURITY.md` called `0.2.0` the `latest` version, which is false after `0.2.1`. | `SECURITY.md`, "How to Check a Release": "it was the `latest` version on 2026-11-27"; the `buildos-smoke` source list: "the latest published version on 2026-11-27". The release procedure text is not changed. A row in [Facts That Depend on the 0.2.1 Release](#facts-that-depend-on-the-021-release) names both sentences. |
+
+`test/rollback-smoke.test.ts` ties the guide and the notes: the guard is the first block, alone, in `sh` and in Command Prompt, in both; the rollback names the pin-only and the git cases before the copy from the backup, in both, and says to put back the npm install in every case and names `ENOTCACHED`; both hold the three-line Windows check, and neither the old one-sentence form; the guide's own-change check is the full diff; and the commands of the notes' update and rollback are the guide's commands, in the same order, in `sh` and in Command Prompt. The Command Prompt line check of the guide leaves out the three Windows-only check lines.
+
+### The Real Runs (Pull Request 17, Review Round 1)
+
+On 2026-11-27, macOS, in scratch folders outside the repository. The stand-in for `0.2.1` is a release build of this branch (`node scripts/release-build.ts --allow-dirty`, version `0.2.1`); the guide's `npx -y build-os@0.2.1 init --root <folder> --skip-make-docs` ran as `npx -y --package <tarball> -- buildos init --root <folder> --skip-make-docs`, and the `0.2.1` npm install was a global install of that tarball into a scratch prefix. Each project was made by `npx -y build-os@0.2.0 init --skip-make-docs` and committed in git. All cases passed.
+
+| Case | What ran | Result |
+| --- | --- | --- |
+| A, a stock project, all `sh` steps, then the rollback from the backup | the guard, the backup, the clean copy, the copy, the pin, the `0.2.1` install; the rollback copies and the `0.2.0` install | `version: 0.2.1`; the `--stat` diff against the clean copy empty; only the two files changed. After the rollback: `version: 0.2.0`, the `--stat` diff against the backup empty, and both files byte for byte A's own `0.2.0` files |
+| B, a sibling of A, pin only (macOS), after A made `../buildos-upgrade-0.2.1` | the pin, the `0.2.1` install; the rollback's first case: copy nothing, the pin back, the `0.2.0` install | `version: 0.2.1`, then `version: 0.2.0`; B's manifest is its own and `git status` is clean. The manifests of A and B differ; the old order (`cp ../buildos-upgrade-0.2.1/backup/manifest.json .os/manifest.json` in B) replaced B's manifest with A's backup |
+| C, a second sibling, all steps | the guard on `../buildos-upgrade-0.2.1` (A's folder), then the other name `../buildos-upgrade-0.2.1-2` in every command, and the rollback from it | the guard printed an error, so the run stopped there; with the other name: `version: 0.2.1`, then `version: 0.2.0`, C's own manifest, `git status` clean |
+| D, an own change in `buildos.cmd` (a `rem` line) | all steps; the `rem` line made again after the copy | `version: 0.2.1`; the full diff against the clean copy exits `1` and shows one added line, the `rem` line, and no removed line |
+| E, the git case | a clone of A at its upgrade commit; `git checkout <commit>~1 -- .os/manifest.json .os/scripts/buildos.cmd` | `git --no-pager diff <commit>~1 -- …` empty; `version: 0.2.0` |
+| F, an offline install from a file | `npm install -g --offline` of the `0.2.1` tarball; then the pin back to `0.2.0`, with an empty npm cache and `npm_config_offline=true` | `version: 0.2.1` from the install; with the pin `0.2.0` and no `0.2.0` install: exit `1`, `ENOTCACHED`; after `npm install -g --offline` of the `0.2.0` file: `version: 0.2.0` |
+| G, fresh inits | `0.2.0` from the registry and this branch's build | they differ only in `.os/manifest.json`, `.os/scripts/AGENTS.md`, and `.os/scripts/buildos.cmd` |
+
+The Command Prompt steps did not run: this round has no Windows shell, and the buildos-ci jobs do not run them ("Known limits" in the notes still says so).
+
+### Check Results (Pull Request 17, Review Round 1)
+
+On 2026-11-27, macOS, from `toolkits/buildos/` and the repository root, the sandbox off for the tests.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck`; `node scripts/check-dependencies.ts`, `--installed`; `node scripts/check-no-python.ts` | passed each |
+| `npm test` (unit, golden, and conversion-eval tests) | 2,983 tests: 2,969 passed, 0 failed, 14 skipped |
+| `npm run build`, then `node dist/buildos.js version`; `npm pack --dry-run --json` | passed; 168 files (unchanged) |
+| `node tools/build-guide.mjs` (from `guide/`) | `Wrote BuildOS-Guide.html (704 KB) from 22 documents.`, no warning |
+| The real-list deny-list scan, `node scripts/check-deny-list.mjs --root ../.. --pack .`, with the list in the environment, outside the repository | exit 0: 2,838 files, 0 matches, 168 of 168 package files read |
+| `make-docs project paths validate` | valid, 0 failing findings |
+| `make-docs project markdown validate` | 184 findings, the same count as before the round; none new |
+
+No golden capture ran. No workflow was started by hand.

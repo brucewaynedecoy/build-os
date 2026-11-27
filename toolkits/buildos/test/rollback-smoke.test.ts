@@ -301,6 +301,7 @@ describe("the guide's 0.2.0 to 0.2.1 section (the F-P9-17 wrapper copy)", () => 
   const from = guideText.indexOf("### From 0.2.0 to 0.2.1");
   const to = guideText.indexOf("### From 0.1.0 to 0.2.0");
   const part = guideText.slice(from, to);
+  const WINDOWS_CHECK = ['set "ERRORLEVEL="', "cmd /d /c .os\\scripts\\buildos.cmd no-such-command", "echo %ERRORLEVEL%"];
   const blocks = (language: string) => [...part.matchAll(new RegExp("```" + language + "\\n([^]*?)\\n *```", "g"))].flatMap((m) => m[1]!.split("\n").map((l) => l.trim())).filter((l) => l !== "");
 
   it("comes before the 0.1.0 to 0.2.0 section, which the rollback smoke reads, and has its rollback", () => {
@@ -327,7 +328,55 @@ describe("the guide's 0.2.0 to 0.2.1 section (the F-P9-17 wrapper copy)", () => 
 
   it("each sh command has its Command Prompt form, made by the guide's rule, in the same order", () => {
     const sh = blocks("sh");
-    const bat = blocks("bat");
+    const bat = blocks("bat").filter((l) => !WINDOWS_CHECK.includes(l));
     assert.deepEqual(bat, sh.map((l) => commandPromptForm(l)));
+  });
+
+  // Review round 1 of pull request 17, findings 1 to 4.
+  const blockList = (doc: string, language: string) => [...doc.matchAll(new RegExp("```" + language + "\\n([^]*?)\\n *```", "g"))].map((m) => m[1]!.split("\n").map((l) => l.trim()).filter((l) => l !== ""));
+  const notesText = readFileSync(join(packageRoot, "RELEASE_NOTES.md"), "utf8").replace(/\r\n/g, "\n");
+  const notes021 = notesText.slice(notesText.indexOf("\n## 0.2.1\n"), notesText.indexOf("\n## 0.2.0\n"));
+
+  it("the work-folder guard runs alone: the first mkdir is a block of its own in sh and in Command Prompt, in the guide and the notes", () => {
+    for (const [name, doc] of [["guide", part], ["notes", notes021]] as const) {
+      for (const [language, guard] of [["sh", "mkdir ../buildos-upgrade-0.2.1"], ["bat", "mkdir ..\\buildos-upgrade-0.2.1"]] as const) {
+        const list = blockList(doc, language);
+        assert.deepEqual(list[0], [guard], `${name} ${language}: the guard is the first block, alone`);
+        assert.equal(list.flat().filter((l) => l === guard).length, 1, `${name} ${language}: one guard`);
+      }
+    }
+  });
+
+  it("the rollback names the cases without a work folder of this project before the copy from the backup, in the guide and the notes", () => {
+    const rollback = part.slice(part.indexOf("#### Roll back from 0.2.1 to 0.2.0"));
+    const copy = rollback.indexOf("cp ../buildos-upgrade-0.2.1/backup/manifest.json .os/manifest.json");
+    assert.ok(copy > 0);
+    for (const s of ["**You changed only the version**", "**Someone else did the upgrade**", "git checkout <commit>~1 -- .os/manifest.json .os/scripts/buildos.cmd"]) {
+      assert.ok(rollback.indexOf(s) > 0 && rollback.indexOf(s) < copy, s);
+    }
+    const notesRollback = notes021.slice(notes021.indexOf("### Roll back\n"));
+    const notesCopy = notesRollback.indexOf("copy ..\\buildos-upgrade-0.2.1\\backup\\manifest.json .os\\manifest.json");
+    assert.ok(notesCopy > 0);
+    for (const s of ["If you changed only the pin (macOS or Linux), you made no backup and no work folder, so copy nothing.", "If someone else did the upgrade", "git checkout <commit>~1 -- .os/manifest.json .os/scripts/buildos.cmd"]) {
+      assert.ok(notesRollback.indexOf(s) > 0 && notesRollback.indexOf(s) < notesCopy, s);
+    }
+    // An offline npm install must go back to 0.2.0 too, in every case.
+    for (const doc of [rollback, notesRollback]) assert.match(doc, /In every case|in every case/);
+    for (const doc of [rollback, notesRollback]) assert.ok(doc.includes("`ENOTCACHED`"));
+  });
+
+  it("the Windows exit-code check clears a variable named ERRORLEVEL first and echoes on its own line, in the guide and the notes; own wrapper changes get the full diff", () => {
+    for (const doc of [part, notes021]) {
+      assert.ok(blockList(doc, "bat").some((b) => JSON.stringify(b) === JSON.stringify(WINDOWS_CHECK)));
+      assert.ok(doc.includes("not inside a block in parentheses"));
+      assert.ok(!/no-such-command` prints an error.{0,80}, and then `echo %ERRORLEVEL%`/.test(doc), "no probe and echo in one sentence");
+    }
+    assert.ok(part.includes("`git --no-pager diff --no-index ../buildos-upgrade-0.2.1/new/.os/scripts/buildos.cmd .os/scripts/buildos.cmd` shows the full difference"));
+    assert.ok(notes021.includes("`git --no-pager diff --no-index ..\\buildos-upgrade-0.2.1\\new\\.os\\scripts\\buildos.cmd .os\\scripts\\buildos.cmd`, and make sure that it shows only your own changes"));
+  });
+
+  it("the notes' update and rollback hold the guide's commands, in the same order, in sh and in Command Prompt", () => {
+    const steps = notes021.slice(notes021.indexOf("### Update a project from 0.2.0"), notes021.indexOf("### Known limits")) + notes021.slice(notes021.indexOf("### Roll back\n"));
+    for (const language of ["sh", "bat"]) assert.deepEqual(blockList(steps, language).flat(), blocks(language), language);
   });
 });

@@ -471,17 +471,25 @@ Commit `.os/manifest.json` with the change, so everyone on the project runs the 
 
 A project does not get the fixed wrapper by itself. A new version in `.os/manifest.json` does not change the files in `.os/scripts/`, and `buildos init` in a project that BuildOS already set up writes no wrapper. So you copy the one file from a clean `0.2.1` copy. If your project is still on `0.1.0`, do "From 0.1.0 to 0.2.0" below first, then these steps.
 
-On macOS and Linux, the wrapper `.os/scripts/buildos` does not have this defect. If no one uses the project on Windows, do only steps 4 and 5; to roll back, set the version back to `"0.2.0"`. If someone uses the project on Windows (for example, the project is in git and a teammate works on Windows), do all the steps in `sh` and commit the new file, so that they get it.
+On macOS and Linux, the wrapper `.os/scripts/buildos` does not have this defect. If no one uses the project on Windows, do only steps 4 and 5. Then you make no backup and no work folder, and to roll back you only set the version back (see the first case of "Roll back from 0.2.1 to 0.2.0" below). If someone uses the project on Windows (for example, the project is in git and a teammate works on Windows), do all the steps in `sh` and commit the new file, so that they get it.
 
-Run the commands in the project folder, while no BuildOS command runs in it: Command Prompt reads a batch file while it runs it, so a wrapper that runs while its file changes can fail. The commands use a work folder, `../buildos-upgrade-0.2.1`, next to the project. Use a new work folder for each project and for each try. If the first command of step 1 prints an error, the folder is there already: stop, and use another name (for example `../buildos-upgrade-0.2.1-2`) in every command of these steps, or delete the old folder when you are sure that you do not need it. If you changed `.os/scripts/buildos.cmd` yourself, step 3 replaces your change; your old file is in the backup, so make your change again in the new file.
+Run the commands in the project folder, while no BuildOS command runs in it: Command Prompt reads a batch file while it runs it, so a wrapper that runs while its file changes can fail. The commands use a work folder, `../buildos-upgrade-0.2.1`, next to the project. Another project in the same parent folder uses the same name, so a folder with this name can hold the backup of another project. The first command of step 1 is the guard: it makes the work folder, or it prints an error when the folder is there already. Do the later steps, and copy from the work folder in the rollback, only when that command made the folder for this project. If it prints an error, stop, and use another name (for example `../buildos-upgrade-0.2.1-2`) in every command of these steps and of the rollback, or delete the old folder when you are sure that no one needs it. Use a new work folder for each project and for each try.
 
-1. **Make a backup.** Commit your work first (`git add -A`, then `git commit -m "Before BuildOS 0.2.1"`; if git says that there is nothing to commit, that is fine). Then make the work folder:
+If you changed `.os/scripts/buildos.cmd` yourself, step 3 replaces your change. Your old file is in the backup: after step 3, make your change again in the new file, and do the check for your own changes in step 5.
+
+1. **Make a backup.** Commit your work first (`git add -A`, then `git commit -m "Before BuildOS 0.2.1"`; if git says that there is nothing to commit, that is fine). Then make the work folder, with this command alone:
 
    ```sh
    mkdir ../buildos-upgrade-0.2.1
    ```
 
-   If this command prints an error, stop (see above). If it prints nothing, copy the version file and the wrapper:
+   In Command Prompt on Windows:
+
+   ```bat
+   mkdir ..\buildos-upgrade-0.2.1
+   ```
+
+   If this command prints an error, stop (see above). Command Prompt goes on to the next line after a failed command, so run the next commands only when this command printed nothing. Then make the folders for the backup and the clean copy, and copy the version file and the wrapper:
 
    ```sh
    mkdir ../buildos-upgrade-0.2.1/backup ../buildos-upgrade-0.2.1/new
@@ -489,10 +497,9 @@ Run the commands in the project folder, while no BuildOS command runs in it: Com
    cp .os/scripts/buildos.cmd ../buildos-upgrade-0.2.1/backup/buildos.cmd
    ```
 
-   In Command Prompt on Windows:
+   In Command Prompt:
 
    ```bat
-   mkdir ..\buildos-upgrade-0.2.1
    mkdir ..\buildos-upgrade-0.2.1\backup ..\buildos-upgrade-0.2.1\new
    copy .os\manifest.json ..\buildos-upgrade-0.2.1\backup\manifest.json
    copy .os\scripts\buildos.cmd ..\buildos-upgrade-0.2.1\backup\buildos.cmd
@@ -522,36 +529,49 @@ Run the commands in the project folder, while no BuildOS command runs in it: Com
    copy ..\buildos-upgrade-0.2.1\new\.os\scripts\buildos.cmd .os\scripts\buildos.cmd
    ```
 
-4. **Change the version.** In `.os/manifest.json`, change `"buildos_version"` from `"0.2.0"` to `"0.2.1"`. Change no other field. If you use an npm install of `build-os` (in the project's `node_modules` folder, or a global install), install `0.2.1` there too. The wrapper uses an install only when it has the pinned version.
+   If you changed the old wrapper yourself, make your change again now in `.os/scripts/buildos.cmd`. Your old file is `../buildos-upgrade-0.2.1/backup/buildos.cmd`.
+
+4. **Change the version.** In `.os/manifest.json`, change `"buildos_version"` from `"0.2.0"` to `"0.2.1"`. Change no other field. If you use an npm install of `build-os` (in the project's `node_modules` folder, or a global install, also one from a file on a machine without registry access), install `0.2.1` there too. The wrapper uses an install only when it has the pinned version.
 
 5. **Check.** Each of these must be true:
 
    - `.os/scripts/buildos version` (in Command Prompt: `.os\scripts\buildos.cmd version`) prints `version: 0.2.1`.
-   - If you did step 3: `git --no-pager diff --no-index --stat ../buildos-upgrade-0.2.1/new/.os/scripts/buildos.cmd .os/scripts/buildos.cmd` prints nothing.
-   - On Windows, in Command Prompt: `cmd /d /c .os\scripts\buildos.cmd no-such-command` prints an error that names `unknown command "no-such-command"`, and then `echo %ERRORLEVEL%` prints `2`. With the old wrapper it prints `0`.
+   - If you did step 3 and made no change of your own: `git --no-pager diff --no-index --stat ../buildos-upgrade-0.2.1/new/.os/scripts/buildos.cmd .os/scripts/buildos.cmd` prints nothing.
+   - If you made your own change again in step 3: `git --no-pager diff --no-index ../buildos-upgrade-0.2.1/new/.os/scripts/buildos.cmd .os/scripts/buildos.cmd` shows the full difference. Read all of it, and make sure that it shows only your own changes. Here git exits with `1`, because the files differ.
+   - On Windows, in Command Prompt, also after your own changes: run these three lines, at the prompt or in a batch file (not inside a block in parentheses). The first line removes a variable named `ERRORLEVEL` from this Command Prompt, if there is one; such a variable hides the exit code from `echo %ERRORLEVEL%`. The second line prints an error that names `unknown command "no-such-command"`, and the third line prints `2`. With the old wrapper it prints `0`.
+
+     ```bat
+     set "ERRORLEVEL="
+     cmd /d /c .os\scripts\buildos.cmd no-such-command
+     echo %ERRORLEVEL%
+     ```
 
    Then commit. Keep the work folder until you are sure that the new version works for you, then delete it.
 
 #### Roll back from 0.2.1 to 0.2.0
 
-The rollback puts back the version file and the wrapper from the backup of step 1. It also puts back the exit-code defect of the old wrapper on Windows.
+The rollback puts back version `0.2.0` and its wrapper. It also puts back the exit-code defect of the old wrapper on Windows. First find your case in step 1, and do only that case. Copy from a work folder only when you made it yourself for this project, with the first command of step 1 above: a folder with the same name can hold the backup of another project.
 
-1. Put back the two files:
+1. **Put back the version.**
 
-   ```sh
-   cp ../buildos-upgrade-0.2.1/backup/manifest.json .os/manifest.json
-   cp ../buildos-upgrade-0.2.1/backup/buildos.cmd .os/scripts/buildos.cmd
-   ```
+   - **You changed only the version** (macOS or Linux, steps 4 and 5 only): you made no backup and no work folder, so copy nothing. In `.os/manifest.json`, change `"buildos_version"` from `"0.2.1"` back to `"0.2.0"`. Change no other field.
+   - **Someone else did the upgrade** (for example, a teammate committed it), or your work folder is not there any more: copy nothing from a work folder. Put back the two files from git: `git checkout <commit>~1 -- .os/manifest.json .os/scripts/buildos.cmd`, where `<commit>` is the commit that changed the version to `0.2.1` (`git log -- .os/manifest.json` lists it).
+   - **You did steps 1 to 5 in this project**, and the work folder that step 1 made is still there: put back the two files from its backup. If you used another name for the work folder, use that name.
 
-   In Command Prompt (answer `Yes` when `copy` asks):
+     ```sh
+     cp ../buildos-upgrade-0.2.1/backup/manifest.json .os/manifest.json
+     cp ../buildos-upgrade-0.2.1/backup/buildos.cmd .os/scripts/buildos.cmd
+     ```
 
-   ```bat
-   copy ..\buildos-upgrade-0.2.1\backup\manifest.json .os\manifest.json
-   copy ..\buildos-upgrade-0.2.1\backup\buildos.cmd .os\scripts\buildos.cmd
-   ```
+     In Command Prompt (answer `Yes` when `copy` asks):
 
-2. If you installed `0.2.1` with npm, install `0.2.0` there again.
-3. **Check.** `.os/scripts/buildos version` (in Command Prompt: `.os\scripts\buildos.cmd version`) prints `version: 0.2.0`, and `git --no-pager diff --no-index --stat ../buildos-upgrade-0.2.1/backup/buildos.cmd .os/scripts/buildos.cmd` prints nothing.
+     ```bat
+     copy ..\buildos-upgrade-0.2.1\backup\manifest.json .os\manifest.json
+     copy ..\buildos-upgrade-0.2.1\backup\buildos.cmd .os\scripts\buildos.cmd
+     ```
+
+2. **Put back the npm install,** in every case: if you installed `0.2.1` with npm (in the project's `node_modules` folder, or a global install), install `0.2.0` there again. This applies also to an install from a file on a machine without registry access: install the `0.2.0` file in the same way. The wrapper does not use a `0.2.1` install for the version `0.2.0`; it runs `0.2.0` through `npx`, and without the registry npm stops with `ENOTCACHED`.
+3. **Check.** `.os/scripts/buildos version` (in Command Prompt: `.os\scripts\buildos.cmd version`) prints `version: 0.2.0`. If you put back the files from the backup: `git --no-pager diff --no-index --stat ../buildos-upgrade-0.2.1/backup/buildos.cmd .os/scripts/buildos.cmd` prints nothing. If you put them back from git: `git --no-pager diff <commit>~1 -- .os/manifest.json .os/scripts/buildos.cmd` prints nothing.
 
 ### From 0.1.0 to 0.2.0
 
