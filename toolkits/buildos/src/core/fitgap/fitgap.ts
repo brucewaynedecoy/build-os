@@ -191,7 +191,10 @@ export function pyGlob(ctx: FitgapContext, pattern: string, options: { spelled?:
     if (ctx.files.inside(path === "" ? "." : path) === undefined) throw ctx.files.refusal(pattern, false);
   };
   contained(prefix);
-  const join = (base: string, name: string): string => (base === "" ? name : base.endsWith("/") || base.endsWith("\\") ? `${base}${name}` : `${base}/${name}`);
+  // F-P9-04 review round 3 (finding 4): for capability-matrix (`spelled`), `\\` is a separator only on Windows, as
+  // `os.path.join` reads it; on POSIX it is part of a name (a folder `fold71\\`). `buildos fitgap` keeps its join (F-P9-12).
+  const separatorAtEnd = (base: string): boolean => base.endsWith("/") || (base.endsWith("\\") && (!spelled || sep === "\\"));
+  const join = (base: string, name: string): string => (base === "" ? name : separatorAtEnd(base) ? `${base}${name}` : `${base}/${name}`);
   /** What `os.lstat` (a name) or `os.path.isdir` (a folder) finds at `path`. */
   const exists = (path: string): boolean => {
     if (!spelled) return ctx.files.kindStrict(path === "" ? "." : path) !== undefined;
@@ -247,17 +250,25 @@ export function pyGlob(ctx: FitgapContext, pattern: string, options: { spelled?:
  * missing. `.` and `..` are then folded as text, as every BuildOS path is
  * (divergence SD-24: a `..` right after a folder link names the link's
  * parent, where the OS goes to the parent of the link's target). A folder
- * before the project folder (`../<project>/...`) is not looked at: BuildOS
- * reads nothing outside the project, and the path must still end inside it
- * (else the refusal, exit 3). Windows folds `.` and `..` as text before it
+ * before the project folder in a relative path (`../<project>/...`) is not
+ * looked at: BuildOS reads nothing outside the project, and the path must
+ * still end inside it (else the refusal, exit 3). For an absolute path,
+ * `files.inside` looks at the metadata of each folder of it (device and
+ * inode, never content or a listing), also outside the project, to
+ * recognize the project folder under another spelling (P9-R2-10; SD-24 as
+ * review round 3 corrected it). Windows folds `.` and `..` as text before it
  * looks at the disk, so there only the whole path is looked up (and a final
  * separator after a file is `ENOTDIR`, as `glob` reads it everywhere).
  */
-export function osLookup(files: ProjectFiles, path: string): "file" | "directory" | "dangling" | "ENOENT" | "ENOTDIR" {
-  const kindOf = (p: string): "file" | "directory" | undefined => files.kindStrict(p === "" ? "." : p);
+export function osLookup(files: ProjectFiles, path: string, options: { forWrite?: boolean } = {}): "file" | "directory" | "dangling" | "ENOENT" | "ENOTDIR" {
+  // F-P9-04 review round 3 (finding 1): `forWrite` looks at a write destination (`--out` and its folders) through the
+  // write-authorized port (`destinationKind`), so an authorized folder link is followed, as the write follows it.
+  const forWrite = options.forWrite === true;
+  const kindOf = (p: string): "file" | "directory" | undefined => (forWrite ? files.destinationKind(p === "" ? "." : p) : files.kindStrict(p === "" ? "." : p));
+  const entryExists = (p: string): boolean => (forWrite ? files.destinationEntryExists(p === "" ? "." : p) : files.entryExists(p === "" ? "." : p));
   if (path === "") return "ENOENT";
   /** The last name: what is there, or a link that leads nowhere (`os.lstat` finds it, `open` does not). */
-  const last = (p: string): "file" | "directory" | "dangling" | "ENOENT" => kindOf(p) ?? (files.entryExists(p === "" ? "." : p) ? "dangling" : "ENOENT");
+  const last = (p: string): "file" | "directory" | "dangling" | "ENOENT" => kindOf(p) ?? (entryExists(p) ? "dangling" : "ENOENT");
   if (sep === "\\") {
     // `glob` itself honours a final separator on every system (`os.path.isdir` of the folder).
     if (/[\\/]$/.test(path)) {
@@ -266,9 +277,14 @@ export function osLookup(files: ProjectFiles, path: string): "file" | "directory
     }
     return last(path);
   }
-  const names = path.split("/").filter((name) => name !== "");
-  const trailing = path.endsWith("/");
-  let at = path.startsWith("/") ? "/" : "";
+  // F-P9-04 review round 3 (finding 2): the installed-path rule first (`userRel`: a leading `system/` names the root
+  // of an initialized project with no `system` entry), then the walk. A mapped path is walked from `./`, so the
+  // rule is not applied a second time to the names it walks. Callers keep the path as typed for their messages.
+  const mapped = files.userRel(path);
+  const walked = mapped === path ? path : `./${mapped}`;
+  const names = walked.split("/").filter((name) => name !== "");
+  const trailing = walked.endsWith("/");
+  let at = walked.startsWith("/") ? "/" : "";
   for (let k = 0; k < names.length; k++) {
     // The names as typed, not `path.join` (which would fold `gone/..` before `gone` is looked at).
     at = at === "" ? names[k]! : at.endsWith("/") ? `${at}${names[k]!}` : `${at}/${names[k]!}`;

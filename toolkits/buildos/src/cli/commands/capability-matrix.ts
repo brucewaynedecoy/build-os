@@ -85,7 +85,34 @@ const SPECS: Record<string, Record<string, OptionSpec>> = {
 };
 const SUBCOMMANDS = Object.keys(SPECS);
 
-const looksLikeOption = (arg: string): boolean => arg.startsWith("-") && arg.length > 1 && !/^-[0-9.]/.test(arg);
+// argparse's negative-number pattern in the capture Python (3.14,
+// `_negative_number_matcher`, r'-\.?\d' with `re.match`): a minus, an
+// optional dot, and one Unicode decimal digit (category Nd).
+const NEGATIVE_NUMBER = /^-\.?\p{Nd}/u;
+
+/**
+ * Whether argparse (`_parse_optional` in the capture Python) reads `arg` as an
+ * option, not as a value, in a subparser whose option strings are the spec's
+ * names plus `-h` and `--help`. In its order: an exact option string, or one
+ * before an `=`; a prefix of an option string (argparse's abbreviations, and
+ * `-h` followed by more text); then a value that looks like a negative number
+ * (no option here looks like one) or that holds a space is a value; anything
+ * else that starts with `-` and is longer than one character is an option.
+ * Review round 3, finding 3.
+ */
+function seenAsOption(arg: string, spec: Record<string, OptionSpec>): boolean {
+  if (!arg.startsWith("-")) return false;
+  const names = [...Object.keys(spec), "-h", "--help"];
+  if (names.includes(arg)) return true;
+  if (arg.length === 1) return false;
+  const eq = arg.indexOf("=");
+  const before = eq >= 0 ? arg.slice(0, eq) : arg;
+  if (eq >= 0 && names.includes(before)) return true;
+  if (arg[1] === "-" ? names.some((n) => n.startsWith(before)) : names.some((n) => n === arg.slice(0, 2) || n.startsWith(before))) return true;
+  if (NEGATIVE_NUMBER.test(arg)) return false;
+  if (arg.includes(" ")) return false;
+  return true;
+}
 
 /** An `argparse`-like parse: `--name value`, `--name=value`, lists (`nargs='+'` and `'*'`), choices; the last one wins. */
 function parse(command: string, args: readonly string[]): Record<string, string | string[]> {
@@ -94,6 +121,7 @@ function parse(command: string, args: readonly string[]): Record<string, string 
   const usage = (message: string): never => {
     throw new UsageError(`capability-matrix ${command}: ${message}`, { command: `buildos capability-matrix ${command}`, json: false });
   };
+  const looksLikeOption = (arg: string): boolean => seenAsOption(arg, spec);
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]!;
     const eq = arg.indexOf("=");

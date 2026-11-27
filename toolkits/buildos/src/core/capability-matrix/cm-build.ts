@@ -222,23 +222,67 @@ function planWrite(plan: WritePlan, path: string, chunks: readonly string[], bom
  * `makedirs` tried to make in it (`[Errno 20] Not a directory: 'p.json/x'`).
  * A missing folder is made when the run writes; `.` and `..` are folded as
  * text (SD-24).
+ *
+ * Review round 3: every name is looked at through the write-authorized port
+ * (finding 1: an authorized folder link is followed, as the write follows
+ * it; without --allow-outside-root a link that leaves the root is the write
+ * refusal, exit 3). In an initialized project, a leading `system/` that the
+ * installed-path rule drops names the root (finding 2). A link that leads
+ * nowhere at the last name is `[Errno 17] File exists` (finding 5). After a
+ * missing folder, `makedirs` makes it and goes on, so a `..` after it climbs
+ * back: the rest is then checked as text-folded (finding 5,
+ * `planned71/../catalogue-71.json/inner`). With no `..` after the missing
+ * folder, nothing below it exists, as before.
  */
 function checkOut(ctx: CmContext, out: string): void {
   if (out === "") throw new FitgapInput("[Errno 2] No such file or directory: ''");
   const separator = sep === "\\" ? /[\\/]/ : /\//;
-  const names: { end: number }[] = [];
+  const names: { end: number; name: string }[] = [];
   const pattern = sep === "\\" ? /[^\\/]+/g : /[^/]+/g;
-  for (const m of out.matchAll(pattern)) names.push({ end: m.index + m[0].length });
+  for (const m of out.matchAll(pattern)) names.push({ end: m.index + m[0].length, name: m[0] });
   const trailing = separator.test(out.slice(-1));
-  for (let k = 0; k < names.length; k++) {
-    const at = out.slice(0, names[k]!.end);
+  const absolute = separator.test(out.slice(0, 1));
+  // Finding 2: the dropped `system` names the root, which is a folder.
+  const first = ctx.files.userRel(out) === out ? 0 : 1;
+  /** The made folders (text-folded, `/`-joined) after the first missing one, and whether that mode is on. */
+  const made = new Set<string>();
+  let folding = false;
+  /** The first `k + 1` names with `.` and `..` folded as text, `/`-joined. */
+  const foldedTo = (k: number): string => {
+    const stack: string[] = [];
+    for (const { name } of names.slice(0, k + 1)) {
+      if (name === ".") continue;
+      if (name === ".." && stack.length > 0 && stack.at(-1) !== "..") stack.pop();
+      else stack.push(name);
+    }
+    return stack.join("/");
+  };
+  for (let k = first; k < names.length; k++) {
+    let at = out.slice(0, names[k]!.end);
+    if (folding) {
+      const folded = foldedTo(k);
+      if ([...made].some((m) => folded === m || folded.startsWith(`${m}/`))) {
+        made.add(folded);
+        continue;
+      }
+      at = absolute ? `/${folded}` : folded === "" ? "." : folded;
+    }
     if (ctx.files.inside(at) === undefined) continue;
-    const found = osLookup(ctx.files, at);
+    const found = osLookup(ctx.files, at, { forWrite: true });
     if (found === "directory") continue;
+    if (found === "dangling" && k === names.length - 1 && !trailing) throw new FitgapInput(`[Errno 17] File exists: ${pyRepr(out)}`);
+    if (found === "ENOENT" && !folding && names.slice(k + 1).some((n) => n.name === "..")) {
+      folding = true;
+      made.add(foldedTo(k));
+      continue;
+    }
+    if (found === "ENOENT" && folding) {
+      continue;
+    }
     if (found !== "file") return;
     if (k === names.length - 1) throw new FitgapInput(trailing ? `[Errno 20] Not a directory: ${pyRepr(out)}` : `[Errno 17] File exists: ${pyRepr(out)}`);
-    const made = k + 1 === names.length - 1 ? out : out.slice(0, names[k + 1]!.end);
-    throw new FitgapInput(`[Errno 20] Not a directory: ${pyRepr(made)}`);
+    const madeFolder = k + 1 === names.length - 1 ? out : out.slice(0, names[k + 1]!.end);
+    throw new FitgapInput(`[Errno 20] Not a directory: ${pyRepr(madeFolder)}`);
   }
 }
 
@@ -403,7 +447,7 @@ export function cmAssemble(ctx: CmContext, a: AssembleArgs): void {
   ]);
   checkOut(ctx, a.out);
   const plan = ctx.files.plan();
-  plan.folder(a.out);
+  plan.folder(a.out, { destination: true });
   planWrite(plan, `${a.out}/${low}-capability-model.json`, cmDumpChunks(model));
   const LM = mapOf(iter(gi(sk, "layers")), (l) => gi(l, "id"), (l) => l);
   const capsCsv = [csvRow(["system", "capability_id", "parent_id", "layer_id", "layer_code", "layer_name", "doc_ref", "capability_type", "status", "maturity", "origin", "source_refs", "name", "summary", "personas", "triggers", "outcomes", "entities", "dependencies", "provenance", "source", "tags", "requirement_count"])];
@@ -559,7 +603,7 @@ export function cmFitgap(ctx: CmContext, a: FitgapArgs): void {
     ["target_only", sortedOnly],
   ]);
   const plan = ctx.files.plan();
-  plan.folder(a.out);
+  plan.folder(a.out, { destination: true });
   planWrite(plan, `${stem}.csv`, csv, true);
   planWrite(plan, `${stem}.json`, cmDumpChunks(out));
   const line = `fitgap[${f(bcode)}->${f(tcode)}]: ${sortedRows.length} scored + ${sortedOnly.length} target-only -> ${stem}.csv/.json  verdicts=${counterRepr(counter(sortedRows.map((r) => gi(r, "verdict"))))}`;
@@ -618,7 +662,7 @@ function fitgapIntegration(ctx: CmContext, a: FitgapArgs): void {
     ["rows", rows],
   ]);
   const plan = ctx.files.plan();
-  plan.folder(a.out);
+  plan.folder(a.out, { destination: true });
   planWrite(plan, `${stem}.csv`, csv, true);
   planWrite(plan, `${stem}.json`, cmDumpChunks(out));
   const line = `integration[${codes.map((c) => f(c)).join("+")}]: ${rows.length} rows -> ${stem}.csv/.json`;

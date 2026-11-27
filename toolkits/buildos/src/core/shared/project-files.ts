@@ -267,6 +267,56 @@ export class ProjectFiles {
   }
 
   /**
+   * F-P9-04 review round 3 (finding 1): the port and path to look at, or to
+   * make, a write destination folder itself (capability-matrix's `--out`).
+   * With --allow-outside-root, a folder that is inside the project as
+   * spelled but is itself a link that leads outside the root (or leads
+   * nowhere), or whose nearest existing ancestor does, is looked at through
+   * the port of its volume, as `writeTarget` already does for a file in it
+   * (P9-F-08). Without the switch it is the root port, which refuses a link
+   * that leaves the root (SD-24).
+   */
+  private destinationTarget(path: string): { port: FsPort; path: string } {
+    const rel = this.inside(path);
+    if (rel !== undefined && rel !== "" && this.input.allowOutsideRoot === true) {
+      const portRel = rel.split(sep).join("/");
+      // `folderLeavesRoot` looks at the folder that holds its argument: here, the destination folder itself first.
+      if (this.folderLeavesRoot(`${portRel}/-`)) {
+        const absolute = this.abs(path);
+        return { port: this.volumeOf(absolute), path: absolute };
+      }
+    }
+    return this.portPath(path, true);
+  }
+
+  /**
+   * F-P9-04 review round 3 (finding 1): what is at a write destination
+   * (links followed), through the write-authorized port; undefined when
+   * nothing is there or the link leads nowhere. A link that leaves the root
+   * without --allow-outside-root throws the write refusal (exit 3).
+   */
+  destinationKind(path: string): "file" | "directory" | undefined {
+    const target = this.destinationTarget(path);
+    try {
+      return target.port.stat(target.path)?.kind;
+    } catch (error) {
+      if (error instanceof PathRefusedError) throw this.refusal(path, true);
+      return undefined;
+    }
+  }
+
+  /** `destinationKind`'s `os.path.lexists`: true when an entry is there, a link at the last name not followed. */
+  destinationEntryExists(path: string): boolean {
+    const target = this.destinationTarget(path);
+    try {
+      return target.port.entryId(target.path) !== undefined;
+    } catch (error) {
+      if (error instanceof PathRefusedError) throw this.refusal(path, true);
+      return false;
+    }
+  }
+
+  /**
    * Reads a file, at most `limit` bytes, through the opened-file-checked
    * reader (P9-R1-05): one open, checked against the entry at the name and
    * its folder; a link at the name is read only when it leads to a regular
@@ -385,6 +435,11 @@ export class ProjectFiles {
   /** @internal */
   writeTarget(path: string): { port: FsPort; path: string } {
     return this.portPath(path, true);
+  }
+
+  /** @internal F-P9-04 review round 3 (finding 1): the target of a destination folder made with `folder(path, { destination: true })`. */
+  folderWriteTarget(path: string): { port: FsPort; path: string } {
+    return this.destinationTarget(path);
   }
 }
 
@@ -508,6 +563,7 @@ export class WritePlan {
   private readonly steps: (PlannedWrite | PlannedRemove)[] = [];
   private readonly limits = new Map<string, { limit: number; label: string }>();
   private readonly folders: string[] = [];
+  private readonly destinationFolders = new Set<number>();
 
   constructor(files: ProjectFiles) {
     this.files = files;
@@ -525,9 +581,16 @@ export class WritePlan {
     this.steps.push({ kind: "remove", path });
   }
 
-  /** Makes `path` and any missing parent folder (as `mkdir -p`), also when nothing is written there. */
-  folder(path: string): void {
+  /**
+   * Makes `path` and any missing parent folder (as `mkdir -p`), also when
+   * nothing is written there. With `destination` (capability-matrix's
+   * `--out`; F-P9-04 review round 3, finding 1), the folder is looked at and
+   * made through `folderWriteTarget`, so an authorized folder link that
+   * leaves the root is followed as the files written in it are.
+   */
+  folder(path: string, options: { destination?: boolean } = {}): void {
     this.folders.push(path);
+    if (options.destination === true) this.destinationFolders.add(this.folders.length - 1);
   }
 
   /** The paths this plan writes. */
@@ -560,7 +623,7 @@ export class WritePlan {
       }
     }
     const targets = this.steps.map((step) => ({ step, target: this.files.writeTarget(step.path) }));
-    const folderTargets = this.folders.map((path) => ({ path, target: this.files.writeTarget(path) }));
+    const folderTargets = this.folders.map((path, index) => ({ path, target: this.destinationFolders.has(index) ? this.files.folderWriteTarget(path) : this.files.writeTarget(path) }));
     const ioFailure = (label: string, error: unknown, why?: string): ProjectFileError => {
       if (error instanceof PathRefusedError) {
         return new ProjectFileError("refused", `${label} leads out of the project folder ${this.files.root}, so BuildOS did not write it. Pass --allow-outside-root to write there.`, label);

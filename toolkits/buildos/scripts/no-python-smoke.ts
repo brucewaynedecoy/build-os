@@ -35,7 +35,9 @@
 //    manifests (each CSV byte for byte the skill's golden example), and
 //    `validate`; `capability-matrix skeleton`, `assemble` (with a quoted
 //    pattern, which BuildOS expands), and `validate` with a narrative whose
-//    name has spaces.
+//    name has spaces; and, in the initialized project itself, `capability-matrix
+//    skeleton` with a path that starts with `system/` (F-P9-04 review round 3,
+//    finding 2: the installed-path rule).
 // 3. Every fixture case of the four commands (test/fixtures/skills/), run by
 //    the installed package's own bin: each step's exit code is the one the
 //    goldens give (the SD-01 rule table of test/golden/skills/divergences.json)
@@ -268,6 +270,10 @@ async function main(): Promise<number> {
   check(assemble.status === 0 && existsSync(join(matrix, "deliver", "CIRC", "circ-capability-model.json")) && existsSync(join(matrix, "deliver", "CIRC", "circ-requirements.csv")), `wrapper capability-matrix assemble: exit 0 and the model files (got ${assemble.status})`);
   const checked = wrapper(project, ["capability-matrix", "validate", "--root", matrix, "--model", "deliver/CIRC/circ-capability-model.json", "--narrative", "deliver/CIRC/Current Circulation System - Capability Model.md"], work);
   check(checked.status === 0 && /\nALL CHECKS PASSED\n$/.test(checked.stdout), `wrapper capability-matrix validate: exit 0 and ALL CHECKS PASSED (got ${checked.status})`);
+  // F-P9-04 review round 3, finding 2: in the initialized project, a path with a leading `system/` names its root.
+  cpSync(join(PACKAGE_ROOT, "test", "fixtures", "skills", "capability-matrix", "bases", "library", "cm", "CIRC"), join(project, "workspace", "capability-matrix-smoke", "CIRC"), { recursive: true });
+  const installed = wrapper(project, ["capability-matrix", "skeleton", "--skeleton", "system/workspace/capability-matrix-smoke/CIRC/skeleton.json"], project);
+  check(installed.status === 0 && /skeleton OK/.test(installed.stdout), `wrapper capability-matrix skeleton with a system/ path in the initialized project: exit 0 and skeleton OK (got ${installed.status})`);
   process.stdout.write(`wrapper: ${problems.length === 0 ? "every skill command passed" : `${problems.length} problem(s)`}\n`);
 
   // 3. Every fixture case, by the installed bin.

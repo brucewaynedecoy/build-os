@@ -991,6 +991,98 @@
           ]
         }
       ]
+    },
+    {
+      "id": "dash-values",
+      "description": "option values that start with a minus, as argparse reads them (review round 3, finding 3): a value with a space, or one that looks like a negative number (an optional dot and a Unicode digit), is a value; anything else is an option",
+      "base": "library",
+      "steps": [
+        {
+          "run": [
+            "assemble",
+            "--skeleton",
+            "cm/CIRC/skeleton.json",
+            "--parts",
+            "cm/CIRC/parts/*.json",
+            "--out",
+            "-.stash71"
+          ]
+        },
+        {
+          "run": [
+            "assemble",
+            "--skeleton",
+            "cm/CIRC/skeleton.json",
+            "--parts",
+            "cm/CIRC/parts/*.json",
+            "--out",
+            "- stash71"
+          ]
+        },
+        {
+          "run": [
+            "assemble",
+            "--skeleton",
+            "cm/CIRC/skeleton.json",
+            "--parts",
+            "cm/CIRC/parts/*.json",
+            "--out",
+            "-١desk71"
+          ]
+        },
+        {
+          "run": [
+            "assemble",
+            "--skeleton",
+            "cm/CIRC/skeleton.json",
+            "--parts",
+            "cm/CIRC/parts/*.json",
+            "--out",
+            "deliver/dash",
+            "--date",
+            "-.edition71"
+          ]
+        },
+        {
+          "run": [
+            "assemble",
+            "--skeleton",
+            "cm/CIRC/skeleton.json",
+            "--parts",
+            "cm/CIRC/parts/*.json",
+            "--out",
+            "deliver/dash-space",
+            "--date",
+            "- catalogue 71"
+          ]
+        },
+        {
+          "run": [
+            "assemble",
+            "--skeleton",
+            "cm/CIRC/skeleton.json",
+            "--parts",
+            "cm/CIRC/parts/*.json",
+            "--out",
+            "deliver/dash-digit",
+            "--date",
+            "-٣issue71"
+          ]
+        },
+        {
+          "run": [
+            "assemble",
+            "--skeleton",
+            "cm/CIRC/skeleton.json",
+            "--parts",
+            "cm/CIRC/parts/*.json",
+            "--out",
+            "deliver/dash-number",
+            "--date",
+            "-.71extra"
+          ]
+        }
+      ]
     }
   ]
 }
