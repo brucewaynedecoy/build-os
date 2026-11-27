@@ -6,17 +6,21 @@
 import { normalizeDiagnostic, type Diagnostic } from "../core/shared/diagnostics.ts";
 import type { CliIo } from "./io.ts";
 
-/** One diagnostic as short human text, ending in a newline. */
-export function formatDiagnosticHuman(diagnostic: Diagnostic): string {
+/**
+ * One diagnostic as short human text, ending in a newline. `action` turns
+ * the correction into the text of the `action:` line (PE-023: the shell
+ * label of a printed command on Windows); by default it is the correction.
+ */
+export function formatDiagnosticHuman(diagnostic: Diagnostic, action: (correction: string) => string = (correction) => correction): string {
   let text = `${diagnostic.severity.toUpperCase()} [${diagnostic.code}]: ${diagnostic.message}`;
   if (diagnostic.correction !== undefined && diagnostic.correction !== "") {
-    text += `\n  action: ${diagnostic.correction}`;
+    text += `\n  action: ${action(diagnostic.correction)}`;
   }
   return `${text}\n`;
 }
 
-export function formatDiagnosticsHuman(diagnostics: readonly Diagnostic[]): string {
-  return diagnostics.map(formatDiagnosticHuman).join("");
+export function formatDiagnosticsHuman(diagnostics: readonly Diagnostic[], action?: (correction: string) => string): string {
+  return diagnostics.map((diagnostic) => formatDiagnosticHuman(diagnostic, action)).join("");
 }
 
 /** Stable JSON records: contract field order, empty optional fields removed. */

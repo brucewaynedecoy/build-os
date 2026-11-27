@@ -57,7 +57,7 @@ export interface Result {
   stderr: string;
 }
 
-export async function buildos(args: string[], cwd: string, options: { stdin?: string | (() => Uint8Array); openFs?: FsPortFactory } = {}): Promise<Result> {
+export async function buildos(args: string[], cwd: string, options: { stdin?: string | (() => Uint8Array); openFs?: FsPortFactory; version?: string } = {}): Promise<Result> {
   let stdout = "";
   let stderr = "";
   const io: CliIo = {
@@ -75,7 +75,7 @@ export async function buildos(args: string[], cwd: string, options: { stdin?: st
       return data;
     },
   };
-  const exit = await run(args, io, { buildInfo: { version: "dev", sourceRevision: "unknown" }, now: () => FIXED_NOW, ...(options.openFs === undefined ? {} : { openFs: options.openFs }) });
+  const exit = await run(args, io, { buildInfo: { version: options.version ?? "dev", sourceRevision: "unknown" }, now: () => FIXED_NOW, ...(options.openFs === undefined ? {} : { openFs: options.openFs }) });
   return { exit, stdout, stderr };
 }
 

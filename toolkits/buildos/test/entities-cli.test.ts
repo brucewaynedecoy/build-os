@@ -15,10 +15,10 @@ import { run } from "../src/cli/run.ts";
 import { checkIndex } from "../src/core/entities/index.ts";
 import { GoError } from "../src/core/entities/io.ts";
 import { FsReadFailure, FsWriteFailure, PathRefusedError } from "../src/core/shared/errors.ts";
-import { goQuote } from "../src/core/shared/go-quote.ts";
 import type { FsPort } from "../src/core/shared/fs-port.ts";
 import { writeCanonicalAtomic } from "../src/core/entities/consolidate.ts";
 import type { EntityHooks } from "../src/core/entities/commands.ts";
+import { printedPath } from "./golden/harness.ts";
 import { captureIo } from "./helpers.ts";
 
 const scratch = mkdtempSync(join(tmpdir(), "buildos-p3-cli-"));
@@ -78,11 +78,11 @@ async function entities(args: string[], options: { cwd?: string; hooks?: Partial
   return { code, stdout, stderr: io.stderr(), envelope: (stdout.startsWith("{") ? JSON.parse(stdout) : undefined) as Envelope };
 }
 
-// Go spells the root with `%q` (internal/cli/domain.go), so a Windows root's
-// backslashes are doubled in the command. Go's own domain_test.go builds the
-// expected text with plain quotes, which holds only for POSIX roots (P3 CI fix
-// round); `goQuote` gives the same text there and Go's text on Windows.
-const recoveryFor = (root: string) => `buildos entities rebuild-index --root ${goQuote(root)} --mode compat --apply`;
+// Go spelled the root with `%q` (internal/cli/domain.go). PE-023 (owner
+// decision 2026-11-26): the port always quotes it for the shell instead
+// (POSIX single quotes; Windows Command Prompt double quotes, each `\` kept
+// single), and a source build starts the command with `buildos`.
+const recoveryFor = (root: string) => `buildos entities rebuild-index --root ${printedPath(root, process.platform)} --mode compat --apply`;
 const tempFiles = (dir: string) => readdirSync(dir).filter((f) => f.endsWith(".tmp"));
 
 describe("entities domain (Go internal/cli tests)", () => {
@@ -258,7 +258,11 @@ describe("entities domain (Go internal/cli tests)", () => {
     const ok = await entities(["validate", "--root", root, "--mode", "compat"]);
     assert.equal(ok.code, 0);
     assert.equal(ok.stderr, "");
-    assert.match(ok.stdout, /^entities\.validate: ok\nroot: .*\nmode: compat\nversion: dev\nsource revision: unknown\nwrite status: not_requested\nWARNING \[index_stale\]: entity-resolution index is missing\n {2}action: buildos entities rebuild-index --root ".*" --mode compat --apply\n\{\n {2}"valid": true,/);
+    // PE-023 (F-P8-11 review round 1): on Windows the action line names its shell first; POSIX quotes the root in single quotes.
+    // The label follows the command: a temporary folder with a `!` adds the delayed expansion words.
+    const label = root.includes("!") ? "run this in Command Prompt, with delayed expansion off" : "run this in Command Prompt";
+    const action = process.platform === "win32" ? `${label}: buildos entities rebuild-index --root ".*"` : "buildos entities rebuild-index --root '.*'";
+    assert.match(ok.stdout, new RegExp(`^entities\\.validate: ok\\nroot: .*\\nmode: compat\\nversion: dev\\nsource revision: unknown\\nwrite status: not_requested\\nWARNING \\[index_stale\\]: entity-resolution index is missing\\n {2}action: ${action} --mode compat --apply\\n\\{\\n {2}"valid": true,`));
     const failed = await entities(["validate", "--root", root, "--mode", "strict"]);
     assert.equal(failed.code, 4);
     assert.equal(failed.stdout, "");
@@ -273,9 +277,9 @@ describe("entities domain (Go internal/cli tests)", () => {
     mkdirSync(join(root, ".os", "data"), { recursive: true });
     for (const name of DATASETS) writeFileSync(join(root, ".os", "data", name), "");
     const human = await entities(["validate", "--root", root, "--mode", "compat"]);
-    assert.match(human.stdout, windows ? /"remediation_command": "buildos entities rebuild-index --root \\".*a\\u0026b-\d+\\"/ : /"remediation_command": "buildos entities rebuild-index --root \\".*a\\u0026b\\u003cc\\u003e-\d+\\"/);
+    assert.match(human.stdout, windows ? /"remediation_command": "buildos entities rebuild-index --root \\".*a\\u0026b-\d+\\"/ : /"remediation_command": "buildos entities rebuild-index --root '.*a\\u0026b\\u003cc\\u003e-\d+'/);
     const json = await entities(["validate", "--root", root, "--mode", "compat", "--json"]);
-    assert.match(json.stdout, windows ? /"remediation_command": "buildos entities rebuild-index --root \\".*a&b-\d+\\"/ : /"remediation_command": "buildos entities rebuild-index --root \\".*a&b<c>-\d+\\"/);
+    assert.match(json.stdout, windows ? /"remediation_command": "buildos entities rebuild-index --root \\".*a&b-\d+\\"/ : /"remediation_command": "buildos entities rebuild-index --root '.*a&b<c>-\d+'/);
   });
 });
 

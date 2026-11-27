@@ -316,7 +316,7 @@ playbooks/build/package-build-artifact.md
 It ends with:
 
 ```text
-Fix each problem, then run buildos validate again.
+Fix each problem, then run the same validate command again.
 ```
 
 Exit code 4. Fix the named field in the named file and run it again.
@@ -361,7 +361,7 @@ playbooks/testing/run-core-validation.md
   env: `env` is an old scoped field and is not allowed. Use systems, environments, and owners. [legacy_scoped_field]
   environments: `environments` is required in scoped frontmatter. Use an empty list ([]) when it does not apply. [scoped_field_required]
 
-Fix each problem, then run buildos validate again.
+Fix each problem, then run the same validate command again.
 ```
 
 One mistake produces two errors: the banned field, and the required field that is now missing.

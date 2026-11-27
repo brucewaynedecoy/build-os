@@ -13,12 +13,13 @@ import {
   changeWords,
   choiceNeededResult,
   clashResult,
-  commandShell,
   failedResult,
+  SAME_INIT,
   MAKE_DOCS_LIMIT,
   MAKE_DOCS_NOT_RUN,
   makeDocsReport,
   notWritableResult,
+  retryAdvice,
   plannedResult,
   plannedSharedFiles,
   prepareInit,
@@ -46,11 +47,11 @@ import {
 import { ApplyFailure, applyInit, type NotRestored } from "../../core/init/apply.ts";
 import { makeDocsChoice, MAKE_DOCS_QUESTION, parseMakeDocsAnswer } from "../../core/init/make-docs-choice.ts";
 import { npxMakeDocsDisplay, runMakeDocsSetup, type MakeDocsOutcome } from "../../core/init/make-docs.ts";
-import { isExactVersion } from "../../core/init/manifest.ts";
 import type { Diagnostic } from "../../core/shared/diagnostics.ts";
 import { createEnvelope, serializeEnvelope, type WriteStatus } from "../../core/shared/envelope.ts";
 import { FsWriteFailure, isCoreError, WriteError } from "../../core/shared/errors.ts";
 import type { ProcessPort } from "../../core/shared/process-port.ts";
+import { printedRun, runWords } from "../../core/shared/run-command.ts";
 import { nodeHash } from "../../adapters/node-hash.ts";
 import { createNodeProcessPort } from "../../adapters/node-process.ts";
 import { loadPackageContent } from "../../adapters/package-content.ts";
@@ -128,7 +129,8 @@ async function runInit(args: readonly string[], context: CommandContext, options
   const skipsMakeDocs = values["skip-make-docs"] === true;
   if (wantsMakeDocs && skipsMakeDocs) throw new UsageError("use either --make-docs or --skip-make-docs, not both", { command: COMMAND, json });
   const platform = options.platform ?? process.platform;
-  const style: CommandStyle = { program: commandProgram(context.buildInfo.version), platform, json };
+  const run = printedRun(context.buildInfo.version, platform);
+  const style: CommandStyle = { program: run.program, platform, json };
 
   const prepared = prepareInit({
     root: values.root,
@@ -138,8 +140,9 @@ async function runInit(args: readonly string[], context: CommandContext, options
     content: (options.loadContent ?? loadPackageContent)(),
     version: context.buildInfo.version,
     now: (options.now ?? (() => new Date()))(),
+    run,
   });
-  const out = new Output(context, prepared, json, commandShell(platform));
+  const out = new Output(context, prepared, json, platform);
 
   if (prepared.plan.clashes.length > 0 || prepared.plan.problems.length > 0) {
     const clash = clashResult(prepared);
@@ -207,7 +210,8 @@ async function runInit(args: readonly string[], context: CommandContext, options
         return out.stopped(changed, { code: "init_changed_during_setup", severity: "error", message: `${changed.summary} ${changed.changed.map((c) => c.path).join(", ")}`, correction: changed.tip });
       }
       const late = unwritableFolders(ready);
-      if (late.length > 0) throw new WriteError(`buildos init cannot write in ${late.map((f) => f.path).join(", ")}: ${late[0]!.error}`, { code: "init_folder_not_writable", correction: "Allow your user to write in these folders, then run buildos init again." });
+      // F-P8-11 review round 3 (follow-up note): `failed` applies the retry words (`retryAdvice`) to this correction once.
+      if (late.length > 0) throw new WriteError(`buildos init cannot write in ${late.map((f) => f.path).join(", ")}: ${late[0]!.error}`, { code: "init_folder_not_writable", correction: `Allow your user to write in these folders, then ${SAME_INIT}.` });
     } else {
       report = makeDocsReport("skipped", laterCommand, prepared.plan);
     }
@@ -244,14 +248,10 @@ function notWritableDiagnostic(folders: readonly { path: string; error: string }
     code: "init_folder_not_writable",
     severity: "error",
     message: `buildos init cannot write in ${folders.map((f) => `${f.path} (${f.error})`).join(", ")}`,
-    correction: "Allow your user to write in these folders, then run buildos init again.",
+    correction: `Allow your user to write in these folders, then ${SAME_INIT}.`,
   };
 }
 
-/** `buildos` for a source build; the exact `npx` form for a release, so the shown command works in an empty folder. */
-function commandProgram(version: string): string[] {
-  return isExactVersion(version) && version !== "0.0.0-dev" ? ["npx", "-y", `build-os@${version}`] : ["buildos"];
-}
 
 function clashDiagnostic(prepared: PreparedInit, result: ClashResult): Diagnostic {
   if (result.reason === "shared_file_problem" || result.reason === "manifest_problem") {
@@ -266,7 +266,7 @@ function clashDiagnostic(prepared: PreparedInit, result: ClashResult): Diagnosti
     code: "init_paths_exist",
     severity: "error",
     message: `${prepared.plan.clashes.length} path(s) that buildos init must add already exist: ${prepared.plan.clashes.map((c) => c.path).join(", ")}`,
-    correction: "Move or back up these files, then run buildos init again.",
+    correction: result.tip,
   };
 }
 
@@ -285,14 +285,19 @@ class Output {
   private readonly context: CommandContext;
   private prepared: PreparedInit;
   private readonly json: boolean;
-  /** " this in Command Prompt" on Windows: each shown command says which shell it is written for. */
-  private readonly run: string;
+  /**
+   * The words before a shown command: "run", or on Windows the shell label
+   * of that command (`runWords`: `COMMAND_PROMPT_LABEL`, plus the delayed
+   * expansion words when the command holds a `!`; F-P8-11 review round 2,
+   * finding 3).
+   */
+  private readonly run: (command: string) => string;
 
-  constructor(context: CommandContext, prepared: PreparedInit, json: boolean, shell: "sh" | "cmd") {
+  constructor(context: CommandContext, prepared: PreparedInit, json: boolean, platform: string) {
     this.context = context;
     this.prepared = prepared;
     this.json = json;
-    this.run = shell === "cmd" ? "run this in Command Prompt" : "run";
+    this.run = (command) => runWords(platform, command);
   }
 
   /** The plan after Make Docs ran: what the result reports. */
@@ -313,7 +318,7 @@ class Output {
     const lines = [...this.header(), `Stopped. ${result.summary}`, ""];
     if ("choices" in result) {
       lines.push(`Ask the user: "${result.question}"`, "", result.about_make_docs, result.later, "");
-      for (const c of result.choices) lines.push(`If the user says ${c.answer}, ${this.run}:`, `  ${c.command}`);
+      for (const c of result.choices) lines.push(`If the user says ${c.answer}, ${this.run(c.command)}:`, `  ${c.command}`);
     } else if (result.reason === "folder_not_writable") {
       lines.push("BuildOS cannot write in these folders:");
       for (const f of result.folders) lines.push(`  ${f.path} (${f.error})`);
@@ -334,7 +339,6 @@ class Output {
         if (lines[lines.length - 1] !== "") lines.push("");
         lines.push(problem.message, `To fix it: ${problem.fix}`);
       }
-      if (result.clashes.length === 0 && result.tip.includes("--skip-make-docs")) lines.push(result.tip.slice(result.tip.indexOf("Make Docs already ran")));
       if (result.make_docs !== undefined) lines.push("", ...makeDocsLines(result.make_docs, true, this.run));
     }
     return this.text(`${lines.join("\n")}\n`, exitCode);
@@ -367,7 +371,10 @@ class Output {
     const notRestored: NotRestored[] = error instanceof ApplyFailure ? error.notRestored : [];
     const why = sentence(cause instanceof Error ? cause.message : String(cause));
     const result: FailedResult = failedResult(prepared, why, notRestored, makeDocs);
-    const diagnostics: Diagnostic[] = isCoreError(cause) ? [...cause.diagnostics] : [{ code: "internal_error", severity: "error", message: why }];
+    // F-P8-11 review round 2 (finding 2): an error's own retry advice carries the flag change after Make Docs ran, as the tip does.
+    const diagnostics: Diagnostic[] = isCoreError(cause)
+      ? cause.diagnostics.map((d) => (d.correction === undefined ? d : { ...d, correction: retryAdvice(d.correction, makeDocs) }))
+      : [{ code: "internal_error", severity: "error", message: why }];
     if (notRestored.length > 0) {
       diagnostics.push({
         code: "init_undo_incomplete",
@@ -482,20 +489,20 @@ function noteLines(notes: readonly { message: string }[] | undefined): string[] 
   return ["", ...notes.map((note) => `Note: ${note.message}`)];
 }
 
-function makeDocsLines(report: MakeDocsReport, named = true, run = "run"): string[] {
+function makeDocsLines(report: MakeDocsReport, named = true, run: (command: string) => string = () => "run"): string[] {
   switch (report.status) {
     case "set_up":
       return ["Make Docs: set up."];
     case "skipped":
       if (report.later === MAKE_DOCS_NOT_RUN) return ["Make Docs: not run, as chosen."];
-      return report.later_command === undefined ? [`Make Docs: not set up, as chosen. ${report.later}`] : [`Make Docs: not set up, as chosen. To set it up later, ${run}:`, `  ${report.later_command}`];
+      return report.later_command === undefined ? [`Make Docs: not set up, as chosen. ${report.later}`] : [`Make Docs: not set up, as chosen. To set it up later, ${run(report.later_command)}:`, `  ${report.later_command}`];
     case "not_started":
       return [report.choice === "yes" ? "Make Docs: would be set up first, before BuildOS writes its files." : "Make Docs: the user is asked before anything changes."];
     case "failed": {
       const lines = [`${named ? "Make Docs: not set up. " : ""}Why: ${sentence(`${report.reason}${report.detail === undefined ? "" : `: ${report.detail}`}`)}`];
       if (report.tip !== undefined) lines.push(report.tip);
       if (report.retry_note !== undefined) lines.push(report.retry_note);
-      lines.push(`To try Make Docs again, ${run}:`, `  ${report.retry_command}`);
+      lines.push(`To try Make Docs again, ${run(report.retry_command)}:`, `  ${report.retry_command}`);
       return lines;
     }
   }

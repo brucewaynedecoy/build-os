@@ -41,6 +41,7 @@ import {
   type ValidateFinding,
 } from "./checks.ts";
 import { pySplitlines } from "./yaml-subset.ts";
+import { runCommand, SOURCE_RUN, type PrintedRun } from "../shared/run-command.ts";
 
 const MiB = 1024 * 1024;
 
@@ -71,6 +72,8 @@ export interface ValidateInput {
   root?: string | undefined;
   cwd: string;
   openFs: FsPortFactory;
+  /** How printed commands start (PE-023). Defaults to the source-build form, `buildos`. */
+  run?: PrintedRun;
 }
 
 export interface ValidateResult {
@@ -100,10 +103,11 @@ export interface Validated {
 /** Runs every check and returns the findings. Throws `InputError` (exit 3) only when the root is not a BuildOS project. */
 export function validateProject(input: ValidateInput): Validated {
   const { root, hasOsFolder, fs } = resolveDefaultRoot({ root: input.root, cwd: input.cwd, openFs: input.openFs });
+  const run = input.run ?? SOURCE_RUN;
   if (!hasOsFolder) {
     throw new InputError(`${root} has no .os/ folder, so it is not a BuildOS project`, {
       code: "root_not_buildos",
-      correction: "Run buildos validate in the project folder, or pass --root with the folder that holds .os/.",
+      correction: `Run ${runCommand(run, ["validate"])} in the project folder, or pass --root with the folder that holds .os/.`,
       root,
     });
   }
@@ -144,7 +148,7 @@ export function validateProject(input: ValidateInput): Validated {
     count === 0
       ? "No problems found."
       : truncated
-        ? `Found at least ${count} problems. BuildOS stopped after ${count}; fix these first, then run buildos validate again.`
+        ? `Found at least ${count} problems. BuildOS stopped after ${count}; fix these first, then run the same validate command again.`
         : `Found ${count} ${count === 1 ? "problem" : "problems"}.`;
   return {
     root,

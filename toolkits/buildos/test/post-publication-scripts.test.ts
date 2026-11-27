@@ -16,6 +16,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { after, describe, it } from "node:test";
 import { withNodeFirst } from "../scripts/node-first-path.ts";
+import { commandPromptArgs, expectedActionLine, expectedRebuild, printedFixStep, type RanStep } from "../scripts/printed-fix-step.ts";
 
 const SCRIPTS = resolve(import.meta.dirname, "..", "scripts");
 const temps: string[] = [];
@@ -68,5 +69,105 @@ describe("F-P8-13: published-smoke.ts checks raw output and cleans only the repo
     assert.match(text, /\n {2}steps: reported,\n/);
     assert.match(text, /\nfor \(const s of reported\) \{\n {2}md\.push\(/);
     assert.doesNotMatch(text.slice(at), /\n {2}steps,\n/);
+  });
+});
+
+describe("F-P8-11 review rounds 1 and 2 (findings 3 and 4): smoke step 10 runs a printed fix command only when both outputs are exact, and then needs a current index", () => {
+  const text = readFileSync(join(SCRIPTS, "published-smoke.ts"), "utf8");
+  const PROJECT_POSIX = "/tmp/smoke/project";
+  const PROJECT_WIN = "C:\\T\\bang!it!";
+
+  /** A stubbed step 10: `before` and `after` are the two `entities validate --json` outputs; `human` is the stdout of step 5. */
+  function stubbed(options: { version?: string; windows?: boolean; printed?: string; human?: string; after?: unknown }) {
+    const version = options.version ?? "0.2.0";
+    const windows = options.windows ?? false;
+    const project = windows ? PROJECT_WIN : PROJECT_POSIX;
+    const expected = expectedRebuild(project, version, windows);
+    const printed = options.printed ?? expected;
+    const checks: { what: string; ok: boolean }[] = [];
+    const shellRuns: string[] = [];
+    let validates = 0;
+    const step = (stdout: string): RanStep => ({ stdout, stderr: "", exit: 0 });
+    const current = { ok: true, result: { index: { state: "current", current: true } }, diagnostics: [] };
+    printedFixStep({
+      version,
+      windows,
+      project,
+      humanStdout: options.human ?? `entities.validate: ok\n${expectedActionLine(printed, windows)}\n`,
+      npxRun: () => step(JSON.stringify(validates++ === 0 ? { ok: true, result: { index: { state: "missing", current: false, remediation_command: printed } }, diagnostics: [{ code: "index_stale", severity: "warning" }] } : (options.after ?? current))),
+      shellRun: (_name, command) => {
+        shellRuns.push(command);
+        return step("entities.rebuild-index: ok\nwrite status: applied\n");
+      },
+      check: (_step, what, ok) => checks.push({ what, ok }),
+    });
+    return { expected, checks, shellRuns, failed: checks.filter((c) => !c.ok).map((c) => c.what) };
+  }
+
+  it("both outputs exact and a current index after the run: every check passes, and the expected command ran once", () => {
+    for (const windows of [false, true]) {
+      const r = stubbed({ windows });
+      assert.deepEqual(r.failed, [], String(windows));
+      assert.deepEqual(r.shellRuns, [r.expected]);
+    }
+  });
+
+  it("the JSON field matches but the human action: line does not: the failure is recorded and nothing runs (the review's case)", () => {
+    for (const windows of [false, true]) {
+      const expected = expectedRebuild(windows ? PROJECT_WIN : PROJECT_POSIX, "0.2.0", windows);
+      for (const human of [`  action: buildos entities rebuild-index --root x\n`, `  action: ${expected} \n`, windows ? `  action: run this in Command Prompt: ${expected}\n` : `  action: run this: ${expected}\n`, ""]) {
+        const r = stubbed({ windows, human });
+        assert.deepEqual(r.shellRuns, [], human);
+        assert.ok(r.failed.some((what) => what.includes("ran nothing")), human);
+        assert.ok(r.failed.some((what) => what.startsWith("the human action: line")), human);
+      }
+    }
+  });
+
+  it("the human line matches but the JSON field does not: nothing runs", () => {
+    const expected = expectedRebuild(PROJECT_POSIX, "0.2.0", false);
+    const r = stubbed({ printed: `${expected} ; echo planted`, human: `${expectedActionLine(expected, false)}\n` });
+    assert.deepEqual(r.shellRuns, []);
+    assert.ok(r.failed.some((what) => what.includes("ran nothing")));
+  });
+
+  it("after the run, a validation that exits 0 with index_non_reproducible and index.current false fails the step", () => {
+    const warned = { ok: true, result: { index: { state: "non_reproducible", current: false } }, diagnostics: [{ code: "index_non_reproducible", severity: "warning" }] };
+    const r = stubbed({ after: warned });
+    assert.equal(r.shellRuns.length, 1);
+    assert.ok(r.failed.some((what) => what.startsWith("ok is true, and result.index.current is true")), r.failed.join("; "));
+    assert.ok(r.failed.some((what) => what.includes("found index_non_reproducible")), r.failed.join("; "));
+    // index.current true is not enough while an index diagnostic is there.
+    const mixed = stubbed({ after: { ...warned, result: { index: { state: "current", current: true } } } });
+    assert.deepEqual(mixed.failed.length, 1);
+    assert.ok(mixed.failed[0]!.includes("found index_non_reproducible"));
+    // No JSON at all fails too.
+    assert.ok(stubbed({ after: "not json" }).failed.length > 0);
+  });
+
+  it("0.1.0: the bare buildos form is checked and never run", () => {
+    const printed = "buildos entities rebuild-index --root '/tmp/smoke/project' --mode compat --apply";
+    const r = stubbed({ version: "0.1.0", printed, human: `  action: ${printed}\n` });
+    assert.deepEqual(r.failed, []);
+    assert.deepEqual(r.shellRuns, []);
+  });
+
+  it("expectedRebuild and the action line state the program, the arguments, the quoting, and the label on their own", () => {
+    const body = readFileSync(join(SCRIPTS, "printed-fix-step.ts"), "utf8");
+    assert.doesNotMatch(body, /^import /m);
+    assert.equal(expectedRebuild("/tmp/a b/it's", "0.2.0", false), "npx -y build-os@0.2.0 entities rebuild-index --root '/tmp/a b/it'\\''s' --mode compat --apply");
+    assert.equal(expectedRebuild("C:\\T\\a%b\\", "0.2.0", true), 'npx -y build-os@0.2.0 entities rebuild-index --root "C:\\T\\a"^%"b\\\\" --mode compat --apply');
+    assert.equal(expectedActionLine("x!y", true), "  action: run this in Command Prompt, with delayed expansion off: x!y");
+    assert.equal(expectedActionLine("xy", true), "  action: run this in Command Prompt: xy");
+    assert.equal(expectedActionLine("x!y", false), "  action: x!y");
+  });
+
+  it("published-smoke.ts runs step 10 through printedFixStep, on Windows in Command Prompt with delayed expansion off", () => {
+    assert.deepEqual(commandPromptArgs("a b"), ['/d /v:off /s /c "a b"']);
+    const step = text.slice(text.indexOf("// 10. A printed fix command"), text.indexOf("for (const s of steps) s.ok"));
+    assert.match(step, /^\/\/ 10\. A printed fix command[^\n]*\nprintedFixStep\(\{\n/);
+    assert.match(step, /WINDOWS \? run\(name, command, process\.env\["ComSpec"\] \?\? "cmd\.exe", commandPromptArgs\(command\), 0, project, \{ verbatim: true \}\) : run\(name, command, "\/bin\/sh", \["-c", command\], 0, project\)/);
+    assert.equal(text.match(/\bprintedFixStep\(/g)?.length ?? 0, 1);
+    assert.doesNotMatch(text, /function expectedRebuild\(/);
   });
 });

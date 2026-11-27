@@ -972,6 +972,28 @@ describe("design promote with the Make Docs 2.0.9 layout (P7-R1-05)", () => {
     assert.match(fellBack.stderr, /design\.md is empty/);
   });
 
+  it("F-P8-11 review round 3 (finding 1): from project A with --repo-root B, the file to delete is B's empty template, human and JSON", async () => {
+    const a = companionProject();
+    const b = companionProject();
+    const aTemplate = join(a, ".make-docs", "system", "templates", "design.md");
+    const bTemplate = join(b, ".make-docs", "system", "templates", "design.md");
+    writeFileSync(aTemplate, "a real template.\n");
+    writeFileSync(bTemplate, "");
+    const fromA = [...args, "--repo-root", relative(a, b)];
+    const out = await cliAt(fromA, a);
+    assert.equal(out.code, 3, out.stderr);
+    assert.ok(out.stderr.includes(` To get the Make Docs file back, delete ${bTemplate}, then `), out.stderr);
+    assert.doesNotMatch(out.stderr, /delete \.make-docs/);
+    const json = await cliAt([...fromA, "--json"], a);
+    const envelope = JSON.parse(json.stdout) as { diagnostics: { code: string; correction: string }[] };
+    assert.equal(json.code, 3);
+    assert.equal(envelope.diagnostics[0]!.code, "make_docs_input_empty");
+    assert.ok(envelope.diagnostics[0]!.correction.startsWith(`To get the Make Docs file back, delete ${bTemplate}, then `), envelope.diagnostics[0]!.correction);
+    // The named file is B's empty template; A's real template is not named and stays.
+    assert.equal(readFileSync(bTemplate).length, 0);
+    assert.equal(readFileSync(aTemplate, "utf8"), "a real template.\n");
+  });
+
   it("a Go-era project (docs/assets/ inputs, no .make-docs/system/) keeps the Go error text and exit 1", async () => {
     const root = tempRoot();
     cpSync(INSTALLED, root, { recursive: true });

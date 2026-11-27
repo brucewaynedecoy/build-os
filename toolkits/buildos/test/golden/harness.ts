@@ -800,6 +800,170 @@ export function withBuildIdentity(golden: Observation, identity: BuildIdentity):
   return { ...golden, stdout: stamp(golden.stdout), stderr: stamp(golden.stderr) };
 }
 
+/**
+ * PE-023 (owner decision 2026-11-26): the class of printed fix commands. The
+ * `rebuild` form occurs in the goldens listed per operating system (the set
+ * the running system selects: its own golden, a derived golden, or the
+ * shared one), in the entity edge seeds, and in the $PWD seeds. The `usage`
+ * form occurs in the shared goldens listed. test/golden/printed-command.test.ts
+ * checks that each list is exactly where the form occurs.
+ */
+export interface PrintedCommandClass {
+  rule: string;
+  program: { source_build: string; release: string };
+  rebuild: { go: string; ours: string; cases: Record<"darwin" | "linux" | "win32", string[]>; edge: string[]; pwd: string[] };
+  usage: { go: string; ours: string; cases: string[] };
+  /** F-P8-11 review round 1 (finding 1): the shell label of the human `action:` line on Windows. */
+  label: { go: string; ours: string; platform: "win32"; cases: string[] };
+}
+
+/** The PE-023 class, or throws when parity-exceptions.json has none. */
+export function printedCommandClass(exceptions: ExceptionsFile): PrintedCommandClass {
+  const found = exceptions.exceptions.filter((e) => e.printed_command !== undefined);
+  if (found.length !== 1) throw new Error(`exactly one parity exception must hold printed_command, found ${found.length}`);
+  return found[0]!.printed_command!;
+}
+
+/**
+ * PE-023: the program a printed fix command starts with, for the build
+ * identity the comparison expects. A release version gives
+ * `npx -y build-os@<version>`: an exact semver version of at most 256
+ * characters, MAJOR.MINOR.PATCH without leading zeros and each at most
+ * Number.MAX_SAFE_INTEGER, with an optional prerelease part whose numeric
+ * identifiers have no leading zero, and not 0.0.0-dev. The development
+ * identity and any other version give `buildos`. This is the harness's own
+ * statement of the rule (the manifest contract's exact version), not a call
+ * to the CLI's code.
+ */
+export function printedProgram(identity: BuildIdentity | undefined): string {
+  const version = identity?.version;
+  return version !== undefined && isPrintedReleaseVersion(version) ? `npx -y build-os@${version}` : "buildos";
+}
+
+function isPrintedReleaseVersion(version: string): boolean {
+  if (version.length > 256 || version === "0.0.0-dev") return false;
+  const m = /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/.exec(version);
+  if (m === null) return false;
+  if (![m[1], m[2], m[3]].every((n) => BigInt(n!) <= BigInt(Number.MAX_SAFE_INTEGER))) return false;
+  return (m[4] ?? "").split(".").every((id) => id === "" || !/^0[0-9]+$/.test(id));
+}
+
+/** Go's `%q` string literal decoded (the forms the goldens hold: printable text, `\\`, `\"`, and `\xHH`). */
+function goUnquote(literal: string): string {
+  if (/\\[^\\"x]/.test(literal.replace(/\\\\/g, ""))) throw new Error(`PE-023: Go string ${literal} has an escape the rule does not decode`);
+  return JSON.parse(literal.replace(/\\x([0-9a-fA-F]{2})/g, "\\u00$1")) as string;
+}
+
+/**
+ * PE-023: a folder path as the port prints it in a fix command, always
+ * quoted. POSIX: single quotes, a `'` as `'\''`. Windows: Command Prompt
+ * double quotes with each `\` kept single; a path with `"` or `%` or a
+ * trailing `\` never occurs in a golden (the normalized root is `{ROOT}`),
+ * so the rule refuses it rather than guess.
+ */
+export function printedPath(path: string, platform: string): string {
+  if (platform === "win32") {
+    if (/["%]|\\$/.test(path)) throw new Error(`PE-023: the Windows path ${JSON.stringify(path)} needs quoting the rule does not state`);
+    return `"${path}"`;
+  }
+  return `'${path.replace(/'/g, "'\\''")}'`;
+}
+
+const GO_REBUILD = /(  action: )?buildos entities rebuild-index --root ("(?:[^"\\]|\\.)*") --mode (strict|compat) --apply/g;
+const GO_USAGE = "Run buildos help for command syntax.";
+
+/** Counts of the PE-023 forms that applyPrintedCommands replaced. */
+export interface PrintedCommandHits {
+  rebuild: number;
+  usage: number;
+  /** Human `action:` lines on Windows that got the shell label. */
+  label: number;
+}
+
+/**
+ * PE-023 label rule (F-P8-11 review round 1, finding 1), stated here on its
+ * own: on Windows, a human `action:` line that is the rebuild command reads
+ * `  action: run this in Command Prompt: <command>`, with `, with delayed
+ * expansion off` after `Command Prompt` when the command holds a `!`. Only
+ * in the text as printed: a JSON string holds the command alone.
+ */
+function windowsLabel(command: string): string {
+  return command.includes("!") ? "run this in Command Prompt, with delayed expansion off" : "run this in Command Prompt";
+}
+
+function printedText(text: string, program: string, platform: string, hits: PrintedCommandHits, human: boolean): string {
+  const rebuilt = text.replace(GO_REBUILD, (_m, action: string | undefined, quoted: string, mode: string) => {
+    hits.rebuild++;
+    const command = `${program} entities rebuild-index --root ${printedPath(goUnquote(quoted), platform)} --mode ${mode} --apply`;
+    if (action === undefined) return command;
+    if (!human || platform !== "win32") return `${action}${command}`;
+    hits.label++;
+    return `${action}${windowsLabel(command)}: ${command}`;
+  });
+  const parts = rebuilt.split(GO_USAGE);
+  hits.usage += parts.length - 1;
+  return parts.join(`Run ${program} help for command syntax.`);
+}
+
+/**
+ * PE-023: Go's text with each printed fix command as the port prints it.
+ * The `rebuild` form `buildos entities rebuild-index --root <Go %q root>
+ * --mode <mode> --apply` becomes `<program> entities rebuild-index --root
+ * <printedPath> --mode <mode> --apply`; the `usage` form `Run buildos help
+ * for command syntax.` becomes `Run <program> help for command syntax.`.
+ * Each is replaced in the text as printed and inside each JSON string,
+ * which is decoded first and encoded again with Go's escaping (the string
+ * must be in Go encoding/json form). On Windows, a rebuild command on a
+ * human `action:` line in the text as printed also gets the shell label
+ * (`windowsLabel`). Nothing else changes.
+ */
+export function applyPrintedCommands(text: string, program: string, platform: string): { text: string; hits: PrintedCommandHits } {
+  const hits: PrintedCommandHits = { rebuild: 0, usage: 0, label: 0 };
+  const raw = printedText(text, program, platform, hits, true);
+  const out = raw.replace(JSON_STRING, (token) => {
+    let value: string;
+    try {
+      value = JSON.parse(token) as string;
+    } catch {
+      return token;
+    }
+    const next = printedText(value, program, platform, hits, false);
+    if (next === value) return token;
+    if (`"${goJsonEscape(value)}"` !== token) throw new Error(`PE-023: JSON string ${token} is not in Go encoding/json form`);
+    return `"${goJsonEscape(next)}"`;
+  });
+  return { text: out, hits };
+}
+
+/** PE-023 applied to a golden's stdout and stderr (see applyPrintedCommands), with the total hits. */
+export function withPrintedCommands(golden: Observation, program: string, platform: string): { observation: Observation; hits: PrintedCommandHits } {
+  const total: PrintedCommandHits = { rebuild: 0, usage: 0, label: 0 };
+  const stamp = (data: Buffer): Buffer => {
+    if (!isUtf8(data)) return data;
+    const { text, hits } = applyPrintedCommands(data.toString("utf8"), program, platform);
+    total.rebuild += hits.rebuild;
+    total.usage += hits.usage;
+    total.label += hits.label;
+    return Buffer.from(text, "utf8");
+  };
+  return { observation: { ...golden, stdout: stamp(golden.stdout), stderr: stamp(golden.stderr) }, hits: total };
+}
+
+/**
+ * PE-023 applied to a Go seed result (an entity edge seed or a $PWD seed)
+ * for a development build: its stdout and stderr with each printed fix
+ * command in the port's form. Throws when the form occurs in a seed that
+ * PE-023 does not list under `key`, or does not occur in one it lists.
+ */
+export function seedWithPrintedCommands<T extends { stdout: string; stderr: string }>(name: string, seed: T, key: "edge" | "pwd", exceptions: ExceptionsFile, platform: string = process.platform): T {
+  const listed = printedCommandClass(exceptions).rebuild[key].includes(name);
+  const stdout = applyPrintedCommands(seed.stdout, "buildos", platform);
+  const stderr = applyPrintedCommands(seed.stderr, "buildos", platform);
+  const hits = stdout.hits.rebuild + stderr.hits.rebuild + stdout.hits.usage + stderr.hits.usage;
+  if ((hits > 0) !== listed) throw new Error(`PE-023: the ${key} seed ${name} holds ${hits} printed fix command(s), and PE-023 ${listed ? "lists" : "does not list"} it under rebuild.${key}`);
+  return { ...seed, stdout: stdout.text, stderr: stderr.text };
+}
+
 /** The text with the four build identity places stamped (see withBuildIdentity). */
 export function stampBuildIdentity(text: string, identity: BuildIdentity): string {
   return text
@@ -1067,6 +1231,12 @@ export interface ParityException {
    * stripLegacyNotice.
    */
   legacy_notice?: Record<string, string>;
+  /**
+   * PE-023: the printed fix commands (owner decision 2026-11-26, F-P8-11 and
+   * F-P8-10). Each form names Go's text, the text the port prints, and the
+   * exact cases where the form occurs. See applyPrintedCommands.
+   */
+  printed_command?: PrintedCommandClass;
   /** W1 R7 P9 (PE-021, approved 2026-11-25): the .xlsx content rule of the skill-script parity test: its helper, goldens, and test. */
   xlsx?: { helper: string; goldens: string; test: string };
 }

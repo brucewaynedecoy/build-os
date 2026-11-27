@@ -29,6 +29,7 @@ import type { CliIo } from "./io.ts";
 import { formatEnvelopeHuman, formatFailureHuman } from "./output.ts";
 import { goQuote, wantsJson } from "./parse.ts";
 import { UsageError } from "./usage-error.ts";
+import { printedRun, runCommand } from "../core/shared/run-command.ts";
 
 const HELP_FLAGS = new Set(["help", "--help", "-h"]);
 
@@ -92,7 +93,7 @@ async function dispatch(
 ): Promise<ExitCode> {
   const [first, ...rest] = argv;
   if (first === undefined || HELP_FLAGS.has(first)) {
-    return runHelp(rest, io, [HELP_ENTRY, ...domains]);
+    return runHelp(rest, io, [HELP_ENTRY, ...domains], buildInfo.version);
   }
   const domain = domains.find((candidate) => candidate.name === first);
   if (domain === undefined) {
@@ -100,7 +101,7 @@ async function dispatch(
     throw new UsageError(`unknown command ${goQuote(first)}`, { command: "buildos", json: false });
   }
   if (rest[0] !== undefined && HELP_FLAGS.has(rest[0])) {
-    io.writeStdout(domain.help);
+    io.writeStdout(domain.helpFor?.(buildInfo.version) ?? domain.help);
     return EXIT_CODES.ok;
   }
   const context: CommandContext = {
@@ -129,10 +130,10 @@ async function dispatch(
  * arguments after the domain are ignored. Printing a domain's help for
  * `help <domain>` differs from the seed; see the parity exceptions.
  */
-function runHelp(args: readonly string[], io: CliIo, entries: readonly HelpEntry[]): ExitCode {
+function runHelp(args: readonly string[], io: CliIo, entries: readonly HelpEntry[], version: string): ExitCode {
   const [target] = args;
   const entry = target === undefined ? undefined : entries.find((candidate) => candidate.name === target);
-  io.writeStdout(entry === undefined ? rootHelp(entries) : entry.help);
+  io.writeStdout(entry === undefined ? rootHelp(entries) : (entry.helpFor?.(version) ?? entry.help));
   return EXIT_CODES.ok;
 }
 
@@ -166,7 +167,7 @@ function reportFailure(error: unknown, io: CliIo, buildInfo: BuildInfo, json: bo
       code: "usage_error",
       severity: "error",
       message: error.message,
-      correction: "Run buildos help for command syntax.",
+      correction: `Run ${runCommand(printedRun(buildInfo.version, process.platform), ["help"])} for command syntax.`,
     };
     writeFailure(failureEnvelope(buildInfo, error.command, "", "not_requested", [diagnostic]), io, error.json);
     return code;

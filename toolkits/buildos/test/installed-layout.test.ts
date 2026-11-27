@@ -268,7 +268,9 @@ describe("the printed Make Docs command works where BuildOS shows one (P7-R2-03)
     const stop = buildos([...PROMOTE, "--repo-root", root]);
     assert.equal(stop.exit, 3);
     assertOutputMatches(stop.stderr, /design\.md is empty, so BuildOS cannot write the design\. Make Docs keeps a changed copy of a file it manages, and BuildOS does not change this file either\./);
-    assertOutputMatches(stop.stderr, / To get the Make Docs file back, delete \.make-docs\/system\/templates\/design\.md, then run this/);
+    // F-P8-11 review round 3 (finding 1): run from another folder with --repo-root, the file to delete is the one in the project.
+    assert.ok(stop.stderr.includes(` To get the Make Docs file back, delete ${template}, then run this`), shape(stop.stderr));
+    assertOutputDoesNotMatch(stop.stderr, /delete \.make-docs/);
     assertOutputDoesNotMatch(stop.stderr, /missing/);
     const command = shownCommand(stop.stderr);
     // The command alone does not repair an empty file: Make Docs 2.0.9 exits 0 with status blocked and keeps it.

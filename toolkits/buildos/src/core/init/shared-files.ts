@@ -157,9 +157,9 @@ export interface SharedFileProblem {
   fix: string;
 }
 
-const MARKER_FIX = "Delete the buildos lines that are not part of one BuildOS section, or delete all of them. Then run `buildos init` again.";
-const CHANGED_FIX = "Move your own text outside the buildos lines, or delete the buildos lines. Then run `buildos init` again.";
-const ENCODING_FIX = "Save the file as UTF-8 text, or move it away. Then run `buildos init` again.";
+const MARKER_FIX = "Delete the buildos lines that are not part of one BuildOS section, or delete all of them. Then run the same init command again.";
+const CHANGED_FIX = "Move your own text outside the buildos lines, or delete the buildos lines. Then run the same init command again.";
+const ENCODING_FIX = "Save the file as UTF-8 text, or move it away. Then run the same init command again.";
 
 /** The stop for a file that BuildOS would replace and that has more than one hard link (W1 R7 P6 review round 3). */
 export function hardLinkProblem(path: string, links: number): SharedFileProblem {
@@ -167,7 +167,7 @@ export function hardLinkProblem(path: string, links: number): SharedFileProblem 
     path,
     problem: "hard_link",
     message: `${path} is shared with ${links === 2 ? "another file name" : `${links - 1} other file names`} through a hard link. BuildOS replaces files and would break that link, so the names would no longer share their text.`,
-    fix: "Make it a file with one name: copy it, delete the original, and give the copy the original name. Or move it away. Then run `buildos init` again.",
+    fix: "Make it a file with one name: copy it, delete the original, and give the copy the original name. Or move it away. Then run the same init command again.",
   };
 }
 
@@ -278,7 +278,7 @@ export function planSharedFiles(
           path: found.path,
           problem: "link",
           message: `${found.path} is a link that does not lead to another of these shared files in this folder. BuildOS does not change a file through a link.`,
-          fix: "Put a regular file in place of the link, or move the link away. Then run `buildos init` again.",
+          fix: "Put a regular file in place of the link, or move the link away. Then run the same init command again.",
         });
       }
     } else if (now.tooLarge) {
@@ -288,7 +288,7 @@ export function planSharedFiles(
           path: found.path,
           problem: "too_large",
           message: `${found.path} is larger than ${SHARED_FILE_MAX_BYTES / (1024 * 1024)} MiB, so BuildOS does not read it.`,
-          fix: "Make the file smaller, or move it away. Then run `buildos init` again.",
+          fix: "Make the file smaller, or move it away. Then run the same init command again.",
         });
       }
     } else {
@@ -354,7 +354,7 @@ function encodingMessage(path: string, encoding: "UTF-32" | "UTF-16" | "zero byt
     : `${path} is saved as ${encoding} text. BuildOS changes only UTF-8 text, so it did not change this file.`;
 }
 
-const CR_FIX = "Save the file with LF or CRLF line endings. Then run `buildos init` again.";
+const CR_FIX = "Save the file with LF or CRLF line endings. Then run the same init command again.";
 
 function problemFix(problem: SharedProblemCode): string {
   if (problem === "section_changed") return CHANGED_FIX;

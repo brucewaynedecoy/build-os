@@ -24,11 +24,23 @@
 // entities validate, validate, one legacy name (buildos-intake), the project
 // wrapper with Node.js missing (exit 127, the plain message), and the project
 // wrapper with Node.js present (it runs the pinned version through npx).
+//
+// Step 10 (F-P8-11, PE-023; owner decision 2026-11-26): the printed fix
+// command, in scripts/printed-fix-step.ts (its header says what it checks).
+// It runs the printed command (through `sh -c`, or Command Prompt with
+// delayed expansion off on Windows) only when both the JSON field and the
+// human `action:` line are exactly the expected ones, and then requires
+// `result.index.current` true and no index diagnostic. So the
+// step count is 13 on Linux and macOS (12 on Windows, which has one wrapper
+// step for Node.js missing) for 0.1.0, and 15 (14) for a later version:
+// version 2, init 2, intake 1, entities validate 1, validate 1, legacy name
+// 2, wrapper 3 (2), and step 10 with 1 for 0.1.0 or 3 for a later version.
 
 import { spawnSync, type SpawnSyncOptions } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir, userInfo } from "node:os";
 import { dirname, join } from "node:path";
+import { commandPromptArgs, printedFixStep } from "./printed-fix-step.ts";
 
 const NODE_REQUIRED = "BuildOS needs Node.js 24 or newer on this computer. Install it from https://nodejs.org, then try again.";
 const LEGACY_NOTICE = 'Note: the command name "buildos-intake" goes away in BuildOS 0.3.0. Use "buildos intake" instead.';
@@ -297,6 +309,18 @@ const project = newFolder("project");
   }
   check(step, `the wrapper ran version ${version}`, parsed.version === version);
 }
+
+// 10. A printed fix command (F-P8-11, PE-023), run as printed (scripts/printed-fix-step.ts). Last, because it writes the project's entity index.
+printedFixStep({
+  version,
+  windows: WINDOWS,
+  project,
+  humanStdout: steps.find((s) => s.name === "entities validate")?.stdout,
+  npxRun: (name, args, expected) => npxRun(name, args, expected, project),
+  shellRun: (name, command) =>
+    WINDOWS ? run(name, command, process.env["ComSpec"] ?? "cmd.exe", commandPromptArgs(command), 0, project, { verbatim: true }) : run(name, command, "/bin/sh", ["-c", command], 0, project),
+  check,
+});
 
 for (const s of steps) s.ok = s.checks.every((c) => c.ok);
 const passed = steps.every((s) => s.ok);

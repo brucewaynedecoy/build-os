@@ -194,7 +194,7 @@ describe("P6-R4-04: a bare CR is text, never a line break or marker padding", ()
     const human = await init(dir, ["--skip-make-docs"]);
     assert.equal(human.exit, 10, shape(human.stdout));
     assert.ok(human.stdout.includes(
-        "AGENTS.md uses old Mac line endings (CR only) at line 1: BuildOS finds a buildos line there only when it reads a CR as a line break, so it cannot tell where that line starts and ends, and it did not change this file.\nTo fix it: Save the file with LF or CRLF line endings. Then run `buildos init` again.\n",
+        "AGENTS.md uses old Mac line endings (CR only) at line 1: BuildOS finds a buildos line there only when it reads a CR as a line break, so it cannot tell where that line starts and ends, and it did not change this file.\nTo fix it: Save the file with LF or CRLF line endings. Then run the same init command again.\n",
       ), shape(human.stdout));
     assertSame(readFileSync(join(dir, "AGENTS.md"), "utf8"), text);
   });

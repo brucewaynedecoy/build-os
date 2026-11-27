@@ -33,7 +33,7 @@ import { join } from "node:path";
 import { after, before, describe, it } from "node:test";
 import { bundle } from "../scripts/build.ts";
 import { EDGE_CASES, type EdgeCase, normalizeEdge, runEdgeCase, tempMessage } from "../scripts/capture-entity-edge-goldens.ts";
-import { edgeExceptionProblems, loadExceptions } from "./golden/harness.ts";
+import { edgeExceptionProblems, loadExceptions, seedWithPrintedCommands } from "./golden/harness.ts";
 
 let dir: string;
 let program: string[];
@@ -130,7 +130,8 @@ describe("entity edge cases match the Go seed (P3 review fixes)", { skip: posix 
     const permission = c.plant === "indexes-read-only" || c.plant === "data-read-only" || c.plant === "os-read-only";
     const title = c.exception === undefined ? `${c.name} matches Go byte for byte (${c.covers})` : `${c.name} differs from Go exactly as ${c.exception} allows (${c.covers})`;
     it(title, { skip: permission && asRoot ? "running as root ignores folder permissions" : false }, () => {
-      const golden = goldens.cases.find((g) => g.name === c.name)!;
+      // PE-023: Go's printed fix commands in the port's form; every other byte as Go wrote it.
+      const golden = seedWithPrintedCommands(c.name, goldens.cases.find((g) => g.name === c.name)!, "edge", exceptions);
       const ours = runEdgeCase(program, c);
       assert.deepEqual(edgeExceptionProblems(c.name, c.exception, golden, ours, exceptions), []);
       if (c.exception === undefined) {
@@ -173,7 +174,7 @@ describe("harness plants: a run that changes a mode or a file outside the root f
   };
   const run = (name: string, action: string) => {
     const c = EDGE_CASES.find((x) => x.name === name)!;
-    const golden = goldens.cases.find((g) => g.name === name)!;
+    const golden = seedWithPrintedCommands(name, goldens.cases.find((g) => g.name === name)!, "edge", exceptions);
     const ours = runEdgeCase([process.execPath, wrapper(), action, program[1]!], c);
     return { ours, problems: edgeExceptionProblems(name, c.exception, golden, ours, exceptions) };
   };

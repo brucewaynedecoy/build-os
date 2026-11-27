@@ -1459,7 +1459,7 @@ function resumePublication(ctx: Ctx, group: Group, review: PyDict): string {
     throw new PublicationConflict(
       `The pending publication in ${review} cannot go on: ${conflicts.length === 1 ? "a data file" : "data files"} changed since the publication started, and BuildOS cannot tell whether the publication's rows are in ${conflicts.length === 1 ? "it" : "them"}: ${named}. Nothing was written, and the publication stays pending with the row IDs it gave. ` +
         `Open each file named and look for those IDs. Where a row with one of them is there more than once, or is not the publication's row, put it right by hand: keep exactly one copy of the publication's row, or remove that ID's rows; for an updated row, keep the row either as the publication wrote it or as it was before. ` +
-        `Then run buildos extract bulk publish ${group.key} again: it adds a row only when its ID is not in the file yet, so it never writes a row twice. Do not delete the "publication" entry from ${review}: the next publication would give the rows new IDs.`,
+        `Then run the same publish command again: it adds a row only when its ID is not in the file yet, so it never writes a row twice. Do not delete the "publication" entry from ${review}: the next publication would give the rows new IDs.`,
     );
   }
   // P9-R2-04: a pending publication is finished only when its recorded rows still pass buildos validate with the config as it is now.
@@ -1475,10 +1475,10 @@ function resumePublication(ctx: Ctx, group: Group, review: PyDict): string {
     const done = states.filter((item) => item.state === "after" || item.state === "present").map((item) => item.relative);
     const next =
       notBefore.length === 0
-        ? `No data file holds a row of it yet. Either restore what the config defined (for example the owner) and run buildos extract bulk publish ${group.key} again, or withdraw the publication: BuildOS has no command for that, so delete the "publication" entry from ${review} by hand; the approved rows stay staged, and you can reset a decision with decide and fix a row with replace-row`
+        ? `No data file holds a row of it yet. Either restore what the config defined (for example the owner) and run the same publish command again, or withdraw the publication: BuildOS has no command for that, so delete the "publication" entry from ${review} by hand; the approved rows stay staged, and you can reset a decision with decide and fix a row with replace-row`
         : done.length > 0
-          ? `${done.join(", ")} already ${done.length === 1 ? "holds" : "hold"} rows of it, so restore what the config defined (for example the owner) and run buildos extract bulk publish ${group.key} again to finish it; do not delete the "publication" entry`
-          : `${notBefore.map((item) => item.relative).join(", ")} changed since the publication started, so restore what the config defined (for example the owner) and run buildos extract bulk publish ${group.key} again to finish it; do not delete the "publication" entry`;
+          ? `${done.join(", ")} already ${done.length === 1 ? "holds" : "hold"} rows of it, so restore what the config defined (for example the owner) and run the same publish command again to finish it; do not delete the "publication" entry`
+          : `${notBefore.map((item) => item.relative).join(", ")} changed since the publication started, so restore what the config defined (for example the owner) and run the same publish command again to finish it; do not delete the "publication" entry`;
     throw valueError(`The pending publication in ${review} would write rows that do not pass buildos validate with the config as it is now; nothing was written and the publication stays pending: ${invalid.join("; ")}. ${next}`);
   }
   for (const item of states) {
@@ -1864,7 +1864,7 @@ export function runBulk(input: BulkInput): BulkRun {
  * that shows it.
  */
 function reviewAfterFailure(ctx: Ctx, rel: string, ref: string): string {
-  const uncertain = `BuildOS cannot tell what the review ${rel} holds now. Run buildos extract bulk check ${ref} to see its state before you run publish again.`;
+  const uncertain = `BuildOS cannot tell what the review ${rel} holds now. Run the same command with check in place of publish to see its state before you run publish again.`;
   let review: PyValue;
   try {
     review = loads(ctx.fs.readText(rel, READ_LIMITS.data));
@@ -1873,7 +1873,7 @@ function reviewAfterFailure(ctx: Ctx, rel: string, ref: string): string {
     throw error;
   }
   if (!isDict(review)) return uncertain;
-  if (truthy(review.get("publication"))) return `The review ${rel} still holds the pending publication. Fix the problem above, then run buildos extract bulk publish ${ref} again to finish it.`;
+  if (truthy(review.get("publication"))) return `The review ${rel} still holds the pending publication. Fix the problem above, then run the same publish command again to finish it.`;
   const publishing = ctx.publishing;
   const applied = review.get("applied");
   const extIds = review.get("extraction_ids");
@@ -1881,7 +1881,7 @@ function reviewAfterFailure(ctx: Ctx, rel: string, ref: string): string {
   const published = publishing.keys.filter((key) => applied.has(key)).length;
   const listed = extIds.some((id) => pyEquals(id, publishing.extractionId));
   if (published === publishing.keys.length && listed) return `The review ${rel} shows the publication as complete: all ${published} rows are published as ${pyStr(publishing.extractionId)}, and no publication is pending. Check the paths listed above; do not publish again.`;
-  if (published === 0 && !listed) return `The review ${rel} holds no pending publication, and none of its rows is published: it is as it was before this publish. Check the paths listed above, fix the problem, then run buildos extract bulk publish ${ref} again.`;
+  if (published === 0 && !listed) return `The review ${rel} holds no pending publication, and none of its rows is published: it is as it was before this publish. Check the paths listed above, fix the problem, then run the same publish command again.`;
   return uncertain;
 }
 

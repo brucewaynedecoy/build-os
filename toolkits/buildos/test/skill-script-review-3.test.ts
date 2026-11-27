@@ -7,7 +7,7 @@
 
 import assert from "node:assert/strict";
 import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, symlinkSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
 import { assertIncludes, assertSame, assertSameTree } from "./helpers.ts";
 import { buildos, canLink, CONFIG, envelopeOf, fixtureFile, frameWith, instrumented, merged, ownedReview, project, tree } from "./skill-script-support.ts";
@@ -369,7 +369,29 @@ describe("P9-F-07: after an incomplete undo, publish describes the review as it 
     });
     const r = await buildos(["extract", "bulk", "--root", dir, "publish", "REF-001"], dir, { openFs: factory });
     assertSame(r.exit, 10, "exit");
-    assertIncludes(r.stderr, `BuildOS cannot tell what the review ${REVIEW} holds now. Run buildos extract bulk check REF-001`);
+    assertIncludes(r.stderr, `BuildOS cannot tell what the review ${REVIEW} holds now. Run the same command with check in place of publish to see its state before you run publish again.`);
+  });
+
+  it("F-P8-11 review round 1 (finding 2): with --root from another folder, a release build says to rerun the adopter's own command, never a printed one that drops the root", async () => {
+    const dir = await ownedAndApproved();
+    let failed = false;
+    const { factory } = instrumented((method, path, n) => {
+      if (method === "writeFileAtomic" && path === ".os/data/requirements.jsonl" && n <= 2) {
+        failed = true;
+        return "after";
+      }
+      return failed && method === "readFileLimited" && path === REVIEW;
+    });
+    const elsewhere = dirname(dir);
+    const r = await buildos(["extract", "bulk", "--root", dir, "publish", "REF-001"], elsewhere, { openFs: factory, version: "0.2.0" });
+    assertSame(r.exit, 10, "exit");
+    assertIncludes(r.stderr, "holds now. Run the same command with check in place of publish to see its state before you run publish again.");
+    assert.ok(!/(?:buildos|build-os@0\.2\.0) extract/.test(r.stderr), "no printed extract command without the root");
+    const pending = await ownedAndApproved();
+    const intent = instrumented((method, path, n) => (method === "writeFileAtomic" && path === ".os/data/requirements.jsonl" && n <= 2 ? "after" : false));
+    const p = await buildos(["extract", "bulk", "--root", pending, "publish", "REF-001"], dirname(pending), { openFs: intent.factory, version: "0.2.0" });
+    assertIncludes(p.stderr, "Fix the problem above, then run the same publish command again to finish it.");
+    assert.ok(!/(?:buildos|build-os@0\.2\.0) extract/.test(p.stderr), "no printed extract command without the root");
   });
 });
 

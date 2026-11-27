@@ -56,6 +56,8 @@ export interface HelpEntry {
   summary: string;
   /** Full help text for `buildos <domain> --help`, ending in a newline. */
   help: string;
+  /** The help for a build with `version`, when a direction in it names a printed command (PE-023). Else `help`. */
+  helpFor?: (version: string) => string;
 }
 
 export interface Domain extends HelpEntry {

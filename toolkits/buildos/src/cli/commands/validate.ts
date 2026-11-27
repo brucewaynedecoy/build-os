@@ -18,6 +18,7 @@ import type { CommandContext, CommandOutcome, Domain } from "../domain.ts";
 import { EXIT_CODES } from "../exit-codes.ts";
 import { parseCommandFlags } from "../parse.ts";
 import { UsageError } from "../usage-error.ts";
+import { printedRun } from "../../core/shared/run-command.ts";
 
 const COMMAND = "buildos validate";
 const FLAGS = { root: "string", json: "boolean" } as const;
@@ -58,13 +59,14 @@ function runValidate(args: readonly string[], context: CommandContext): CommandO
   context.setCommand("validate");
   if (positionals.length !== 0) throw new UsageError(`validate takes no arguments; got ${positionals[0] ?? ""}`, { command: COMMAND, json });
 
-  const { root, result } = validateProject({ root: values.root, cwd: context.io.cwd, openFs: context.openFs });
+  const run = printedRun(context.buildInfo.version, process.platform);
+  const { root, result } = validateProject({ root: values.root, cwd: context.io.cwd, openFs: context.openFs, run });
   const passed = result.status === "passed";
   const exitCode = passed ? EXIT_CODES.ok : EXIT_CODES.contract;
   if (json) {
     const diagnostics: Diagnostic[] = passed
       ? []
-      : [{ code: "validation_failed", severity: "error", message: result.summary, correction: "Fix each finding in result.findings, then run buildos validate again." }];
+      : [{ code: "validation_failed", severity: "error", message: result.summary, correction: "Fix each finding in result.findings, then run the same validate command again." }];
     const envelope = createEnvelope({
       ok: passed,
       command: "validate",
@@ -100,7 +102,7 @@ export function humanReport(root: string, result: ValidateResult): string {
     for (const finding of findings) lines.push(`  ${finding.field}: ${finding.message} [${finding.code}]`);
     lines.push("");
   }
-  lines.push("Fix each problem, then run buildos validate again.");
+  lines.push("Fix each problem, then run the same validate command again.");
   return `${lines.join("\n")}\n`;
 }
 

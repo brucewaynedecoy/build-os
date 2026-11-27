@@ -124,7 +124,7 @@ describe("buildos validate: command", () => {
     assert.equal(out.exit, 4);
     assert.equal(out.stderr, "");
     assert.match(out.stdout, /^Project folder: .+\nChecked: .+\n\nFound 3 problems\.\n\n\.os\/config\/instance\.yaml\n {2}systems\[1\]\.id: "Second_System" must be a stable slug: .+ \[not_slug\]\n/);
-    assert.match(out.stdout, /\nFix each problem, then run buildos validate again\.\n$/);
+    assert.match(out.stdout, /\nFix each problem, then run the same validate command again\.\n$/);
   });
 
   it("--json: the shared envelope with every finding, ok false, and one diagnostic", async () => {

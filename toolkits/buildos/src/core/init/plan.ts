@@ -112,11 +112,25 @@ export interface InitNote {
 /** The legacy Python validator of a Go-era project. Adoption leaves it as it is. */
 export const LEGACY_VALIDATOR_PATH = ".os/scripts/validate_config.py";
 
-/** P7-R1-09: the note when adoption finds the legacy validator. */
-export const LEGACY_VALIDATOR_NOTE = `${LEGACY_VALIDATOR_PATH} is the old Python config check. BuildOS no longer uses it: run buildos validate (.os/scripts/buildos validate) instead. Where .os/scripts/AGENTS.md or your own notes name the old script, use buildos validate instead. BuildOS left the file as it is. You can delete it.`;
+/**
+ * P7-R1-09: the note when adoption finds the legacy validator. It names the
+ * project wrapper alone, with no version in it, so it stays true after an
+ * upgrade (F-P8-11 review round 1, finding 5): adoption writes the wrapper.
+ * The wrapper checks the folder it is run in, so the note names the project
+ * folder (F-P8-11 review round 2, finding 1): an adoption with --root from
+ * another folder must not send the adopter to validate the wrong folder.
+ * A dry run only plans the wrapper, so the command is for after adoption
+ * completes (F-P8-11 review round 3, finding 2): one wording, true for the
+ * dry run and the applied run.
+ */
+export function legacyValidatorNote(root: string): string {
+  return `${LEGACY_VALIDATOR_PATH} is the old Python config check. BuildOS no longer uses it. After adoption completes, in the project folder ${root}, run .os/scripts/buildos validate instead (on Windows, .os\\scripts\\buildos.cmd validate). Where .os/scripts/AGENTS.md or your own notes name the old script, use that command instead. BuildOS left the file as it is. You can delete it.`;
+}
 
 export interface PlanInput {
   fs: FsPort;
+  /** The project folder as the output shows it (`PreparedInit.root`), for the notes. */
+  root: string;
   hash: HashPort;
   content: PackageContent;
   /** The `.os/manifest.json` text. */
@@ -181,7 +195,7 @@ export function planInit(input: PlanInput): InitPlan {
           path: found.path,
           problem: "replace_too_large",
           message: `${found.path} is larger than ${SHARED_FILE_MAX_BYTES / (1024 * 1024)} MiB, so BuildOS cannot keep a copy to put back if setup fails.`,
-          fix: "Move the file away, then run `buildos init` again.",
+          fix: "Move the file away, then run the same init command again.",
         });
       } else if (before.links > 1) {
         // W1 R7 P6 review rounds 3 and 4: the replace would break the hard link (of a file, or of a link itself), so it stops before Make Docs runs.
@@ -204,7 +218,7 @@ export function planInit(input: PlanInput): InitPlan {
   // P7-R1-09: an adopted Go-era project may still have the old Python validator. It is not changed; the result says so.
   const notes: InitNote[] = [];
   // P7-R2-07: only a regular file (its folder entry, not followed) is the old validator; a folder or a link at that name is not.
-  if (setup === "adoption" && look(LEGACY_VALIDATOR_PATH).kind === "file") notes.push({ code: "legacy_validator_kept", path: LEGACY_VALIDATOR_PATH, message: LEGACY_VALIDATOR_NOTE });
+  if (setup === "adoption" && look(LEGACY_VALIDATOR_PATH).kind === "file") notes.push({ code: "legacy_validator_kept", path: LEGACY_VALIDATOR_PATH, message: legacyValidatorNote(input.root) });
   return { setup, entries, shared, clashes, problems, rootRouters, ...routers, ...(notes.length > 0 ? { notes } : {}) };
 }
 
@@ -262,7 +276,7 @@ function routerOwners(look: (path: string) => FoundEntry, read: (path: string) =
   return { foreignRouters, missingRouters };
 }
 
-const MANIFEST_FIX_VALID = "Put back a good copy of .os/manifest.json. To have BuildOS adopt this folder again instead, move .os/manifest.json away. Then run `buildos init` again.";
+const MANIFEST_FIX_VALID = "Put back a good copy of .os/manifest.json. To have BuildOS adopt this folder again instead, move .os/manifest.json away. Then run the same init command again.";
 
 /** `.os/manifest.json` read once with a bound, under the manifest contract (`parseManifest`), or why it cannot be. */
 function readManifest(fs: FsPort, found: FoundEntry): { manifest: ProjectManifest } | InitProblem {
@@ -272,7 +286,7 @@ function readManifest(fs: FsPort, found: FoundEntry): { manifest: ProjectManifes
       path: found.path,
       problem: "manifest_not_a_file",
       message: `${found.path} is ${what}, so BuildOS cannot tell how this folder was set up.`,
-      fix: "Move it away, then run `buildos init` again.",
+      fix: "Move it away, then run the same init command again.",
     };
   }
   const read = fs.readFileLimited(found.path, MANIFEST_MAX_BYTES);

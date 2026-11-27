@@ -141,7 +141,7 @@ export function applyInit(plan: InitPlan, fs: FsPort): void {
           ? fs.matchesEntry(shared.path, { kind: "symlink", target: shared.linkTarget ?? "" }) && sameEntry(fs.resolvedId(shared.path), fs.entryId(shared.linkTo))
           : fs.matchesEntry(shared.path, { kind: "file", data: shared.before ?? new Uint8Array(), ...(shared.mode === undefined ? {} : { mode: shared.mode }), ...(shared.id === undefined ? {} : { id: shared.id }) });
       if (!still) {
-        throw new NeedsOperatorReviewError(`${shared.path} changed while buildos init was running`, { code: "init_shared_file_changed", correction: "Run `buildos init` again." });
+        throw new NeedsOperatorReviewError(`${shared.path} changed while buildos init was running`, { code: "init_shared_file_changed", correction: "Run the same init command again." });
       }
     }
   } catch (error) {
