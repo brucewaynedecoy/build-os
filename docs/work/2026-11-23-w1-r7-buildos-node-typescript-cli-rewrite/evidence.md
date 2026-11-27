@@ -6902,3 +6902,47 @@ New follow-ups:
 #### Checks (Review Round 3 Fix Pass)
 
 Local, from `toolkits/buildos/` (macOS arm64, Node 26.13.1, npm 11.20.0): `npm ci --ignore-scripts`, `npm run typecheck`, and `npm run build` exit 0; `npm test` exit 0, 2,817 tests, 2,804 pass, 0 fail, 13 skipped. `node test/golden/skills/capture.ts --check --script azure-boards` exit 0, 11 cases; `--script bulk-extract` exit 0, 35 cases; `--script fitgap --python <venv>/bin/python` exit 0, 15 cases, with openpyxl 3.1.5 and et_xmlfile 2.0.0 from the pinned wheel hashes in a throwaway virtual environment. From the repository root: `make-docs project paths validate` exit 0 (valid, 0 failing findings); `make-docs check prd` exit 0 (no diagnostics). The guide source did not change, so the guide app was not rebuilt.
+
+## F-P9-04 Capability-Matrix Command (2026-11-26)
+
+Branch `feat/capability-matrix-command`, stacked on pull request 9 (`fix/f-p8-11-printed-commands`, head `f93be66`), which was not merged when this work started. The owner decided on 2026-11-26 that the `capability-matrix` skill gets its own BuildOS command in `0.2.0`, so that no skill needs Python and the named exception of the no-Python check goes away (F-P9-04; see [Owner Decisions 2026-11-26 (Recorded in Review Round 1)](#owner-decisions-2026-11-26-recorded-in-review-round-1), item 2). This section records the design, written before the code, and then what was built. No version, release candidate, tag, release, or stage changed.
+
+### The Tool (F-P9-04)
+
+The skill `system/.os/skills/capability-matrix/SKILL.md` embeds its tool `cm_build.py` in the appendix "Appendix — `cm_build.py`" (a fenced `python` block, 271 lines) and tells the agent to write it to `build/cm_build.py` and run `python3 build/cm_build.py skeleton|assemble|fitgap|validate …`. The frozen source of behaviour is that block at commit `085927e3c1324fc73fe57af9493ca0b01fcaed18`, the first commit of the public repository and the revision the other three skill scripts are read from (`toolkits/buildos/test/golden/skills/script-source.ts`). `SKILL.md` is byte for byte the same at that commit, at `4dd86ce` (`main`), and at `f93be66`: SHA-256 `688b93048d50097644f72827f79a0e842bfcebca978e0c271c7b5b4a3b128a30`. The block (from the line after the opening fence to the line before the closing fence, with its final line break) has SHA-256 `559ccc27826acbb1dea53ebc829de0242922366672964beea218edd5f56d38a8`. It imports only the standard library (`argparse`, `csv`, `glob`, `json`, `os`, `re`, `sys`, `collections`).
+
+| Subcommand | Options | Reads | Writes | Script exit |
+| --- | --- | --- | --- | --- |
+| `skeleton` | `--skeleton` (required) | the skeleton JSON | nothing | 0; 1 with `FAIL` lines on stdout; 1 with a traceback |
+| `assemble` | `--skeleton` (required), `--parts` (one or more, files or `glob` patterns), `--out` (required), `--date` (default empty) | the skeleton and each part (a JSON list of capabilities) | `<out>/<code>-capability-model.json` (`json.dump`, `indent=1`, `ensure_ascii=False`, no final line break), `<out>/<code>-capabilities.csv` and `<out>/<code>-requirements.csv` (`csv.writer`, UTF-8 with a byte order mark, `\r\n`); `<code>` is the system code in lower case | 0; 1 with `assemble: …` on stderr (`sys.exit`); 1 with a traceback |
+| `fitgap` | `--mode` (`replacement`, the default, `selection`, or `integration`), `--baseline`, `--target`, `--models` (zero or more), `--rows` (one or more), `--only` (zero or more), `--out` (required), `--date` (default empty) | the models, the scored rows, the target-only rows | `<out>/<b>-<t>-fit-gap.csv` and `.json`, or in integration mode `<out>/<a>-<b>…-integration-map.csv` and `.json`; `<out>` is made first, before anything is read | 0; 1 with `fitgap: …` on stderr; 1 with a traceback |
+| `validate` | `--model` (required), `--narrative`, `--fitgap`, `--baseline`, `--target` | the model, `<model folder>/<code>-capabilities.csv` and `-requirements.csv`, the narrative, the fit/gap and its two models | nothing | 0 with `ALL CHECKS PASSED`; 1 with `*** N FAILURE(S) ***`; 1 with a traceback |
+
+argparse prints its usage and exits 2 for a missing required option, an unknown option, a value not in `--mode`'s choices, or no subcommand.
+
+### Design (Before the Code)
+
+Name and shape: `buildos capability-matrix skeleton|assemble|fitgap|validate`, with the script's options and the shared `--root`, `--json`, `--allow-outside-root`, and `--help`. The domain is named after the skill, as `buildos fitgap` is named after the tool of `fit-gap-analysis` and `buildos export azure-boards` after its target. The script's own name (`cm_build`) says nothing to an adopter, and its `fitgap` subcommand cannot be a domain, because `buildos fitgap` is the fit-gap-analysis command; under `capability-matrix` it is a subcommand and does not clash. PRD 20 Command Surface lists each `0.2.0` command in its table; this one is added there. Usage and help name `buildos` (PRD 20 Output and Exit Contract, SD-02).
+
+Built by the method of P9 Stages 1 and 2:
+
+- Core logic in `toolkits/buildos/src/core/capability-matrix/`, on the shared Python ports (`py-json.ts` for `json.load` and `json.dump`, `fitgap/py.ts` for Python value rules, the `glob` and `fnmatch` port of `buildos fitgap`, the `csv` reader of `extract/py-lines.ts`). The CLI adapter is `src/cli/commands/capability-matrix.ts`; it owns the parse, the output, and the exit code. Every write goes through the write plan of `ProjectFiles` (the filesystem port).
+- Writes follow the tool they replace: the script writes when it runs, with no dry run, so the command does too, as `buildos fitgap` does (no `--apply`).
+- Human stdout and stderr are the script's, byte for byte. `--json` prints the shared envelope with `result.output` (the stdout lines) and `result.written`, as `buildos fitgap` does.
+- Exit codes map as SD-01 maps `fitgap.py`: 0 done; 2 usage; 3 a file that cannot be read or has the wrong shape (the script's traceback); 4 a stop (`sys.exit` with a message) or a failed check (`FAIL` lines); 5 a failed write; 10 a write whose undo was incomplete.
+- Goldens: invented fixtures under `test/fixtures/skills/capability-matrix/` (the one neutral topic of the skill fixtures, a community library), captured by running the pinned block with Python 3 through `test/golden/skills/capture.ts`, which gains a fourth script without changing the other three's goldens. The parity test compares every golden byte for byte.
+
+Intended divergences, each forced by a rule the owner already decided (none needs an owner decision, except the one in the last row):
+
+| SD | Divergence | Rule that forces it |
+| --- | --- | --- |
+| SD-01 (rows added) | Exit codes as above; the script exits 1 for every failure and 2 for argparse | PRD 20 Output and Exit Contract |
+| SD-02 (steps added) | Usage errors and help name `buildos`; no argparse abbreviations | PRD 20 Output and Exit Contract |
+| SD-23 (new) | A traceback becomes one plain line on stderr, `capability-matrix <subcommand>: <what>`, exit 3; stdout up to that point stays the script's | PRD 20 (no stack trace), as SD-03 and SD-11 |
+| SD-24 (new) | Contained, checked, atomic reads and writes, as SD-04, SD-05, SD-06, and SD-13 already hold for `buildos fitgap`: every file read and every pattern match is inside the project folder; every output is inside it unless `--allow-outside-root` is given; the out folder is made only when the run writes, and a failed run writes nothing (the script made `--out` before any check, and left a partial file when it crashed after its first write); a companion CSV path that falls outside the project (`validate --model model.json` with no folder: the script looked for `/<code>-capabilities.csv`) counts as missing | PRD 20 Output and Exit Contract; SD-04 (owner decision 2026-11-25) |
+| SD-07 (applies) | Printed paths are as given; the root is never resolved through links | PRD 20 (one root model) |
+| SD-25 (new) | Written files and printed text are the same bytes on every system: Python's text mode wrote `\r\n` for each `\n` of the model JSON and of stdout on Windows | PRD 20 Compatibility (the same input gives the same bytes) |
+| SD-26 (new, owner question) | The script puts the system code into a regular expression unescaped (`re.fullmatch(rf'{code}-[A-Z]{{2,4}}-\d{{2,3}}[a-z]?', id)`). For a code with a pattern character (`\ . ^ $ * + ? { } [ ] | ( )`), Python's result depends on Python's pattern syntax (a code `A(` crashes, a code `A.B` also accepts `AxB-…`). BuildOS stops with a plain message (exit 4) instead of guessing Python's pattern rules | None decided: owner question Q1 below |
+
+Owner question Q1 (SD-26): (A) keep the stop for a code with a pattern character (recommended: real codes are letters and digits, the skill asks for a short upper-case code, and a stop names the code to change); (B) read the code as plain text in the id check, which differs from the script only for such codes.
+
