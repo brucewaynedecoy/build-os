@@ -31,7 +31,7 @@ Every file is UTF-8 JSON. Relative paths in `frame.json` resolve against the fol
 | `tracks` | Optional delivery plan: `[{"id", "name", "order", "timing", "description"}]`. When present, every scored row needs a `track` and `owners`, and the final `merge` needs a to-do list. |
 | `owners` | The parties that own work, for example `["Library Staff", "Platform Vendor", "Volunteer Team"]`. Use the names in `owners[].name` of `.os/config/instance.yaml` when the project config lists the parties. Required with `tracks`. |
 | `owner_roles` | Optional `{owner: what they are responsible for}`, shown on the Read Me sheet. |
-| `owner_colors` | Optional `{owner: {"fill": "RRGGBB", "font": "RRGGBB"}}` for the Owner column of the To-Dos sheet. An owner it leaves out takes the next color of the neutral palette in `config/owner-colors.json`, in owner order. The script holds no owner name and no owner color. |
+| `owner_colors` | Optional `{owner: {"fill": "RRGGBB", "font": "RRGGBB"}}` for the Owner column of the To-Dos sheet. An owner it leaves out takes the next color of the neutral palette in `config/owner-colors.json`, in owner order. BuildOS holds no owner name and no owner color. |
 | `scoring` | Optional overrides of any value in [Scores](#scores), for example `{"mark_points": {"partly": 40}}`. |
 
 ## Scored Rows (`scored/pkg-NN.json`)
@@ -68,7 +68,7 @@ Rules that `merge` checks:
 
 Use `descoped` only when the person has decided the organisation does not need that requirement in the target (for example, a layout of the old system they will not rebuild). It is not a softer `not_met`.
 
-Do not write `verdict`, `fit_score` or `priority`. The script computes them.
+Do not write `verdict`, `fit_score` or `priority`. `buildos fitgap` computes them.
 
 ## Target-Only Rows (`only.json`)
 

@@ -107,6 +107,6 @@ Create `adapters/<id>/ADAPTER.md` with these sections in this order:
 7. `Deterministic checks` — the rules the validator enforces.
 8. `Bundled files` — the authoring, template, and example files.
 
-Create `scripts/adapters/<id>.mjs` exporting `id`, `requiredParams`, `normalizeParams`, and `validateRows`.
+The deterministic checks of an adapter are part of the `buildos export azure-boards` command, so a new adapter also needs a BuildOS release that registers it. Ask the BuildOS maintainers for it; until then, `emit` and `validate` refuse the new adapter id.
 
 Add the row to the registered-adapter table and a trigger-signal block above.

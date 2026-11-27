@@ -35,8 +35,9 @@ To rebuild the workbook after a change to the objectives, weights or scores, go 
 
 | Name | Means |
 | --- | --- |
-| `<skill>` | The folder that holds this `SKILL.md`. The tool is `<skill>/scripts/fitgap.py`. |
-| `<root>` | The folder that holds the capability-matrix `deliver/` and `build/` folders. In a BuildOS project that is usually the project root. |
+| `<project>` | The BuildOS project folder, the one that holds `.os/` |
+| `<buildos>` | The project wrapper `<project>/.os/scripts/buildos` (`<project>\.os\scripts\buildos.cmd` on Windows) |
+| `<root>` | The folder that holds the capability-matrix `deliver/` and `build/` folders. It is inside `<project>`, and is usually `<project>` itself. |
 | `<a>`, `<b>` | The baseline and target codes, in lower case, such as `circ` and `lib` |
 | `<build>` | `<root>/build/fit-gap-analysis/<a>-<b>`, the working folder for this pair |
 | `<frame>` | `<build>/frame.json` |
@@ -44,7 +45,7 @@ To rebuild the workbook after a change to the objectives, weights or scores, go 
 
 Use absolute paths in every command and in every sub-agent task message, because the working folder can reset between calls. Never write into the capability-matrix folders.
 
-The tool needs Python 3, and `workbook` also needs `openpyxl`. Run `workbook` with `uv run --with openpyxl python …`, or install `openpyxl` first. BuildOS plans to replace this script with the `buildos fitgap` command in BuildOS 0.2.0; until then this skill needs Python.
+The tool is the `buildos fitgap` command, run through `<buildos>`. It needs Node.js 24 or newer and nothing else. Every command below takes `--root <project>`. It reads only files inside `<project>`, and it writes outside `<project>` only with `--allow-outside-root`; use that only when the person asks for an output outside the project.
 
 ## Outputs
 
@@ -76,7 +77,7 @@ Make a task list with these eight steps before you start. The run is long, and t
 1. Search the project for `*-capability-model.json`. For an older run, search for `*-capabilities.csv`.
 2. Tell the person which system you take as the baseline and which as the target, and the mode (`replacement` or `selection`). The baseline is the system whose capabilities get scored: in a replacement, the system in use today.
 3. Write `<frame>` with no objectives yet.
-4. Run `python3 <skill>/scripts/fitgap.py frame --frame <frame>`. Fix every `FAIL`. It warns that there are no objectives; step 2 fixes that. An older CSV run needs a `maturity_map` only when its CSVs have no `maturity` column.
+4. Run `<buildos> fitgap frame --root <project> --frame <frame>`. Fix every `FAIL`. It warns that there are no objectives; step 2 fixes that. An older CSV run needs a `maturity_map` only when its CSVs have no `maturity` column.
 
 ### 2. Get the objectives confirmed
 
@@ -97,11 +98,11 @@ An objective that no capability can serve, such as cost or timeline, still goes 
 
 If the person ranks objectives more finely than must, should and could, keep the weight and add `rank` (1 = most important); rank breaks priority ties.
 
-**Optional delivery plan.** When the person wants phases or a split of work between parties, add `tracks` and `owners` (and `owner_roles`) to the frame. Take the owner names from `owners[].name` in the project config `.os/config/instance.yaml` when it lists the parties; add a party it does not list only when the person confirms it. The To-Dos sheet colors each owner from `<skill>/config/owner-colors.json`, in owner order; the frame may set `owner_colors` instead. Then give every scored row a `track` and `owners`, and write `<build>/todos.json` (format in `references/formats.md`). The workbook then adds Roadmap and To-Dos sheets. Confirm the tracks and owners with the person like the objectives.
+**Optional delivery plan.** When the person wants phases or a split of work between parties, add `tracks` and `owners` (and `owner_roles`) to the frame. Take the owner names from `owners[].name` in the project config `.os/config/instance.yaml` when it lists the parties; add a party it does not list only when the person confirms it. The To-Dos sheet colors each owner from `<project>/.os/skills/fit-gap-analysis/config/owner-colors.json`, in owner order; the frame may set `owner_colors` instead. Then give every scored row a `track` and `owners`, and write `<build>/todos.json` (format in `references/formats.md`). The workbook then adds Roadmap and To-Dos sheets. Confirm the tracks and owners with the person like the objectives.
 
 ### 3. Make the scoring packages
 
-Run `python3 <skill>/scripts/fitgap.py packages --frame <frame> --out <build>`.
+Run `<buildos> fitgap packages --root <project> --frame <frame> --out <build>`.
 
 It refuses to run with no objectives. It splits the baseline capabilities, in model order, into packages of about 180 requirements (change it with `--max-requirements`). A package can hold more than one layer. It also writes `target-index.json`, `target-requirements.csv` and `objectives.md`.
 
@@ -118,7 +119,7 @@ It refuses to run with no objectives. It splits the baseline capabilities, in mo
 
 ### 5. Do the target-only pass
 
-1. Run `python3 <skill>/scripts/fitgap.py uncited --frame <frame> --rows "<build>/scored/*.json" --out <build>/uncited.json`.
+1. Run `<buildos> fitgap uncited --root <project> --frame <frame> --rows "<build>/scored/*.json" --out <build>/uncited.json`. Keep the quotes: BuildOS expands the pattern itself.
 2. Write `<build>/only.json`: one row for each uncited target capability. These are things the target has that the baseline never asked for. Write them as opportunities, not risks. You write them yourself, because there are few and they need judgment. Read each one in the target narrative first.
 
 If you change any marks later, run this step again: the uncited set can change.
@@ -128,7 +129,7 @@ If you change any marks later, run this step again: the uncited set can change.
 Run:
 
 ```text
-python3 <skill>/scripts/fitgap.py merge --frame <frame> --rows "<build>/scored/*.json" --only <build>/only.json --out <deliver> --draft
+<buildos> fitgap merge --root <project> --frame <frame> --rows "<build>/scored/*.json" --only <build>/only.json --out <deliver> --draft
 ```
 
 Then read the result before you write any findings:
@@ -152,7 +153,7 @@ Take every number from the merged JSON. Compute it. Do not estimate it.
 ### 8. Build the final workbook
 
 1. Run the step 6 `merge` again, without `--draft` and with `--findings <build>/findings.json` (and `--todos <build>/todos.json` when the frame has tracks). It refuses until the objectives are confirmed, every uncited target capability has a row, the findings are complete and, with tracks, the to-do list is valid.
-2. Run `uv run --with openpyxl python <skill>/scripts/fitgap.py workbook --frame <frame> --fitgap <deliver>/<a>-<b>-fit-gap-analysis.json`.
+2. Run `<buildos> fitgap workbook --root <project> --frame <frame> --fitgap <deliver>/<a>-<b>-fit-gap-analysis.json`.
 3. Every check must print `PASS`.
 
 After any later change to the frame, the scored rows, `only.json`, `todos.json` or `findings.json`, run the steps from 5 again. The workbook is always built from the JSON, never edited by hand.
@@ -180,7 +181,7 @@ Do not recap the steps.
 ## Rules
 
 - **Fidelity.** A mark rests only on the target model and its sources. Do not add what the target platform "obviously" does. A wrong `met` is worse than a cautious `partly`, because someone will plan against it.
-- **The script decides.** The verdict, fit score, priority and decision flags come from `fitgap.py`. Never write them by hand. To change a verdict, change the marks, with evidence.
+- **BuildOS decides.** The verdict, fit score, priority and decision flags come from `buildos fitgap`. Never write them by hand. To change a verdict, change the marks, with evidence.
 - **Models are read-only.** If a model is wrong or thin, stop and tell the person to fix it with `capability-matrix`. Do not patch it here.
 - **Objectives come from the person.** You draft them. The person confirms them.
 

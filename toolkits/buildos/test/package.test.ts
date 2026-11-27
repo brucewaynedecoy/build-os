@@ -116,24 +116,19 @@ describe("npm pack (t11)", () => {
     assertSame(content.files.find((f) => f.path === ".gitignore")?.stored, "_dot.gitignore");
   });
 
-  // W1 R7 P8 t14: no Python file ships to users outside the skill scripts of
-  // the two skills that P9 (0.2.0) moves to CLI commands. Every BuildOS
-  // command is TypeScript; a new Python file anywhere else in the package
-  // fails here.
-  it("t14: the only Python files are the skill scripts that P9 removes", () => {
+  // W1 R7 P8 t14, W1 R7 P9 t9: no Python file ships to users. P9 removed the
+  // last ones, the skill scripts of buildos-bulk-extract and fit-gap-analysis,
+  // which the commands `buildos extract bulk` and `buildos fitgap` replace.
+  // A Python file anywhere in the package fails here.
+  it("t14: the package holds no Python file", () => {
     const dry = npm(["pack", "--dry-run", "--json"], stage);
     assert.equal(dry.status, 0, shape(dry.stderr));
     const files = (JSON.parse(dry.stdout) as { files: { path: string }[] }[])[0]!.files.map((f) => f.path);
     const python = files.filter((path) => /\.(?:py|pyc|pyo|pyw|pyz|ipynb)$/i.test(path) || /(?:^|\/)(?:requirements[^/]*\.txt|pyproject\.toml|setup\.py|__pycache__)(?:$|\/)/i.test(path)).sort();
-    assertSameList(
-      python,
-      [
-        "dist/system/.os/skills/buildos-bulk-extract/scripts/work.py",
-        "dist/system/.os/skills/buildos-bulk-extract/tests/test_work.py",
-        "dist/system/.os/skills/fit-gap-analysis/scripts/fitgap.py",
-      ],
-      "Python files in the package",
-    );
+    assertSameList(python, [], "Python files in the package");
+    // No script of the removed skill scripts ships either (the Azure Boards
+    // scripts were Node.js; `buildos export azure-boards` replaces them).
+    assertSameList(files.filter((path) => /^dist\/system\/\.os\/skills\/[^/]+\/(?:scripts|tests)\//.test(path)), [], "skill script files in the package");
   });
 });
 

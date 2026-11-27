@@ -80,6 +80,11 @@ jobs:
       - name: Dependency policy guard (installed manifests)
         run: node scripts/check-dependencies.ts --installed
 
+      # W1 R7 P9 t10, A79: no Python file and no Python call in the packaged
+      # skills, except the named exception that waits for the owner (F-P9-04).
+      - name: No-Python check of the packaged skills
+        run: node scripts/check-no-python.ts
+
       # W1 R7 P8 t2: two release builds of this commit, each from an empty
       # dist/, must give the same tarball bytes (scripts/reproducible-pack.ts).
       # Runs before the tests, on the clean checkout, and removes dist/ after,
@@ -149,6 +154,84 @@ jobs:
 
       - name: npm audit (fails on high or critical)
         run: npm audit --audit-level=high
+
+  # W1 R7 P9 t11, A80: the three commands that replaced the skill scripts run
+  # with Node 24 and no Python. The runner images have Python, so the checks
+  # run with a PATH that holds only a copy of node (and sh, which the project
+  # wrapper's first line starts; on Windows, System32 for cmd.exe and
+  # where.exe). scripts/no-python-smoke.ts first proves that no python,
+  # python3, or py program is on that PATH, then runs the skills' commands
+  # through the project wrapper of a new project with the packed package
+  # installed, and every fixture case through the installed bin. The
+  # skill-script parity test runs with the same PATH.
+  no-python:
+    name: no Python (${{ matrix.os }}, Node 24)
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: toolkits/buildos
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      - name: Dependency policy guard (lockfile and .npmrc)
+        run: node scripts/check-dependencies.ts
+
+      - name: Install with install scripts off
+        run: npm ci --ignore-scripts
+
+      - name: Dependency policy guard (installed manifests)
+        run: node scripts/check-dependencies.ts --installed
+
+      - name: No-Python check of the packaged skills
+        run: node scripts/check-no-python.ts
+
+      # The tarball name comes from npm pack --json, never from a glob (see
+      # the installed-tarball step of the test job).
+      - name: Build, pack, and install the package into a new project
+        run: |
+          npm run build
+          tarball=$(npm pack --pack-destination "$RUNNER_TEMP" --json | node -e 'let s="";process.stdin.on("data",(d)=>s+=d).on("end",()=>console.log(JSON.parse(s)[0].filename))')
+          mkdir "$RUNNER_TEMP/project"
+          node dist/buildos.js init --root "$RUNNER_TEMP/project" --skip-make-docs
+          npm install --offline --ignore-scripts --no-save --no-audit --no-fund --prefix "$RUNNER_TEMP/project" "$RUNNER_TEMP/$tarball"
+
+      # On Windows, Git Bash gives RUNNER_TEMP as a Windows path, so the PATH
+      # entries are converted with cygpath.
+      - name: Make a PATH with Node and no Python
+        run: |
+          temp=$RUNNER_TEMP
+          if [ "$RUNNER_OS" = Windows ]; then temp=$(cygpath -u "$RUNNER_TEMP"); fi
+          bin="$temp/no-python-bin"
+          mkdir "$bin"
+          if [ "$RUNNER_OS" = Windows ]; then
+            cp "$(command -v node)" "$bin/node.exe"
+            echo "NO_PYTHON_NODE=$bin/node.exe" >> "$GITHUB_ENV"
+            echo "NO_PYTHON_PATH=$bin:$(cygpath -u "$SYSTEMROOT")/System32" >> "$GITHUB_ENV"
+          else
+            ln -s "$(command -v node)" "$bin/node"
+            ln -s /bin/sh "$bin/sh"
+            echo "NO_PYTHON_NODE=$bin/node" >> "$GITHUB_ENV"
+            echo "NO_PYTHON_PATH=$bin" >> "$GITHUB_ENV"
+          fi
+
+      - name: The three commands from the installed package, with no Python on PATH
+        run: PATH="$NO_PYTHON_PATH" "$NO_PYTHON_NODE" scripts/no-python-smoke.ts --project "$RUNNER_TEMP/project" --work "$RUNNER_TEMP/no-python-work"
+
+      - name: Skill-script parity, with no Python on PATH
+        run: PATH="$NO_PYTHON_PATH" "$NO_PYTHON_NODE" --test --test-reporter=spec test/skill-script-parity.test.ts
 
   # W1 R7 P8 t2: compares the tarball content lists of the three systems with
   # the Linux one and prints each difference. Report only (a warning, never a

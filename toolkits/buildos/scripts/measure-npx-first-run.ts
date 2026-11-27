@@ -9,15 +9,19 @@
 // Writes one JSON document to stdout. Every repetition uses a new empty npm
 // cache folder and new empty working folders below one temporary root, which
 // is removed at the end; no path is printed. npm install scripts and npm's
-// update notice are off. The profile that governs its use is
+// update notice are off. Every child starts with the folder of the Node.js
+// that runs this script first on PATH, so the BuildOS CLI that npx starts by
+// the name `node` runs under that same Node.js (follow-up F-P8-12); the
+// script checks that before it measures, and records it as child_node. The profile that governs its use is
 // `## PERF-002 Profile` in the W1 R7 P8 work file.
 
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync } from "node:fs";
 import { arch, cpus, platform, release, tmpdir, totalmem } from "node:os";
 import { dirname, join } from "node:path";
 import { parseArgs } from "node:util";
+import { withNodeFirst } from "./node-first-path.ts";
 
 const { values } = parseArgs({
   options: {
@@ -47,8 +51,16 @@ const root = mkdtempSync(join(tmpdir(), "buildos-perf-002-"));
 const env = (cache: string): NodeJS.ProcessEnv => {
   const e: NodeJS.ProcessEnv = { ...process.env, npm_config_cache: cache, npm_config_ignore_scripts: "true", npm_config_update_notifier: "false", npm_config_fund: "false", npm_config_audit: "false" };
   for (const key of Object.keys(e)) if (key.startsWith("BUILDOS_") || /^npm_config_(prefer_offline|offline|prefer_online)$/i.test(key)) delete e[key];
-  return e;
+  return withNodeFirst(e);
 };
+
+// F-P8-12: the `node` a child finds on its PATH is the Node.js that runs this script.
+const childNode = spawnSync("node", ["-p", "process.version + ' ' + process.execPath"], { encoding: "utf8", env: env(join(tmpdir(), "unused")) });
+const [childVersion = "", ...childExec] = String(childNode.stdout ?? "").trim().split(" ");
+if (childNode.status !== 0 || childVersion !== process.version || realpathSync(childExec.join(" ") || ".") !== realpathSync(process.execPath)) {
+  process.stderr.write("measure-npx-first-run: the node on the child PATH is not the Node.js that runs this script\n");
+  process.exit(1);
+}
 
 interface Sample {
   ms: number;
@@ -122,6 +134,7 @@ process.stdout.write(
       tarball_sha256: digest,
       tarball_bytes: tarballBytes,
       node: process.version,
+      child_node: childVersion,
       npm: npmVersion,
       platform: `${platform()} ${release()} ${arch()}`,
       cpu: cpus()[0]?.model ?? "unknown",

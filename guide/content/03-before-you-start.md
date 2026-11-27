@@ -74,10 +74,10 @@ The program that has to be installed before code written in a given language wil
 
 | Runtime | What needs it | Where you meet it |
 | --- | --- | --- |
-| Node.js 24 or newer | every BuildOS command, and the work-tracker export skill | [Install and configure your instance](04-install-and-configure-your-instance.md) |
-| Python 3 | three skills' own helper tools until BuildOS `0.2.0`: bulk extraction, fit-gap analysis, and the capability matrix. No BuildOS command needs it | [Install and configure your instance](04-install-and-configure-your-instance.md), section Skills |
+| Node.js 24 or newer | every BuildOS command, and every skill that runs one | [Install and configure your instance](04-install-and-configure-your-instance.md) |
+| Python 3 | one skill's own tool: the capability matrix. With BuildOS `0.1.0`, also bulk extraction and fit-gap analysis; from `0.2.0`, those two run BuildOS commands. No BuildOS command needs it | [Install and configure your instance](04-install-and-configure-your-instance.md), section Skills |
 
-Install Node.js 24 or newer now, from `https://nodejs.org` or your company's software portal. To check it, run `node --version`: it must print `v24` or a higher number. Install Python 3 only if you plan to use one of those three skills. A missing runtime discovered halfway through a task is an expensive interruption.
+Install Node.js 24 or newer now, from `https://nodejs.org` or your company's software portal. To check it, run `node --version`: it must print `v24` or a higher number. Install Python 3 only if you plan to use one of those skills. A missing runtime discovered halfway through a task is an expensive interruption.
 
 ### Branch
 

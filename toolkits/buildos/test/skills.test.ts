@@ -126,13 +126,18 @@ describe("packaged skills: source folder (A54, A57, t7)", () => {
     assertSame(listSourceContent(dir).map((f) => f.path), [".os/skills/s/SKILL.md"]);
   });
 
+  // W1 R7 P9 t9: the fit-gap code is the `buildos fitgap` command (src/core/fitgap/), not a skill script.
   it("fit-gap-analysis code holds no owner name and no owner color; owner colors come from config", () => {
-    const code = readFileSync(join(SKILLS, "fit-gap-analysis", "scripts", "fitgap.py"), "utf8");
+    const dir = join(PACKAGE, "src", "core", "fitgap");
+    const code = readdirSync(dir).filter((f) => f.endsWith(".ts")).map((f) => readFileSync(join(dir, f), "utf8")).join("\n");
     // Every literal (fill, font) color pair belongs to a verdict or mark vocabulary entry, never to an owner.
-    const vocabulary = new Set(["native", "configurable", "partial", "unreleased", "gap", "met", "configured", "partly", "not_met", "DESCOPED"]);
-    for (const match of code.matchAll(/(['"]?)(\w+)\1: \('[0-9A-Fa-f]{6}', '[0-9A-Fa-f]{6}'\)/g)) assert.ok(vocabulary.has(match[2]!), `color constant for ${tag(String(match[2]))}`);
-    assert.ok(/OWNER_COLORS_FILE = os\.path\.join\(.*'config', 'owner-colors\.json'\)/.test(code), "OWNER_COLORS_FILE");
-    assert.ok(/ocol = owner_colors\(/.test(code), "owner_colors call");
+    // `colors` is the heat-map color scale of the workbook, not an owner.
+    const vocabulary = new Set(["native", "configurable", "partial", "unreleased", "gap", "met", "configured", "partly", "not_met", "[DESCOPED]", "colors"]);
+    const pairs = [...code.matchAll(/(['"]?)(\[?\w+\]?)\1: \["[0-9A-Fa-f]{6}", "[0-9A-Fa-f]{6}"\]/g)];
+    assert.ok(pairs.length >= 12, `the verdict and mark color pairs are found (${pairs.length})`);
+    for (const match of pairs) assert.ok(vocabulary.has(match[2]!), `color constant for ${tag(String(match[2]))}`);
+    assert.ok(/export const OWNER_COLORS_FILE = "\.os\/skills\/fit-gap-analysis\/config\/owner-colors\.json";/.test(code), "OWNER_COLORS_FILE");
+    assert.ok(/const ocol = ownerColors\(/.test(code), "ownerColors call");
     const config = JSON.parse(readFileSync(join(SKILLS, "fit-gap-analysis", "config", "owner-colors.json"), "utf8")) as Record<string, unknown>;
     assertSame(Object.keys(config).sort(), ["$comment", "palette"], "the palette has no owner names");
     assert.ok(Array.isArray(config["palette"]) && config["palette"].length > 0);
@@ -154,13 +159,16 @@ describe("packaged skills: instructions (t10, P7-O10)", () => {
     assertNoProblems(problems, "skill instructions");
   });
 
-  it("the Azure Boards skill rebuilds both golden CSVs byte for byte (CRLF kept by .gitattributes)", () => {
+  // W1 R7 P9 t9: the skill's command is `buildos export azure-boards`, run here in a fresh project
+  // as the skill runs it, from the project root with the skill's own manifests.
+  it("buildos export azure-boards rebuilds both golden CSVs of the skill byte for byte (CRLF kept by .gitattributes)", () => {
     const skill = join(SKILLS, "buildos-export-azure-boards");
+    const root = temp();
+    assert.equal(init(root, ["--skip-make-docs"]).exit, 0);
     for (const [manifest, golden] of [["assets/synthetic-manifest.json", "assets/synthetic-golden-example.csv"], ["assets/adapters/dynamics-365-ce-manifest.json", "assets/adapters/dynamics-365-ce-golden-example.csv"]] as const) {
-      const out = join(temp(), "out.csv");
-      const result = spawnSync(process.execPath, [join(skill, "scripts", "azure_boards_csv.mjs"), "emit", "--input", join(skill, manifest), "--output", out], { encoding: "utf8" });
+      const result = spawnSync(process.execPath, [MAIN, "export", "azure-boards", "emit", "--input", `.os/skills/buildos-export-azure-boards/${manifest}`, "--output", "workspace/out.csv"], { cwd: root, encoding: "utf8", env: { ...process.env, PATH: "" } });
       assert.equal(result.status, 0, shape(result.stderr));
-      assertSame(readFileSync(out), readFileSync(join(skill, golden)), tag(String(golden)));
+      assertSame(readFileSync(join(root, "workspace", "out.csv")), readFileSync(join(skill, golden)), tag(String(golden)));
     }
   });
 
@@ -267,6 +275,9 @@ const SKILL_PATH_KINDS: Record<string, "make-docs" | "conditional" | "output" | 
   // Written by a BuildOS command or by the workflow itself.
   ".os/indexes/references.json": "output",
   "workspace/findings/FIND-NNN/": "output",
+  // The Azure Boards contract's example outputs (W1 R7 P9 t9): inside the project, as the command requires.
+  "workspace/azure-boards.csv": "output",
+  "workspace/azure-boards-template.csv": "output",
   // Inside the skill's own folder.
   "assets/new-items-template.csv": "skill",
   "assets/target-17-column-template.csv": "skill",

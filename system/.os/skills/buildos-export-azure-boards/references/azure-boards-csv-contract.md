@@ -148,30 +148,30 @@ Use target-project values only. `tags` can be a string or an array.
 Emit:
 
 ```sh
-node .os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs emit \
-  --input assets/synthetic-manifest.json \
-  --output /tmp/azure-boards.csv \
+.os/scripts/buildos export azure-boards emit \
+  --input .os/skills/buildos-export-azure-boards/assets/synthetic-manifest.json \
+  --output workspace/azure-boards.csv \
   --profile target17-new
 ```
 
 Validate:
 
 ```sh
-node .os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs validate \
-  --input /tmp/azure-boards.csv \
+.os/scripts/buildos export azure-boards validate \
+  --input workspace/azure-boards.csv \
   --profile target17-new
 ```
 
 Validate with an adapter. The adapter reads its parameters from `--adapter-params`, then from the CSV itself:
 
 ```sh
-node .os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs validate \
-  --input /tmp/azure-boards.csv \
+.os/scripts/buildos export azure-boards validate \
+  --input workspace/azure-boards.csv \
   --profile target17-new \
   --adapter dynamics-365-ce
 
-node .os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs validate \
-  --input /tmp/azure-boards.csv \
+.os/scripts/buildos export azure-boards validate \
+  --input workspace/azure-boards.csv \
   --adapter dynamics-365-ce \
   --adapter-params '{"publisher_prefix":"ex_"}'
 ```
@@ -179,14 +179,14 @@ node .os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs validat
 List registered adapters and their required parameters:
 
 ```sh
-node .os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs adapters
+.os/scripts/buildos export azure-boards adapters
 ```
 
 Create a header-only target template:
 
 ```sh
-node .os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs template \
-  --output /tmp/azure-boards-template.csv \
+.os/scripts/buildos export azure-boards template \
+  --output workspace/azure-boards-template.csv \
   --profile target17-new
 ```
 
@@ -203,11 +203,13 @@ The emitter writes:
 
 It quotes fields that contain commas, quotes, carriage returns, or line feeds.
 
+It adds no guard character to a field that starts with `=`, `+`, `-`, or `@`, so the file imports into Azure Boards unchanged. A spreadsheet program that opens the CSV may read such a field as a formula. Import the file with Azure Boards' CSV import, and open it in a spreadsheet program only when you trust every text in the manifest.
+
 ## Validation split
 
-The script validates deterministic structure. The agent validates meaning.
+The command validates deterministic structure. The agent validates meaning.
 
-The script checks:
+The command checks:
 
 - adapter registration and required parameters;
 - every deterministic rule the selected adapter declares;

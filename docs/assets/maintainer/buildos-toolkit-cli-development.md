@@ -41,12 +41,12 @@ The earlier Go tools (`toolkits/buildos-intake/`, `toolkits/buildos-discovery/`,
 
 | Path | What it owns |
 | --- | --- |
-| `toolkits/buildos/src/core/` | Domain logic: `entities`, `intake`, `discovery`, `design`, `init`, `validate`, `version`, and `shared`. Core returns typed results and errors, never writes to stdout, and never calls `process.exit`. It writes only through the filesystem port (`src/core/shared/fs-port.ts`). |
+| `toolkits/buildos/src/core/` | Domain logic: `entities`, `intake`, `discovery`, `design`, `init`, `validate`, `version`, `extract` (`extract bulk`), `fitgap`, `export` (`export azure-boards`), and `shared`. Core returns typed results and errors, never writes to stdout, and never calls `process.exit`. It writes only through the filesystem port (`src/core/shared/fs-port.ts`). |
 | `toolkits/buildos/src/cli/` | The thin CLI adapter: argument parsing (Go `flag` rules, no CLI framework), help, output, exit codes, and the legacy command names. |
 | `toolkits/buildos/src/adapters/` | The only Node-facing code: the filesystem port (`node-fs.ts`), hashing, the one place that may start a process (`node-process.ts`), the document parsers, and the package content. |
-| `toolkits/buildos/scripts/` | The build (`build.ts`), the dependency guard, the release flow (`release-build.ts`, `release-gate.ts`, `release-candidate.ts`, `sbom.ts`, `reproducible-pack.ts`, `release-dry-run.ts`), the deny-list check, and the startup instrument. |
+| `toolkits/buildos/scripts/` | The build (`build.ts`), the dependency guard, the release flow (`release-build.ts`, `release-gate.ts`, `release-candidate.ts`, `sbom.ts`, `reproducible-pack.ts`, `release-dry-run.ts`), the deny-list check, the no-Python check of the packaged skills (`check-no-python.ts`) and its CI smoke run (`no-python-smoke.ts`), and the startup instrument. |
 | `toolkits/buildos/test/` | `node:test` suites, the golden parity harness, the conversion eval, and the hostile-input tests. |
-| `system/` | The project files that `buildos init` copies into a project, including `.os/scripts/` wrappers and `.os/skills/`. |
+| `system/` | The project files that `buildos init` copies into a project, including `.os/scripts/` wrappers and `.os/skills/`. The skills hold no script: they call `buildos` commands through the wrapper, and `scripts/check-no-python.ts` fails on a Python file or call there, except the named `capability-matrix` exception (F-P9-04). |
 
 Rules that tests enforce: an adapter never shells out to another adapter or another `buildos` command; each domain keeps its own boundary (`test/boundary.test.ts`); only `src/adapters/node-process.ts` may load `child_process`; core loads no `node:crypto` except two older files allowed by path (follow-up F-P6-04).
 
@@ -82,5 +82,4 @@ The release flow is in [`SECURITY.md`](../../../toolkits/buildos/SECURITY.md), s
 
 ## Future Coverage
 
-- Blocked by: W1 R7 P9 (`0.2.0`). Update when: `buildos extract bulk`, `buildos fitgap`, and `buildos export azure-boards` land. Guide change: add the new domains to the layout table and drop the Python note from the skills.
 - Blocked by: W2 update and uninstall. Update when: `buildos update` exists. Guide change: describe the update path and the manifest fields W2 adds.

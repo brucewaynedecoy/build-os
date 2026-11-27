@@ -130,7 +130,7 @@ If Node.js is missing or too old, the wrapper prints one plain line and stops:
 BuildOS needs Node.js 24 or newer on this computer. Install it from https://nodejs.org, then try again.
 ```
 
-Commands come in groups called **domains**: `intake`, `discovery`, `design`, `entities`, `validate`, `init`, `version`, and `help`. For example, `.os/scripts/buildos intake convert --source <path>` converts a document. The later chapters use these commands.
+Commands come in groups called **domains**: `intake`, `discovery`, `design`, `entities`, `validate`, `init`, `version`, and `help`. BuildOS `0.2.0` adds three domains that skills use: `extract` (`extract bulk`, for the `buildos-bulk-extract` skill), `fitgap` (for `fit-gap-analysis`), and `export` (`export azure-boards`, for `buildos-export-azure-boards`). For example, `.os/scripts/buildos intake convert --source <path>` converts a document. The later chapters use these commands.
 
 ### Check that it works
 
@@ -420,7 +420,7 @@ A **skill** is a packaged set of instructions an agent can follow for one kind o
 
 BuildOS never installs a skill into your agent tool by itself. When you want one, ask your agent to install it. The router tells the agent how: copy that one skill folder, unchanged, into the project's skill folder of its own app (it names the folders for Claude Code, Codex, and GitHub Copilot), or, for another app, read the skill from `.os/skills/` and follow it. Some apps find a new skill only after a restart.
 
-> **Not available yet.** Three skills still need Python 3 for their own helper tools until BuildOS `0.2.0`: `buildos-bulk-extract`, `fit-gap-analysis` (its spreadsheet step also needs the `openpyxl` package), and `capability-matrix`. No BuildOS command needs Python. `0.2.0` plans to move these tools into the `buildos` command. [What is not built yet](18-what-is-not-built-yet.md) has the full list.
+> **Not available yet.** One skill still needs Python 3 for its own tool: `capability-matrix`. No BuildOS command needs Python. From BuildOS `0.2.0`, `buildos-bulk-extract`, `fit-gap-analysis`, and `buildos-export-azure-boards` run the `buildos extract bulk`, `buildos fitgap`, and `buildos export azure-boards` commands through the project wrapper and need only Node.js. In a project that pins `0.1.0`, the first two still run their own Python scripts (the spreadsheet step also needs the `openpyxl` package). [What is not built yet](18-what-is-not-built-yet.md) has the full list.
 
 ---
 

@@ -17,10 +17,10 @@ Convert one approved Build OS work backlog into a validated Azure Boards CSV. Pr
 6. Read [references/writing-style.md](references/writing-style.md). Rewrite each selected stage into the required field grammar.
 7. Read the selected adapter's files. Apply its classification, split, depth, property, and naming rules on top of the base grammar. Skip this step only when no adapter applies.
 8. Read [references/azure-boards-csv-contract.md](references/azure-boards-csv-contract.md). Choose the correct import profile and create the structured JSON manifest.
-9. Emit the CSV with `scripts/azure_boards_csv.mjs emit`.
-10. Validate the CSV with `scripts/azure_boards_csv.mjs validate`.
+9. Emit the CSV with `.os/scripts/buildos export azure-boards emit`.
+10. Validate the CSV with `.os/scripts/buildos export azure-boards validate`.
 11. Inspect the final CSV with an available spreadsheet reader. Confirm the headers, row count, title hierarchy, and representative rich-text fields.
-12. Return the CSV, the selected profile, the selected adapter, item counts by type, unresolved adapter warnings, and any excluded or blocked source material.
+12. Return the CSV, the selected profile, the selected adapter, item counts by type, unresolved adapter warnings, any excluded or blocked source material, and the [CSV formula prefixes](#csv-formula-prefixes) note.
 
 Do not import or save work items in Azure Boards unless the user gives separate approval for that external change.
 
@@ -112,12 +112,12 @@ Never copy IDs, state values, iteration paths, tags, or identities from an unrel
 Create a manifest as described in [references/azure-boards-csv-contract.md](references/azure-boards-csv-contract.md), then run:
 
 ```sh
-node .os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs emit \
+.os/scripts/buildos export azure-boards emit \
   --input <manifest.json> \
   --output <azure-boards-import.csv> \
   --profile target17-new
 
-node .os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs validate \
+.os/scripts/buildos export azure-boards validate \
   --input <azure-boards-import.csv> \
   --profile target17-new
 ```
@@ -125,15 +125,15 @@ node .os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs validat
 The emitter reads `adapter` and `adapter_params` from the manifest and runs the adapter checks during `emit`. Adapter errors block the write. To re-check a delivered CSV, name the adapter on `validate`:
 
 ```sh
-node .os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs validate \
+.os/scripts/buildos export azure-boards validate \
   --input <azure-boards-import.csv> \
   --profile target17-new \
   --adapter dynamics-365-ce
 
-node .os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs adapters
+.os/scripts/buildos export azure-boards adapters
 ```
 
-Run these from the project root. `buildos init` puts this skill in `.os/skills/`. When an app installed a copy of the skill somewhere else, the `.os/skills/` path still works. The script needs Node.js only.
+Run these from the project root through the project wrapper (`.os\scripts\buildos.cmd` on Windows, with the same arguments). The command needs Node.js 24 or newer and nothing else. It reads only files inside the project, and it writes `--output` outside the project only with `--allow-outside-root`; use that only when the user asks for it. On Windows, write each command on one line: Command Prompt does not read the `\` line breaks above.
 
 ## Hard validation gates
 
@@ -160,7 +160,11 @@ When an adapter applies, also confirm:
 - Every adapter warning is either fixed or explained in the delivery report.
 - Every item passes the adapter's self-review rubric.
 
-The script checks structural rules and the adapter's deterministic rules. Perform the final cross-field meaning check yourself.
+The command checks structural rules and the adapter's deterministic rules. Perform the final cross-field meaning check yourself.
+
+## CSV formula prefixes
+
+The command adds no guard character to a field that starts with `=`, `+`, `-`, or `@`, so the file imports into Azure Boards unchanged. A spreadsheet program that opens the CSV may read such a field as a formula and run it. Import the file with Azure Boards' CSV import. Open it in a spreadsheet program only when you trust every text in the manifest. Tell the user this when you deliver the CSV.
 
 ## Bundled resources
 
