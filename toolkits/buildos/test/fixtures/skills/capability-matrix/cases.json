@@ -866,6 +866,65 @@
       ]
     },
     {
+      "id": "spelled-paths",
+      "description": "paths as Python's glob and makedirs read them (review round 2, findings 1 and 3): a final separator after a file and after a pattern of files matches nothing; an out folder that is a file, and one under a file, are makedirs' errors; two adjacent lone surrogates in a printed line are one range",
+      "base": "library",
+      "steps": [
+        {
+          "run": [
+            "assemble",
+            "--skeleton",
+            "cm/CIRC/skeleton.json",
+            "--parts",
+            "cm/CIRC/parts/part-a.json/",
+            "cm/CIRC/parts/part-b.json",
+            "--out",
+            "deliver/CIRC"
+          ]
+        },
+        {
+          "run": [
+            "assemble",
+            "--skeleton",
+            "cm/CIRC/skeleton.json",
+            "--parts",
+            "cm/CIRC/parts/*.json/",
+            "--out",
+            "deliver/CIRC"
+          ]
+        },
+        {
+          "run": [
+            "assemble",
+            "--skeleton",
+            "cm/CIRC/skeleton.json",
+            "--parts",
+            "cm/CIRC/parts/*.json",
+            "--out",
+            "cm/CIRC/skeleton.json"
+          ]
+        },
+        {
+          "run": [
+            "assemble",
+            "--skeleton",
+            "cm/CIRC/skeleton.json",
+            "--parts",
+            "cm/CIRC/parts/*.json",
+            "--out",
+            "cm/CIRC/skeleton.json/out/deeper"
+          ]
+        },
+        {
+          "run": [
+            "skeleton",
+            "--skeleton",
+            "cm/bad/skeleton-surrogates.json"
+          ]
+        }
+      ]
+    },
+    {
       "id": "arguments",
       "description": "argument errors (argparse in the script) and help",
       "base": "library",

@@ -83,7 +83,7 @@ A **dry run** checks whether a command would work before it changes anything. It
 1. Dry-run the conversion.
 
 ```
-.os/scripts/buildos intake convert --source <path> --dry-run
+.os/scripts/buildos intake convert --source "<path>" --dry-run
 ```
 
 2. Read what it says it will do. Exit code zero means everything is green.
@@ -91,7 +91,7 @@ A **dry run** checks whether a command would work before it changes anything. It
 3. Run it for real.
 
 ```
-.os/scripts/buildos intake convert --source <path>
+.os/scripts/buildos intake convert --source "<path>"
 ```
 
 Useful flags:
@@ -99,7 +99,7 @@ Useful flags:
 - `--type auto|csv|docx|xlsx|pdf|html|html-dir` forces the source type. The default is `auto`.
 - `--force` overwrites output that is already there.
 - `--assets-root assets` writes somewhere other than the default.
-- `--repo-root <path>` runs the tool from outside the repository.
+- `--repo-root "<path>"` runs the tool from outside the repository.
 
 ### A worked example, start to finish
 
@@ -204,7 +204,7 @@ Use it whenever the conversion was not a straight deterministic read, such as a 
 
 ## One source per run
 
-`buildos intake convert` takes `--source <path>`, and that path is one source. There is no folder sweep. The tool will not walk a directory for you.
+`buildos intake convert` takes `--source "<path>"`, and that path is one source. There is no folder sweep. The tool will not walk a directory for you.
 
 So a folder of 40 documents is 40 invocations. In practice teams ask their agent to work through the folder and run the command once per file, and that is how most real intake happens.
 

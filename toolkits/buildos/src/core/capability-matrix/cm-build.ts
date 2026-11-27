@@ -20,19 +20,20 @@
  * sorted from its first-seen order, not Python's hash order.
  */
 
+import { sep } from "node:path";
 import { ProjectFileError, type WritePlan } from "../shared/project-files.ts";
 import { isDict, isList, pyRepr, pyStrip, pyUniversalNewlines, type PyDict, type PyValue } from "../shared/py-json.ts";
 import { PyException, pyDecodeUtf8 } from "../shared/py-text.ts";
 import { READ_LIMITS } from "../shared/read-limits.ts";
 import { pyCsvRows } from "../extract/py-lines.ts";
-import { FitgapInput, load as fitgapLoad, pyGlob, type FitgapContext } from "../fitgap/fitgap.ts";
+import { FitgapInput, load as fitgapLoad, osLookup, pyGlob, type FitgapContext } from "../fitgap/fitgap.ts";
 import { FitgapShapeError, fmt, get, iter, truthy, type V } from "../fitgap/py.ts";
 import {
   PyMap,
   PySet,
   backslashReplace,
   checkEncodable,
-  cmDumps,
+  cmDumpChunks,
   concat,
   counter,
   counterJson,
@@ -106,18 +107,33 @@ function load(ctx: CmContext, path: V): PyValue {
   if (typeof path !== "string") throw new FitgapShapeError(`TypeError: expected str, bytes or os.PathLike object, not ${path === null || path === undefined ? "NoneType" : typeof path}`);
   // `open('')` names no file (an empty --model=, --baseline=, ...); BuildOS would resolve it to the project folder.
   if (path === "") throw new FitgapInput("[Errno 2] No such file or directory: ''");
+  checkOpen(ctx, path);
   return fitgapLoad(ctx, path);
+}
+
+/**
+ * The error of `open(path)` that the path's own spelling gives, before
+ * BuildOS reads it (review round 2, finding 1): a name before the last that
+ * is not a folder (`p.json/`, `p.json/.`, `p.json/../p.json`), a missing
+ * one (`gone/../p.json`), or a folder where the file belongs.
+ */
+function checkOpen(ctx: CmContext, path: string): void {
+  const found = osLookup(ctx.files, path);
+  if (found === "ENOENT" || found === "dangling") throw new FitgapInput(`[Errno 2] No such file or directory: ${pyRepr(path)}`);
+  if (found === "ENOTDIR") throw new FitgapInput(`[Errno 20] Not a directory: ${pyRepr(path)}`);
+  if (found === "directory") throw new FitgapInput(`[Errno 21] Is a directory: ${pyRepr(path)}`);
 }
 
 /** `sorted(f for p in pats for f in glob.glob(p))`: every match of every pattern, sorted, a file named twice kept twice. */
 function globs(ctx: CmContext, patterns: readonly string[]): string[] {
   const found: string[] = [];
-  for (const p of patterns) found.push(...pyGlob(ctx, p));
+  for (const p of patterns) found.push(...pyGlob(ctx, p, { spelled: true }));
   return [...found].sort((a, b) => pyOrder(a, b));
 }
 
 /** The text of a UTF-8 file as Python's text mode reads it (universal newlines; a byte order mark kept). */
 function readText(ctx: CmContext, path: string): string {
+  checkOpen(ctx, path);
   let data: Uint8Array;
   try {
     data = ctx.files.readBytes(path, READ_LIMITS.data);
@@ -187,15 +203,43 @@ function mapOf<T>(items: readonly PyValue[], key: (x: PyValue) => V, value: (x: 
   return out;
 }
 
-/** Writes `text` (checked as UTF-8 first: the script crashed on a lone surrogate). */
-function planWrite(plan: WritePlan, path: string, text: string): void {
-  checkEncodable(text);
-  plan.write(path, text, { limit: READ_LIMITS.data });
+/**
+ * Writes the chunks that the script handed to `f.write` one at a time (the
+ * JSON encoder's chunks, or one CSV row each), each checked as UTF-8 first:
+ * the script crashed on a lone surrogate, at a position counted in its chunk.
+ * A CSV file starts with the byte order mark of `utf-8-sig`.
+ */
+function planWrite(plan: WritePlan, path: string, chunks: readonly string[], bom = false): void {
+  for (const chunk of chunks) checkEncodable(chunk);
+  plan.write(path, `${bom ? "\ufeff" : ""}${chunks.join("")}`, { limit: READ_LIMITS.data });
 }
 
-/** `os.makedirs(out, exist_ok=True)` of an empty name. */
-function checkOut(out: string): void {
+/**
+ * The errors of `os.makedirs(out, exist_ok=True)`, before BuildOS plans a
+ * write (review round 2): an empty name; `out` itself a file (`[Errno 17]
+ * File exists`, or `[Errno 20]` with a final separator, as macOS's `mkdir`
+ * reports it); a file before its last name, named with the folder that
+ * `makedirs` tried to make in it (`[Errno 20] Not a directory: 'p.json/x'`).
+ * A missing folder is made when the run writes; `.` and `..` are folded as
+ * text (SD-24).
+ */
+function checkOut(ctx: CmContext, out: string): void {
   if (out === "") throw new FitgapInput("[Errno 2] No such file or directory: ''");
+  const separator = sep === "\\" ? /[\\/]/ : /\//;
+  const names: { end: number }[] = [];
+  const pattern = sep === "\\" ? /[^\\/]+/g : /[^/]+/g;
+  for (const m of out.matchAll(pattern)) names.push({ end: m.index + m[0].length });
+  const trailing = separator.test(out.slice(-1));
+  for (let k = 0; k < names.length; k++) {
+    const at = out.slice(0, names[k]!.end);
+    if (ctx.files.inside(at) === undefined) continue;
+    const found = osLookup(ctx.files, at);
+    if (found === "directory") continue;
+    if (found !== "file") return;
+    if (k === names.length - 1) throw new FitgapInput(trailing ? `[Errno 20] Not a directory: ${pyRepr(out)}` : `[Errno 17] File exists: ${pyRepr(out)}`);
+    const made = k + 1 === names.length - 1 ? out : out.slice(0, names[k + 1]!.end);
+    throw new FitgapInput(`[Errno 20] Not a directory: ${pyRepr(made)}`);
+  }
 }
 
 function commit(ctx: CmContext, plan: WritePlan): void {
@@ -357,16 +401,16 @@ export function cmAssemble(ctx: CmContext, a: AssembleArgs): void {
     ["capabilities", outCaps],
     ["capability_tree", outCaps.map((c) => new Map<string, PyValue>([["id", c.get("id")!], ["name", c.get("name")!], ["status", c.get("status")!], ["maturity", c.get("maturity")!], ["layer_id", c.get("layer_id")!], ["requirement_count", pyLength(c.get("requirements"))]]))],
   ]);
-  checkOut(a.out);
+  checkOut(ctx, a.out);
   const plan = ctx.files.plan();
   plan.folder(a.out);
-  planWrite(plan, `${a.out}/${low}-capability-model.json`, cmDumps(model));
+  planWrite(plan, `${a.out}/${low}-capability-model.json`, cmDumpChunks(model));
   const LM = mapOf(iter(gi(sk, "layers")), (l) => gi(l, "id"), (l) => l);
-  let capsCsv = `﻿${csvRow(["system", "capability_id", "parent_id", "layer_id", "layer_code", "layer_name", "doc_ref", "capability_type", "status", "maturity", "origin", "source_refs", "name", "summary", "personas", "triggers", "outcomes", "entities", "dependencies", "provenance", "source", "tags", "requirement_count"])}`;
+  const capsCsv = [csvRow(["system", "capability_id", "parent_id", "layer_id", "layer_code", "layer_name", "doc_ref", "capability_type", "status", "maturity", "origin", "source_refs", "name", "summary", "personas", "triggers", "outcomes", "entities", "dependencies", "provenance", "source", "tags", "requirement_count"])];
   for (const c of outCaps) {
     const L = LM.at(c.get("layer_id"));
     const parent = c.get("parent_id");
-    capsCsv += csvRow([
+    capsCsv.push(csvRow([
       code,
       c.get("id"),
       truthy(parent) ? parent : "",
@@ -383,18 +427,18 @@ export function cmAssemble(ctx: CmContext, a: AssembleArgs): void {
       c.get("summary"),
       ...["personas", "triggers", "outcomes", "entities", "dependencies", "provenance", "source", "tags"].map((k) => joinBars(c.get(k))),
       pyLength(c.get("requirements")),
-    ]);
+    ]));
   }
-  planWrite(plan, `${a.out}/${low}-capabilities.csv`, capsCsv);
-  let reqsCsv = `﻿${csvRow(["system", "requirement_id", "capability_id", "capability_name", "layer_id", "layer_code", "layer_name", "doc_ref", "requirement_kind", "status", "maturity", "text", "option_values", "option_default", "option_scope", "source_refs"])}`;
+  planWrite(plan, `${a.out}/${low}-capabilities.csv`, capsCsv, true);
+  const reqsCsv = [csvRow(["system", "requirement_id", "capability_id", "capability_name", "layer_id", "layer_code", "layer_name", "doc_ref", "requirement_kind", "status", "maturity", "text", "option_values", "option_default", "option_scope", "source_refs"])];
   for (const c of outCaps) {
     const L = LM.at(c.get("layer_id"));
     for (const r of iter(c.get("requirements"))) {
       const or = (key: string): PyValue => (truthy(gi(r, key)) ? gi(r, key) : "");
-      reqsCsv += csvRow([code, gi(r, "id"), c.get("id"), c.get("name"), c.get("layer_id"), gi(L, "code"), gi(L, "name"), c.get("doc_ref"), gi(r, "kind"), gi(r, "status"), gi(r, "maturity"), gi(r, "text"), or("option_values"), or("option_default"), or("option_scope"), joinBars(gi(r, "source_refs"))]);
+      reqsCsv.push(csvRow([code, gi(r, "id"), c.get("id"), c.get("name"), c.get("layer_id"), gi(L, "code"), gi(L, "name"), c.get("doc_ref"), gi(r, "kind"), gi(r, "status"), gi(r, "maturity"), gi(r, "text"), or("option_values"), or("option_default"), or("option_scope"), joinBars(gi(r, "source_refs"))]));
     }
   }
-  planWrite(plan, `${a.out}/${low}-requirements.csv`, reqsCsv);
+  planWrite(plan, `${a.out}/${low}-requirements.csv`, reqsCsv, true);
   const line = `assemble[${f(code)}]: ${outCaps.length} capabilities, ${reqs.length} requirements -> ${a.out}/${low}-*  warnings=${counterRepr(warn)}`;
   checkEncodable(line);
   commit(ctx, plan);
@@ -431,7 +475,7 @@ export interface FitgapArgs {
 const rowsOf = (ctx: CmContext, patterns: readonly string[]): PyValue[] => globs(ctx, patterns).flatMap((file) => iter(load(ctx, file)));
 
 export function cmFitgap(ctx: CmContext, a: FitgapArgs): void {
-  checkOut(a.out);
+  checkOut(ctx, a.out);
   if (a.mode === "integration") return fitgapIntegration(ctx, a);
   const b = idx(ctx, a.baseline);
   const t = idx(ctx, a.target);
@@ -454,7 +498,7 @@ export function cmFitgap(ctx: CmContext, a: FitgapArgs): void {
   const sortedOnly = pySorted(only, (r) => indexOf(torder, gi(r, "target_capability_id")));
   const hdr = ["baseline_system", "target_system", "direction", "baseline_capability_id", "baseline_name", "layer_id", "layer_code", "layer_name", "baseline_status", "baseline_maturity", "baseline_requirement_count", "verdict", "confidence", "effort", "target_capability_ids", "target_capability_names", "target_statuses", "target_maturities", "target_requirement_count", "evidence", "gap_detail", "migration_note"];
   const stem = `${a.out}/${lower(bcode)}-${lower(tcode)}-fit-gap`;
-  let csv = `﻿${csvRow(hdr)}`;
+  const csv = [csvRow(hdr)];
   for (const r of sortedRows) {
     const c = b.caps.at(gi(r, "baseline_capability_id"));
     const L = b.layers.at(gi(c, "layer_id"));
@@ -467,7 +511,7 @@ export function cmFitgap(ctx: CmContext, a: FitgapArgs): void {
       for (const i of ts) n += pyLength(gi(t.caps.at(i), "requirements"));
       return n;
     };
-    csv += csvRow([
+    csv.push(csvRow([
       bcode,
       tcode,
       "baseline_to_target",
@@ -490,13 +534,13 @@ export function cmFitgap(ctx: CmContext, a: FitgapArgs): void {
       gi(r, "evidence"),
       get(r, "gap_detail", ""),
       get(r, "migration_note", ""),
-    ]);
+    ]));
   }
   for (const r of sortedOnly) {
     const c = t.caps.at(gi(r, "target_capability_id"));
     const L = t.layers.at(gi(c, "layer_id"));
     const fallback = get(r, "migration_note", "");
-    csv += csvRow([bcode, tcode, "target_only", "", "", gi(c, "layer_id"), gi(L, "code"), gi(L, "name"), "", "", "", "target_only", gi(r, "confidence"), get(r, "effort", ""), gi(c, "id"), gi(c, "name"), gi(c, "status"), gi(c, "maturity"), pyLength(gi(c, "requirements")), gi(r, "evidence"), "", get(r, "opportunity", fallback as PyValue)]);
+    csv.push(csvRow([bcode, tcode, "target_only", "", "", gi(c, "layer_id"), gi(L, "code"), gi(L, "name"), "", "", "", "target_only", gi(r, "confidence"), get(r, "effort", ""), gi(c, "id"), gi(c, "name"), gi(c, "status"), gi(c, "maturity"), pyLength(gi(c, "requirements")), gi(r, "evidence"), "", get(r, "opportunity", fallback as PyValue)]));
   }
   const verdicts = counter(sortedRows.map((r) => gi(r, "verdict")));
   const out = new Map<string, JsonOut>([
@@ -516,8 +560,8 @@ export function cmFitgap(ctx: CmContext, a: FitgapArgs): void {
   ]);
   const plan = ctx.files.plan();
   plan.folder(a.out);
-  planWrite(plan, `${stem}.csv`, csv);
-  planWrite(plan, `${stem}.json`, cmDumps(out));
+  planWrite(plan, `${stem}.csv`, csv, true);
+  planWrite(plan, `${stem}.json`, cmDumpChunks(out));
   const line = `fitgap[${f(bcode)}->${f(tcode)}]: ${sortedRows.length} scored + ${sortedOnly.length} target-only -> ${stem}.csv/.json  verdicts=${counterRepr(counter(sortedRows.map((r) => gi(r, "verdict"))))}`;
   checkEncodable(line);
   commit(ctx, plan);
@@ -535,7 +579,7 @@ function fitgapIntegration(ctx: CmContext, a: FitgapArgs): void {
   const stem = `${a.out}/${codes.map((c) => lower(c)).join("-")}-integration-map`;
   if (models.length === 0) throw new FitgapShapeError("IndexError: list index out of range");
   const LM = mapOf(iter(gi(models[0]!.m, "layers")), (l) => gi(l, "id"), (l) => l);
-  let csv = `﻿${csvRow(hdr)}`;
+  const csv = [csvRow(hdr)];
   for (const r of rows) {
     const ids = new PyMap<PyValue>();
     for (const c of codes) {
@@ -543,7 +587,7 @@ function fitgapIntegration(ctx: CmContext, a: FitgapArgs): void {
       const v = getOr(systems, c);
       ids.set(c, truthy(v) ? v! : []);
     }
-    csv += csvRow([
+    csv.push(csvRow([
       gi(r, "capability_key"),
       gi(r, "name"),
       gi(r, "layer_id"),
@@ -558,7 +602,7 @@ function fitgapIntegration(ctx: CmContext, a: FitgapArgs): void {
       ...codes.map((c) => joinBars(iter(ids.at(c)).map((i) => gi(IDX.at(c).at(i), "name")))),
       gi(r, "evidence"),
       get(r, "notes", ""),
-    ]);
+    ]));
   }
   const out = new Map<string, JsonOut>([
     [
@@ -575,8 +619,8 @@ function fitgapIntegration(ctx: CmContext, a: FitgapArgs): void {
   ]);
   const plan = ctx.files.plan();
   plan.folder(a.out);
-  planWrite(plan, `${stem}.csv`, csv);
-  planWrite(plan, `${stem}.json`, cmDumps(out));
+  planWrite(plan, `${stem}.csv`, csv, true);
+  planWrite(plan, `${stem}.json`, cmDumpChunks(out));
   const line = `integration[${codes.map((c) => f(c)).join("+")}]: ${rows.length} rows -> ${stem}.csv/.json`;
   checkEncodable(line);
   commit(ctx, plan);

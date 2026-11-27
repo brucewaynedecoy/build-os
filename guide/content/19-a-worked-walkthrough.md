@@ -115,7 +115,7 @@ A **converted source**, or twin, is a clean text copy of an original file carryi
 Run one source at a time:
 
 ```
-.os/scripts/buildos intake convert --source <path>
+.os/scripts/buildos intake convert --source "<path>"
 ```
 
 Add `--dry-run` first. It doubles the wall time and finds the problem before the tool commits anything. Exit code 0 means the conversion is clean.
@@ -178,7 +178,7 @@ Run the validator again after each batch. It checks one JSON object per line, th
 Two source documents describing the same thing produce two records. Folding them together is a separate, explicit step: you write a **consolidation manifest** listing which record folds into which, a person reviews it, and only then do you apply it. The losing record keeps its ID and gains a `redirect` pointing at the winner, so old references still resolve.
 
 ```
-.os/scripts/buildos entities consolidate --root . --mode compat --manifest <path> --apply
+.os/scripts/buildos entities consolidate --root . --mode compat --manifest "<path>" --apply
 .os/scripts/buildos entities rebuild-index --root . --mode strict --apply
 ```
 
@@ -246,7 +246,7 @@ A **run** is one recorded attempt at doing something. It is a folder, `RUN-NNN/`
 Two things are true at once here. The live browser work is external to BuildOS by design, with the agent driving a real signed-in browser through your harness. BuildOS records what happened:
 
 ```
-.os/scripts/buildos discovery run discovery --playbook-id <PB-NNN> --outcome positive|negative|inconclusive --evidence <path> --raw-finding <path>
+.os/scripts/buildos discovery run discovery --playbook-id <PB-NNN> --outcome positive|negative|inconclusive --evidence "<path>" --raw-finding "<path>"
 ```
 
 That writes `workspace/runs/RUN-NNN/` containing `run.md`, an `evidence/` directory and `raw-findings.md`, and appends one row to `.os/data/runs.jsonl`.
@@ -264,7 +264,7 @@ A **raw finding** is something you noticed that has not been proved. It has no I
 A **qualified finding** is a raw finding that passed a repeatable test. It gets a `FIND-NNN` ID and its own folder. **Qualification** is the test itself. Intuition and a one-off observation do not qualify.
 
 ```
-.os/scripts/buildos discovery qualify finding --run-id <RUN-NNN> --raw-finding-ref <path#anchor> --outcome positive|negative --confirmation-test <path> --confirmation-evidence <path>
+.os/scripts/buildos discovery qualify finding --run-id <RUN-NNN> --raw-finding-ref "<path#anchor>" --outcome positive|negative --confirmation-test "<path>" --confirmation-evidence "<path>"
 ```
 
 This writes `workspace/findings/FIND-NNN/` with `finding.md` and `qualification.md`, and appends a `status: "qualified"` row to `findings.jsonl`. The qualification file records the test type, the procedure, the assertion, the result, which must be `pass`, and the evidence.

@@ -173,12 +173,18 @@ function dumpTo(plan: WritePlan, value: PyValue, path: string): void {
  * `buildos fitgap` is unchanged: its `globs` still keeps a pattern that names
  * an existing path when nothing matches.
  */
-export function pyGlob(ctx: FitgapContext, pattern: string): string[] {
+export function pyGlob(ctx: FitgapContext, pattern: string, options: { spelled?: boolean } = {}): string[] {
   if (pattern === "") return [];
+  const spelled = options.spelled === true;
   const magic = /[*?[]/;
   const parts = pattern.split(sep === "\\" ? /[/\\]/ : "/");
   const first = parts.findIndex((part) => magic.test(part));
-  if (first === -1) return ctx.files.kindStrict(pattern) === undefined ? [] : [pattern];
+  if (first === -1) {
+    if (!spelled) return ctx.files.kindStrict(pattern) === undefined ? [] : [pattern];
+    // `glob.glob` of a plain path: `os.path.lexists(path)`, or `os.path.isdir` of its folder when it ends with a separator.
+    const found = osLookup(ctx.files, pattern);
+    return found === "file" || found === "directory" || found === "dangling" ? [pattern] : [];
+  }
   let prefix = parts.slice(0, first).join("/");
   if (isAbsolute(pattern) && (prefix === "" || /^[A-Za-z]:$/.test(prefix))) prefix = sep === "\\" ? `${prefix}\\` : "/";
   const contained = (path: string): void => {
@@ -186,6 +192,13 @@ export function pyGlob(ctx: FitgapContext, pattern: string): string[] {
   };
   contained(prefix);
   const join = (base: string, name: string): string => (base === "" ? name : base.endsWith("/") || base.endsWith("\\") ? `${base}${name}` : `${base}/${name}`);
+  /** What `os.lstat` (a name) or `os.path.isdir` (a folder) finds at `path`. */
+  const exists = (path: string): boolean => {
+    if (!spelled) return ctx.files.kindStrict(path === "" ? "." : path) !== undefined;
+    const found = osLookup(ctx.files, path);
+    return found === "file" || found === "directory" || found === "dangling";
+  };
+  const isFolder = (path: string): boolean => (spelled ? osLookup(ctx.files, path === "" ? "." : path) === "directory" : ctx.files.kindStrict(path === "" ? "." : path) === "directory");
   let results: string[] = [prefix];
   for (let i = first; i < parts.length; i++) {
     const part = parts[i]!;
@@ -194,16 +207,22 @@ export function pyGlob(ctx: FitgapContext, pattern: string): string[] {
     for (const base of results) {
       if (!magic.test(part)) {
         if (part === "" && base !== "") {
+          // F-P9-04 review round 2 (finding 1): a final separator matches only a folder, spelled with the separator
+          // (`os.path.join(folder, '')`); between two names it adds nothing.
+          if (spelled && last) {
+            if (isFolder(base)) next.push(join(base, ""));
+            continue;
+          }
           next.push(base);
           continue;
         }
         const candidate = join(base, part);
         contained(candidate);
-        if (ctx.files.kindStrict(candidate === "" ? "." : candidate) !== undefined) next.push(candidate);
+        if (exists(candidate)) next.push(candidate);
         continue;
       }
       const folder = base === "" ? "." : base;
-      if (ctx.files.kindStrict(folder) !== "directory") continue;
+      if (!isFolder(folder)) continue;
       const re = fnmatchRegex(part);
       for (const name of ctx.files.listStrict(folder)) {
         if (name.startsWith(".") && !part.startsWith(".")) continue;
@@ -216,6 +235,51 @@ export function pyGlob(ctx: FitgapContext, pattern: string): string[] {
     results = next;
   }
   return results;
+}
+
+/**
+ * F-P9-04 review round 2 (finding 1): what the operating system finds at
+ * `path` as the user spelled it, one name at a time, as `open` and
+ * `os.lstat` resolve it on macOS and Linux: every name before the last (and
+ * the last one too, when the path ends with a separator) must be a folder,
+ * so `p.json/`, `p.json/.`, and `p.json/../p.json` are `ENOTDIR` when
+ * `p.json` is a file, and `gone/../p.json` is `ENOENT` when `gone` is
+ * missing. `.` and `..` are then folded as text, as every BuildOS path is
+ * (divergence SD-24: a `..` right after a folder link names the link's
+ * parent, where the OS goes to the parent of the link's target). A folder
+ * before the project folder (`../<project>/...`) is not looked at: BuildOS
+ * reads nothing outside the project, and the path must still end inside it
+ * (else the refusal, exit 3). Windows folds `.` and `..` as text before it
+ * looks at the disk, so there only the whole path is looked up (and a final
+ * separator after a file is `ENOTDIR`, as `glob` reads it everywhere).
+ */
+export function osLookup(files: ProjectFiles, path: string): "file" | "directory" | "dangling" | "ENOENT" | "ENOTDIR" {
+  const kindOf = (p: string): "file" | "directory" | undefined => files.kindStrict(p === "" ? "." : p);
+  if (path === "") return "ENOENT";
+  /** The last name: what is there, or a link that leads nowhere (`os.lstat` finds it, `open` does not). */
+  const last = (p: string): "file" | "directory" | "dangling" | "ENOENT" => kindOf(p) ?? (files.entryExists(p === "" ? "." : p) ? "dangling" : "ENOENT");
+  if (sep === "\\") {
+    // `glob` itself honours a final separator on every system (`os.path.isdir` of the folder).
+    if (/[\\/]$/.test(path)) {
+      const kind = kindOf(path);
+      return kind === "directory" ? kind : kind === undefined ? "ENOENT" : "ENOTDIR";
+    }
+    return last(path);
+  }
+  const names = path.split("/").filter((name) => name !== "");
+  const trailing = path.endsWith("/");
+  let at = path.startsWith("/") ? "/" : "";
+  for (let k = 0; k < names.length; k++) {
+    // The names as typed, not `path.join` (which would fold `gone/..` before `gone` is looked at).
+    at = at === "" ? names[k]! : at.endsWith("/") ? `${at}${names[k]!}` : `${at}/${names[k]!}`;
+    const needFolder = k < names.length - 1 || trailing;
+    if (needFolder && files.inside(at) === undefined) continue;
+    if (!needFolder) return last(at);
+    const kind = kindOf(at);
+    if (kind === undefined) return "ENOENT";
+    if (kind !== "directory") return "ENOTDIR";
+  }
+  return last(at);
 }
 
 /**

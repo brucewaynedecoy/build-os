@@ -112,15 +112,15 @@ Never copy IDs, state values, iteration paths, tags, or identities from an unrel
 Create a manifest as described in [references/azure-boards-csv-contract.md](references/azure-boards-csv-contract.md), then run:
 
 ```sh
-.os/scripts/buildos export azure-boards emit --input <manifest.json> --output <azure-boards-import.csv> --profile target17-new
+.os/scripts/buildos export azure-boards emit --input "<manifest.json>" --output "<azure-boards-import.csv>" --profile target17-new
 
-.os/scripts/buildos export azure-boards validate --input <azure-boards-import.csv> --profile target17-new
+.os/scripts/buildos export azure-boards validate --input "<azure-boards-import.csv>" --profile target17-new
 ```
 
 The emitter reads `adapter` and `adapter_params` from the manifest and runs the adapter checks during `emit`. Adapter errors block the write. To re-check a delivered CSV, name the adapter on `validate`:
 
 ```sh
-.os/scripts/buildos export azure-boards validate --input <azure-boards-import.csv> --profile target17-new --adapter dynamics-365-ce
+.os/scripts/buildos export azure-boards validate --input "<azure-boards-import.csv>" --profile target17-new --adapter dynamics-365-ce
 
 .os/scripts/buildos export azure-boards adapters
 ```

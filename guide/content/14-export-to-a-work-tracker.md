@@ -97,7 +97,7 @@ A single backlog directory can produce well over a hundred work items, arriving 
 8. **Validate the file.** From that same directory again:
 
    ```sh
-   .os/scripts/buildos export azure-boards validate --input <your-export.csv> --profile target17-new
+   .os/scripts/buildos export azure-boards validate --input "<your-export.csv>" --profile target17-new
    ```
 
    A passing run prints `"valid": true` with an empty `errors` list and your row counts by type. A failing run prints the reason and exits with status 4.

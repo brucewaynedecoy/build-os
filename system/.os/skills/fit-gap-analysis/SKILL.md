@@ -152,7 +152,7 @@ Take every number from the merged JSON. Compute it. Do not estimate it.
 
 ### 8. Build the final workbook
 
-1. Run the step 6 `merge` again, without `--draft` and with `--findings <build>/findings.json` (and `--todos <build>/todos.json` when the frame has tracks). It refuses until the objectives are confirmed, every uncited target capability has a row, the findings are complete and, with tracks, the to-do list is valid.
+1. Run the step 6 `merge` again, without `--draft` and with `--findings "<build>/findings.json"` (and `--todos "<build>/todos.json"` when the frame has tracks). It refuses until the objectives are confirmed, every uncited target capability has a row, the findings are complete and, with tracks, the to-do list is valid.
 2. Run `"<buildos>" fitgap workbook --root "<project>" --frame "<frame>" --fitgap "<deliver>/<a>-<b>-fit-gap-analysis.json"`.
 3. Every check must print `PASS`.
 

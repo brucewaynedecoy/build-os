@@ -15,7 +15,7 @@
     "bulk-extract": 35,
     "fitgap": 15,
     "azure-boards": 11,
-    "capability-matrix": 18
+    "capability-matrix": 19
   },
   "provenance": {
     "$comment": "What made the goldens. Not compared by --check: it differs between machines and fresh installs.",

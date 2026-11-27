@@ -214,7 +214,7 @@ Conventions that the tooling and the narrative depend on:
   parameters are three or four capabilities, not twenty. Over-splitting doubles the fit/gap without adding
   information.
 
-Check it before dispatching anyone: `"<buildos>" capability-matrix skeleton --root "<project>" --skeleton build/<code>/skeleton.json`
+Check it before dispatching anyone: `"<buildos>" capability-matrix skeleton --root "<project>" --skeleton "build/<code>/skeleton.json"`
 reports counts per layer and fails on duplicate ids, a prefix that does not match the layer, a type or status
 outside the vocabulary, or a scope brief too thin to guide an extractor. A skeleton error found after
 extraction costs an hour.
@@ -253,7 +253,7 @@ yourself against the same brief; the brief is the quality control, not the paral
 ## Phase 4 — Assemble models
 
 ```
-"<buildos>" capability-matrix assemble --root "<project>" --skeleton build/<code>/skeleton.json --parts "build/<code>/out_*.json" --out deliver/<CODE> --date <YYYY-MM-DD>
+"<buildos>" capability-matrix assemble --root "<project>" --skeleton "build/<code>/skeleton.json" --parts "build/<code>/out_*.json" --out "deliver/<CODE>" --date <YYYY-MM-DD>
 ```
 
 The command restores skeleton fields the agents may have altered, maps `status` to `maturity`, renumbers
@@ -335,13 +335,13 @@ more into fewer capabilities, its extras sit as requirements inside capabilities
 cite. Read the `partial` and `native` evidence for those and carry them into the readout. Then:
 
 ```
-"<buildos>" capability-matrix fitgap --root "<project>" --mode replacement --baseline deliver/<A>/<a>-capability-model.json --target deliver/<B>/<b>-capability-model.json --rows "build/fit-gap/fg_*.json" --only build/fit-gap/only.json --out deliver/fit-gap --date <YYYY-MM-DD>
+"<buildos>" capability-matrix fitgap --root "<project>" --mode replacement --baseline "deliver/<A>/<a>-capability-model.json" --target "deliver/<B>/<b>-capability-model.json" --rows "build/fit-gap/fg_*.json" --only build/fit-gap/only.json --out deliver/fit-gap --date <YYYY-MM-DD>
 ```
 
 **Integration.** Build the union capability list first: walk both models layer by layer and produce
 `build/fit-gap/union.json` — one entry per distinct capability across systems, with the ids each system
 contributes. Then dispatch mapping packages with the integration brief; the command writes the map with
-`--mode integration --models <a-model> <b-model> [...]`.
+`--mode integration --models "<a-model>" "<b-model>" [...]`.
 
 **The readout.** Write `deliver/fit-gap/fit-gap-readout.md` last. It is short and it is the document that
 gets read:
@@ -368,8 +368,8 @@ Open questions for the vendor / other team — the low-confidence rows and every
 ## Phase 8 — Validate and deliver
 
 ```
-"<buildos>" capability-matrix validate --root "<project>" --model deliver/<A>/<a>-capability-model.json --narrative "deliver/<A>/<A Name> - Capability Model.md"
-"<buildos>" capability-matrix validate --root "<project>" --model deliver/<B>/<b>-capability-model.json --narrative "…" --fitgap deliver/fit-gap/<a>-<b>-fit-gap.json --baseline deliver/<A>/… --target deliver/<B>/…
+"<buildos>" capability-matrix validate --root "<project>" --model "deliver/<A>/<a>-capability-model.json" --narrative "deliver/<A>/<A Name> - Capability Model.md"
+"<buildos>" capability-matrix validate --root "<project>" --model "deliver/<B>/<b>-capability-model.json" --narrative "…" --fitgap "deliver/fit-gap/<a>-<b>-fit-gap.json" --baseline "deliver/<A>/…" --target "deliver/<B>/…"
 ```
 
 `validate` exits 0 when every check passes and 4 when one fails; the `FAIL` lines say which. `assemble` and `fitgap` exit 5 when a write failed and BuildOS put back every file it had changed, and 10 when it could not put back every file: the message names each file left, and you check those files before you run the command again.

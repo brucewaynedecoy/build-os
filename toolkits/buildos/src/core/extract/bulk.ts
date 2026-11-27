@@ -1905,6 +1905,9 @@ function classify(error: PyException): BulkOutcome {
   if (error instanceof PublicationConflict) return "review";
   if (error.pyClass === "ValueError" && error.message === "--count must be positive") return "usage";
   if (error.forWrite) return "io";
+  // F-P9-04 review round 2 (finding 2): `json.loads` of an integer of more than 4300 digits raised int()'s ValueError;
+  // a file that cannot be parsed is an input error (exit 3), as the JSONDecodeError it was before the parser read such numbers.
+  if (error.pyClass === "ValueError" && /^Exceeds the limit \(\d+ digits\) for integer string conversion: /.test(error.message)) return "input";
   if (["JSONDecodeError", "UnicodeDecodeError", "KeyError", "TypeError", "AttributeError", "RecursionError", "FileNotFoundError", "PermissionError", "IsADirectoryError", "NotADirectoryError", "OSError"].includes(error.pyClass)) return "input";
   if (/^Invalid (staged )?JSONL in |^Missing or duplicate ID in |^Missing _stage block in |^Wrong row type in |^Reference index has no references list$|^Invalid reference record: |^Duplicate reference ID: |^Inconsistent source hashes: |^Invalid repo-relative path: |^Path leaves repo: |^embedded null byte$/.test(error.message)) return "input";
   return "contract";

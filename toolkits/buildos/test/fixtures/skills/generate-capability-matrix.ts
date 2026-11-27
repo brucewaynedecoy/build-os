@@ -444,6 +444,8 @@ countModel("int-ok", [`${"0".repeat(4299)}1`, " 1 ", "　1", "\u000b1\u000c",
 countModel("int-zeros", [`${"0".repeat(4300)}1`]);
 countModel("int-separator", ["\u001c1\u001c"]);
 countModel("int-long-text", ["x".repeat(300)]);
+// Review round 2 (finding 3): two adjacent lone surrogates in a printed layer name, and in a layer name that only the model JSON holds.
+put("cm/bad/skeleton-surrogates.json", '{"system": {"code": "SUR", "converted": true, "status_vocabulary": ["live"], "maturity_map": {"live": "proven"}}, "layers": [{"id": "L1", "code": "ONE", "name": "Desk"}, {"id": "L2", "code": "TWO", "name": "Desk \\ud808\\ud808 two"}], "capabilities": []}\n');
 put("analysis/bad/integration-unhashable.json", { meta: { mode: "integration" }, rows: [{ overlap_type: "handoff", evidence: "Patron records start in the old system and are copied to members nightly, by a job." }, { overlap_type: ["handoff"], evidence: "A list where a word belongs." }] });
 
 // ---------------------------------------------------------------- cases
@@ -555,6 +557,13 @@ add("empty-values", "empty optional values (review round 1, finding 3): --narrat
   run("fitgap", ...PAIR, "--rows", "analysis/scored/*.json", "--only", "", "--out", "deliver/fit-gap-empty-only"),
   run("fitgap", "--baseline=", "--target", LIB_MODEL, "--rows", "analysis/scored/rows-1.json", "--out", "deliver/fit-gap"),
   run("validate", "--model", CIRC_MODEL, "--fitgap", "analysis/bad/integration-unhashable.json"),
+]);
+add("spelled-paths", "paths as Python's glob and makedirs read them (review round 2, findings 1 and 3): a final separator after a file and after a pattern of files matches nothing; an out folder that is a file, and one under a file, are makedirs' errors; two adjacent lone surrogates in a printed line are one range", [
+  run("assemble", ...CIRC_SK, "--parts", "cm/CIRC/parts/part-a.json/", "cm/CIRC/parts/part-b.json", "--out", "deliver/CIRC"),
+  run("assemble", ...CIRC_SK, "--parts", "cm/CIRC/parts/*.json/", "--out", "deliver/CIRC"),
+  run("assemble", ...CIRC_SK, "--parts", "cm/CIRC/parts/*.json", "--out", "cm/CIRC/skeleton.json"),
+  run("assemble", ...CIRC_SK, "--parts", "cm/CIRC/parts/*.json", "--out", "cm/CIRC/skeleton.json/out/deeper"),
+  run("skeleton", "--skeleton", "cm/bad/skeleton-surrogates.json"),
 ]);
 add("arguments", "argument errors (argparse in the script) and help", [
   run(),

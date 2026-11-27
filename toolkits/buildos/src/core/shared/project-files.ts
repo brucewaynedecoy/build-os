@@ -304,6 +304,21 @@ export class ProjectFiles {
     }
   }
 
+  /**
+   * F-P9-04 review round 2: true when an entry is at `path`, a link at the
+   * last name not followed (Python's `os.path.lexists`), so a dangling link
+   * counts. Its folder must be inside the project (else the refusal).
+   */
+  entryExists(path: string): boolean {
+    const target = this.portPath(path, false);
+    try {
+      return target.port.entryId(target.path) !== undefined;
+    } catch (error) {
+      if (error instanceof PathRefusedError) throw this.refusal(path, false);
+      return false;
+    }
+  }
+
   /** The names in a folder, sorted by code unit, or [] when it is not a folder. Never throws. */
   list(path: string): string[] {
     try {

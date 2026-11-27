@@ -6,14 +6,14 @@
 // book-lending topic of the fixtures).
 
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 import { HEADING_FOR_TEST } from "../src/core/capability-matrix/cm-build.ts";
-import { PyMap, PySet, cmDumps, counter, counterJson, counterRepr, indexOf, pyDirname, pyEqual, pyEqualItem, pyHashKey, pyIn, pyIntOf, pyOrder, pySorted } from "../src/core/capability-matrix/py-values.ts";
+import { PyMap, PySet, checkEncodable, cmDumpChunks, cmDumps, counter, counterJson, counterRepr, indexOf, pyDirname, pyEqual, pyEqualItem, pyHashKey, pyIn, pyIntOf, pyOrder, pySorted } from "../src/core/capability-matrix/py-values.ts";
 import { CAPABILITY_MATRIX_HELP } from "../src/cli/commands/capability-matrix.ts";
 import { ENVELOPE_FIELDS } from "../src/core/shared/envelope.ts";
-import { PyFloat, PyIntDigitsError, PyJsonError, pyLoads, pyRepr } from "../src/core/shared/py-json.ts";
+import { PyFloat, PyIntDigitsError, PyJsonError, pyLoads, pyRepr, pyStrRepr } from "../src/core/shared/py-json.ts";
 import { assertIncludes, assertSame, assertSameList } from "./helpers.ts";
 import { buildos, project } from "./skill-script-support.ts";
 
@@ -332,5 +332,168 @@ describe("capability-matrix: empty values (review round 1 of pull request 10, fi
     const ctx = { files: new ProjectFiles({ root: dir, cwd: dir, openFs: createNodeFsPort as never, allowOutsideRoot: false }) } as never;
     assertSameList(pyGlob(ctx, ""), [], "empty pattern");
     assertSameList(pyGlob(ctx, "cm/CIRC/parts/part-a.json"), ["cm/CIRC/parts/part-a.json"], "a plain path");
+  });
+});
+
+describe("capability-matrix: paths as the operating system reads them (review round 2 of pull request 10, finding 1)", () => {
+  const posix = process.platform !== "win32";
+  const stop = "assemble: skeleton/parts mismatch  missing=['CIRC-CORE-01', 'CIRC-CORE-02', 'CIRC-CORE-02a'] extra=[]\n";
+  const assemble = (dir: string, ...parts: string[]) => buildos(["capability-matrix", "--root", dir, "assemble", ...CIRC_SK, "--parts", ...parts, "cm/CIRC/parts/part-b.json", "--out", "deliver/out"], dir);
+
+  it("a final separator after a file matches nothing, on every system (Python's glob: os.path.isdir of the folder)", async () => {
+    const dir = project("capability-matrix", "library");
+    const r = await assemble(dir, "cm/CIRC/parts/part-a.json/");
+    assertSame(r.exit, 4, "exit");
+    assertSame(r.stderr, stop, "the script's stop");
+    assertSame(existsSync(join(dir, "deliver", "out")), false, "nothing written");
+  });
+
+  it("`.` and `..` after a file, and `..` after a missing folder, match nothing; a path through a file cannot be opened", { skip: !posix }, async () => {
+    const dir = project("capability-matrix", "library");
+    for (const part of ["cm/CIRC/parts/part-a.json/.", "cm/CIRC/parts/part-a.json/../part-a.json", "cm/CIRC/gone/../parts/part-a.json", "cm/CIRC/gone/../parts/part-a*.json"]) {
+      const r = await assemble(dir, part);
+      assertSame(r.exit, 4, `${part}: exit`);
+      assertSame(r.stderr, stop, `${part}: the script's stop`);
+    }
+    const ok = await assemble(dir, "cm/CIRC/parts/../parts/./part-a.json");
+    assertSame(ok.exit, 0, "a `..` and a `.` after real folders match");
+    const cases: [string, string][] = [
+      ["cm/CIRC/skeleton.json/", "[Errno 20] Not a directory: 'cm/CIRC/skeleton.json/'"],
+      ["cm/CIRC/skeleton.json/.", "[Errno 20] Not a directory: 'cm/CIRC/skeleton.json/.'"],
+      ["cm/gone/../CIRC/skeleton.json", "[Errno 2] No such file or directory: 'cm/gone/../CIRC/skeleton.json'"],
+      ["cm/CIRC/", "[Errno 21] Is a directory: 'cm/CIRC/'"],
+    ];
+    for (const [path, message] of cases) {
+      const r = await buildos(["capability-matrix", "--root", dir, "skeleton", "--skeleton", path], dir);
+      assertSame(r.exit, 3, `${path}: exit`);
+      assertSame(r.stderr, `capability-matrix skeleton: ${message}\n`, `${path}: Python's open() error`);
+    }
+    const narrative = await buildos(["capability-matrix", "--root", dir, "validate", "--model", "models/int-ok/hm-capability-model.json", "--narrative", "models/int-ok/hm-capabilities.csv/"], dir);
+    assertSame(narrative.exit, 3, "narrative through a file: exit");
+    assertIncludes(narrative.stderr, "[Errno 20] Not a directory: 'models/int-ok/hm-capabilities.csv/'", "narrative through a file: message");
+  });
+
+  it("a link that leads nowhere is matched, then cannot be opened (glob uses os.lstat)", { skip: !posix }, async () => {
+    const dir = project("capability-matrix", "library");
+    symlinkSync("missing.json", join(dir, "cm", "CIRC", "parts", "dangling.json"));
+    for (const part of ["cm/CIRC/parts/dangling.json", "cm/CIRC/parts/d*.json"]) {
+      const r = await assemble(dir, part);
+      assertSame(r.exit, 3, `${part}: exit`);
+      assertSame(r.stderr, "capability-matrix assemble: [Errno 2] No such file or directory: 'cm/CIRC/parts/dangling.json'\n", `${part}: open() of the link`);
+    }
+  });
+
+  it("SD-24: a `..` right after a folder link is folded as text (Python went to the parent of the link's target)", { skip: !posix }, async () => {
+    const dir = project("capability-matrix", "library");
+    mkdirSync(join(dir, "cm", "CIRC", "parts", "inner"));
+    symlinkSync(join("parts", "inner"), join(dir, "cm", "CIRC", "link"));
+    // Python read cm/CIRC/parts/part-a.json (the parent of the target); BuildOS looks for cm/CIRC/part-a.json, which is not there.
+    const r = await assemble(dir, "cm/CIRC/link/../part-a.json");
+    assertSame(r.exit, 4, "exit");
+    assertSame(r.stderr, stop, "no match beside the link");
+  });
+
+  it("the out folder: makedirs' errors for a file, a file before the last name, and a final separator after a file", { skip: !posix }, async () => {
+    const dir = project("capability-matrix", "library");
+    const cases: [string, string][] = [
+      ["cm/CIRC/skeleton.json", "[Errno 17] File exists: 'cm/CIRC/skeleton.json'"],
+      ["cm/CIRC/skeleton.json/", "[Errno 20] Not a directory: 'cm/CIRC/skeleton.json/'"],
+      ["cm/CIRC/skeleton.json//a/b", "[Errno 20] Not a directory: 'cm/CIRC/skeleton.json//a'"],
+      ["cm/CIRC/skeleton.json/a/", "[Errno 20] Not a directory: 'cm/CIRC/skeleton.json/a/'"],
+    ];
+    for (const [out, message] of cases) {
+      const r = await buildos(["capability-matrix", "--root", dir, "assemble", ...CIRC_SK, "--parts", "cm/CIRC/parts/*.json", "--out", out], dir);
+      assertSame(r.exit, 3, `${out}: exit`);
+      assertSame(r.stderr, `capability-matrix assemble: ${message}\n`, `${out}: message`);
+    }
+    // SD-24: `..` in --out is folded as text, so only `o` is made (Python's makedirs also made the missing `gone`).
+    const folded = await buildos(["capability-matrix", "--root", dir, "assemble", ...CIRC_SK, "--parts", "cm/CIRC/parts/*.json", "--out", "gone/../o"], dir);
+    assertSame(folded.exit, 0, "gone/../o: exit");
+    assertSame(existsSync(join(dir, "gone")), false, "gone/../o: no folder gone");
+    assertSame(existsSync(join(dir, "o", "circ-capability-model.json")), true, "gone/../o: the model in o");
+  });
+
+  it("buildos fitgap keeps its own rule (F-P9-12 open): the glob it shares reads a path with a final separator as before", async () => {
+    const { pyGlob } = await import("../src/core/fitgap/fitgap.ts");
+    const dir = project("capability-matrix", "library");
+    const { ProjectFiles } = await import("../src/core/shared/project-files.ts");
+    const { createNodeFsPort } = await import("../src/adapters/node-fs.ts");
+    const ctx = { files: new ProjectFiles({ root: dir, cwd: dir, openFs: createNodeFsPort as never, allowOutsideRoot: false }) } as never;
+    assertSameList(pyGlob(ctx, "cm/CIRC/skeleton.json/"), ["cm/CIRC/skeleton.json/"], "buildos fitgap: as at eb0187f");
+    assertSameList(pyGlob(ctx, "cm/CIRC/skeleton.json/", { spelled: true }), [], "capability-matrix: no match");
+    assertSameList(pyGlob(ctx, "cm/CIRC/part*/", { spelled: true }), ["cm/CIRC/parts/", "cm/CIRC/parts-bad/", "cm/CIRC/parts-extra/"].filter((p) => existsSync(join(dir, p))), "capability-matrix: folders, spelled with the separator");
+  });
+});
+
+describe("capability-matrix: a lone surrogate's position (review round 2 of pull request 10, finding 3)", () => {
+  it("Python's UTF-8 encoder reports the whole run of surrogates, counted in code points", () => {
+    const message = (text: string): string => {
+      try {
+        checkEncodable(text);
+        return "";
+      } catch (error) {
+        return (error as Error).message;
+      }
+    };
+    assertSame(message('"x\udc01"'), "UnicodeEncodeError: 'utf-8' codec can't encode character '\\udc01' in position 2: surrogates not allowed", "one");
+    assertSame(message('"x\udc01\udc02"'), "UnicodeEncodeError: 'utf-8' codec can't encode characters in position 2-3: surrogates not allowed", "two");
+    assertSame(message(`${String.fromCodePoint(0x1f600)}\ud808\ud808${String.fromCodePoint(0x1f600)}`), "UnicodeEncodeError: 'utf-8' codec can't encode characters in position 1-2: surrogates not allowed", "after an astral character");
+    assertSame(message("\ud808\udc01"), "", "a pair is one character");
+  });
+
+  it("json.dump writes a dict key, a value, and a list item with its separator as separate chunks", () => {
+    const value = new Map<string, never>([["k\udc01", 1 as never], ["refs", ["a", "b"] as never], ["deep", new Map([["x", ["y"]]]) as never]]);
+    assertSameList(cmDumpChunks(value), ["{", "\n ", '"k\udc01"', ": ", "1", ",\n ", '"refs"', ": ", '[\n  "a"', ',\n  "b"', "\n ", "]", ",\n ", '"deep"', ": ", "{", "\n  ", '"x"', ": ", '[\n   "y"', "\n  ", "]", "\n ", "}", "\n", "}"], "the chunks of Python's _make_iterencode");
+    assertSame(cmDumpChunks(value).join(""), cmDumps(value), "the same bytes");
+  });
+});
+
+describe("capability-matrix: repr and the Unicode version (review round 2 of pull request 10, finding 4)", () => {
+  it("Python 3.14.10 (Unicode 16.0) escapes U+11DE1, a character Unicode 17.0 added; BuildOS follows Node's Unicode tables", () => {
+    // What the capture Python printed (its unicodedata is 16.0.0, where U+11DE1 is unassigned, so not printable).
+    const python = "'\\U00011de1'";
+    const node = Number(process.versions["unicode"] ?? "0");
+    // Node 26.13.1 has Unicode 17.0 (ICU 78), where U+11DE1 is a digit and printable: the one recorded difference.
+    assertSame(pyStrRepr(String.fromCodePoint(0x11de1)), node >= 17 ? `'${String.fromCodePoint(0x11de1)}'` : python, `Node's Unicode ${process.versions["unicode"]}`);
+    assertSame(pyStrRepr("\u2065"), "'\\u2065'", "a character unassigned in both versions is escaped, as Python did");
+  });
+});
+
+describe("the shared JSON reader in each command that uses it (review round 2 of pull request 10, finding 2)", () => {
+  const big = "7".repeat(4301);
+  const longInt = "7".repeat(4200);
+  const longFloat = `1.${"5".repeat(5000)}`;
+
+  it("extract bulk: an integer of 4301 digits is an input error (exit 3) with Python's text; 4200 digits and a long float are read", async () => {
+    for (const [token, exit] of [[big, 3], [longInt, 0], [longFloat, 0]] as const) {
+      const dir = project("bulk-extract", "library");
+      const index = join(dir, ".os", "indexes", "references.json");
+      writeFileSync(index, readFileSync(index, "utf8").replace('"references":', `"n": ${token}, "references":`));
+      const r = await buildos(["extract", "bulk", "--root", dir, "template", "requirement"], dir);
+      assertSame(r.exit, exit, `${token.length} characters: exit`);
+      if (exit === 3) assertIncludes(r.stderr, "Exceeds the limit (4300 digits) for integer string conversion: value has 4301 digits", "Python's ValueError text");
+    }
+  });
+
+  it("buildos fitgap: an integer of 4301 digits is an input error (exit 3) in plain words; 4200 digits and a long float are read", async () => {
+    for (const [token, exit] of [[big, 3], [longInt, 0], [longFloat, 0]] as const) {
+      const dir = project("fitgap", "library");
+      const frame = join(dir, "analysis", "frame.json");
+      writeFileSync(frame, readFileSync(frame, "utf8").replace("{", `{"n": ${token},`));
+      const r = await buildos(["fitgap", "--root", dir, "frame", "--frame", "analysis/frame.json"], dir);
+      assertSame(r.exit, exit, `${token.length} characters: exit`);
+      if (exit === 3) assertIncludes(r.stderr, "analysis/frame.json: an integer has 4301 digits; Python reads at most 4300", "the plain words");
+    }
+  });
+
+  it("capability-matrix: an integer of 4301 digits is an input error (exit 3); 4200 digits and a long float are read", async () => {
+    for (const [token, exit] of [[big, 3], [longInt, 0], [longFloat, 0]] as const) {
+      const dir = project("capability-matrix", "library");
+      const sk = join(dir, "cm", "CIRC", "skeleton.json");
+      writeFileSync(sk, readFileSync(sk, "utf8").replace("{", `{"n": ${token},`));
+      const r = await buildos(["capability-matrix", "--root", dir, "skeleton", ...CIRC_SK], dir);
+      assertSame(r.exit, exit, `${token.length} characters: exit`);
+      if (exit === 3) assertIncludes(r.stderr, "an integer has 4301 digits; Python reads at most 4300", "the plain words");
+    }
   });
 });

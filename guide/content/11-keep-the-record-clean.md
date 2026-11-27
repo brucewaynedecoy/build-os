@@ -103,7 +103,7 @@ The four commands:
 | --- | --- |
 | `buildos entities resolve --root . --mode compat --id <entity-id>` | Follows the redirect chain and prints the current canonical ID. |
 | `buildos entities validate --root . --mode compat` | Checks the whole record graph. |
-| `buildos entities consolidate --root . --mode compat --manifest <path>` | Plans a consolidation. Add `--apply` to write it. |
+| `buildos entities consolidate --root . --mode compat --manifest "<path>"` | Plans a consolidation. Add `--apply` to write it. |
 | `buildos entities rebuild-index --root . --mode compat --apply` | Rebuilds `entity-resolution.json`. `--check` reports instead. |
 
 `--mode` picks how strict the check is. `compat` treats a missing index and an old record without a redirect as warnings. `strict` treats both as errors, which is why it is the mode to run before a release.

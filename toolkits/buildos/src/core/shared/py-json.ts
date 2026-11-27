@@ -371,6 +371,13 @@ function floatJson(value: number): string {
 
 // ---------------------------------------------------------------- repr and str
 
+/**
+ * `str.isprintable()`'s categories, from Node's Unicode tables (Node 26.13.1:
+ * Unicode 17.0). The skill-script goldens were captured with Python 3.14.10,
+ * whose `unicodedata` is Unicode 16.0: a character that Unicode 17.0 added
+ * (U+11DE1) is unassigned there, so Python's `repr` escapes it and this one
+ * prints it (F-P9-04 review round 2, finding 4; recorded in the evidence).
+ */
 const NOT_PRINTABLE = /[\p{Cc}\p{Cf}\p{Cs}\p{Co}\p{Cn}\p{Zl}\p{Zp}\p{Zs}]/u;
 
 /** `str.__repr__`. */

@@ -255,27 +255,71 @@ function jsonKey(key: PyValue): string {
   throw new FitgapShapeError(`TypeError: keys must be str, int, float, bool or None, not ${typeName(key)}`);
 }
 
-/** `json.dump(o, f, indent=1, ensure_ascii=False)` (no final line break), with `PyPairs` dicts. */
-export function cmDumps(value: JsonOut): string {
-  const indent = 1;
-  const wrap = (open: string, close: string, items: string[], level: number): string => {
-    const inner = "\n" + " ".repeat(indent * (level + 1));
-    const outer = "\n" + " ".repeat(indent * level);
-    return `${open}${inner}${items.join("," + inner)}${outer}${close}`;
-  };
-  const encode = (v: JsonOut, level: number): string => {
+/**
+ * The chunks that `json.dump(o, f, indent=1, ensure_ascii=False)` hands to
+ * `f.write`, one at a time, as Python's pure-Python encoder yields them
+ * (`json.dump` never uses the C encoder): a dict key alone, `": "`, a string
+ * value alone; a scalar in a list with the separator before it (`"[\n "`
+ * for the first, `",\n "` for the others). The text file encodes each chunk
+ * on its own, so a lone surrogate's `UnicodeEncodeError` counts its position
+ * from the start of its chunk (review round 2, finding 3).
+ */
+export function cmDumpChunks(value: JsonOut): string[] {
+  const out: string[] = [];
+  const scalar = (v: JsonOut): string | undefined => {
     if (v === null) return "null";
     if (v === true) return "true";
     if (v === false) return "false";
     if (typeof v === "number" || typeof v === "bigint") return String(v);
     if (v instanceof PyFloat) return floatJson(v.value);
     if (typeof v === "string") return pyJsonString(v, false);
-    if (Array.isArray(v)) return v.length === 0 ? "[]" : wrap("[", "]", v.map((x) => encode(x, level + 1)), level);
-    const pairs: [string, JsonOut][] = v instanceof PyPairs ? v.pairs.map(([k, x]) => [jsonKey(k), x]) : [...v];
-    if (pairs.length === 0) return "{}";
-    return wrap("{", "}", pairs.map(([k, x]) => `${pyJsonString(k, false)}: ${encode(x, level + 1)}`), level);
+    return undefined;
   };
-  return encode(value, 0);
+  const encode = (v: JsonOut, level: number): void => {
+    const text = scalar(v);
+    if (text !== undefined) {
+      out.push(text);
+      return;
+    }
+    const inner = "\n" + " ".repeat(level + 1);
+    const outer = "\n" + " ".repeat(level);
+    if (Array.isArray(v)) {
+      if (v.length === 0) {
+        out.push("[]");
+        return;
+      }
+      v.forEach((x, i) => {
+        const buf = i === 0 ? `[${inner}` : `,${inner}`;
+        const item = scalar(x);
+        if (item !== undefined) out.push(buf + item);
+        else {
+          out.push(buf);
+          encode(x, level + 1);
+        }
+      });
+      out.push(outer, "]");
+      return;
+    }
+    const pairs: [string, JsonOut][] = v instanceof PyPairs ? v.pairs.map(([k, x]) => [jsonKey(k), x]) : [...(v as Map<string, JsonOut>)];
+    if (pairs.length === 0) {
+      out.push("{}");
+      return;
+    }
+    out.push("{", inner);
+    pairs.forEach(([k, x], i) => {
+      if (i > 0) out.push(`,${inner}`);
+      out.push(pyJsonString(k, false), ": ");
+      encode(x, level + 1);
+    });
+    out.push(outer, "}");
+  };
+  encode(value, 0);
+  return out;
+}
+
+/** `json.dump(o, f, indent=1, ensure_ascii=False)` (no final line break), with `PyPairs` dicts. */
+export function cmDumps(value: JsonOut): string {
+  return cmDumpChunks(value).join("");
 }
 
 /** Throws the `TypeError` of an unhashable value (a list or a dict) used as `use`. */
@@ -457,12 +501,21 @@ export function pyDirname(path: string): string {
 /** A character that `str.encode('utf-8')` refuses: a lone surrogate. */
 export const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
 
-/** Throws Python's `UnicodeEncodeError` when `text` cannot be written as UTF-8. */
+/**
+ * Throws Python's `UnicodeEncodeError` when `text` (one `write` call) cannot
+ * be written as UTF-8. Python's UTF-8 encoder reports the whole run of
+ * consecutive surrogates from the first one (`can't encode characters in
+ * position 2-3`), positions in code points (review round 2, finding 3).
+ */
 export function checkEncodable(text: string): void {
   const m = LONE_SURROGATE.exec(text);
   if (m === null) return;
-  const position = [...text.slice(0, m.index)].length;
-  throw new FitgapShapeError(`UnicodeEncodeError: 'utf-8' codec can't encode character '\\u${m[0].charCodeAt(0).toString(16)}' in position ${position}: surrogates not allowed`);
+  const points = [...text.slice(m.index)];
+  const start = [...text.slice(0, m.index)].length;
+  let end = 1;
+  while (end < points.length && points[end]!.length === 1 && /[\uD800-\uDFFF]/.test(points[end]!)) end++;
+  if (end === 1) throw new FitgapShapeError(`UnicodeEncodeError: 'utf-8' codec can't encode character '\\u${m[0].charCodeAt(0).toString(16)}' in position ${start}: surrogates not allowed`);
+  throw new FitgapShapeError(`UnicodeEncodeError: 'utf-8' codec can't encode characters in position ${start}-${start + end - 1}: surrogates not allowed`);
 }
 
 /** stderr's `backslashreplace` for a lone surrogate (`sys.exit(message)`). */
