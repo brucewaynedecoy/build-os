@@ -8592,6 +8592,8 @@ The adopter effect and the severity recommendation of [F-P9-17 After Run 2](#f-p
 - Orchestrator's recommendation: open (for the orchestrator to fill in).
 - Owner decision: open.
 
+Pull request 16 (2026-11-27): the mechanism is shown on Windows and the fix is in the repository, a two-line change in `system/.os/scripts/buildos.cmd` ([F-P9-17 Mechanism and Fix](#f-p9-17-mechanism-and-fix-pull-request-16-2026-11-27)). This question, the release that carries the fix, stays open.
+
 ### Facts for the Next Release Notes (Not Changed Here)
 
 The published `0.2.0` notes (`toolkits/buildos/RELEASE_NOTES.md`, "Known limits") say: "Not tested yet: the Command Prompt forms of the upgrade and rollback steps in the guide (they were tested in `sh` on macOS) …". Since run 2, those Command Prompt forms have run once on `windows-latest` through the rollback smoke. The notes also do not name F-P9-17. The notes file is not changed in this pull request: it is the published text of `0.2.0` (the GitHub Release body comes from it at the tag `v0.2.0`), and no repository rule says that known limits may be added to a published release's notes afterwards. F-P9-17 is recorded here and in [`R-003`](../../prd/03-open-questions-and-risk-register.md#r-003-build-os-packaging-upgrade-rollback-and-removal-hardening) instead; the notes of the release with the fix name it.
@@ -8758,5 +8760,106 @@ On 2026-11-27, macOS, from `toolkits/buildos/` and the repository root, Node.js 
 | The real-list deny-list scan, `node scripts/check-deny-list.mjs --root ../.. --pack .`, with the list in the environment, outside the repository | exit 0: 2,834 files (with this round's history record), 0 matches, 0 home folder paths, 168 of 168 package files read |
 | `make-docs project paths validate` | valid, 0 failing findings |
 | `make-docs project markdown validate` | 184 findings, the same count as before the round; none new (this file keeps its six old `block-spacing` findings) |
+
+No golden capture ran. No workflow was started by hand.
+
+## Review Round 3 (Pull Request 15) (2026-11-27)
+
+This record was missing when pull request 15 merged; it is added afterwards, in pull request 16. The reviewer's round 3 of pull request 15 had four findings, all of them wording points. Under the stop rule of the review loop (three review rounds, then one fix pass), the orchestrator fixed them with no further review: the three findings in files in commit `9458dde`, and the fourth in the pull request body. No product file, wrapper, or test changed in that pass.
+
+| Finding | What changed |
+| --- | --- |
+| 1 | The clause "lost after the helper returns" is removed from the F-P9-17 text of this report, because run 3 measured the helper only when started directly ([F-P9-17 After Run 3](#f-p9-17-after-run-3-cause-narrowed), "What is still not proven"). |
+| 2 | [`R-003`](../../prd/03-open-questions-and-risk-register.md#r-003-build-os-packaging-upgrade-rollback-and-removal-hardening) credits run 2 with A72 and run 3 with the registry-route proof of F-P8-09. |
+| 3 | The owner question for F-P9-17 and the open-items table name only `buildos-intake.cmd` as a tested legacy script; `buildos-design.cmd` and `buildos-discovery.cmd` are named as not tested. |
+| 4 | The run 4 line of the pull request 15 body. |
+
+## F-P9-17 Mechanism and Fix (Pull Request 16) (2026-11-27)
+
+The owner gave the go on 2026-11-27, in these words: "Go ahead and implement the Windows fix." That is the go for the fix in the repository. It is not a decision on the release that carries it: [the owner question](#owner-question-for-f-p9-17) (`0.2.1` or `0.3.0`) stays open. The package version, the release notes of a published version, and the ledger do not change. Pull request 16, on the branch `fix/f-p9-17-windows-wrapper-exit-code` from `main` at `8d81488`.
+
+### The Tests First
+
+`toolkits/buildos/test/wrapper-exit-codes.test.ts` (new) runs the project wrappers of this tree with the real `node` (on Windows the `node.exe` of the runner, no `node.cmd` stub) and a fake BuildOS program, which writes one line to stdout and one to stderr and exits with the code that the test gives it: `0`, `1`, `2`, `7`, and `127`. The program is reached through three routes that work offline: a local install (`node_modules/build-os` in the project), a global install (on Windows an npm `.cmd` shim on `PATH` with `node_modules\build-os` next to it, which the helper uses without running the shim), and `npx` (on Windows a copy of npm's own `npx.cmd` from the runner's Node.js folder, whose `npx-cli.js` is the fake). On Windows each `.cmd` wrapper starts three ways: `cmd.exe /d /s /c "<wrapper> args"` (as Node.js, CI runners, and agents start a `.cmd` file), `cmd.exe /d /s /c "call <wrapper> args"`, and from PowerShell (`pwsh`) as `& <wrapper> args` with `$LASTEXITCODE`. A driver batch file runs, under one `cmd.exe`, the helper as `buildos.cmd` starts it (`node.exe pinned-version.cjs --cmd <buildos.cmd> <manifest> some-command --flag`, with the two variables that `buildos.cmd` sets), then `call` of the wrapper, then a nested `cmd /d /s /c` of the wrapper, and reads `%ERRORLEVEL%` on the line right after each: the measurement that [F-P9-17 After Run 3](#f-p9-17-after-run-3-cause-narrowed) names as missing. Seven probe batch files show the `cmd.exe` rule apart from BuildOS. On macOS and Linux the `sh` wrappers get the same exit-code cases with the real `node` (directly and through `sh -c`; they passed before the fix too), and the Windows-only cases skip.
+
+The first commit of the pull request (`d702c32`) has these tests and no wrapper change. Its `buildos-ci` run, [46066863403](https://github.com/brucewaynedecoy/build-os/actions/runs/46066863403), failed on `windows-latest` only, with 19 failing tests, all of them new (2,531 tests: 2,383 passed, 19 failed, 129 skipped); Linux and macOS passed. Each failing case stops at its first wrong code, so the logs show the program's `1` (or `2` for the `npx` legacy cases) and the wrapper's `0`, with the program's stderr line printed:
+
+| Case (Windows, wrappers of `0.2.0`, run 46066863403) | Result |
+| --- | --- |
+| `buildos.cmd`, `cmd /c`, local-install, global-install, and `npx` routes | exit `0` for program code `1` (failed) |
+| `buildos.cmd`, PowerShell `&`, the three routes | `$LASTEXITCODE` `0` for program code `1` (failed) |
+| `buildos.cmd`, `cmd /c call`, the three routes | each code kept: `0`, `1`, `2`, `7`, `127` (passed) |
+| `buildos-intake.cmd`, `buildos-discovery.cmd`, `buildos-design.cmd`, `cmd /c` and PowerShell `&`, local-install route | exit `0` for program code `1` (failed) |
+| The same three, `cmd /c call`, local-install route | each code kept (passed) |
+| The same three, `cmd /c`, `npx` route with npm's own `npx.cmd` | exit `0` for program code `2` (failed) |
+| `buildos.cmd`, `cmd /c`, a caller variable `ERRORLEVEL=0` | exit `0` for program code `2` (failed) |
+| One `cmd.exe`, the three routes, program code `1` | `direct=1`, `call=1`, `nested=0` (failed on `nested`) |
+
+The probes, each with a program that exits `2`; the three numbers are the exit code of `cmd.exe` for `cmd /c <file>`, for `cmd /c call <file>`, and for `cmd /c <file>` with a caller variable `ERRORLEVEL=0`:
+
+| Probe batch file | Codes |
+| --- | --- |
+| The program, then `exit /b` | `0`, `2`, `0` |
+| The program at the end of the file (the shape of npm's `npx.cmd`) | `2`, `2`, `2` |
+| The program, then `goto :eof` | `0`, `2`, `0` |
+| The program, then `exit /b %ERRORLEVEL%` | `2`, `2`, `0` |
+| `setlocal DisableDelayedExpansion`, the program, then `exit /b` (the shape of `buildos.cmd` in `0.1.0` and `0.2.0`) | `0`, `2`, `0` |
+| `setlocal DisableDelayedExpansion`, the program, then `exit /b %ERRORLEVEL%` | `2`, `2`, `0` |
+| `setlocal DisableDelayedExpansion`, `set "ERRORLEVEL="`, the program, then `exit /b %ERRORLEVEL%` (the shape of the fix) | `2`, `2`, `2` |
+
+### The Mechanism, as the Run Shows It
+
+When `cmd /c` runs a `.cmd` file with no `call`, the exit code of `cmd.exe` is the code of the last command that ran in the file, not the `ERRORLEVEL`. A bare `exit /b` (or `goto :eof`) is such a command, with code `0`. So `buildos.cmd`, whose last line after `node` is a bare `exit /b`, gives `0` to every caller that starts it that way: `cmd /c`, and PowerShell, which starts a `.cmd` file through `cmd.exe /c`. With `call`, the code is the `ERRORLEVEL`, which `node` set, so the code is kept; npm's `npx.cmd` ends with the program itself, so it passes the code too. Microsoft's reference for `exit` says only that `exit /b <exitcode>` sets `ERRORLEVEL` and that `exit` outside a batch file sets the process exit code; it does not describe this case, so the rule is recorded as measured, not as documented. `pinned-version.cjs` is not involved: started directly, and under one `cmd.exe`, it returned the program's code on all three routes, also through npm's `npx.cmd`. The legacy `.cmd` scripts start `buildos.cmd` with no `call`, so `buildos.cmd` ends them, and they give what `buildos.cmd` gives. A variable named `ERRORLEVEL` in the caller's environment hides the real one in `%ERRORLEVEL%`, so `exit /b %ERRORLEVEL%` alone gives that variable's value.
+
+### The Fix
+
+`system/.os/scripts/buildos.cmd`, two lines and their comments. The last line of the normal path, after `node "%~dp0pinned-version.cjs" --cmd "%~f0" "%~dp0..\manifest.json" %*`, is now `exit /b %ERRORLEVEL%` in place of `exit /b`; and right after `setlocal DisableDelayedExpansion` the wrapper runs `set "ERRORLEVEL="`, which removes a variable of that name from its own copy of the environment only. `%ERRORLEVEL%` is read on its own line after `node` has ended, so delayed expansion stays off. Every other line is the same: the arguments go on as `%*` with no `call`, so they are never read twice; `NoDefaultCurrentDirectoryInExePath`, the loop guard, the Node.js check, and the start of the program by Node.js itself (no path comes back as text) do not change; the first lines that the helper reads to know a wrapper do not change. The legacy `.cmd` scripts and `pinned-version.cjs` do not change. `system/.os/scripts/AGENTS.md` now says that `buildos.cmd` ends with `exit /b %ERRORLEVEL%`, so the caller gets the exit code also without `call`, and why the wrapper removes an `ERRORLEVEL` variable. The probe test now asserts the codes above, and `test/rollback-smoke.test.ts` checks the new last line.
+
+The wrapper files ship in the package (`dist/system/`, built from `system/`) and `buildos init` copies them byte for byte; no golden, managed-file hash, manifest contract, or parity exception pins their bytes, so no golden changed and no capture ran. An existing project does not get the fixed wrapper by itself: `buildos init` in a project that BuildOS already set up writes no wrapper (a rerun only refreshes its sections in the shared files), and the guide's upgrade steps from `0.1.0` to `0.2.0` change the version and four skills only. So an adopter on Windows gets the fix only by copying `.os/scripts/buildos.cmd` from the release that has it; the notes and the upgrade steps of that release must say so.
+
+### The Guide
+
+Chapter 4 says which versions have the defect, in place of "A fix is planned.": "On Windows, in BuildOS `0.1.0` and `0.2.0`, the project wrapper `.os\scripts\buildos.cmd` and the `.cmd` scripts with the old names give exit code `0` when they are started without `call`, for example by `cmd /c`, by PowerShell, or by an agent. The error text is right, so check the text, not only the code. The fix is in the BuildOS repository and waits for a release." The repeated claim says "or `0` on Windows through the project wrapper of `0.1.0` or `0.2.0`, as above". `guide/BuildOS-Guide.html` is rebuilt (`node tools/build-guide.mjs`).
+
+### The Smokes
+
+The rollback smoke runs only the published `0.1.0` and `0.2.0`, whose wrappers keep the defect, so its Windows checks of exit `0` (F-P9-17) stay true, and it has no mode that uses this tree's wrappers; it is not changed. The tarball and local-pack modes of `scripts/published-smoke.ts` use this tree's wrappers, but their wrapper steps check a command that succeeds and the Node.js-missing message (exit `127`), not a failing command; adding a failing-command wrapper step there is a follow-up for the release that carries the fix.
+
+### What Stays Unproven
+
+- npm's real `npx` with the registry: the tests use a copy of npm's own `npx.cmd` with a fake `npx-cli.js`, offline. The fixed wrapper on the real `npx` route with the registry runs only when a release with the fix is smoked.
+- A real global install made by `npm install -g` on Windows: the test lays out the same files (an npm shim and the package next to it).
+- An interactive Command Prompt (a person who types the wrapper, then `echo %ERRORLEVEL%`): not measured; the driver measures a batch file.
+- Windows PowerShell 5.1 (`powershell.exe`): only `pwsh` ran.
+- Exit codes outside `0` to `127`, and codes from a real BuildOS failure other than a usage error: the fake program covers the five codes above.
+
+### The Run of the Fix
+
+The `buildos-ci` run of the fix commit (`de7e8b6`), [46068381377](https://github.com/brucewaynedecoy/build-os/actions/runs/46068381377), passed on all jobs. On `windows-latest` the unit tests had 2,531 tests: 2,402 passed, 0 failed, 129 skipped; the golden harness had 299 tests: 294 passed, 0 failed, 5 skipped. The existing Windows wrapper tests of `test/wrappers.test.ts` (arguments with `%`, `^`, double quotes, `&`, and `!`, the loop guard, the Node.js messages, and the `PATH` rules) passed with the fixed wrapper. The new cases, on Windows:
+
+| Wrapper | Route | `cmd /c` | `cmd /c call` | PowerShell `&` |
+| --- | --- | --- | --- | --- |
+| `buildos.cmd` | local install, global install, `npx` (npm's own `npx.cmd`) | `0`, `1`, `2`, `7`, `127` kept (passed) | kept (passed) | kept (passed) |
+| `buildos-intake.cmd`, `buildos-discovery.cmd`, `buildos-design.cmd` | local install | kept (passed) | kept (passed) | kept (passed) |
+| The same three | `npx` (npm's own `npx.cmd`) | `2` kept (passed) | not run | not run |
+| `buildos.cmd`, a caller variable `ERRORLEVEL=0` | local install | `2` kept (passed) | not run | not run |
+
+Under one `cmd.exe`, on the three routes, `%ERRORLEVEL%` was the program's code after the helper started directly, after `call` of the wrapper, and after a nested `cmd /c` of the wrapper, for each of the five codes. The seven probes gave the same codes as in the first run, now asserted. On Linux and macOS the `sh` cases passed.
+
+### Check Results (Pull Request 16)
+
+On 2026-11-27, macOS, from `toolkits/buildos/` and the repository root, the sandbox off for the tests.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck`; `node scripts/check-dependencies.ts`, `--installed`; `node scripts/check-no-python.ts` | passed each |
+| `npm test` (unit, golden, and conversion-eval tests) | 2,974 tests: 2,961 passed, 0 failed, 13 skipped (the Windows-only cases skip on macOS) |
+| `npm run build`; `npm pack --dry-run --json` | passed; 168 files (unchanged); `dist/system/.os/scripts/buildos.cmd` is byte for byte `system/.os/scripts/buildos.cmd` |
+| `node tools/build-guide.mjs` (from `guide/`) | `Wrote BuildOS-Guide.html (692 KB) from 22 documents.`, no warning |
+| The real-list deny-list scan, `node scripts/check-deny-list.mjs --root ../.. --pack .`, with the list in the environment, outside the repository | exit 0: 2,837 files, 0 matches |
+| `make-docs project paths validate` | valid, 0 failing findings |
+| `make-docs project markdown validate` | 184 findings, the same count as on `main`; none new |
+| `buildos-ci` run 46066863403 (`d702c32`, the tests only) | failed on `windows-latest` only: 19 new tests (above); passed on Linux and macOS; `test/rollback-smoke.test.ts` "finds both guide sections" passed on Windows |
+| `buildos-ci` run 46068381377 (`de7e8b6`, the fix) | passed on all jobs |
 
 No golden capture ran. No workflow was started by hand.

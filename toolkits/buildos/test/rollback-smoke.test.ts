@@ -19,7 +19,9 @@ import { ALL_COMMANDS, ancestorInstalls, buildosNames, cacheProblems, changedLin
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = resolve(packageRoot, "..", "..");
-const guideText = readFileSync(join(repoRoot, "guide", "content", "04-install-and-configure-your-instance.md"), "utf8");
+// Line ends are read as LF: git checks out guide/content/ with the system's line ends (CRLF on a
+// Windows runner), and the section finders below match \n (as guide-walk.test.ts and guide-examples.test.ts do).
+const guideText = readFileSync(join(repoRoot, "guide", "content", "04-install-and-configure-your-instance.md"), "utf8").replace(/\r\n/g, "\n");
 const start = guideText.indexOf("### From 0.1.0 to 0.2.0");
 const end = guideText.indexOf("> **Not available yet.** There is no `buildos update` command yet.", start);
 const section = guideText.slice(start, end);
@@ -272,16 +274,18 @@ describe("review round 1 of pull request 15, finding 2: the F-P9-17 diagnostic",
     assert.match(script, /const args = \[helperFile, "--npx", join\(npmRoot, "bin", "npx-cli\.js"\), FROM_VERSION, "capability-matrix", "--help"\];\n {4}const direct = run\([^\n]*, process\.execPath, args, 2, project,/);
     // The batch wrapper starts node with these arguments, so the direct form matches it.
     const cmd = readFileSync(join(repoRoot, "system", ".os", "scripts", "buildos.cmd"), "utf8");
-    assert.match(cmd, /node "%~dp0pinned-version\.cjs" --cmd "%~f0" "%~dp0\.\.\\manifest\.json" %\*\r?\nexit \/b/);
+    // F-P9-17 fix: the line after node names the exit code, so cmd /c without call passes it on (test/wrapper-exit-codes.test.ts).
+    assert.match(cmd, /node "%~dp0pinned-version\.cjs" --cmd "%~f0" "%~dp0\.\.\\manifest\.json" %\*\r?\nexit \/b %ERRORLEVEL%\r?\n/);
   });
 });
 
 // Review round 2 of pull request 15, finding 2: run 3 saw the 0.1.0 usage error with exit 0 through the
 // Windows wrapper's npx route (F-P9-17), so the guide names that exception where it says exit code 2.
+// Pull request 16 (the F-P9-17 fix): the guide names the versions with the defect and says the fix waits for a release.
 describe("review round 2 of pull request 15, finding 2: the guide names the Windows exit code of F-P9-17", () => {
   it("the first description of the failure names the exception, and the repeated claim points to it", () => {
-    const first = "a skill command stops with `unknown command` (exit code `2`). On Windows, through the project wrapper `.os\\scripts\\buildos.cmd`, the error text is right but the exit code can be `0`, so check the text, not only the code. A fix is planned.";
-    const repeated = "the command stops with `unknown command` (exit code `2`, or `0` on Windows through the project wrapper, as above).";
+    const first = "a skill command stops with `unknown command` (exit code `2`). On Windows, in BuildOS `0.1.0` and `0.2.0`, the project wrapper `.os\\scripts\\buildos.cmd` and the `.cmd` scripts with the old names give exit code `0` when they are started by `cmd /c` without `call` or by PowerShell, which is how a script or an agent usually starts them. The error text is right, so check the text, not only the code. The fix is in the BuildOS repository and waits for a release.";
+    const repeated = "the command stops with `unknown command` (exit code `2`, or `0` on Windows through the project wrapper of `0.1.0` or `0.2.0`, as above).";
     assert.ok(guideText.includes(first));
     assert.ok(guideText.includes(repeated));
     assert.ok(guideText.indexOf(first) < guideText.indexOf(repeated));
