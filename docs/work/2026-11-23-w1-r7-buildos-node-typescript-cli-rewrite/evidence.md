@@ -6407,7 +6407,7 @@ Counts: the package tarball has 168 files (173 in `0.1.0`; the five scripts are 
 | Criterion | Status | Proof |
 | --- | --- | --- |
 | A79 | Not met as written. The check passes; a search of `system/.os/skills/` finds no `.py` file, and finds Python calls only in `capability-matrix/SKILL.md` (19 findings: 10 `.py` file names, 7 `python3` commands, 1 code fence, 1 shebang), the named exception. On the old tree (`HEAD` before t9) the check fails with 42 findings in the two other skills. | `node scripts/check-no-python.ts`: exit 0, 59 files read; `test/check-no-python.test.ts` |
-| A80 | Met locally on macOS; needs a green CI run of this branch on the three systems. | Local run with a `PATH` of only `node` and `sh`: no Python found; wrapper checks passed; 35 bulk-extract cases (142 steps), 15 fit-gap cases (64 steps), 11 Azure Boards cases (96 steps) passed; the parity test 65 of 65 with that `PATH`. With `python3` on that `PATH` the smoke stops with exit 1. |
+| A80 | Met: the `no-python` job of CI run 45916436564 of `980ef40` passed on Ubuntu, macOS, and Windows (see [CI Run of `980ef40`](#ci-run-of-980ef40-stage-3)). Locally on macOS too: | Local run with a `PATH` of only `node` and `sh`: no Python found; wrapper checks passed; 35 bulk-extract cases (142 steps), 15 fit-gap cases (64 steps), 11 Azure Boards cases (96 steps) passed; the parity test 65 of 65 with that `PATH`. With `python3` on that `PATH` the smoke stops with exit 1. |
 | A81 | Open: t13 is not started. | None |
 
 ### Check Results (Stage 3)
@@ -6447,3 +6447,11 @@ Not run here: Node 24, Linux, and Windows (the CI run of the pull request covers
 - F-P9-07 (new): the parity test counts a removed file as equal to an untouched one.
 - F-P8-11: open, unchanged (owner decision).
 - F-P8-12 and F-P8-13: fixed (above).
+
+### CI Run of `980ef40` (Stage 3)
+
+`980ef40` holds the Stage 3 code. Its buildos-ci [run 45916436564](https://github.com/brucewaynedecoy/build-os/actions/runs/45916436564) (push) and [run 45916467857](https://github.com/brucewaynedecoy/build-os/actions/runs/45916467857) (pull request 7) ran on GitHub. In run 45916436564, each `no-python` job (Ubuntu, macOS, and Windows, Node 24) passed: the no-Python check (59 files), then, with `NO_PYTHON_PATH` (Ubuntu and macOS: one folder with `node` and `sh`; Windows: that folder and `System32`), `no-python-smoke.ts` printed "no python, python3, or py program on it", "wrapper: every skill command passed", and 35 bulk-extract cases (142 steps), 15 fit-gap cases (64 steps), and 11 Azure Boards cases (96 steps) passed, and `test/skill-script-parity.test.ts` passed 65 of 65. The three `test` jobs (Ubuntu, macOS, and Windows) passed and ran the no-Python check too; on Ubuntu the test step had 2,449 tests (0 fail), the golden harness 287 (0 fail), and the installed-tarball step 167 (0 fail). The `buildos-smoke` run 45916467963 (its script changed for F-P8-13) passed on the three systems against the published `0.1.0`. The OSV gate, the Make Docs contract job, the cross-OS pack report, and the invented-list deny-list job passed; the real-list deny-list job runs on the default branch only and was skipped.
+
+- A80: met. Each of the three commands runs on Ubuntu, macOS, and Windows with Node 24 and no Python on `PATH`.
+- A79 stays not met as written (the `capability-matrix` exception, F-P9-04); A81 stays open (t13).
+- After the run, one sentence was added to the `buildos-bulk-extract` skill: Command Prompt needs double quotes, not single quotes, around a name with a space (the skill's examples quote `--author` and `--reviewer` names with single quotes, as the earlier script lines did). `npm test` passed again locally (2,749 tests, 0 fail).

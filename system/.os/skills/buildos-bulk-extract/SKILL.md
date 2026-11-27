@@ -13,7 +13,7 @@ There are two separate agent tasks. An ordinary extraction request starts **Stag
 
 ## Work units and helper
 
-Treat a requested count as the total set. Check source size and format before dividing work. When working alone, finish one source at a time. Agents may review different sources in parallel. A coordinator assigns disjoint sources and keeps the total count. The helper is the `buildos extract bulk` command. Run it through the project wrapper `.os/scripts/buildos` from the project root (`.os\scripts\buildos.cmd` on Windows, with the same arguments). It needs Node.js 24 or newer and nothing else, and it never runs Git.
+Treat a requested count as the total set. Check source size and format before dividing work. When working alone, finish one source at a time. Agents may review different sources in parallel. A coordinator assigns disjoint sources and keeps the total count. The helper is the `buildos extract bulk` command. Run it through the project wrapper `.os/scripts/buildos` from the project root (`.os\scripts\buildos.cmd` on Windows, with the same arguments; Command Prompt needs double quotes, not single quotes, around a name with a space). It needs Node.js 24 or newer and nothing else, and it never runs Git.
 
 Use the harness assigned by the user. Do not choose or switch harnesses. Delegate Stage 1 with a short task message: "Use the current buildos-bulk-extract skill for Stage 1 on [sources]. Follow its Stage 1 write limits. Stop after staging." Do not add source, row-type, or domain exclusions unless the user requests them.
 

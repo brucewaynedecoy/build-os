@@ -30,6 +30,8 @@ Framing: [W1 R7 backlog](../../../docs/work/2026-11-23-w1-r7-buildos-node-typesc
 | Docs (t12) | Guide chapters and app, `toolkits/buildos/README.md`, `RELEASE_NOTES.md`, `SECURITY.md`, the maintainer guide |
 | Checks | `npm test` 2,749 tests, 0 fail; every `capture.ts --check` mode passes; real-list deny-list check 0 matches |
 
+CI record (same day): CI run 45916436564 of `980ef40` passed the new `no-python` job on Ubuntu, macOS, and Windows with Node 24 and no Python on PATH, so A80 is met; the `buildos-bulk-extract` skill now says that Command Prompt needs double quotes around a name with a space.
+
 Deferred obligations and Unassisted Goal Testing: `not-needed-now`; no `O-###` or `NUAT-###` applies.
 
 ## Documentation
