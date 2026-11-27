@@ -68,7 +68,7 @@ describe("the printed-command helper (src/core/shared/run-command.ts)", () => {
   });
 
   it("a source build, 0.0.0-dev, build metadata (+local), and any other text give plain buildos", () => {
-    for (const version of ["dev", "0.0.0-dev", "0.2.0+local", "0.2.0-rc.1+abc", "01.2.3", "1.2", "", "latest", "0.2.0 && echo"]) {
+    for (const version of ["dev", "0.0.0-dev", "0.2.0+local", "0.2.0-rc.1+abc", "01.2.3", "1.2", "", "latest", "0.2.0 && echo", "0.2.0-01", "0.2.0-rc.01", "9007199254740992.0.0", `0.2.0-${"a".repeat(251)}`]) {
       assert.deepEqual(runProgram(version), ["buildos"], version);
       assert.equal(isRegistryVersion(version), false, version);
     }
@@ -96,7 +96,7 @@ describe("the printed-command helper (src/core/shared/run-command.ts)", () => {
   });
 
   it("the harness's own statement of the PE-023 rule gives the same text as the helper", () => {
-    for (const version of [RELEASE, "dev", "0.2.0+local", "0.3.0-rc.1"]) {
+    for (const version of [RELEASE, "dev", "0.2.0+local", "0.3.0-rc.1", "0.2.0-01", "0.3.0-0.rc-1.x7", "9007199254740991.0.0", "9007199254740992.0.0", `0.2.0-${"a".repeat(250)}`, `0.2.0-${"a".repeat(251)}`]) {
       assert.equal(printedProgram({ version, sourceRevision: "unknown" }), runProgram(version).join(" "), version);
     }
     const cases: [string, string][] = [

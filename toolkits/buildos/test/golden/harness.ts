@@ -824,15 +824,26 @@ export function printedCommandClass(exceptions: ExceptionsFile): PrintedCommandC
 
 /**
  * PE-023: the program a printed fix command starts with, for the build
- * identity the comparison expects. A release version (MAJOR.MINOR.PATCH with
- * an optional prerelease part, not 0.0.0-dev) gives `npx -y build-os@<version>`;
- * the development identity and any other version give `buildos`. This is
- * the harness's own statement of the rule, not a call to the CLI's code.
+ * identity the comparison expects. A release version gives
+ * `npx -y build-os@<version>`: an exact semver version of at most 256
+ * characters, MAJOR.MINOR.PATCH without leading zeros and each at most
+ * Number.MAX_SAFE_INTEGER, with an optional prerelease part whose numeric
+ * identifiers have no leading zero, and not 0.0.0-dev. The development
+ * identity and any other version give `buildos`. This is the harness's own
+ * statement of the rule (the manifest contract's exact version), not a call
+ * to the CLI's code.
  */
 export function printedProgram(identity: BuildIdentity | undefined): string {
   const version = identity?.version;
-  const release = version !== undefined && version !== "0.0.0-dev" && /^(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.test(version);
-  return release ? `npx -y build-os@${version}` : "buildos";
+  return version !== undefined && isPrintedReleaseVersion(version) ? `npx -y build-os@${version}` : "buildos";
+}
+
+function isPrintedReleaseVersion(version: string): boolean {
+  if (version.length > 256 || version === "0.0.0-dev") return false;
+  const m = /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/.exec(version);
+  if (m === null) return false;
+  if (![m[1], m[2], m[3]].every((n) => BigInt(n!) <= BigInt(Number.MAX_SAFE_INTEGER))) return false;
+  return (m[4] ?? "").split(".").every((id) => id === "" || !/^0[0-9]+$/.test(id));
 }
 
 /** Go's `%q` string literal decoded (the forms the goldens hold: printable text, `\\`, `\"`, and `\xHH`). */

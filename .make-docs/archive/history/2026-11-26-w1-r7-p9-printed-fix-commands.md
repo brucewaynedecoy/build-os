@@ -31,6 +31,8 @@ Framing: [W1 R7 backlog](../../../docs/work/2026-11-23-w1-r7-buildos-node-typesc
 
 Pull request 9 (`fix/f-p8-11-printed-commands`). CI passed on three systems for the F-P8-11 commit, with the printed rebuild command run in Command Prompt and Windows PowerShell on Windows, and `buildos-smoke` for `0.1.0` passed with step 10. Pull request 8 was opened by mistake from `rewrite/p9-stage-3` and is closed; the evidence records it.
 
+Bot review fix (same day): the harness rule `printedProgram` now states the exact-version limits itself (at most 256 characters, each number at most `Number.MAX_SAFE_INTEGER`, no numeric prerelease identifier with a leading zero), so `0.2.0-01` gives `buildos` there as in the CLI helper; the tests check both agree on these versions.
+
 Deferred obligations and Unassisted Goal Testing: `not-needed-now`; no `O-###` or `NUAT-###` applies. Guide coverage: `update-existing`; chapter 18 and the entity consolidation user guide.
 
 ## Documentation

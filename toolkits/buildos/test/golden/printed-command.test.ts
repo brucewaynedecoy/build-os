@@ -49,6 +49,11 @@ describe("PE-023 printed fix commands: the lists are exact", () => {
     assert.equal(printedProgram({ version: "0.2.0+local", sourceRevision: "unknown" }), "buildos");
     assert.equal(printedProgram({ version: "0.0.0-dev", sourceRevision: "unknown" }), "buildos");
     assert.equal(printedProgram({ version: "0.3.0-rc.1", sourceRevision: "unknown" }), "npx -y build-os@0.3.0-rc.1");
+    assert.equal(printedProgram({ version: "0.3.0-0.rc-1.x7", sourceRevision: "unknown" }), "npx -y build-os@0.3.0-0.rc-1.x7");
+    assert.equal(printedProgram({ version: "9007199254740991.0.0", sourceRevision: "unknown" }), "npx -y build-os@9007199254740991.0.0");
+    for (const version of ["0.2.0-01", "0.2.0-rc.01", "9007199254740992.0.0", `0.2.0-${"a".repeat(251)}`, "01.2.3"]) {
+      assert.equal(printedProgram({ version, sourceRevision: "unknown" }), "buildos", version);
+    }
   });
 
   for (const platform of GOLDEN_PLATFORMS) {
