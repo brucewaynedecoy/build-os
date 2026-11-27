@@ -95,7 +95,7 @@ describe("P6-R3-02: the first plan's view of each path is carried through the se
     const human = await init(dir, ["--make-docs"], { process: stub.port });
     assert.equal(human.exit, 10, shape(human.stdout));
     assert.ok(human.stdout.includes(
-        "\nStopped. Make Docs was set up, but BuildOS changed nothing. While Make Docs ran, 1 path that BuildOS must write changed, so BuildOS did not write over it.\n\nThis path changed while Make Docs ran:\n  .os/scripts/buildos (it was not there before Make Docs ran, and now it is)\n\nMake Docs: set up.\n\nCheck this path, then run the same init command again. Make Docs already ran, so when you run it again, use --skip-make-docs and not --make-docs.\n",
+        "\nStopped. Make Docs was set up, but BuildOS changed nothing. While Make Docs ran, 1 path that BuildOS must write changed, so BuildOS did not write over it.\n\nThis path changed while Make Docs ran:\n  .os/scripts/buildos (it was not there before Make Docs ran, and now it is)\n\nMake Docs: set up.\n\nCheck this path, then run the same init command again, but with --skip-make-docs and without --make-docs, because Make Docs already ran.\n",
       ), shape(human.stdout));
     assertSame(readFileSync(join(dir, ".os", "scripts", "buildos"), "utf8"), "#!/bin/sh\necho another writer\n");
     assertSame(existsSync(join(dir, ".os", "manifest.json")), false);

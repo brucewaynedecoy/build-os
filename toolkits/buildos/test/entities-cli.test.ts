@@ -259,7 +259,9 @@ describe("entities domain (Go internal/cli tests)", () => {
     assert.equal(ok.code, 0);
     assert.equal(ok.stderr, "");
     // PE-023 (F-P8-11 review round 1): on Windows the action line names its shell first; POSIX quotes the root in single quotes.
-    const action = process.platform === "win32" ? 'run this in Command Prompt: buildos entities rebuild-index --root ".*"' : "buildos entities rebuild-index --root '.*'";
+    // The label follows the command: a temporary folder with a `!` adds the delayed expansion words.
+    const label = root.includes("!") ? "run this in Command Prompt, with delayed expansion off" : "run this in Command Prompt";
+    const action = process.platform === "win32" ? `${label}: buildos entities rebuild-index --root ".*"` : "buildos entities rebuild-index --root '.*'";
     assert.match(ok.stdout, new RegExp(`^entities\\.validate: ok\\nroot: .*\\nmode: compat\\nversion: dev\\nsource revision: unknown\\nwrite status: not_requested\\nWARNING \\[index_stale\\]: entity-resolution index is missing\\n {2}action: ${action} --mode compat --apply\\n\\{\\n {2}"valid": true,`));
     const failed = await entities(["validate", "--root", root, "--mode", "strict"]);
     assert.equal(failed.code, 4);

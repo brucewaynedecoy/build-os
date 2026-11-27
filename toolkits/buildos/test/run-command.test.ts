@@ -13,7 +13,9 @@
 //   checkout's bundle, runs as printed in the system shell (sh on POSIX;
 //   Command Prompt on Windows, after its shell label), for folders with spaces
 //   and shell characters; on Windows also through the PowerShell route of the
-//   user guide (open Command Prompt from PowerShell, then paste).
+//   user guide (open Command Prompt with delayed expansion off from
+//   PowerShell, `cmd /v:off`, then paste) and in the form the smoke step
+//   runs it (`cmd /d /v:off /s /c`, F-P8-11 review round 2, finding 3).
 // - F-P8-11 review round 1: the Windows label (finding 1), and the "run ...
 //   again" messages with a root that is not the current folder (finding 2).
 
@@ -32,6 +34,7 @@ import { rebuildCommand } from "../src/core/entities/commands.ts";
 import { createEnvelope } from "../src/core/shared/envelope.ts";
 import { goQuote } from "../src/core/shared/go-quote.ts";
 import { COMMAND_PROMPT_LABEL, isRegistryVersion, labelledCommand, printedRun, runCommand, runProgram, shellLabel, SOURCE_RUN } from "../src/core/shared/run-command.ts";
+import { commandPromptArgs } from "../scripts/printed-fix-step.ts";
 import { applyPrintedCommands, printedProgram } from "./golden/harness.ts";
 import { assertIncludes, assertSame, captureIo } from "./helpers.ts";
 
@@ -293,7 +296,8 @@ describe("the printed rebuild command runs as printed in the system shell (F-P8-
     process.platform === "win32"
       ? [
           { shell: "Command Prompt", typed: false, spawn: (line) => spawnSync(comSpec, [`/d /s /c "${line}"`], { encoding: "utf8", windowsVerbatimArguments: true }) },
-          { shell: "PowerShell, then cmd", typed: true, spawn: (line) => spawnSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", "cmd"], { encoding: "utf8", input: `${line}\r\nexit\r\n` }) },
+          { shell: "Command Prompt, delayed expansion off (the smoke form)", typed: false, spawn: (line) => spawnSync(comSpec, commandPromptArgs(line), { encoding: "utf8", windowsVerbatimArguments: true }) },
+          { shell: "PowerShell, then cmd /v:off", typed: true, spawn: (line) => spawnSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", "cmd /v:off"], { encoding: "utf8", input: `${line}\r\nexit\r\n` }) },
         ]
       : [{ shell: "sh", typed: false, spawn: (line) => spawnSync("/bin/sh", ["-c", line], { encoding: "utf8" }) }];
 
@@ -318,7 +322,7 @@ describe("the printed rebuild command runs as printed in the system shell (F-P8-
   for (const name of names) {
     it(`a folder named ${JSON.stringify(name)}`, { timeout: 60_000 }, async () => {
       // Windows: Command Prompt with its default settings (delayed expansion off), and the user guide's PowerShell
-      // route: type cmd in PowerShell, paste the command, then exit (Command Prompt reads the pasted line as typed).
+      // route: type cmd /v:off in PowerShell, paste the command, then exit (Command Prompt reads the pasted line as typed).
       for (const { shell, spawn, typed } of shells()) {
         const root = entityRoot(`${name}-${++counter}`);
         const printed = actionLine((await cli(["entities", "validate", "--root", root, "--mode", "compat"], "dev")).stdout);

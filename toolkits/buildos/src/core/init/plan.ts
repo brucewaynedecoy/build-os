@@ -116,11 +116,18 @@ export const LEGACY_VALIDATOR_PATH = ".os/scripts/validate_config.py";
  * P7-R1-09: the note when adoption finds the legacy validator. It names the
  * project wrapper alone, with no version in it, so it stays true after an
  * upgrade (F-P8-11 review round 1, finding 5): adoption writes the wrapper.
+ * The wrapper checks the folder it is run in, so the note names the project
+ * folder (F-P8-11 review round 2, finding 1): an adoption with --root from
+ * another folder must not send the adopter to validate the wrong folder.
  */
-export const LEGACY_VALIDATOR_NOTE = `${LEGACY_VALIDATOR_PATH} is the old Python config check. BuildOS no longer uses it: run .os/scripts/buildos validate instead (on Windows, .os\\scripts\\buildos.cmd validate). Where .os/scripts/AGENTS.md or your own notes name the old script, use that command instead. BuildOS left the file as it is. You can delete it.`;
+export function legacyValidatorNote(root: string): string {
+  return `${LEGACY_VALIDATOR_PATH} is the old Python config check. BuildOS no longer uses it: in the project folder ${root}, run .os/scripts/buildos validate instead (on Windows, .os\\scripts\\buildos.cmd validate). Where .os/scripts/AGENTS.md or your own notes name the old script, use that command instead. BuildOS left the file as it is. You can delete it.`;
+}
 
 export interface PlanInput {
   fs: FsPort;
+  /** The project folder as the output shows it (`PreparedInit.root`), for the notes. */
+  root: string;
   hash: HashPort;
   content: PackageContent;
   /** The `.os/manifest.json` text. */
@@ -208,7 +215,7 @@ export function planInit(input: PlanInput): InitPlan {
   // P7-R1-09: an adopted Go-era project may still have the old Python validator. It is not changed; the result says so.
   const notes: InitNote[] = [];
   // P7-R2-07: only a regular file (its folder entry, not followed) is the old validator; a folder or a link at that name is not.
-  if (setup === "adoption" && look(LEGACY_VALIDATOR_PATH).kind === "file") notes.push({ code: "legacy_validator_kept", path: LEGACY_VALIDATOR_PATH, message: LEGACY_VALIDATOR_NOTE });
+  if (setup === "adoption" && look(LEGACY_VALIDATOR_PATH).kind === "file") notes.push({ code: "legacy_validator_kept", path: LEGACY_VALIDATOR_PATH, message: legacyValidatorNote(input.root) });
   return { setup, entries, shared, clashes, problems, rootRouters, ...routers, ...(notes.length > 0 ? { notes } : {}) };
 }
 

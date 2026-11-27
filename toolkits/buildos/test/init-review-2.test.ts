@@ -253,7 +253,7 @@ describe("P6-R2-08: the Make Docs result is kept the moment Make Docs returns", 
       const human = await init(dir, ["--make-docs"], { process: stub.port });
       assert.notEqual(human.exit, 0);
       assertOutputMatches(human.stdout, /\nMake Docs: set up\.\n/);
-      assertOutputMatches(human.stdout, /Make Docs already ran, so when you run it again, use --skip-make-docs and not --make-docs\./);
+      assertOutputMatches(human.stdout, /run the same init command again, but with --skip-make-docs and without --make-docs, because Make Docs already ran\./);
       chmodSync(join(dir, "AGENTS.md"), 0o644);
       rmSync(join(dir, "AGENTS.md"));
       rmSync(join(dir, "docs"), { recursive: true });

@@ -305,7 +305,8 @@ describe("buildos init: the legacy Python validator (W1 R7 P7 t16)", () => {
 
   // W1 R7 P7 review round 1 (P7-R1-09): the user is told that the old script is no longer used.
   it("an adoption that finds it says so in plain words, in the human and JSON output, the dry run too, and changes nothing about it", () => {
-    const note = ".os/scripts/validate_config.py is the old Python config check. BuildOS no longer uses it: run .os/scripts/buildos validate instead (on Windows, .os\\scripts\\buildos.cmd validate). Where .os/scripts/AGENTS.md or your own notes name the old script, use that command instead. BuildOS left the file as it is. You can delete it.";
+    // F-P8-11 review round 2 (finding 1): the note names the project folder that the wrapper must run in.
+    const note = (dir: string) => `.os/scripts/validate_config.py is the old Python config check. BuildOS no longer uses it: in the project folder ${dir}, run .os/scripts/buildos validate instead (on Windows, .os\\scripts\\buildos.cmd validate). Where .os/scripts/AGENTS.md or your own notes name the old script, use that command instead. BuildOS left the file as it is. You can delete it.`;
     const make = (name: string): { dir: string; legacy: string } => {
       const dir = folder(name);
       cpSync(FIXTURE, dir, { recursive: true });
@@ -317,17 +318,17 @@ describe("buildos init: the legacy Python validator (W1 R7 P7 t16)", () => {
     const before = readFileSync(human.legacy);
     const out = init(human.dir, ["--skip-make-docs"]);
     assert.equal(out.exit, 0, shape(out.stderr));
-    assert.ok(out.stdout.includes(`\nNote: ${note}\n`), shape(out.stdout));
+    assert.ok(out.stdout.includes(`\nNote: ${note(human.dir)}\n`), shape(out.stdout));
     assertSame(readFileSync(human.legacy), before);
 
     const json = make("note-json");
     const envelope = JSON.parse(init(json.dir, ["--skip-make-docs", "--json"]).stdout) as { result: { notes?: { code: string; path: string; message: string }[] } };
-    assertSame(envelope.result.notes, [{ code: "legacy_validator_kept", path: ".os/scripts/validate_config.py", message: note }]);
+    assertSame(envelope.result.notes, [{ code: "legacy_validator_kept", path: ".os/scripts/validate_config.py", message: note(json.dir) }]);
 
     const dry = make("note-dry");
     const planned = init(dry.dir, ["--skip-make-docs", "--dry-run"]);
     assert.equal(planned.exit, 0, shape(planned.stderr));
-    assert.ok(planned.stdout.includes(`Note: ${note}`));
+    assert.ok(planned.stdout.includes(`Note: ${note(dry.dir)}`));
 
     // No old script: no note, and no notes key.
     const plain = folder("note-none");

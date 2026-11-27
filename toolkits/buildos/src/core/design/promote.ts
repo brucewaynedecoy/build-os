@@ -46,6 +46,7 @@ import { MAKE_DOCS_RANGE } from "../init/make-docs-range.ts";
 import { DesignFormError, DesignSelfCheckError, renderMakeDocsDesign } from "./make-docs-form.ts";
 import { parseYamlSubset } from "../validate/yaml-subset.ts";
 import { npxMakeDocsDisplay } from "../init/make-docs.ts";
+import { runWords } from "../shared/run-command.ts";
 import { makeDocsForeignRouters } from "../init/plan.ts";
 import { GoError, GoFiles, type GoFilesContext } from "../shared/go-files.ts";
 import {
@@ -548,8 +549,8 @@ function makeDocsInputStop(p: Promotion, label: string, displayPath: string, sta
       root: p.layout.repoRoot,
     });
   }
-  const run = p.files.osPlatform === "win32" ? "run this in Command Prompt" : "run this";
   const setup = npxMakeDocsDisplay(contentRoot, p.files.osPlatform);
+  const run = runWords(p.files.osPlatform, setup, "run this");
   const first = state === "empty" ? `delete ${displayPath}, then ` : "";
   const [status, todo, code] =
     state === "empty"

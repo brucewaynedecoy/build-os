@@ -3,13 +3,16 @@
  * parity exception PE-023; owner decision of 2026-11-26). A command printed
  * as a fix to copy and run starts with `npx -y build-os@<running version>`,
  * which needs no global install. Every such command is built here. Limit
- * (F-P8-11 review round 1, finding 4): with the npm setting
- * `bin-links=false`, npx puts the package into its cache without its `bin`
+ * (F-P8-11 review rounds 1 and 2, findings 4 and 5; tested on macOS with npm
+ * 11.20.0, in `sh`): with the npm setting `bin-links=false`, an `npx` run
+ * that must fetch the package puts it into the npx cache without its `bin`
  * link and cannot start `build-os` (`sh: build-os: command not found`, exit
- * 127), and that cached copy fails the same way later, also through the
- * project wrapper, until it is removed (`npm cache npx ls`, then
- * `npm cache npx rm <key>`). The project wrapper (`.os/scripts/buildos`,
- * `.os\scripts\buildos.cmd`) turns the setting on for its own `npx` run, so
+ * 127). The failure belongs to that cached copy, not to the setting at every
+ * run: the copy fails the same way later, also with the setting off and
+ * through the project wrapper, until it is removed (`npm cache npx ls`, then
+ * `npm cache npx rm <key>`), while a copy cached with its link runs with
+ * `bin-links=false` too. The project wrapper (`.os/scripts/buildos`,
+ * `.os\scripts\buildos.cmd`) turns bin links on for its own `npx` run, so
  * it runs the same arguments when no such copy is cached.
  *
  * Edge cases (each has a test in test/run-command.test.ts):
@@ -99,6 +102,17 @@ export function shellLabel(run: PrintedRun, command: string): string | undefined
 export function labelledCommand(run: PrintedRun, command: string): string {
   const label = shellLabel(run, command);
   return label === undefined ? command : `${label}: ${command}`;
+}
+
+/**
+ * The words before a printed command that stands on its own line or after
+ * a colon: `shellLabel` on Windows (so a `!` in the command adds `, with
+ * delayed expansion off`), else `plain` (F-P8-11 review round 2, finding
+ * 3). Every human line that shows a command with a quoted folder for the
+ * adopter to run uses it.
+ */
+export function runWords(platform: string, command: string, plain = "run"): string {
+  return shellLabel({ program: [], platform }, command) ?? plain;
 }
 
 /** The whole command, as a user would type it: the program, then `words`, each quoted for the platform. */

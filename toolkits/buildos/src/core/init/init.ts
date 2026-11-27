@@ -99,7 +99,7 @@ export function prepareInit(input: PrepareInput): PreparedInit {
   // The manifest contract (`manifest.ts`): BuildOS never writes a version that the wrappers refuse.
   if (!isManifestVersion(input.version)) throw new Error(`the BuildOS package version ${JSON.stringify(input.version)} is not an exact version or dev, so the wrappers could not pin it`);
   const fresh = createManifest(input.version, input.now);
-  const plan = planInit({ fs, hash: input.hash, content: input.content, manifest: serializeManifest(fresh) });
+  const plan = planInit({ fs, root, hash: input.hash, content: input.content, manifest: serializeManifest(fresh) });
   // A rerun reports the manifest on disk, not a new one (W1 R7 P6 review round 2).
   return { root, fs, hash: input.hash, plan, manifest: plan.installed ?? fresh, content: input.content, run };
 }
@@ -158,7 +158,7 @@ function checkProjectFolder(fs: FsPort, root: string, run: PrintedRun): void {
  * BuildOS decides them from what is there after Make Docs ran.
  */
 export function replanInit(prepared: PreparedInit, fresh: ProjectManifest = prepared.manifest): PreparedInit {
-  const plan = planInit({ fs: prepared.fs, hash: prepared.hash, content: prepared.content, manifest: serializeManifest(fresh) });
+  const plan = planInit({ fs: prepared.fs, root: prepared.root, hash: prepared.hash, content: prepared.content, manifest: serializeManifest(fresh) });
   const first = new Map(prepared.plan.entries.map((e) => [e.path, e] as const));
   const changed: ChangedPath[] = [];
   const seen = new Set<string>();
@@ -279,9 +279,6 @@ export function initRun(run: PrintedRun): string {
  */
 export const SAME_INIT = "run the same init command again";
 
-/** The tip of a stop for paths that exist already. */
-export const CLASH_TIP = `Move or back up these files, then ${SAME_INIT}.`;
-
 /** What the plan and the output say about the shared files. */
 export const SHARED_FILES_NOTE = "BuildOS changes only its own section of these files, between its buildos:begin and buildos:end lines, and only when that section is still exactly as BuildOS wrote it.";
 
@@ -350,9 +347,34 @@ function stopPrefix(makeDocs: MakeDocsReport | undefined): string {
   return makeDocs.status === "set_up" ? "Make Docs was set up, but BuildOS changed nothing." : "Make Docs ran but did not finish its setup, and BuildOS changed nothing.";
 }
 
-/** The retry note after Make Docs ran: it is not run a second time. */
-function afterMakeDocs(makeDocs: MakeDocsReport | undefined): string {
-  return makeDocs !== undefined && (makeDocs.status === "set_up" || makeDocs.status === "failed") ? " Make Docs already ran, so when you run it again, use --skip-make-docs and not --make-docs." : "";
+/** True when Make Docs ran in this run (set up, or ran and did not finish): a retry must not run it a second time. */
+export function makeDocsRan(makeDocs: MakeDocsReport | undefined): boolean {
+  return makeDocs !== undefined && (makeDocs.status === "set_up" || makeDocs.status === "failed");
+}
+
+/** The retry words after Make Docs ran (F-P8-11 review round 2, finding 2). */
+export const SAME_INIT_AFTER_MAKE_DOCS = "run the same init command again, but with --skip-make-docs and without --make-docs, because Make Docs already ran";
+
+/**
+ * F-P8-11 review round 2 (finding 2): the one source of the retry words of
+ * `buildos init`. After Make Docs ran, every retry advice (a result `tip`,
+ * a problem `fix`, a diagnostic `correction`, human or JSON) carries the
+ * flag change, so an adopter or agent that follows any of them does not run
+ * Make Docs again.
+ */
+export function sameInit(makeDocs?: MakeDocsReport): string {
+  return makeDocsRan(makeDocs) ? SAME_INIT_AFTER_MAKE_DOCS : SAME_INIT;
+}
+
+/**
+ * `text` with each "run the same init command again" in it changed to
+ * `sameInit(makeDocs)`. A problem fix or an error correction is written
+ * before BuildOS knows whether Make Docs ran; this puts the flag change in
+ * it after Make Docs ran.
+ */
+export function retryAdvice(text: string, makeDocs?: MakeDocsReport): string {
+  if (!makeDocsRan(makeDocs)) return text;
+  return text.replace(/([Rr])un the same init command again/g, (_whole, r: string) => `${r}${SAME_INIT_AFTER_MAKE_DOCS.slice(1)}`);
 }
 
 /**
@@ -373,8 +395,8 @@ export function clashResult(prepared: PreparedInit, makeDocs?: MakeDocsReport): 
     summary: `${stopPrefix(makeDocs)} ${parts.join(", and ")}.`,
     setup: prepared.plan.setup,
     clashes: prepared.plan.clashes,
-    problems,
-    tip: `${count > 0 ? CLASH_TIP : `Fix each file as shown, then ${SAME_INIT}.`}${afterMakeDocs(makeDocs)}`,
+    problems: problems.map((p) => ({ ...p, fix: retryAdvice(p.fix, makeDocs) })),
+    tip: count > 0 ? `Move or back up these files, then ${sameInit(makeDocs)}.` : `Fix each file as shown, then ${sameInit(makeDocs)}.`,
     reason: count > 0 ? "paths_exist" : manifest ? "manifest_problem" : "shared_file_problem",
     ...(makeDocs === undefined ? {} : { make_docs: makeDocs }),
   };
@@ -404,7 +426,7 @@ export function setupChangedResult(prepared: PreparedInit, now: PreparedInit, ma
     setup: prepared.plan.setup,
     planned_setup: prepared.plan.setup,
     found_setup: now.plan.setup,
-    tip: `Check the .os/ folder and what Make Docs added, then ${SAME_INIT}.${afterMakeDocs(makeDocs)}`,
+    tip: `Check the .os/ folder and what Make Docs added, then ${sameInit(makeDocs)}.`,
     reason: "setup_changed",
     make_docs: makeDocs,
   };
@@ -437,7 +459,7 @@ export function changedDuringSetupResult(prepared: PreparedInit, changed: Change
     summary: `${stopPrefix(makeDocs)} While Make Docs ran, ${count === 1 ? "1 path that BuildOS must write" : `${count} paths that BuildOS must write`} changed, so BuildOS did not write over ${count === 1 ? "it" : "them"}.`,
     setup: prepared.plan.setup,
     changed,
-    tip: `Check ${count === 1 ? "this path" : "these paths"}, then ${SAME_INIT}.${afterMakeDocs(makeDocs)}`,
+    tip: `Check ${count === 1 ? "this path" : "these paths"}, then ${sameInit(makeDocs)}.`,
     reason: "changed_during_setup",
     make_docs: makeDocs,
   };
@@ -662,10 +684,10 @@ export function failedResult(prepared: PreparedInit, why: string, notRestored: N
   if (makeDocs?.status === "set_up") summary += " Make Docs was set up before this, and it stays set up.";
   else if (makeDocs?.status === "failed") summary += " Make Docs ran before this, but it did not finish its setup.";
   const tip = undone
-    ? `Fix the problem shown in "Why", then ${SAME_INIT}.${afterMakeDocs(makeDocs)}`
+    ? `Fix the problem shown in "Why", then ${sameInit(makeDocs)}.`
     : onlyUnsure
-      ? `Check that each path listed holds what it held before, fix the problem shown in "Why", then ${SAME_INIT}.${afterMakeDocs(makeDocs)}`
-      : `Look at each path listed. Move away what BuildOS left there, fix the problem shown in "Why", then ${SAME_INIT}.${afterMakeDocs(makeDocs)}`;
+      ? `Check that each path listed holds what it held before, fix the problem shown in "Why", then ${sameInit(makeDocs)}.`
+      : `Look at each path listed. Move away what BuildOS left there, fix the problem shown in "Why", then ${sameInit(makeDocs)}.`;
   return {
     status: "failed",
     summary,

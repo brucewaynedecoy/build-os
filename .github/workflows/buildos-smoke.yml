@@ -24,6 +24,7 @@ on:
     paths:
       - ".github/workflows/buildos-smoke.yml"
       - "toolkits/buildos/scripts/published-smoke.ts"
+      - "toolkits/buildos/scripts/printed-fix-step.ts"
 
 permissions:
   contents: read
