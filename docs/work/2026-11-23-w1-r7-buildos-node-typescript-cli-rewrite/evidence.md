@@ -7259,7 +7259,7 @@ Each statement was checked against the code or a record of this branch: the four
 | F-P8-06 (lazy-load the PDF reader, new `PERF-001` recheck) | Open | After: "a later release" (owner decision 2026-11-25, answer 5) | Agent, in a later release |
 | F-P8-07 (remove the legacy names and project scripts) | Open | After: in `0.3.0` (`Q-016`) | Agent, in `0.3.0` |
 | F-P8-08 (Windows long-line estimate of the `npx` fallback) | Open | After: no phase file or decision puts it before | Agent |
-| F-P8-09 (rollback `0.2.0` to `0.1.0` through `npx` on three systems) | Open. Update 2026-11-27, after publication: passed on macOS by hand; Linux and Windows not run ([Rollback From 0.2.0 to 0.1.0 Through npx (F-P8-09)](#rollback-from-020-to-010-through-npx-f-p8-09)) | After publication (it needs `0.2.0` on the registry); a pre-approval check on the tarball is step h3 (rehearsed on a local pack, [Rehearsal of Step h3](#rehearsal-of-step-h3-2026-11-27)) | Agent |
+| F-P8-09 (rollback `0.2.0` to `0.1.0` through `npx` on three systems) | Open. Update 2026-11-27, after publication: passed on macOS by hand; Linux and Windows not run ([Rollback From 0.2.0 to 0.1.0 Through npx (F-P8-09)](#rollback-from-020-to-010-through-npx-f-p8-09)). Update 2026-11-27, close-out: closed by `buildos-smoke` run 46056570552 on Linux, macOS, and Windows, with the F-P9-17 qualification on Windows ([Three-System Run (F-P8-09)](#three-system-run-f-p8-09)) | After publication (it needs `0.2.0` on the registry); a pre-approval check on the tarball is step h3 (rehearsed on a local pack, [Rehearsal of Step h3](#rehearsal-of-step-h3-2026-11-27)) | Agent |
 | F-P8-10 (doubled Windows backslashes) | Fixed in `0.2.0` (PE-023). Closed 2026-11-27: registry smoke run 46045192196 ran step 10 on three systems | Closes after publication, when the `0.2.0` smoke runs step 10 | Agent |
 | F-P8-11 (bare `buildos` in printed commands) | Fixed in `0.2.0` (PE-023). Closed 2026-11-27: registry smoke run 46045192196 ran step 10 on three systems | Closes after publication, when the `0.2.0` smoke runs step 10 | Agent |
 | F-P8-12 (`PERF-002` child `PATH`) | Fixed (P9 Stage 3) | Closed | None |
@@ -7285,7 +7285,7 @@ Each statement was checked against the code or a record of this branch: the four
 | P8 t17 and A73 (a chat app and a restricted network, `R-012`) | Done 2026-11-27, owner-reported, without the detailed captures ([Chat-App and Restricted-Network Trials (t17)](#chat-app-and-restricted-network-trials-t17-2026-11-27)); A73 is met by its words; `R-012` closed by owner decision on 2026-11-27 ("I think we can close it now"), against the recommendation to keep it open | Before step a: done by the owner, or an owner exception (step 0) | Owner |
 | P8 t25 (the `0.1.0` publication decision; A75's order missed) | Decided 2026-11-27 (owner decision): "Yes"; t25 is closed by the explicit dated exception; A75's order stays missed for `0.1.0`; the checkbox stays unticked (Stage 5 does not pass) | Before step a: the owner's answer (step 0) | Owner |
 | P8 A71 (the 5 smoke-output differences) | Decided 2026-11-27 (owner decision): "Yes", the five differences are accepted | Before step a: the owner's answer (step 0) | Owner |
-| P8 t16 and A72 (rollback by pin to a published earlier version) | Open; the dated owner exception of 2026-11-27 is recorded ("I accept that order") | Cannot close before the `0.2.0` publication (it needs `0.2.0` on the registry, F-P8-09); before step a: an owner exception that says so (step 0); closes at step k | Owner (exception); agent (step k) |
+| P8 t16 and A72 (rollback by pin to a published earlier version) | Open; the dated owner exception of 2026-11-27 is recorded ("I accept that order"). Update 2026-11-27, close-out: A72 met and t16 ticked after run 46056570552 ([Acceptance and Task Status (Close-Out)](#acceptance-and-task-status-close-out)) | Cannot close before the `0.2.0` publication (it needs `0.2.0` on the registry, F-P8-09); before step a: an owner exception that says so (step 0); closes at step k | Owner (exception); agent (step k) |
 | F-P8-01 (retry after a partial draft upload) | Open | Only if `attach` fails half-way (step f) | Owner deletes the asset by hand |
 | F-P8-04 (esbuild install-script exception) | Checked 2026-11-27: `esbuild` 0.28.2 still declares `postinstall` (`hasInstallScript` in the lockfile), so the exception stays | Each release, step c | Agent |
 | F-P8-05 (facts that depend on the release) | Listed below for `0.2.0`. Checked 2026-11-27 after publication | At publication, step k | Agent |
@@ -8475,7 +8475,69 @@ What changed in this round (`scripts/rollback-smoke.ts`, `test/rollback-smoke.te
 
 Local run on macOS after the change (Node 26.13.1, `PATH` with links to `node`, `npm`, and `npx` and the system folders only): passed, 71 of 71 steps, `absolute_paths_removed` 0, no absolute path in the report; the four evidence steps exit `2`.
 
-Run 2: not run yet. The next pull-request run of `buildos-smoke` (it starts by itself on the push of this round, because the smoke files changed) shows the three systems with the new steps; its run ID and results go here when it has run. Nothing is ticked on it before then: t16, A72, and t15 to t18 stay unticked.
+Run 2: the pull-request run [46056570552](https://github.com/brucewaynedecoy/build-os/actions/runs/46056570552) of `buildos-smoke` on `2bb9c41` (head of pull request 15), started by itself on the push of the F-P9-17 round. Conclusion `success`: every job passed. The reports are the artifacts `buildos-smoke-rollback-<os>` (`rollback-<os>.json` and `rollback-<os>.md`); the orchestrator and the implementer read them.
+
+| Job | Result |
+| --- | --- |
+| `smoke (rollback, ubuntu-latest, Node 24)` | passed, 71 of 71 steps, `passed: true`; Node.js 24.22.3, npm 11.19.1, `sh -c` |
+| `smoke (rollback, macos-latest, Node 24)` | passed, 71 of 71 steps, `passed: true`; Node.js 24.22.3, npm 11.19.1, `sh -c` |
+| `smoke (rollback, windows-latest, Node 24)` | passed, 71 of 71 steps, `passed: true`; Node.js 24.22.3, npm 11.19.1, Command Prompt (`cmd /d /v:off /s /c`, the guide's Windows form, `COPYCMD=/Y`) |
+| The `registry` and `local-pack` jobs on the three systems | passed |
+
+What run 2 proves, on each of the three systems, from the reports:
+
+- The guide's upgrade from `0.1.0` to `0.2.0` and its rollback to `0.1.0` (chapter 4) ran on a copied project, with every command of `scripts/rollback-steps.ts` ("every guide command ran"). On Windows they ran in their Command Prompt form, so that form has now run once on a hosted Windows runner.
+- With the `0.2.0` pin, `.os/scripts/buildos version` (on Windows `.os\scripts\buildos.cmd version`) printed `version: 0.2.0` with the source revision of `npx -y build-os@0.2.0` (`6f395c1…`).
+- After the rollback, `.os/manifest.json` pins `0.1.0`, and the wrapper printed `version: 0.1.0` with the source revision of `npx -y build-os@0.1.0` (`20f941a…`); `version --json` names the same; `help` lists none of the four `0.2.0` domains; the compare commands against the backup print nothing; the staged tree equals the "Before BuildOS 0.2.0" commit. The original project is untouched.
+- Both versions came from the public registry through `npx`: no `buildos` program is on `PATH`; no `node_modules` folder is in the test project or the original project, and npm's global prefix is empty (no npm install of `build-os`); every `build-os` entry of the npm cache is the registry document or the registry tarball of `0.1.0` or `0.2.0` with the registry's integrity; the npx cache holds `build-os` `0.1.0` and `0.2.0` and no other.
+
+So after the rollback the project wrapper runs the pinned `0.1.0` on Linux, macOS, and Windows, all from the public registry. F-P8-09 is proven on three systems. Its one qualification, asserted as observed: on Windows, two failing commands return exit code `0` through the wrapper (F-P9-17): `.os\scripts\buildos.cmd capability-matrix --help` (Linux and macOS: `2`) and `.os\scripts\buildos-intake.cmd version` (Linux and macOS: `1`). The Windows run asserts that exit `0` on purpose, and both steps check the error text in stderr. The pin itself is not affected: the right version runs and prints its error.
+
+The Windows report has `absolute_paths_removed` 31 (Linux and macOS 0). All 31 are the Command Prompt switches `/e`, `/i`, `/q`, and `/s` in the `command` field of the nine `xcopy` steps (3 each) and the two `rmdir` steps (2 each): the report cleaner reads them as absolute paths and writes `{ABSOLUTE-PATH}`; the step names keep the switches. No real path was removed, and no absolute path is in the report. This is a cosmetic defect of the report cleaner only; it changes no check.
+
+### F-P9-17 After Run 2 (Windows Exit Codes)
+
+The four "F-P9-17 evidence" steps of run 2, field `exit` in each report:
+
+| Step | Linux | macOS | Windows |
+| --- | --- | --- | --- |
+| `upgrade 7 (F-P9-17 evidence)`: the wrapper with `no-such-command`, `0.2.0` pin | `2` | `2` | `0` |
+| `rollback 5 (also)`: the wrapper with `capability-matrix --help`, `0.1.0` pin | `2` | `2` | `0` |
+| `rollback 5 (also)`: `buildos-intake` with `version`, `0.1.0` pin | `1` | `1` | `0` |
+| `rollback 5 (F-P9-17 evidence)`: `npx -y build-os@0.1.0 capability-matrix --help`, `npx-cli.js` started by `node` | `2` | `2` | `2` |
+| `rollback 5 (F-P9-17 evidence)`: `npx -y build-os@0.1.0 capability-matrix --help` in the shell (Command Prompt on Windows, so npm's `npx.cmd`) | `2` | `2` | `2` |
+| `rollback 5 (F-P9-17 evidence)`: `npx -y --prefix "{PROJECT}" --workspaces=false build-os@0.1.0 capability-matrix --help` in the shell (the wrapper's own `npx` arguments) | `2` | `2` | `2` |
+
+On all three systems stderr holds the version and the usage error, for example `version: 0.2.0` and `ERROR [usage_error]: unknown command "no-such-command"` for the first step.
+
+What this shows:
+
+- `0.2.0` is affected too, proven: with the `0.2.0` pin, `.os\scripts\buildos.cmd no-such-command` printed the `0.2.0` usage error and returned `0` on Windows (`2` on Linux and macOS).
+- The route of that step is `npx`, not a local install: the test project has no `node_modules` folder, npm's global prefix is empty, no `buildos` is on `PATH`, and the `0.2.0` error text says `Run npx -y build-os@0.2.0 help`. So the wrapper started `0.2.0` through `npx`.
+- npm passes the exit code on Windows: `npx` returns `2` in all three forms, also npm's real `npx.cmd` in Command Prompt, also with the wrapper's `--prefix <project> --workspaces=false`. The smoke starts the two shell forms the same way as the wrapper's helper starts `npx.cmd`: `cmd /d /v:off /s /c` with the line passed as given. So the code is lost in the project wrapper layer: `system/.os/scripts/buildos.cmd` and its helper `pinned-version.cjs` (the `--cmd` route), not in npm.
+
+Routes proven affected, on Windows: `.os\scripts\buildos.cmd` on its `npx` route (no npm install of the pinned version in the project, no `buildos.cmd` npm shim on `PATH`), with the `0.1.0` pin and with the `0.2.0` pin; and the legacy script `.os\scripts\buildos-intake.cmd` on the same route (it calls `buildos.cmd`). Not tested, so not proven either way: the wrapper's local-install route (`node_modules/build-os` at the pinned version), its global-install route (a `buildos.cmd` npm shim on `PATH` at the pinned version), and the legacy scripts `buildos-design.cmd` and `buildos-discovery.cmd` (they call `buildos.cmd` the same way as `buildos-intake.cmd`, so they are likely affected on the `npx` route). Not affected: Linux and macOS (the `sh` wrapper), and `npx -y build-os@<version>` typed by the adopter.
+
+Hypothesis for the mechanism, not proven (no Windows machine here; nothing was run on Windows to test it). The chain on the `npx` route is: Command Prompt runs `buildos.cmd`; it runs `node pinned-version.cjs --cmd …` and ends with `exit /b`, which passes on the exit code of `node`; `pinned-version.cjs` finds `npx.cmd` on `PATH` and its `start()` starts `cmd.exe /d /v:off /s /c "<npx.cmd path> <arguments>"` (the path with each special character escaped by `^`, each argument quoted and escaped twice, `windowsVerbatimArguments`), with the wrapper's environment (`BUILDOS_REQUIRE_VERSION`, `npm_config_bin_links=true` and its override variable, and `BUILDOS_WRAPPER_ACTIVE` and `NoDefaultCurrentDirectoryInExePath` from `buildos.cmd`); then `process.exit(result.status)`. The wrapper tests on Windows pass exit codes `7` and `5` through this same chain, but with a one-line stub `npx.cmd` (`@"<node>" "<script>" %*`). npm's real `npx.cmd` is a longer batch file (`SETLOCAL`, an `IF` block, a `FOR /F` line with `CALL`, then `"%NODE_EXE%" "%NPX_CLI_JS%" %*`). The most likely place is the second `cmd.exe` that `start()` opens: with npm's real `npx.cmd`, started by its escaped full path and with the wrapper's environment, that `cmd.exe` gives `0` to `spawnSync` as its exit status, so `pinned-version.cjs` exits `0`. The smoke's own `npx.cmd` lines name `npx` by its bare name and run with the smoke's environment, which are the two differences left between them and the wrapper. Three checks on Windows would settle it: a wrapper test with a copy of npm's real `npx.cmd` instead of the one-line stub; `start()` with the real `npx.cmd` and the exact line, reading `status`; and the same with each wrapper variable removed in turn.
+
+The adopter effect on Windows: a failing command through `.os\scripts\buildos.cmd` or a legacy `.cmd` script on the `npx` route prints its error text, as on the other systems, but `%ERRORLEVEL%` is `0`. A script or an agent that checks only the exit code sees success. Likely every BuildOS command that fails is affected on that route, not only usage errors, because the cause is not in BuildOS, which returns `2` through `npx` directly; run 2 shows usage errors only. Commands that succeed are not affected. Rollback by pin is not affected.
+
+Severity recommendation (the agent's, for the owner): high for adopters on Windows who drive BuildOS from scripts or agents, because a failure reads as a success and BuildOS is built for agent use; no data is lost or changed by the defect itself, the error text is printed, and Linux and macOS are not affected. So: fix in the next release, with a Windows wrapper test that uses npm's real `npx.cmd`.
+
+The smallest fix route, a candidate until the cause is proven on Windows: a change in `system/.os/scripts/pinned-version.cjs` only (and its tests), so that on Windows the `--cmd` route keeps the exit code of `npx`, for example by starting npm's `npx-cli.js` with the same `node` (the form that returned `2` in run 2) instead of `npx.cmd`, or by a fix in `start()` once the checks above show the cause. The wrapper files of a project are written by `buildos init`, so an adopter gets the fix only by a new release and a refresh of `.os/scripts/`. The release for it is the owner's choice (see the question below). Nothing in this pull request changes product code, a wrapper, or the guide.
+
+### Owner Question for F-P9-17
+
+> On Windows, a failing BuildOS command run through the project wrapper `.os\scripts\buildos.cmd` (or a legacy `.cmd` script) on its `npx` route returns exit code `0`; the error text is printed. `0.1.0` and `0.2.0` are both affected (run 46056570552). Do you want the fix in a `0.2.1` patch release, or in `0.3.0`?
+
+- Option 1, a `0.2.1` patch: only the Windows wrapper helper and its tests change; adopters on Windows get correct exit codes sooner; it is one more release through the full release process.
+- Option 2, in `0.3.0`: no extra release; Windows adopters keep the wrong exit code until `0.3.0`.
+- Orchestrator's recommendation: open (for the orchestrator to fill in).
+- Owner decision: open.
+
+### Facts for the Next Release Notes (Not Changed Here)
+
+The published `0.2.0` notes (`toolkits/buildos/RELEASE_NOTES.md`, "Known limits") say: "Not tested yet: the Command Prompt forms of the upgrade and rollback steps in the guide (they were tested in `sh` on macOS) …". Since run 2, those Command Prompt forms have run once on `windows-latest` through the rollback smoke. The notes also do not name F-P9-17. The notes file is not changed in this pull request: it is the published text of `0.2.0` (the GitHub Release body comes from it at the tag `v0.2.0`), and no repository rule says that known limits may be added to a published release's notes afterwards. F-P9-17 is recorded here and in [`R-003`](../../prd/03-open-questions-and-risk-register.md#r-003-build-os-packaging-upgrade-rollback-and-removal-hardening) instead; the notes of the release with the fix name it.
 
 ### First-Run Measurement for 0.2.0 (Close-Out)
 
@@ -8488,7 +8550,7 @@ The rule in [00-index.md](00-index.md): "Mark a task done only when its stage ac
 | Stage | Criteria | Status | Checkboxes |
 | --- | --- | --- | --- |
 | P9 Stage 3 (t9 to t13) | A79, A80, A81 | A79 and A80 met. A81: the review lists the same items as the P8 review (met, retrospectively); the owner approved the publication on 2026-11-27 after the fact, so "publication happens only after a recorded maintainer approval" is not met for `0.2.0`, and it cannot be met | t9 to t13 stay unticked |
-| P8 Stage 4 (t15 to t18) | A71, A72, A73 | A71 met through the owner's acceptance of 2026-11-27; A73 met by its words; A72 waits for the three-system run above (not run yet) | t15 to t18 stay unticked until A72 is met |
+| P8 Stage 4 (t15 to t18) | A71, A72, A73 | A71 met through the owner's acceptance of 2026-11-27 (the five differences); A73 met by its words; A72 met by its words since run 2 (46056570552): the rollback test runs the pinned earlier version `0.1.0` on a copied project, on Linux, macOS, and Windows, from the public registry. Qualification: on Windows two failing commands return exit code `0` through the wrapper (F-P9-17); A72 asks that the pinned version runs, and it does | t15 to t18 ticked on 2026-11-27: every Stage 4 criterion passes |
 | P8 Stage 5 (t19 to t25) | A74, A75 | A74 met; A75 not met for `0.1.0`, and it cannot be met | t19 to t25 stay unticked |
 
 ### Open Items After the Close-Out
@@ -8496,13 +8558,14 @@ The rule in [00-index.md](00-index.md): "Mark a task done only when its stage ac
 | ID | Status | Who |
 | --- | --- | --- |
 | The `0.2.0` publication approval | Decided 2026-11-27 by the owner ("Yes, the public file is the reviewed file."), as a dated exception; A81's order stays missed | None |
-| F-P8-09, and t16 and A72 | Passed on macOS by hand; run 1 of the three-system route passed on Linux and macOS and failed on Windows on F-P9-17; run 2 is not run yet ([Three-System Run (F-P8-09)](#three-system-run-f-p8-09)) | Orchestrator reads the pull-request run |
-| F-P9-17 (new) | Open. On Windows the project wrapper `.os\scripts\buildos.cmd` (and the legacy `.cmd` scripts) on its `npx` route gave exit `0` for a command that failed with `2` or `1` (run 46054715769); the error text is printed. Adopter effect: a script or an agent that checks only the exit code takes a failure for a success. The rollback smoke asserts that behavior on Windows, and its "F-P9-17 evidence" steps record which layer loses the code. A fix changes a wrapper or `pinned-version.cjs`, so it ships in a later release | Agent, after run 2 shows the layer |
+| F-P8-09, and t16 and A72 | Closed 2026-11-27: run 2 (46056570552) passed on Linux, macOS, and Windows, 71 of 71 steps each; the wrapper runs the pinned `0.1.0` after the rollback, from the public registry. Qualification: F-P9-17 on Windows ([Three-System Run (F-P8-09)](#three-system-run-f-p8-09)) | None |
+| F-P9-17 | Open. On Windows the project wrapper `.os\scripts\buildos.cmd` and the legacy `.cmd` scripts on the `npx` route return exit `0` for a failing command; the error text is printed (runs 46054715769 and 46056570552). Run 2: `0.2.0` is affected too; the code is lost in the wrapper layer (`buildos.cmd` and `pinned-version.cjs`, the `--cmd` route), not in npm. Severity recommendation: high for Windows adopters who drive BuildOS from scripts or agents. The release for the fix is an [owner question](#owner-question-for-f-p9-17) ([F-P9-17 After Run 2](#f-p9-17-after-run-2-windows-exit-codes)) | Owner (the release); agent (the fix, after the decision) |
 | `PERF-002` for `0.2.0` | Done: `pass` (`PERF-002-P9-R1`) | None |
-| The package-size decision | Recommendation: no reduction now | Owner |
-| F-P9-16 | Built in this pull request | None |
+| The package-size decision | Recommendation: no reduction now; the owner's decision is open | Owner |
+| F-P9-16 | Built in this pull request; run 2 (46056570552) passed on the three systems | None |
 | `npm trust list build-os` | Not done for `0.2.0` (owner skipped); not a gate after publication | Owner, if wanted |
 | `Q-012` | Its gate, "the first planning gate after `0.2.0`", is due | Owner |
+| The release process | Owner request of 2026-11-27, for a follow-up, not a decision: "I would really prefer for BuildOS to follow the pattern/process we use for Make Docs. This process feels much more convoluted." No change is made in this pull request; a proposal comes before the next release | Orchestrator (proposal); owner (decision) |
 | The other "after" rows of [Open Items Before and After the Release](#open-items-before-and-after-the-release) | Unchanged | As listed there |
 
 ### Check Results (Close-Out)
@@ -8541,3 +8604,16 @@ Checks after the F-P9-17 round, on 2026-11-27, macOS, from `toolkits/buildos/`, 
 | `make-docs project markdown validate` | 184 findings, the same count as before the round; none new |
 
 No golden capture ran. No workflow was started by hand.
+
+Checks after rollback smoke run 2 (the documentation round of 2026-11-27), macOS, from the repository root and `toolkits/buildos/`. This round changes documentation only: no product code, wrapper, guide, test, or release notes file. So the test suites did not run again.
+
+| Check | Result |
+| --- | --- |
+| `make-docs project paths validate` | valid, 0 failing findings |
+| `make-docs check prd --target-root .` | 0 diagnostics |
+| `make-docs project markdown validate` | 184 findings, the same count as before the round; none new (this file keeps its six old `block-spacing` findings) |
+| `make-docs check performance-evidence --target-root .` | `failed` with the same 12 old findings (11 `PERF-VAL-014` warnings and the expired `PERF-001` of P1); no new finding |
+| `npm run build`, then `node dist/buildos.js version` | passed |
+| The real-list deny-list scan, `node scripts/check-deny-list.mjs --root ../.. --pack .`, with the list in the environment, outside the repository | exit 0: 2,832 files, 0 matches, 0 home folder paths, 168 of 168 package files read |
+
+No workflow was started by hand. Nothing was published, staged, or tagged.
