@@ -130,7 +130,7 @@ If Node.js is missing or too old, the wrapper prints one plain line and stops:
 BuildOS needs Node.js 24 or newer on this computer. Install it from https://nodejs.org, then try again.
 ```
 
-Commands come in groups called **domains**: `intake`, `discovery`, `design`, `entities`, `validate`, `init`, `version`, and `help`. BuildOS `0.2.0` adds three domains that skills use: `extract` (`extract bulk`, for the `buildos-bulk-extract` skill), `fitgap` (for `fit-gap-analysis`), and `export` (`export azure-boards`, for `buildos-export-azure-boards`). For example, `.os/scripts/buildos intake convert --source <path>` converts a document. The later chapters use these commands.
+Commands come in groups called **domains**: `intake`, `discovery`, `design`, `entities`, `validate`, `init`, `version`, and `help`. BuildOS `0.2.0` adds four domains that skills use: `extract` (`extract bulk`, for the `buildos-bulk-extract` skill), `fitgap` (for `fit-gap-analysis`), `export` (`export azure-boards`, for `buildos-export-azure-boards`), and `capability-matrix` (for the skill of the same name). For example, `.os/scripts/buildos intake convert --source <path>` converts a document. The later chapters use these commands.
 
 ### Check that it works
 
@@ -420,7 +420,7 @@ A **skill** is a packaged set of instructions an agent can follow for one kind o
 
 BuildOS never installs a skill into your agent tool by itself. When you want one, ask your agent to install it. The router tells the agent how: copy that one skill folder, unchanged, into the project's skill folder of its own app (it names the folders for Claude Code, Codex, and GitHub Copilot), or, for another app, read the skill from `.os/skills/` and follow it. Some apps find a new skill only after a restart.
 
-> **Not available yet.** One skill still needs Python 3 for its own tool: `capability-matrix`. No BuildOS command needs Python. A BuildOS command for that tool is planned for `0.2.0`. From BuildOS `0.2.0`, `buildos-bulk-extract`, `fit-gap-analysis`, and `buildos-export-azure-boards` run the `buildos extract bulk`, `buildos fitgap`, and `buildos export azure-boards` commands through the project wrapper and need only Node.js. In a project that pins `0.1.0`, the first two still run their own Python scripts (the spreadsheet step also needs the `openpyxl` package), and the new skills do not work, because the wrapper still runs `0.1.0`: see "From 0.1.0 to 0.2.0" below. [What is not built yet](18-what-is-not-built-yet.md) has the full list.
+> **Watch out.** From BuildOS `0.2.0`, no skill needs Python. `buildos-bulk-extract`, `fit-gap-analysis`, `buildos-export-azure-boards`, and `capability-matrix` run the `buildos extract bulk`, `buildos fitgap`, `buildos export azure-boards`, and `buildos capability-matrix` commands through the project wrapper and need only Node.js. In a project that pins `0.1.0`, `buildos-bulk-extract` and `fit-gap-analysis` still run their own Python scripts (the spreadsheet step also needs the `openpyxl` package), `capability-matrix` still tells the agent to write and run its own Python tool, and the new skills do not work, because the wrapper still runs `0.1.0`: see "From 0.1.0 to 0.2.0" below.
 
 ---
 
@@ -467,7 +467,7 @@ Commit `.os/manifest.json` with the change, so everyone on the project runs the 
 
 ### From 0.1.0 to 0.2.0
 
-`0.2.0` changes three skills and the skills router, `.os/skills/AGENTS.md`. Every other file that `buildos init` copied is the same as in `0.1.0`. The new skills call commands that `0.1.0` does not have, so change the version and these skills together. If you change only one of the two, a skill command stops with `unknown command` (exit code `2`). BuildOS has no update command yet, and `buildos init` does not do this for you: in a project that BuildOS already set up, it keeps the version and the skills as they are.
+`0.2.0` changes four skills and the skills router, `.os/skills/AGENTS.md`. Every other file that `buildos init` copied is the same as in `0.1.0`. The new skills call commands that `0.1.0` does not have, so change the version and these skills together. If you change only one of the two, a skill command stops with `unknown command` (exit code `2`). BuildOS has no update command yet, and `buildos init` does not do this for you: in a project that BuildOS already set up, it keeps the version and the skills as they are.
 
 These are the files that change in `.os/skills/`:
 
@@ -476,6 +476,7 @@ These are the files that change in `.os/skills/`:
 | `AGENTS.md` | The list "What a skill needs" | None |
 | `buildos-bulk-extract/` | `SKILL.md` | `scripts/work.py`, `tests/test_work.py` |
 | `buildos-export-azure-boards/` | `SKILL.md`, `adapters/00-adapter-registry.md`, `adapters/dynamics-365-ce/ADAPTER.md`, `references/azure-boards-csv-contract.md` | `scripts/azure_boards_csv.mjs`, `scripts/adapters/dynamics-365-ce.mjs` |
+| `capability-matrix/` | `SKILL.md` (its appendix with the Python tool `cm_build.py` is gone) | None |
 | `fit-gap-analysis/` | `SKILL.md`, `references/formats.md`, `references/scoring-brief.md` | `scripts/fitgap.py` |
 
 Refresh only these. Do not delete the `.os/skills/` folder, and do not touch any other skill: a skill that you added stays as it is.
@@ -498,7 +499,7 @@ Run the commands in the project folder. They use a work folder, `../buildos-upgr
 
    An agent app can have its own copy of a skill, in a skills folder of its own (for example `.claude/skills/`, `.agents/skills/`, or `.github/skills/` in the project). Copy each of those folders too, with its own name. For example: `cp -R .claude/skills ../buildos-upgrade/backup/claude-skills`. The steps call this folder the app folder.
 
-   A skills folder in your home folder is different: the agent uses it in every project. If it holds one of the three skills, do not refresh that copy while one of your projects still uses `0.1.0`. In such a project, the refreshed skill runs a command that `0.1.0` does not have, and the command stops with `unknown command` (exit code `2`). Do one of these two things. Upgrade every project that uses the home-folder copy, and refresh that copy last, as one more app folder. Or move the three skills out of the home folder and give each project its own copy in its app folder, so that each project has the skills of its own version. For a rollback, the same rule applies the other way.
+   A skills folder in your home folder is different: the agent uses it in every project. If it holds one of the four skills, do not refresh that copy while one of your projects still uses `0.1.0`. In such a project, the refreshed skill runs a command that `0.1.0` does not have, and the command stops with `unknown command` (exit code `2`). Do one of these two things. Upgrade every project that uses the home-folder copy, and refresh that copy last, as one more app folder. Or move the four skills out of the home folder and give each project its own copy in its app folder, so that each project has the skills of its own version. For a rollback, the same rule applies the other way.
 
 2. **Get clean copies of both versions:**
 
@@ -507,35 +508,37 @@ Run the commands in the project folder. They use a work folder, `../buildos-upgr
    npx -y build-os@0.2.0 init --root ../buildos-upgrade/new --skip-make-docs
    ```
 
-3. **Find your own changes.** Compare each of the three skills and the router with the clean `0.1.0` copy:
+3. **Find your own changes.** Compare each of the four skills and the router with the clean `0.1.0` copy:
 
    ```sh
    git --no-pager diff --no-index --stat ../buildos-upgrade/old/.os/skills/buildos-bulk-extract .os/skills/buildos-bulk-extract
    git --no-pager diff --no-index --stat ../buildos-upgrade/old/.os/skills/buildos-export-azure-boards .os/skills/buildos-export-azure-boards
+   git --no-pager diff --no-index --stat ../buildos-upgrade/old/.os/skills/capability-matrix .os/skills/capability-matrix
    git --no-pager diff --no-index --stat ../buildos-upgrade/old/.os/skills/fit-gap-analysis .os/skills/fit-gap-analysis
    git --no-pager diff --no-index --stat ../buildos-upgrade/old/.os/skills/AGENTS.md .os/skills/AGENTS.md
    ```
 
-   Do the same for each of the three skills that an app folder has, with the app folder in place of `.os/skills` in the last path. For example: `git --no-pager diff --no-index --stat ../buildos-upgrade/old/.os/skills/buildos-bulk-extract .claude/skills/buildos-bulk-extract`. No output means no change. A listed file is a file that you or an agent changed or added. Write down each one. To see the change, run the same command without `--stat`.
+   Do the same for each of the four skills that an app folder has, with the app folder in place of `.os/skills` in the last path. For example: `git --no-pager diff --no-index --stat ../buildos-upgrade/old/.os/skills/buildos-bulk-extract .claude/skills/buildos-bulk-extract`. No output means no change. A listed file is a file that you or an agent changed or added. Write down each one. To see the change, run the same command without `--stat`.
 
-   If a listed file is one of the five files in the "Removed in `0.2.0`" column, stop here. `0.2.0` removes that script, and the BuildOS command that replaces it does not have your change. Do not refresh that skill until you decide what to do with your change: for example, keep the project on `0.1.0`, or ask the BuildOS maintainer for the behavior in the command.
+   If a listed file is one of the five files in the "Removed in `0.2.0`" column, stop here. `0.2.0` removes that script, and the BuildOS command that replaces it does not have your change. Do not refresh that skill until you decide what to do with your change: for example, keep the project on `0.1.0`, or ask the BuildOS maintainer for the behavior in the command. The same is true for a change in the appendix of `capability-matrix/SKILL.md`, the Python tool `cm_build.py`: `0.2.0` removes the appendix, and the `buildos capability-matrix` command does not have your change. A copy of that tool that an agent wrote into the project (for example `build/cm_build.py`) is not a BuildOS file: `0.2.0` does not use it, and you can delete it.
 
-4. **Refresh the three skills.** In the project:
+4. **Refresh the four skills.** In the project:
 
    ```sh
-   rm -rf .os/skills/buildos-bulk-extract .os/skills/buildos-export-azure-boards .os/skills/fit-gap-analysis
+   rm -rf .os/skills/buildos-bulk-extract .os/skills/buildos-export-azure-boards .os/skills/capability-matrix .os/skills/fit-gap-analysis
    cp -R ../buildos-upgrade/new/.os/skills/buildos-bulk-extract .os/skills/buildos-bulk-extract
    cp -R ../buildos-upgrade/new/.os/skills/buildos-export-azure-boards .os/skills/buildos-export-azure-boards
+   cp -R ../buildos-upgrade/new/.os/skills/capability-matrix .os/skills/capability-matrix
    cp -R ../buildos-upgrade/new/.os/skills/fit-gap-analysis .os/skills/fit-gap-analysis
    cp ../buildos-upgrade/new/.os/skills/AGENTS.md .os/skills/AGENTS.md
    ```
 
-   Then, in each app folder, do the same for each of the three skills that it has, one skill at a time. For example: `rm -rf .claude/skills/buildos-bulk-extract`, then `cp -R ../buildos-upgrade/new/.os/skills/buildos-bulk-extract .claude/skills/buildos-bulk-extract`. Do not replace the whole app folder, and do not add a skill that the app did not have. An old copy tells the agent to run a script that `0.2.0` removed.
+   Then, in each app folder, do the same for each of the four skills that it has, one skill at a time. For example: `rm -rf .claude/skills/buildos-bulk-extract`, then `cp -R ../buildos-upgrade/new/.os/skills/buildos-bulk-extract .claude/skills/buildos-bulk-extract`. Do not replace the whole app folder, and do not add a skill that the app did not have. An old copy tells the agent to run a script that `0.2.0` removed, or, for `capability-matrix`, to write and run its own Python tool.
 
 5. **Put your changes back.** Go through the list from step 3, one file at a time. Your old files are in the backup (`../buildos-upgrade/backup/`).
 
    - A file that you changed, and that `0.2.0` still has: open the new file and make your change again by hand. Do not copy the old file over the new one: the old file tells the agent to run the old script.
-   - A file that you added to one of the three skill folders (a file that the clean `0.1.0` copy does not have): the refresh removed it. Copy it back from the backup to the same place. For example: `cp ../buildos-upgrade/backup/os-skills/fit-gap-analysis/my-notes.md .os/skills/fit-gap-analysis/my-notes.md`.
+   - A file that you added to one of the four skill folders (a file that the clean `0.1.0` copy does not have): the refresh removed it. Copy it back from the backup to the same place. For example: `cp ../buildos-upgrade/backup/os-skills/fit-gap-analysis/my-notes.md .os/skills/fit-gap-analysis/my-notes.md`.
 
    Do the same for the app folders. Do not continue until each file on your list is done.
 
@@ -544,9 +547,10 @@ Run the commands in the project folder. They use a work folder, `../buildos-upgr
 7. **Check.** Each of these must be true:
 
    - `.os/scripts/buildos version` prints `version: 0.2.0`.
-   - `.os/scripts/buildos help` lists `extract`, `fitgap`, and `export`.
+   - `.os/scripts/buildos help` lists `extract`, `fitgap`, `export`, and `capability-matrix`.
    - `.os/scripts/buildos export azure-boards adapters` lists `dynamics-365-ce`, with exit code `0`. This command comes from a refreshed skill.
-   - For each of the three skills, in the project and in each app folder that has it, the step 3 command with `new` in place of `old` prints nothing, or only your own changes. For example: `git --no-pager diff --no-index --stat ../buildos-upgrade/new/.os/skills/fit-gap-analysis .os/skills/fit-gap-analysis`.
+   - `.os/scripts/buildos capability-matrix --help` prints the help of the command that the refreshed `capability-matrix` skill runs, with exit code `0`.
+   - For each of the four skills, in the project and in each app folder that has it, the step 3 command with `new` in place of `old` prints nothing, or only your own changes. For example: `git --no-pager diff --no-index --stat ../buildos-upgrade/new/.os/skills/fit-gap-analysis .os/skills/fit-gap-analysis`.
    - The same is true for the router: `git --no-pager diff --no-index --stat ../buildos-upgrade/new/.os/skills/AGENTS.md .os/skills/AGENTS.md`.
    - Each file on your list from step 3 is in place: your change is in the new file, or your added file is back.
 
@@ -555,7 +559,7 @@ Run the commands in the project folder. They use a work folder, `../buildos-upgr
 
 #### Roll back from 0.2.0 to 0.1.0
 
-The rollback puts back the version file and the three skills from the backup of step 1, in the project and in each app folder. A change that you made to these three skills after the upgrade goes away, so save it first.
+The rollback puts back the version file and the four skills from the backup of step 1, in the project and in each app folder. A change that you made to these four skills after the upgrade goes away, so save it first.
 
 1. Put back the version file and the router:
 
@@ -564,18 +568,19 @@ The rollback puts back the version file and the three skills from the backup of 
    cp ../buildos-upgrade/backup/os-skills/AGENTS.md .os/skills/AGENTS.md
    ```
 
-2. Put back the three skills in the project:
+2. Put back the four skills in the project:
 
    ```sh
-   rm -rf .os/skills/buildos-bulk-extract .os/skills/buildos-export-azure-boards .os/skills/fit-gap-analysis
+   rm -rf .os/skills/buildos-bulk-extract .os/skills/buildos-export-azure-boards .os/skills/capability-matrix .os/skills/fit-gap-analysis
    cp -R ../buildos-upgrade/backup/os-skills/buildos-bulk-extract .os/skills/buildos-bulk-extract
    cp -R ../buildos-upgrade/backup/os-skills/buildos-export-azure-boards .os/skills/buildos-export-azure-boards
+   cp -R ../buildos-upgrade/backup/os-skills/capability-matrix .os/skills/capability-matrix
    cp -R ../buildos-upgrade/backup/os-skills/fit-gap-analysis .os/skills/fit-gap-analysis
    ```
 
-3. In each app folder, do the same for each of the three skills that it has, from that folder's backup. For example: `rm -rf .claude/skills/buildos-bulk-extract`, then `cp -R ../buildos-upgrade/backup/claude-skills/buildos-bulk-extract .claude/skills/buildos-bulk-extract`. If the backup has no copy of a skill, delete the app's copy.
+3. In each app folder, do the same for each of the four skills that it has, from that folder's backup. For example: `rm -rf .claude/skills/buildos-bulk-extract`, then `cp -R ../buildos-upgrade/backup/claude-skills/buildos-bulk-extract .claude/skills/buildos-bulk-extract`. If the backup has no copy of a skill, delete the app's copy.
 4. If you installed `0.2.0` with npm, install `0.1.0` there again.
-5. **Check.** `.os/scripts/buildos version` prints `version: 0.1.0`. Then, for each of the three skills, in the project and in each app folder that has it, compare it with the backup. For example:
+5. **Check.** `.os/scripts/buildos version` prints `version: 0.1.0`. Then, for each of the four skills, in the project and in each app folder that has it, compare it with the backup. For example:
 
    ```sh
    git --no-pager diff --no-index --stat ../buildos-upgrade/backup/os-skills/fit-gap-analysis .os/skills/fit-gap-analysis

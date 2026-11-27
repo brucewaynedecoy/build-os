@@ -6946,3 +6946,75 @@ Intended divergences, each forced by a rule the owner already decided (none need
 
 Owner question Q1 (SD-26): (A) keep the stop for a code with a pattern character (recommended: real codes are letters and digits, the skill asks for a short upper-case code, and a stop names the code to change); (B) read the code as plain text in the id check, which differs from the script only for such codes.
 
+### What Was Built (F-P9-04)
+
+| Part | Where |
+| --- | --- |
+| Core: the port of `cm_build.py` | `toolkits/buildos/src/core/capability-matrix/cm-build.ts` (the four subcommands), `src/core/capability-matrix/py-values.ts` (Python `dict` and `set` with Python's key rules, `Counter`, `in`, `len`, `x[k]`, `int(str)`, `os.path.dirname`, `json.dump` of a dict with non-string keys, the UTF-8 encode check); it reuses `shared/py-json.ts`, `fitgap/py.ts`, the `glob` port of `fitgap/fitgap.ts` (`pyGlob`, now exported), and the `csv` reader of `extract/py-lines.ts` |
+| CLI | `src/cli/commands/capability-matrix.ts` (parse, help, output, exit codes), registered in `src/cli/run.ts` after `export` |
+| Fixtures | `test/fixtures/skills/generate-capability-matrix.ts` writes `test/fixtures/skills/capability-matrix/` (one base project, 15 cases); every name is invented (the library book-lending topic) |
+| Goldens and capture | `test/golden/skills/capability-matrix/cases/` (15 files), `script-source.ts` (`embeddedScript`, `embeddedKey`), `script-sha256.json` (the `SKILL.md` and the block), `capture.ts` (the fourth runner; a one-script capture keeps the other scripts' goldens and record entries), `capture-record.json`, `test/capture-sources.test.ts`, `test/golden/CAPTURE.md` |
+| Tests | `test/skill-script-parity.test.ts` runs the new cases with no change (it iterates `SCRIPTS`); `test/capability-matrix.test.ts` (20 tests: SD-24, SD-26, `--json`, help, and the Python value rules); `test/check-no-python.test.ts` |
+| Divergences | `test/golden/skills/divergences.json`: SD-01 (three exit rules), SD-02 (the `arguments` case), SD-23 (20 pinned crash steps), SD-24, SD-25, SD-26 |
+| Root help | PE-001 now holds the root help with `capability-matrix`; the longer name widens the name column (`test/golden/parity-exceptions.json`, `test/validate.test.ts`) |
+| Skill and router | `system/.os/skills/capability-matrix/SKILL.md` (the appendix and every `python3 build/cm_build.py …` line are gone; the commands run through `<buildos>`, with the wrapper's `.cmd` form named), `system/.os/skills/AGENTS.md` |
+| No-Python check and smoke | `scripts/check-no-python.ts` (no exception), `scripts/no-python-smoke.ts` (the wrapper runs `capability-matrix skeleton`, `assemble` with a quoted pattern, and `validate` with a narrative whose name has spaces; every fixture case runs by the installed bin), `.github/workflows/buildos-ci.yml` (two labels) |
+
+The published smoke (`scripts/published-smoke.ts`) runs a published version, and no published version has the command, so it gets no new step.
+
+### Fixtures and Goldens (F-P9-04)
+
+Captured on 2026-11-27 (the record's `provenance.captures` date; the work day is 2026-11-26 in the records) with Python 3.14.10, Node 26.13.1, macOS arm64, from the block pinned above, run as `python3 -P -s cm_build.py …` in a fresh copy of the base project per case. The tool reads no clock. 15 cases, 66 steps:
+
+| Subcommand | Steps | Exit 0 | Exit 1 (a stop, FAIL lines, or a crash) | Exit 2 (argparse) | What they reach |
+| --- | --- | --- | --- | --- | --- |
+| `skeleton` | 12 | 2 | 8 | 2 | a valid skeleton with a child capability; a converted one with thin scope briefs; every check that fails; layer columns from ids, codes, and names that are numbers, `null`, or `true` (Python's `1` and `True` are one key); a missing file, broken JSON, a byte order mark, a missing key, an id with no dash, a `null` layer id |
+| `assemble` | 20 | 10 | 9 | 1 | restored fields, renumbered requirements, stripped and aliased option fields (every alias), pipe normalisation, CSV quoting (comma, quote, line break), non-ASCII text, `1.0`, `1e16`, an integer above 2^53, strings and dicts where lists belong, `null` and number summaries, a system key named `generated`; a pattern of parts; the same part twice; missing and extra capabilities; a pattern that matches nothing; statuses outside the vocabulary; a part that is not JSON; a missing key |
+| `fitgap` | 13 | 3 | 9 | 1 | replacement with a pattern and target-only rows; selection; integration with two models; an unknown baseline id; an unknown target id; target ids as a string (read by character); an unknown target-only id; no `--baseline`; no `--models`; an empty `--models`; rows that are not JSON; a missing model |
+| `validate` | 18 | 5 | 12 | 1 | a model with a narrative (CRLF, `§`, a bold status tag on the next line, trailing spaces); without one; with each fit/gap mode passing and failing; a wrong narrative; a model that fails every check; no companion CSVs; CSVs with CRLF, a quoted line break, a blank line, and padded counts; a count that is not a number; an unresolved parent; a missing narrative; a fit/gap without its models; a model that is not JSON |
+| no subcommand, an unknown one, `--help` | 3 | 1 | 0 | 2 | argparse errors and help |
+
+Not covered by goldens, and why: a run that crashed after its first write (the script left a partial file; the parity test compares written files strictly), a lone surrogate, a code with a pattern character, and a read or write outside the project. Each is a divergence held by `test/capability-matrix.test.ts` instead. A folder where a file belongs (`IsADirectoryError`) is a unit test too, so the Windows CI job does not depend on how a directory read fails there. Python's own regular-expression and Unicode tables are those of Python 3.14 (Unicode 16.0); BuildOS uses Node's tables for `\d` and for lower case, which can differ only for characters that a Unicode version added.
+
+### Divergences (F-P9-04)
+
+Every divergence is in `test/golden/skills/divergences.json`. SD-01, SD-02, SD-07, and SD-23 to SD-25 follow rules that the owner already decided (PRD 20 exit codes, help and usage, no stack trace, one root model, SD-04 contained reads, SD-05 atomic writes, the same bytes on every system). SD-26 is not decided: owner question Q1 above.
+
+| SD | What differs from `cm_build.py` |
+| --- | --- |
+| SD-01 | Exit 2 for argparse usage, 3 for a crash (a traceback), 4 for a stop or FAIL lines, 5 for a failed write, 10 for an incomplete undo; the script exited 1 or 2 |
+| SD-02 | Usage errors and help name `buildos`; no argparse abbreviations (`--skel`) |
+| SD-23 | A crash is one plain line, `capability-matrix <subcommand>: <what>`, exit 3; stdout up to there is the script's |
+| SD-24 | Reads, matches, and writes stay in the project (`--allow-outside-root` for an output outside); the out folder is made only when the run writes; a failed run writes nothing (the script could leave the model JSON without its CSVs, a half-written JSON on a lone surrogate, or the fit/gap CSV without its JSON); a companion CSV path outside the project counts as missing |
+| SD-25 | The JSON files and stdout end lines with `\n` on Windows too (Python's text mode wrote `\r\n`) |
+| SD-26 | A system code with a pattern character stops the id check (exit 4) where Python read it as part of its pattern; owner question Q1 |
+
+### Acceptance Criteria (F-P9-04)
+
+- A79 is met. `node scripts/check-no-python.ts` prints `no-python check: 59 file(s) read under the skills folder` and `no-python check: passed`, with no exception line; `EXCEPTIONS` is empty, and the stale-exception logic stays (tested with an invented exception). `findPython` on `system/.os/skills/` returns no finding (`test/check-no-python.test.ts`). A search of `system/.os/skills/` finds no file whose name ends in `.py` and no line that runs Python; the one line that names Python is the router's "No skill needs Python."
+- A80 needs a green CI run of this branch (the `no-python` jobs on three systems and `no-python-image`); locally, the smoke with a `PATH` of `node` and `sh` only passed: `capability-matrix: 15 case(s), 66 step(s), passed`, with the wrapper steps.
+- A77 and A78 for the fourth command: parity passes on macOS (80 skill-script parity tests: 65 earlier and 15 new); the `--json` envelope has every field (`test/capability-matrix.test.ts`); a three-system CI run of this branch is needed.
+
+### Upgrade from 0.1.0 (F-P9-04)
+
+`capability-matrix/SKILL.md` now changes between `0.1.0` and `0.2.0`, so the guide's steps refresh four skills. The list was checked against the published package: `buildos init --skip-make-docs` from the `build-os@0.1.0` tarball (fetched with `npm pack build-os@0.1.0`) gives 164 files, and from this build 159; the differences are the five removed script files, `.os/manifest.json`, the router, and these skill files: `buildos-bulk-extract/SKILL.md`, `buildos-export-azure-boards/SKILL.md` with three reference files, `capability-matrix/SKILL.md`, and `fit-gap-analysis/SKILL.md` with two reference files. The new steps were run on a copy of that `0.1.0` project: after step 4, `.os/skills/` equals the new copy's `.os/skills/` exactly (`git diff --no-index` prints nothing), and after the rollback, `git status` shows no change. The guide also says what to do with a change to the old appendix, and that an old `build/cm_build.py` in a project can be deleted. Counts are unchanged: the package has 168 files, `system/` 158, `system/.os/skills/` 59, and the `buildos init --skip-make-docs` plan lists 224 paths.
+
+### Records (F-P9-04)
+
+F-P9-04 is closed by this work (the command, the skill on it, and no exception), and its "to finish with the capability-matrix command" sentences are true now: the `0.2.0` release-notes draft (four commands; the "Not in this draft yet" section is gone; the upgrade refreshes four skills), the `0.1.0` Known limits sentence, guide chapters 3, 4, 10, 16, 17, and 18, `SECURITY.md` (Skills, the no-Python check row, the no-Python job row, Read Safety, Skill-Script Commands, Skill scripts, and the CSV formula prefixes), `system/.os/skills/AGENTS.md`, the package README, PRD 20 (Command Surface table, Packaged Skills, Requirement History), and the register (R-003). The guide app was rebuilt (`guide/BuildOS-Guide.html`, 22 documents).
+
+### Check Results (F-P9-04)
+
+From `toolkits/buildos/` unless noted, macOS arm64, Node 26.13.1, npm 11.20.0.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm test` (sandbox off, for the tests that open a local port) | exit 0; 2,852 tests, 2,839 passed, 0 failed, 13 skipped |
+| `npm run build`; `node dist/buildos.js help`; `node dist/buildos.js capability-matrix --help` | exit 0 each |
+| `node test/golden/skills/capture.ts --check --python <venv>/bin/python` (openpyxl 3.1.5 and et_xmlfile 2.0.0 from wheels whose SHA-256 equal the recorded ones, in a throwaway virtual environment) | exit 0: `checked bulk-extract 35, fitgap 15, azure-boards 11, capability-matrix 15 with Python 3.14.10`; the record's reproducible fields compared too |
+| `node scripts/check-no-python.ts` | exit 0, no exception |
+| `scripts/no-python-smoke.ts` with `PATH` of `node` and `sh` only, on a packed and installed build | exit 0, every wrapper step and every case of the four commands |
+| `node scripts/check-deny-list.mjs --root ../.. --pack .` with the real list | 0 matches, 0 home folder paths, 168 of 168 package files read |
+| `npm pack --dry-run --json` | 168 files, no Python file |
+| From the repository root: `make-docs project paths validate`; `make-docs check prd` | exit 0 (valid, 0 failing findings); exit 0 (no diagnostics) |

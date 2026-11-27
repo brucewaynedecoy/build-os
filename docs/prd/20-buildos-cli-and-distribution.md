@@ -99,6 +99,7 @@ From `0.2.0`, the CLI also provides these commands, which carry logic that skill
 | `buildos extract bulk` | Bulk extraction |
 | `buildos fitgap` | Fit-gap analysis, with `.xlsx` output |
 | `buildos export azure-boards` | Azure Boards CSV export |
+| `buildos capability-matrix` | Capability models and their fit/gap: `skeleton`, `assemble`, `fitgap`, and `validate`, the tool of the `capability-matrix` skill |
 
 After `0.2.0`, an adopter needs Node and nothing else. No user-facing command needs Python.
 
@@ -425,7 +426,7 @@ Code anchors:
 
 The router, `.os/skills/AGENTS.md`, lists every skill with its purpose. It tells an agent how to install one skill into its own app's skill location when the user or a BuildOS workflow needs it: copy that one skill folder, unchanged, to the app's project skill folder (Claude Code, Codex, and GitHub Copilot are named), and for any other app use that app's documentation or read the skill from `.os/skills/`. It tells agents that when `buildos init` exits `10` for the Make Docs choice, they put the question to the user, explain the Make Docs limit in the words `buildos init` uses, and run the one command `buildos init` printed for the answer.
 
-Skills run BuildOS commands through the project wrapper `.os/scripts/buildos`. Until `0.2.0`, three skills still need Python 3 for their own tools (`buildos-bulk-extract`, `fit-gap-analysis`, and `capability-matrix`), and the router says so. No BuildOS command needs Python.
+Skills run BuildOS commands through the project wrapper `.os/scripts/buildos`. From `0.2.0`, no skill needs Python: `buildos-bulk-extract`, `fit-gap-analysis`, `buildos-export-azure-boards`, and `capability-matrix` run `buildos extract bulk`, `buildos fitgap`, `buildos export azure-boards`, and `buildos capability-matrix`, and the router says so. In `0.1.0`, three skills needed Python 3 for their own tools (`buildos-bulk-extract`, `fit-gap-analysis`, and `capability-matrix`). No BuildOS command needs Python.
 
 The `fit-gap-analysis` skill takes owner names from the project config (`owners[].name` in `.os/config/instance.yaml`, [PRD 13](./13-adopter-owned-config-surface.md)) and owner colors from its frame or its own neutral palette file. Its code holds no owner name or owner color.
 
@@ -460,6 +461,14 @@ These observable outcomes are current requirements of this subsystem. The standa
 The adopter does not need to know about npm, `npx`, `PATH`, Node versions, bundling, wrapper choice, Make Docs setup flags, or where each chat app keeps skills.
 
 ## Requirement History
+
+### 2026-11-26 — W1 R7 owner decision (capability-matrix command, F-P9-04)
+
+- Affected requirement or section: `## Command Surface` (the `0.2.0` command table), `## Packaged Skills` (which skills need Python)
+- Previous contract: The `0.2.0` table listed three commands that carry skill logic. Until `0.2.0`, three skills needed Python 3 for their own tools, and the `capability-matrix` skill told the agent to write the Python tool `cm_build.py` from its appendix and run it; the no-Python check of the skills had one named exception for it.
+- Replacement contract: `0.2.0` also provides `buildos capability-matrix` (`skeleton`, `assemble`, `fitgap`, `validate`), the port of `cm_build.py` with the script's options, output bytes, and messages, the PRD 20 exit codes, `--json`, and contained, atomic reads and writes. The skill calls it through the project wrapper and holds no Python. From `0.2.0`, no skill needs Python, and the no-Python check has no exception.
+- Rationale: The owner decided on 2026-11-26 that the `capability-matrix` skill gets its own BuildOS command in `0.2.0`, so that no skill needs Python (F-P9-04), in preference to shipping `0.2.0` with the named exception.
+- Source: [F-P9-04 Capability-Matrix Command](../work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#f-p9-04-capability-matrix-command-2026-11-26)
 
 ### 2026-11-26 — W1 R7 owner decision (printed commands, F-P8-11)
 
