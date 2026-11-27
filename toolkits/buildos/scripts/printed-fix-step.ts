@@ -22,6 +22,16 @@
 //   true (state `current`) and no `index_` diagnostic, so an index that is
 //   there but not reproducible (`index_non_reproducible`, a warning with
 //   exit 0) fails the step.
+//
+// Tarball mode (F-P9-15, `source: "tarball"`): the same exact checks of the
+// printed text, and the same run of that text through the system shell. The
+// smoke has installed the tarball into the project and blocked the
+// registry, so npm can resolve `build-os@<version>` only to that local
+// install. The check after step 10 (scripts/published-smoke.ts) checks the
+// project's launchers and records the entry scripts of the Node.js processes
+// that the launch probe observed (review round 3 of pull request 12, finding
+// 1: not every executable); the step's name states no result. What this cannot prove before publication is
+// the registry fetch of the literal command (runbook step k).
 
 /** The parts of a smoke step that this step reads. */
 export interface RanStep {
@@ -32,13 +42,15 @@ export interface RanStep {
 
 export interface PrintedFixInput<S extends RanStep> {
   version: string;
+  /** Where the package comes from (scripts/smoke-source.ts); "registry" when not given. */
+  source?: "registry" | "tarball";
   windows: boolean;
   /** The project folder of step 3. */
   project: string;
   /** The stdout of step 5 (human `entities validate`), or undefined when it did not run. */
   humanStdout: string | undefined;
-  /** Runs `npx -y build-os@<version> <args>` in the project; `expected` is the exit code it must give. */
-  npxRun: (name: string, args: string[], expected: number) => S;
+  /** Runs `npx -y build-os@<version> <args>` in the project; `expected` is the exit code it must give; `role` is the run's part in the report claims (scripts/smoke-source.ts). */
+  npxRun: (name: string, args: string[], expected: number, role: "fix-check" | "fix-after") => S;
   /** Runs `command` through the system shell in the project (exit 0 expected). */
   shellRun: (name: string, command: string) => S;
   check: (step: S, what: string, ok: boolean) => void;
@@ -89,7 +101,7 @@ function parse(text: string): ValidateJson {
 /** Runs step 10. */
 export function printedFixStep<S extends RanStep>(input: PrintedFixInput<S>): void {
   const { version, windows, project, check } = input;
-  const json = input.npxRun("entities validate --json (the printed fix command)", ["entities", "validate", "--root", project, "--mode", "compat", "--json"], 0);
+  const json = input.npxRun("entities validate --json (the printed fix command)", ["entities", "validate", "--root", project, "--mode", "compat", "--json"], 0, "fix-check");
   const printed = parse(json.stdout).result?.index?.remediation_command ?? "";
   const humanLines = input.humanStdout === undefined ? [] : input.humanStdout.split("\n");
   if (version === "0.1.0") {
@@ -109,9 +121,12 @@ export function printedFixStep<S extends RanStep>(input: PrintedFixInput<S>): vo
     check(json, "the printed command did not match in the JSON field and the human action: line, so the step stopped and ran nothing", false);
     return;
   }
-  const step = input.shellRun(windows ? "the printed fix command, as printed, in Command Prompt (delayed expansion off)" : "the printed fix command, as printed, in sh", printed);
+  const shellName = windows ? "the printed fix command, as printed, in Command Prompt (delayed expansion off)" : "the printed fix command, as printed, in sh";
+  // Review round 2 of pull request 12, finding 3: the name states no result; the launch check after step 10 records the entry scripts that the launch probe observed (round 3, finding 1).
+  const tarballNote = ` (tarball mode, registry blocked: the launch check after step 10 records the entry scripts that the launch probe observed; the registry fetch of this literal command is proven only after publication, runbook step k)`;
+  const step = input.shellRun(input.source === "tarball" ? `${shellName}${tarballNote}` : shellName, printed);
   check(step, "stdout says entities.rebuild-index: ok and the write was applied", step.stdout.startsWith("entities.rebuild-index: ok\n") && step.stdout.includes("write status: applied\n"));
-  const after = input.npxRun("entities validate --json after the printed fix command", ["entities", "validate", "--root", project, "--mode", "compat", "--json"], 0);
+  const after = input.npxRun("entities validate --json after the printed fix command", ["entities", "validate", "--root", project, "--mode", "compat", "--json"], 0, "fix-after");
   const parsed = parse(after.stdout);
   const index = parsed.result?.index;
   const indexDiagnostics = (parsed.diagnostics ?? []).filter((d) => typeof d.code === "string" && d.code.startsWith("index_")).map((d) => d.code);

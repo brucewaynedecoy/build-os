@@ -1,10 +1,20 @@
-// W1 R7 P8 t15: smoke test of a published (or staged) build-os version,
-// through `npx -y build-os@<version>`, in clean folders, with a clean npm
-// cache. The `buildos-smoke` workflow runs it on ubuntu-latest,
-// windows-latest, and macos-latest with Node 24; a maintainer can run it on
-// any machine. Node built-ins only; it installs nothing from this repository.
+// W1 R7 P8 t15: smoke test of a published build-os version, through
+// `npx -y build-os@<version>`, in clean folders, with a clean npm cache. The
+// `buildos-smoke` workflow runs it on ubuntu-latest, windows-latest, and
+// macos-latest with Node 24; a maintainer can run it on any machine. Node
+// built-ins only; it installs nothing from this repository.
 //
 // Usage: node scripts/published-smoke.ts --version <version> --out <folder>
+//        node scripts/published-smoke.ts --tarball <file> --sha256 <hex> --out <folder>
+//
+// Tarball mode (W1 R7 P9, F-P9-15): the same steps on one release tarball,
+// before its version is on the registry (a staged version cannot be
+// installed before the npm approval). The file's SHA-256 must equal
+// --sha256 before any step runs, and the version is read from the tarball.
+// How each step gets the package, the registry guard, and what the mode
+// proves and does not prove are in scripts/smoke-source.ts. The report
+// records the mode, the tarball's file name, SHA-256, and version, and
+// those limits.
 //
 // Each step runs in a new empty folder below one temporary root. The npm
 // cache is a new empty folder in that root, npm install scripts are off
@@ -35,12 +45,64 @@
 // step for Node.js missing) for 0.1.0, and 15 (14) for a later version:
 // version 2, init 2, intake 1, entities validate 1, validate 1, legacy name
 // 2, wrapper 3 (2), and step 10 with 1 for 0.1.0 or 3 for a later version.
+// Tarball mode adds 5 (review round 1 of pull request 12, finding 1): the
+// registry guard preflight before step 1 (when it fails, the run stops there
+// and writes the report), the check of the npx install and its launchers
+// after step 7, the install of the tarball into the project before step 9,
+// and after step 10 the check of the project install and its launchers (and
+// the npx install again) and of the npm cache (20 on Linux and macOS, 19 on
+// Windows, for 0.2.0). Review round 2 added the launcher and launch-probe
+// checks to the two install checks, so the count is the same. Review round 3
+// narrowed what they claim: the launch probe shows the entry scripts of the
+// Node.js processes that it observed in a step, not every executable
+// (PROBE_LIMIT in scripts/smoke-source.ts).
+//
+// The report (review round 1, findings 2 and 3): every claim of what tarball
+// mode proved comes from the steps that ran and their outcomes
+// (tarballClaims in scripts/smoke-source.ts), and the check labels are
+// cleaned like stdout and stderr, so the report holds no runner path.
 
 import { spawnSync, type SpawnSyncOptions } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir, userInfo } from "node:os";
-import { dirname, join } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { commandPromptArgs, printedFixStep } from "./printed-fix-step.ts";
+import { cacheContentSha256, canonicalShims, findBuildOsFolders, readCacheIndex, readInstalledCopy, readLaunchers, readNpxFolders } from "./smoke-evidence.ts";
+import {
+  BLOCKED_REGISTRY,
+  cacheContentProblems,
+  cacheIndexProblems,
+  comparisonStatement,
+  copyProblems,
+  guardedEnv,
+  launcherProblems,
+  launchProblems,
+  launchRecords,
+  legacyNpxArgs,
+  npxArgs,
+  npmPrograms,
+  npxFolderProblems,
+  parseSmokeArgs,
+  pathKey,
+  PREFLIGHT_KEYS,
+  preflightStdout,
+  PROBE_LIMIT,
+  PROBE_LOG_VARIABLE,
+  PROBE_SOURCE,
+  readTarballIdentity,
+  reportCacheKey,
+  scrubAbsolutePaths,
+  sha256Hex,
+  strayProblems,
+  TARBALL_MODE_LIMITS,
+  tarballClaims,
+  USAGE,
+  UsageError,
+  type LauncherRead,
+  type SmokeSource,
+  type StepRole,
+  type TarballIdentity,
+} from "./smoke-source.ts";
 
 const NODE_REQUIRED = "BuildOS needs Node.js 24 or newer on this computer. Install it from https://nodejs.org, then try again.";
 const LEGACY_NOTICE = 'Note: the command name "buildos-intake" goes away in BuildOS 0.3.0. Use "buildos intake" instead.';
@@ -48,9 +110,12 @@ const WINDOWS = process.platform === "win32";
 
 interface Step {
   name: string;
+  /** The part this step plays, for the claims of a tarball-mode report. */
+  role?: StepRole;
   command: string;
   exit: number | null;
-  expected_exit: number;
+  /** null for a check that starts no process (the provenance and cache checks). */
+  expected_exit: number | null;
   stdout: string;
   stderr: string;
   files?: Record<string, string>;
@@ -59,41 +124,83 @@ interface Step {
 }
 
 function usage(message: string): never {
-  process.stderr.write(`${message}\nUsage: node scripts/published-smoke.ts --version <version> --out <folder>\n`);
+  process.stderr.write(`${message}\n${USAGE}\n`);
   process.exit(2);
 }
 
-function parseArgs(argv: string[]): { version: string; out: string } {
-  let version = "";
-  let out = "";
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    if (a === "--version") version = argv[++i] ?? "";
-    else if (a === "--out") out = argv[++i] ?? "";
-    else usage(`unknown argument: ${a}`);
+function parseArgs(argv: string[]): { source: SmokeSource; out: string } {
+  try {
+    return parseSmokeArgs(argv);
+  } catch (e) {
+    if (e instanceof UsageError) usage(e.message);
+    throw e;
   }
-  // A plain semver version only: npm reads an empty spec as "any version".
-  if (!/^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$/.test(version)) usage("--version must be a plain version such as 0.1.0");
-  if (out === "") usage("--out is required");
-  return { version, out };
 }
 
-/** npx as `node <npx-cli.js>`, so no shell is needed on Windows; else npx on PATH. */
-function npxCommand(): { file: string; prefix: string[]; shell: boolean } {
+/**
+ * The npm installation next to the Node.js that runs the smoke: the real
+ * path of its folder (`node_modules/npm` next to node.exe on Windows,
+ * `../lib/node_modules/npm` elsewhere), or undefined. Tarball mode selects
+ * this one installation in the preflight and allows only its exact program
+ * files (review round 3 of pull request 12, finding 1).
+ */
+function npmInstallation(): string | undefined {
   const nodeDir = dirname(process.execPath);
-  for (const cli of [join(nodeDir, "node_modules", "npm", "bin", "npx-cli.js"), join(nodeDir, "..", "lib", "node_modules", "npm", "bin", "npx-cli.js")]) {
-    if (existsSync(cli)) return { file: process.execPath, prefix: [cli], shell: false };
+  for (const dir of [join(nodeDir, "node_modules", "npm"), join(nodeDir, "..", "lib", "node_modules", "npm")]) {
+    if (existsSync(join(dir, "bin", "npm-cli.js")) && existsSync(join(dir, "bin", "npx-cli.js"))) return realpathSync.native(dir);
   }
-  return { file: "npx", prefix: [], shell: WINDOWS };
+  return undefined;
+}
+const npmRoot = npmInstallation();
+
+/** npx or npm as `node <npx-cli.js>` (or `npm-cli.js`) of that installation, so no shell is needed on Windows; else the program on PATH (registry mode only: tarball mode stops in the preflight without the installation). */
+function npmTool(name: "npx" | "npm"): { file: string; prefix: string[]; shell: boolean } {
+  if (npmRoot !== undefined) return { file: process.execPath, prefix: [join(npmRoot, "bin", `${name}-cli.js`)], shell: false };
+  return { file: name, prefix: [], shell: WINDOWS };
 }
 
-const { version, out } = parseArgs(process.argv.slice(2));
-const root = mkdtempSync(join(tmpdir(), "buildos-smoke-"));
+const parsed = parseArgs(process.argv.slice(2));
+const out = parsed.out;
+// Tarball mode (F-P9-15): the file as an absolute path, its SHA-256 checked
+// against --sha256 before any step, and the version read from the tarball.
+const source: SmokeSource = parsed.source.kind === "tarball" ? { ...parsed.source, file: resolve(parsed.source.file) } : parsed.source;
+let identity: TarballIdentity | undefined;
+if (source.kind === "tarball") {
+  let bytes: Uint8Array = new Uint8Array();
+  try {
+    bytes = readFileSync(source.file);
+  } catch {
+    process.stderr.write(`cannot read the tarball ${source.file}; no step ran\n`);
+    process.exit(1);
+  }
+  const actual = sha256Hex(bytes);
+  if (actual !== source.sha256) {
+    process.stderr.write(`the tarball's SHA-256 is ${actual}, not the expected ${source.sha256}; no step ran\n`);
+    process.exit(1);
+  }
+  try {
+    identity = readTarballIdentity(bytes);
+  } catch (e) {
+    process.stderr.write(`${(e as Error).message}; no step ran\n`);
+    process.exit(1);
+  }
+}
+const version = identity !== undefined ? identity.version : source.kind === "registry" ? source.version : "";
+// The real path (review round 1 of pull request 12): on macOS the temporary
+// folder is below a symbolic link (/var, /tmp), and through a linked path npm
+// records the hidden lockfile keys of an install relative to the link (on
+// Windows, the native form also expands a short 8.3 name such as RUNNER~1).
+const root = realpathSync.native(mkdtempSync(join(tmpdir(), "buildos-smoke-")));
 const cache = join(root, "npm-cache");
 mkdirSync(cache);
-const npx = npxCommand();
-const baseEnv: NodeJS.ProcessEnv = {
-  ...process.env,
+// Tarball mode: npm's global prefix is this new empty folder, so no global install can stand in.
+const globalPrefix = join(root, "npm-prefix");
+mkdirSync(globalPrefix);
+const npx = npmTool("npx");
+const npm = npmTool("npm");
+const callerEnv: NodeJS.ProcessEnv = {
+  // The caller's value of a setting below, in any spelling, never counts.
+  ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !/^npm_config_(cache|ignore[-_]scripts|update[-_]notifier|fund|audit)$/i.test(key))),
   npm_config_cache: cache,
   npm_config_ignore_scripts: "true",
   npm_config_update_notifier: "false",
@@ -101,7 +208,20 @@ const baseEnv: NodeJS.ProcessEnv = {
   npm_config_audit: "false",
 };
 // A BuildOS variable from the caller never counts.
-for (const key of Object.keys(baseEnv)) if (key.startsWith("BUILDOS_")) delete baseEnv[key];
+for (const key of Object.keys(callerEnv)) if (key.startsWith("BUILDOS_")) delete callerEnv[key];
+// Tarball mode: the launch probe (review round 2 of pull request 12, finding
+// 1), loaded by every Node.js process of a step through NODE_OPTIONS; each
+// step gets its own launch log (run()).
+const probeDir = join(root, "launch-probe");
+const probe = join(probeDir, "probe.cjs");
+if (source.kind === "tarball") {
+  mkdirSync(probeDir);
+  writeFileSync(probe, PROBE_SOURCE);
+}
+// Tarball mode: npm offline, with a blocked registry and bin links on, and the
+// launch probe, for every process that the smoke starts (the registry guard,
+// scripts/smoke-source.ts).
+const baseEnv: NodeJS.ProcessEnv = source.kind === "tarball" ? guardedEnv(callerEnv, { cache, prefix: globalPrefix, probe }) : callerEnv;
 
 /** Every spelling of a path that output can hold: as given, real path, short and long forms, and JSON-escaped. */
 function spellings(path: string): string[] {
@@ -130,7 +250,10 @@ function spellings(path: string): string[] {
 function clean(text: string, project?: string): string {
   let t = text.replace(/\r\n/g, "\n");
   const pairs: [string, string][] = [];
+  if (source.kind === "tarball") for (const s of spellings(source.file)) pairs.push([s, "{TARBALL}"]);
   if (project !== undefined) for (const s of spellings(project)) pairs.push([s, "{PROJECT}"]);
+  // Review round 3 of pull request 12, finding 5: the selected npm installation, before {HOME} (it can be below the home folder).
+  if (npmRoot !== undefined) for (const s of spellings(npmRoot)) pairs.push([s, "{NPM}"]);
   for (const s of spellings(root)) pairs.push([s, "{TMP}"]);
   for (const s of spellings(tmpdir())) pairs.push([s, "{TMP}"]);
   for (const s of spellings(homedir())) pairs.push([s, "{HOME}"]);
@@ -150,11 +273,15 @@ function newFolder(name: string): string {
 const steps: Step[] = [];
 /** The project folder of each step, for the cleaning of its report. */
 const stepFolder = new WeakMap<Step, string>();
+/** Tarball mode: the launch log of each step that started a process. */
+const stepLaunchLog = new WeakMap<Step, string>();
 
-function run(name: string, shown: string, file: string, args: string[], expected: number, cwd: string, opts: { env?: NodeJS.ProcessEnv; shell?: boolean; verbatim?: boolean } = {}): Step {
+function run(name: string, shown: string, file: string, args: string[], expected: number, cwd: string, opts: { env?: NodeJS.ProcessEnv; shell?: boolean; verbatim?: boolean; role?: StepRole } = {}): Step {
+  const env = opts.env ?? baseEnv;
+  const launchLog = source.kind === "tarball" ? join(probeDir, `step-${steps.length + 1}.jsonl`) : undefined;
   const options: SpawnSyncOptions = {
     cwd,
-    env: opts.env ?? baseEnv,
+    env: launchLog !== undefined ? { ...env, [PROBE_LOG_VARIABLE]: launchLog } : env,
     // No TTY: stdin is closed, as in a chat app or CI.
     stdio: ["ignore", "pipe", "pipe"],
     encoding: "utf8",
@@ -166,6 +293,7 @@ function run(name: string, shown: string, file: string, args: string[], expected
   const r = spawnSync(file, args, options);
   const step: Step = {
     name,
+    ...(opts.role !== undefined ? { role: opts.role } : {}),
     command: clean(shown, cwd),
     exit: r.status,
     expected_exit: expected,
@@ -177,16 +305,173 @@ function run(name: string, shown: string, file: string, args: string[], expected
   };
   steps.push(step);
   stepFolder.set(step, cwd);
+  if (launchLog !== undefined) stepLaunchLog.set(step, launchLog);
   return step;
+}
+
+/** The launch records of a step (tarball mode), from its launch log; none when it has no log. */
+function launchesOf(step: Step): ReturnType<typeof launchRecords> {
+  const log = stepLaunchLog.get(step);
+  if (log === undefined || !existsSync(log)) return [];
+  return launchRecords(readFileSync(log, "utf8"));
+}
+
+/** Tarball mode: the selected npm's programs, what each route's launchers resolve to, and the entry scripts that the launch probe observed in each step, cleaned, for the report (review round 2, finding 1; round 3, finding 1). */
+const launcherRecord: { npm_programs: string[]; npx: Record<string, string[]>; project: Record<string, string[]>; wrapper_lookup: string | null; observed: { step: string; entry_scripts: string[] }[]; observes: string } = { npm_programs: [], npx: {}, project: {}, wrapper_lookup: null, observed: [], observes: `The entry scripts of the Node.js processes that the launch probe (a preload) observed in each step. ${PROBE_LIMIT}` };
+
+function recordLaunchers(route: "npx" | "project", launchers: readonly LauncherRead[]): string {
+  const lines: string[] = [];
+  for (const l of launchers) {
+    launcherRecord[route][l.name] = l.files.map((f) =>
+      f.kind === "shim" ? `${f.where}: ${f.equal === true ? "byte-equal to the canonical shim of the selected npm's cmd-shim" : `NOT byte-equal to the canonical shim (${f.reason ?? "differs"})`}` : `${f.where} -> ${f.resolved !== undefined ? clean(f.resolved) : `(${f.kind === "missing" ? "missing" : (f.reason ?? "no target")})`}`,
+    );
+    lines.push(...launcherRecord[route][l.name]!.map((x) => `launcher ${l.name}: ${x}\n`));
+  }
+  return lines.join("");
+}
+
+/** The npm programs that may start in a step: the exact program files of the selected npm installation (finding 1). */
+const allowedNpm = npmRoot !== undefined ? npmPrograms(npmRoot, WINDOWS) : [];
+
+/** The launch check of each step in `which`: the entry script of every Node.js process that the probe observed was one of `expected(step)` or `allowed` (finding 1). */
+function launchChecks(which: readonly Step[], expected: (s: Step) => string[], allowed: readonly string[]): { text: string; problems: string[] } {
+  const problems: string[] = [];
+  const lines: string[] = [];
+  for (const s of which) {
+    const records = launchesOf(s);
+    const scripts = records.map((r) => clean(r.real ?? r.argv1 ?? "(none)"));
+    launcherRecord.observed = launcherRecord.observed.filter((x) => x.step !== s.name);
+    launcherRecord.observed.push({ step: s.name, entry_scripts: scripts });
+    lines.push(`observed (${s.name}): ${scripts.length > 0 ? scripts.join(", ") : "(no Node.js process)"}\n`);
+    problems.push(...launchProblems(s.name, records, expected(s), allowed, WINDOWS).map((p) => clean(p)));
+  }
+  return { text: lines.join(""), problems };
 }
 
 function check(step: Step, what: string, ok: boolean): void {
   step.checks.push({ check: what, ok });
 }
 
-function npxRun(name: string, args: string[], expected: number, cwd: string): Step {
-  const full = ["-y", `build-os@${version}`, ...args];
-  return run(name, `npx ${full.join(" ")}`, npx.file, [...npx.prefix, ...full], expected, cwd, { shell: npx.shell });
+function npxRun(name: string, args: string[], expected: number, cwd: string, role: StepRole = "direct"): Step {
+  const full = npxArgs(source, version, args);
+  return run(name, `npx ${full.join(" ")}`, npx.file, [...npx.prefix, ...full], expected, cwd, { shell: npx.shell, role });
+}
+
+/** A step that starts no process: it reads the disk and records each problem in stderr. */
+function evidenceStep(name: string, role: StepRole, command: string, stdout: string, checks: { check: string; problems: string[] }[]): void {
+  steps.push({ name, role, command, exit: null, expected_exit: null, stdout, stderr: checks.flatMap((c) => c.problems).map((p) => `${p}\n`).join(""), checks: checks.map((c) => ({ check: c.check, ok: c.problems.length === 0 })), ok: false });
+}
+
+const os = process.platform === "darwin" ? "macos" : process.platform === "win32" ? "windows" : process.platform;
+
+/** Writes the JSON and Markdown reports, prints the summary, removes the temporary root, and exits (1 unless every step passed). */
+function finish(stopped?: string): never {
+  for (const s of steps) s.ok = s.checks.every((c) => c.ok);
+  const passed = stopped === undefined && steps.every((s) => s.ok);
+  // The checks are done: only now is the output cleaned, for the report;
+  // the check labels too, which can hold a project path (finding 3).
+  // Review round 3, finding 5: last, every string of the report loses any
+  // absolute path that the cleaning left (scrubAbsolutePaths); the count is
+  // recorded, and the cleaning is expected to leave none.
+  let absolutePathsRemoved = 0;
+  const scrub = <T>(value: T): T => {
+    if (typeof value === "string") {
+      const r = scrubAbsolutePaths(value);
+      absolutePathsRemoved += r.removed;
+      return r.text as T;
+    }
+    if (Array.isArray(value)) return value.map((v) => scrub(v)) as T;
+    if (value !== null && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, scrub(v)])) as T;
+    return value;
+  };
+  const reported = scrub(steps.map((s) => ({ ...s, stdout: clean(s.stdout, stepFolder.get(s)), stderr: clean(s.stderr, stepFolder.get(s)), checks: s.checks.map((c) => ({ ...c, check: clean(c.check, stepFolder.get(s)) })) })));
+  const launchers = scrub(launcherRecord);
+  const npmVersion = spawnSync(npx.file, [...npx.prefix, "--version"], { env: baseEnv, encoding: "utf8", shell: npx.shell, cwd: root }).stdout?.toString().trim() ?? "";
+  const tarballRecord = source.kind === "tarball" && identity !== undefined ? { file: basename(source.file), sha256: identity.sha256, integrity: identity.integrity, name: identity.name, version: identity.version, file_count: identity.files.size, non_file_entries: identity.nonFileEntries, bin_sha256: identity.bins } : null;
+  // Finding 2: what this run proved comes from the steps that ran, never fixed text.
+  const claims = identity !== undefined ? tarballClaims(reported, { version, sha256: identity.sha256, integrity: identity.integrity }) : null;
+  const packageSource = source.kind === "registry" ? `the public npm registry: npx -y build-os@${version}` : `the tarball file ${basename(source.file)} (tarball mode), with npm offline and the registry ${BLOCKED_REGISTRY} (blocked) for every process`;
+  const report = {
+    package: `build-os@${version}`,
+    mode: source.kind,
+    package_source: packageSource,
+    tarball: tarballRecord,
+    ...(claims !== null && identity !== undefined ? { tarball_mode: { ...claims, compares: comparisonStatement(identity), does_not_prove: TARBALL_MODE_LIMITS.does_not_prove }, launchers } : {}),
+    os,
+    platform: `${process.platform} ${process.arch}`,
+    node: process.version,
+    npm: npmVersion,
+    npm_cache: "a new empty folder below {TMP}",
+    paths_replaced: `{TMP} temporary root, {PROJECT} step folder, {HOME} home folder, {USER} user name, {TIMESTAMP} times${npmRoot !== undefined ? ", {NPM} the selected npm installation" : ""}${source.kind === "tarball" ? ", {TARBALL} tarball path" : ""}; any other absolute path is replaced by {ABSOLUTE-PATH} (absolute_paths_removed)`,
+    absolute_paths_removed: absolutePathsRemoved,
+    passed,
+    ...(stopped !== undefined ? { stopped } : {}),
+    steps: reported,
+  };
+  mkdirSync(out, { recursive: true });
+  writeFileSync(join(out, `smoke-${os}.json`), `${JSON.stringify(report, null, 2)}\n`);
+  const md: string[] = [`# build-os@${version} smoke on ${os}`, "", `Node ${process.version}, npm ${npmVersion}, ${process.platform} ${process.arch}. Result: ${passed ? "passed" : "FAILED"}. Paths are replaced as stated in the JSON report.`, ""];
+  if (stopped !== undefined) md.push(`Stopped: ${stopped}`, "");
+  if (tarballRecord !== null && claims !== null) {
+    md.push(`Mode: tarball. File \`${tarballRecord.file}\`, SHA-256 \`${tarballRecord.sha256}\`, version ${tarballRecord.version} (read from the tarball). Package source: ${packageSource}.`, "");
+    const list = (title: string, lines: readonly string[]): void => {
+      md.push(title, "");
+      for (const line of lines.length > 0 ? lines : ["(none)"]) md.push(`- ${line}`);
+      md.push("");
+    };
+    list("This run proved (each claim from steps that ran and passed):", claims.proves);
+    list("This run did not prove:", claims.not_proven);
+    list("Ran nothing:", claims.not_run);
+    md.push(`What the install checks compare: ${comparisonStatement(identity!)}`, "");
+    list("Tarball mode does not prove (in any run):", TARBALL_MODE_LIMITS.does_not_prove);
+  } else {
+    md.push(`Mode: registry. Package source: ${packageSource}.`, "");
+  }
+  for (const s of reported) {
+    md.push(`## ${s.ok ? "pass" : "FAIL"}: ${s.name}`, "", s.expected_exit === null ? `Check: ${s.command}.` : `Command: \`${s.command}\` (exit ${s.exit}, expected ${s.expected_exit})`, "");
+    for (const c of s.checks) md.push(`- ${c.ok ? "ok" : "FAILED"}: ${c.check}`);
+    md.push("", "stdout:", "", "```text", s.stdout.replace(/\n$/, ""), "```", "", "stderr:", "", "```text", s.stderr.replace(/\n$/, ""), "```", "");
+    for (const [path, text] of Object.entries(s.files ?? {})) md.push(`File \`${path}\`:`, "", "```text", text.replace(/\n$/, ""), "```", "");
+  }
+  writeFileSync(join(out, `smoke-${os}.md`), md.join("\n"));
+  process.stdout.write(`build-os@${version}${tarballRecord !== null ? ` (tarball, SHA-256 ${tarballRecord.sha256})` : ""} smoke on ${os}: ${passed ? "passed" : "FAILED"} (${steps.filter((s) => s.ok).length} of ${steps.length} steps)\n`);
+  if (stopped !== undefined) process.stdout.write(`  STOPPED: ${stopped}\n`);
+  for (const s of steps) if (!s.ok) process.stdout.write(`  FAILED: ${s.name}: ${s.checks.filter((c) => !c.ok).map((c) => clean(c.check, stepFolder.get(s))).join("; ")}\n`);
+  rmSync(root, { recursive: true, force: true, maxRetries: 5 });
+  if (shimScratch !== undefined) rmSync(shimScratch, { recursive: true, force: true, maxRetries: 5 });
+  process.exit(passed ? 0 : 1);
+}
+
+// 0. Tarball mode only: the registry guard is on (npm reads offline, the
+// blocked registry, bin links on, and node-options set to the launch probe),
+// the one npm installation of the run is selected, and the probe observes
+// the preflight's own npm process. On Windows the canonical shims of each bin
+// are made with that npm's cmd-shim (review round 3 of pull request 12,
+// findings 1 to 3). When any of this fails, no step runs (finding 1 of round 1).
+/** Windows, tarball mode: the canonical shims of each bin by its name (canonicalShims), made in the preflight. */
+let canonical: Map<string, Map<string, Uint8Array>> | undefined;
+/** The folder of the canonical shims' scratch folder, outside the temporary root (so no build-os folder of it is below the root); removed when the run ends. */
+let shimScratch: string | undefined;
+if (source.kind === "tarball") {
+  const keys = PREFLIGHT_KEYS.join(" ");
+  const step = run(`registry guard (tarball mode): npm config get ${keys}`, `npm config get ${keys}`, npm.file, [...npm.prefix, "config", "get", ...PREFLIGHT_KEYS], 0, root, { shell: npm.shell, role: "guard-preflight" });
+  check(step, "the selected npm installation is the one next to the Node.js that runs the smoke ({NPM}: its bin/npm-cli.js and bin/npx-cli.js exist)", npmRoot !== undefined);
+  check(step, `npm reads offline=true, registry=${BLOCKED_REGISTRY}, bin-links=true, and node-options equal to the launch probe's NODE_OPTIONS`, step.stdout === preflightStdout(probe));
+  const records = launchesOf(step);
+  step.stdout += `observed (preflight): ${records.length > 0 ? records.map((r) => clean(r.real ?? r.argv1 ?? "(none)")).join(", ") : "(no Node.js process)"}\n`;
+  check(step, "the launch probe observed the entry script of this npm process: exactly the selected npm's bin/npm-cli.js, and nothing else", npmRoot !== undefined && launchProblems("preflight", records, [join(npmRoot, "bin", "npm-cli.js")], [], WINDOWS).length === 0);
+  launcherRecord.npm_programs = allowedNpm.map((p) => clean(p));
+  if (WINDOWS && npmRoot !== undefined && identity !== undefined) {
+    let made = "";
+    try {
+      shimScratch = realpathSync.native(mkdtempSync(join(tmpdir(), "buildos-smoke-shims-")));
+      canonical = await canonicalShims(npmRoot, join(shimScratch, "shims"), identity.binFiles, identity.binBodies);
+    } catch (e) {
+      made = (e as Error).message;
+    }
+    check(step, "the canonical Windows shims of each bin were made with the selected npm's cmd-shim", made === "" && canonical !== undefined && canonical.size === identity.binFiles.size);
+  }
+  if (!step.checks.every((c) => c.ok)) finish("the registry guard preflight failed (npm did not read offline=true, the blocked registry, bin-links=true, and node-options set to the launch probe, or the npm installation, the launch probe, or the canonical shims were not as required), so the run stopped before step 1 and no other step ran");
 }
 
 // 1. version, human and JSON.
@@ -259,13 +544,67 @@ const project = newFolder("project");
 
 // 7. One legacy name, from the package: the notice, then the same output as `buildos intake --help`.
 {
-  const legacyArgs = ["-y", `--package=build-os@${version}`, "buildos-intake", "--help"];
-  const legacy = run("legacy name buildos-intake --help", `npx ${legacyArgs.join(" ")}`, npx.file, [...npx.prefix, ...legacyArgs], 0, project, { shell: npx.shell });
+  const legacyArgs = legacyNpxArgs(source, version);
+  const legacy = run("legacy name buildos-intake --help", `npx ${legacyArgs.join(" ")}`, npx.file, [...npx.prefix, ...legacyArgs], 0, project, { shell: npx.shell, role: "direct" });
   const plain = npxRun("intake --help (for the legacy comparison)", ["intake", "--help"], 0, project);
   const lines = legacy.stderr.split("\n");
   check(legacy, "the first stderr line is the legacy notice", lines[0] === LEGACY_NOTICE);
   check(legacy, "the rest of stderr equals that of buildos intake --help", lines.slice(1).join("\n") === plain.stderr);
   check(legacy, "stdout equals that of buildos intake --help", legacy.stdout === plain.stdout);
+}
+
+// Tarball mode only, after step 7 and before the project install exists: a
+// check of the npx install that steps 1 to 7 used (scripts/smoke-source.ts
+// says why it is that one). Exactly one npx folder, made for the tarball
+// file; its build-os package holds exactly the tarball's regular files with
+// the tarball's bytes; its lockfile names the tarball's version, file, and
+// integrity; its launchers resolve to that package's bin files (review
+// round 2 of pull request 12, finding 1); the launch probe shows that the
+// program of each direct step was that package's bin file; and no other
+// build-os folder is below the temporary root.
+let npxInstallDir: string | undefined;
+/** The bin file of the package in `<base>/node_modules/build-os` for a bin name, or "" when the tarball names no such bin. */
+function binFileIn(base: string, bin: string): string {
+  const rel = identity?.binFiles.get(bin);
+  return rel === undefined ? "" : join(base, "node_modules", "build-os", ...rel.split("/"));
+}
+/** The bins that the npx steps start: `buildos` (steps 1 to 6 and the validate runs of step 10) and `buildos-intake` (step 7). */
+const NPX_BINS = ["buildos", "buildos-intake"];
+/** The bins that the project route starts: `build-os` (npm's bin for `npx -y build-os@<version>`, the printed command of step 10) and `buildos`. */
+const PROJECT_BINS = ["build-os", "buildos"];
+function npxCopyCheck(): { folders: string; problems: { check: string; problems: string[] }[] } {
+  const id = identity!;
+  const folders = readNpxFolders(cache, (p) => clean(p));
+  const withBuildOs = folders.filter((f) => f.hasBuildOs);
+  if (withBuildOs.length === 1) npxInstallDir = withBuildOs[0]!.dir;
+  const copy = npxInstallDir !== undefined ? readInstalledCopy(npxInstallDir, clean(join(npxInstallDir, "node_modules", "build-os"))) : undefined;
+  const launchers = npxInstallDir !== undefined ? readLaunchers(join(npxInstallDir, "node_modules", ".bin"), NPX_BINS, WINDOWS, (p) => clean(p), canonical) : [];
+  const launcherText = recordLaunchers("npx", launchers);
+  const expected = new Map(NPX_BINS.map((b) => [b, npxInstallDir !== undefined ? binFileIn(npxInstallDir, b) : "(no npx install)"]));
+  return {
+    folders: folders.map((f) => `${f.where}: _npx.packages ${JSON.stringify(f.packages).split(source.kind === "tarball" ? source.file : "\0").join("{TARBALL}")}${f.hasBuildOs ? ", holds node_modules/build-os" : ""}\n`).join("") + launcherText,
+    problems: [
+      { check: "the npx cache holds exactly one folder, made for the tarball file alone (_npx.packages)", problems: npxFolderProblems(folders, source.kind === "tarball" ? source.file : "") },
+      { check: `its node_modules/build-os holds exactly the tarball's ${id.files.size} regular files, each with the tarball's SHA-256, and its lockfile entry names version ${id.version}, the tarball file, and the integrity ${id.integrity}`, problems: copyProblems("the npx install", copy, id, basename(source.kind === "tarball" ? source.file : "")) },
+      { check: `its launchers ${NPX_BINS.map((b) => `node_modules/.bin/${b}`).join(" and ")} ${WINDOWS ? "(the shell, .cmd, and PowerShell shims) are byte-equal to the shims that the selected npm's cmd-shim writes for" : "are npm's symbolic links and resolve to"} that package's bin files`, problems: launcherProblems("the npx route", launchers, expected, WINDOWS).map((p) => clean(p)) },
+    ],
+  };
+}
+/** The stray check: no build-os folder below the root except `expected`, and the whole root was read (finding 2). */
+function strayCheck(expected: string[]): string[] {
+  const r = findBuildOsFolders(root, [join(cache, "_cacache"), join(cache, "_logs")], WINDOWS);
+  return [...r.incomplete.map((p) => `the search for build-os folders is incomplete: ${p}`), ...strayProblems(r.found, expected, WINDOWS)].map((p) => clean(p));
+}
+if (source.kind === "tarball" && identity !== undefined) {
+  const r = npxCopyCheck();
+  const expected = npxInstallDir !== undefined ? [join(npxInstallDir, "node_modules", "build-os")] : [];
+  const direct = steps.filter((s) => s.role === "direct");
+  const ran = launchChecks(direct, (s) => [npxInstallDir !== undefined ? binFileIn(npxInstallDir, s.name.startsWith("legacy name buildos-intake") ? "buildos-intake" : "buildos") : "(no npx install)"], allowedNpm);
+  evidenceStep("verify the npx install and its launchers (tarball mode, after step 7)", "npx-copy", "no process; it reads {TMP}/npm-cache/_npx, its node_modules/.bin launchers, the launch log of each direct step, and every node_modules/build-os folder below {TMP}", r.folders + ran.text, [
+    ...r.problems,
+    { check: `the launch probe of each of the ${direct.length} direct steps (steps 1 to 7): the entry script of each Node.js process that it observed is the npx install's bin file (buildos, or buildos-intake for the legacy name) or one of the selected npm's own programs ({NPM}/bin), and at least one is that bin file`, problems: ran.problems },
+    { check: "no other build-os folder is below the temporary root (the global prefix {TMP}/npm-prefix included), and the whole root was read; the project has no install yet", problems: strayCheck(expected) },
+  ]);
 }
 
 // 8. The project wrapper with Node.js missing: the plain message, exit 127.
@@ -278,7 +617,7 @@ const project = newFolder("project");
     const comspec = process.env["ComSpec"] ?? `${sys}\\System32\\cmd.exe`;
     const nodeFound = path.split(";").some((d) => existsSync(join(d, "node.exe")));
     const line = `/d /s /c ""${join(scripts, "buildos.cmd")}" version"`;
-    const step = run("wrapper with Node.js missing (.os\\scripts\\buildos.cmd version)", "PATH=%SystemRoot%\\System32;%SystemRoot% .os\\scripts\\buildos.cmd version", comspec, [line], 127, project, { env, verbatim: true });
+    const step = run("wrapper with Node.js missing (.os\\scripts\\buildos.cmd version)", "PATH=%SystemRoot%\\System32;%SystemRoot% .os\\scripts\\buildos.cmd version", comspec, [line], 127, project, { env, verbatim: true, role: "wrapper-missing" });
     check(step, "no node.exe in the PATH folders", !nodeFound);
     check(step, "stderr is exactly the plain message", step.stderr === `${NODE_REQUIRED}\n`);
     check(step, "stdout is empty", step.stdout === "");
@@ -287,7 +626,7 @@ const project = newFolder("project");
     symlinkSync("/bin/sh", join(bin, "sh"));
     const env = { ...baseEnv, PATH: bin };
     for (const name of ["buildos", "buildos-intake"]) {
-      const step = run(`wrapper with Node.js missing (.os/scripts/${name} version)`, `PATH=<folder with only sh> sh .os/scripts/${name} version`, "/bin/sh", [join(scripts, name), "version"], 127, project, { env });
+      const step = run(`wrapper with Node.js missing (.os/scripts/${name} version)`, `PATH=<folder with only sh> sh .os/scripts/${name} version`, "/bin/sh", [join(scripts, name), "version"], 127, project, { env, role: "wrapper-missing" });
       const expected = name === "buildos" ? `${NODE_REQUIRED}\n` : `${LEGACY_NOTICE}\n${NODE_REQUIRED}\n`;
       check(step, "stderr is exactly the expected lines", step.stderr === expected);
       check(step, "stdout is empty", step.stdout === "");
@@ -295,61 +634,104 @@ const project = newFolder("project");
   }
 }
 
-// 9. The project wrapper with Node.js present: it runs the pinned version (through npx).
+// Tarball mode only, before step 9: the offline install of the tarball into
+// the project (the user guide, chapter 4), so the wrapper runs the pinned
+// version from that local install. Registry mode has none: the wrapper uses npx.
+if (source.kind === "tarball") {
+  const step = run("install the tarball into the project (tarball mode)", "npm install --offline --ignore-scripts --no-save --no-package-lock --prefix . <tarball>", npm.file, [...npm.prefix, "install", "--offline", "--ignore-scripts", "--no-save", "--no-package-lock", "--prefix", project, source.file], 0, project, { shell: npm.shell, role: "project-install" });
+  let installed = "";
+  try {
+    installed = (JSON.parse(readFileSync(join(project, "node_modules", "build-os", "package.json"), "utf8")) as { version?: string }).version ?? "";
+  } catch {
+    // Reported by the check below.
+  }
+  check(step, `node_modules/build-os in the project is ${version}, the pinned version`, installed === version);
+}
+
+// 9. The project wrapper with Node.js present: it runs the pinned version
+// (registry mode: through npx; tarball mode: from the local install).
 {
   const scripts = join(project, ".os", "scripts");
   const step = WINDOWS
-    ? run("wrapper with Node.js present (.os\\scripts\\buildos.cmd version --json)", ".os\\scripts\\buildos.cmd version --json", process.env["ComSpec"] ?? "cmd.exe", [`/d /s /c ""${join(scripts, "buildos.cmd")}" version --json"`], 0, project, { verbatim: true })
-    : run("wrapper with Node.js present (.os/scripts/buildos version --json)", "sh .os/scripts/buildos version --json", "/bin/sh", [join(scripts, "buildos"), "version", "--json"], 0, project);
+    ? run("wrapper with Node.js present (.os\\scripts\\buildos.cmd version --json)", ".os\\scripts\\buildos.cmd version --json", process.env["ComSpec"] ?? "cmd.exe", [`/d /s /c ""${join(scripts, "buildos.cmd")}" version --json"`], 0, project, { verbatim: true, role: "wrapper" })
+    : run("wrapper with Node.js present (.os/scripts/buildos version --json)", "sh .os/scripts/buildos version --json", "/bin/sh", [join(scripts, "buildos"), "version", "--json"], 0, project, { role: "wrapper" });
   let parsed: { version?: string } = {};
   try {
     parsed = JSON.parse(step.stdout) as typeof parsed;
   } catch {
     // Reported by the check below.
   }
-  check(step, `the wrapper ran version ${version}`, parsed.version === version);
+  check(step, `the wrapper's JSON output names version ${version}`, parsed.version === version);
 }
 
 // 10. A printed fix command (F-P8-11, PE-023), run as printed (scripts/printed-fix-step.ts). Last, because it writes the project's entity index.
 printedFixStep({
   version,
+  source: source.kind,
   windows: WINDOWS,
   project,
   humanStdout: steps.find((s) => s.name === "entities validate")?.stdout,
-  npxRun: (name, args, expected) => npxRun(name, args, expected, project),
+  npxRun: (name, args, expected, role) => npxRun(name, args, expected, project, role),
   shellRun: (name, command) =>
-    WINDOWS ? run(name, command, process.env["ComSpec"] ?? "cmd.exe", commandPromptArgs(command), 0, project, { verbatim: true }) : run(name, command, "/bin/sh", ["-c", command], 0, project),
+    WINDOWS ? run(name, command, process.env["ComSpec"] ?? "cmd.exe", commandPromptArgs(command), 0, project, { verbatim: true, role: "fix-run" }) : run(name, command, "/bin/sh", ["-c", command], 0, project, { role: "fix-run" }),
   check,
 });
 
-for (const s of steps) s.ok = s.checks.every((c) => c.ok);
-const passed = steps.every((s) => s.ok);
-// The checks are done: only now is the output cleaned, for the report.
-const reported = steps.map((s) => ({ ...s, stdout: clean(s.stdout, stepFolder.get(s)), stderr: clean(s.stderr, stepFolder.get(s)) }));
-const os = process.platform === "darwin" ? "macos" : process.platform === "win32" ? "windows" : process.platform;
-const npmVersion = spawnSync(npx.file, [...npx.prefix, "--version"], { env: baseEnv, encoding: "utf8", shell: npx.shell, cwd: root }).stdout?.toString().trim() ?? "";
-const report = {
-  package: `build-os@${version}`,
-  os,
-  platform: `${process.platform} ${process.arch}`,
-  node: process.version,
-  npm: npmVersion,
-  npm_cache: "a new empty folder below {TMP}",
-  paths_replaced: "{TMP} temporary root, {PROJECT} step folder, {HOME} home folder, {USER} user name, {TIMESTAMP} times",
-  passed,
-  steps: reported,
-};
-mkdirSync(out, { recursive: true });
-writeFileSync(join(out, `smoke-${os}.json`), `${JSON.stringify(report, null, 2)}\n`);
-const md: string[] = [`# build-os@${version} smoke on ${os}`, "", `Node ${process.version}, npm ${npmVersion}, ${process.platform} ${process.arch}. Result: ${passed ? "passed" : "FAILED"}. Paths are replaced as stated in the JSON report.`, ""];
-for (const s of reported) {
-  md.push(`## ${s.ok ? "pass" : "FAIL"}: ${s.name}`, "", `Command: \`${s.command}\` (exit ${s.exit}, expected ${s.expected_exit})`, "");
-  for (const c of s.checks) md.push(`- ${c.ok ? "ok" : "FAILED"}: ${c.check}`);
-  md.push("", "stdout:", "", "```text", s.stdout.replace(/\n$/, ""), "```", "", "stderr:", "", "```text", s.stderr.replace(/\n$/, ""), "```", "");
-  for (const [path, text] of Object.entries(s.files ?? {})) md.push(`File \`${path}\`:`, "", "```text", text.replace(/\n$/, ""), "```", "");
+// Tarball mode only, after step 10: a check of the project install that the
+// wrapper (step 9) and the printed command of step 10 used: the same file and
+// lockfile checks, its launchers (`build-os`, which npm starts for
+// `npx -y build-os@<version>`, and `buildos`), the wrapper's own lookup
+// (`localEntry` of the project's .os/scripts/pinned-version.cjs, which the
+// wrapper runs first, in the project folder), and the launch probe of the
+// wrapper step and of step 10; then the npx install again (the entities
+// validate --json runs of step 10), and no other build-os folder below the
+// temporary root. Last, the npm cache: at least one entry, every entry a
+// tarball file entry for the tarball's file name and integrity, the whole
+// index read, and the cache content for that integrity with the tarball's
+// SHA-256 (scripts/smoke-source.ts).
+if (source.kind === "tarball" && identity !== undefined) {
+  const id = identity;
+  const name = basename(source.file);
+  const copy = readInstalledCopy(project, clean(join(project, "node_modules", "build-os")));
+  const projectLaunchers = readLaunchers(join(project, "node_modules", ".bin"), PROJECT_BINS, WINDOWS, (p) => clean(p), canonical);
+  const projectLauncherText = recordLaunchers("project", projectLaunchers);
+  const projectBin = binFileIn(project, "buildos");
+  const helper = join(project, ".os", "scripts", "pinned-version.cjs");
+  // The exact helper of the project under test (finding 1), by its real path, as the probe records it.
+  let helperReal = helper;
+  try {
+    helperReal = realpathSync.native(helper);
+  } catch {
+    // Missing: the wrapper step and the lookup fail on their own.
+  }
+  // The wrapper's own lookup, without running BuildOS: the helper's localEntry, in the project folder, as the wrapper runs it first.
+  const lookup = spawnSync(process.execPath, ["-e", "const h = require(process.argv[1]); const e = h.localEntry(process.argv[2], process.argv[3]); process.stdout.write(typeof e === 'string' ? e : '');", helper, project, version], { cwd: project, env: baseEnv, encoding: "utf8" });
+  const chosen = String(lookup.stdout ?? "");
+  launcherRecord.wrapper_lookup = chosen !== "" ? clean(chosen) : null;
+  const lookupProblems = chosen === "" ? [`the wrapper's lookup (localEntry of .os/scripts/pinned-version.cjs) chose no local install${lookup.stderr ? `: ${clean(String(lookup.stderr)).trim()}` : ""}`] : pathKey(chosen, WINDOWS) !== pathKey(projectBin, WINDOWS) ? [`the wrapper's lookup chose ${clean(chosen)}, not the project install's bin file ${clean(projectBin)}`] : [];
+  const wrapperRuns = launchChecks(steps.filter((s) => s.role === "wrapper"), () => [projectBin], [helperReal]);
+  const fixRunSteps = steps.filter((s) => s.role === "fix-run");
+  const fixRuns = launchChecks(fixRunSteps, () => [binFileIn(project, "build-os")], allowedNpm);
+  const fixNpx = launchChecks(steps.filter((s) => s.role === "fix-check" || s.role === "fix-after"), () => [npxInstallDir !== undefined ? binFileIn(npxInstallDir, "buildos") : "(no npx install)"], allowedNpm);
+  const again = npxCopyCheck();
+  const expected = [join(project, "node_modules", "build-os"), ...(npxInstallDir !== undefined ? [join(npxInstallDir, "node_modules", "build-os")] : [])];
+  evidenceStep("verify the project and npx installs and their launchers (tarball mode, after step 10)", "project-copy", "no process but the wrapper's lookup (node -e with the localEntry of .os/scripts/pinned-version.cjs, which starts no BuildOS); it reads {TMP}/project/node_modules, its node_modules/.bin launchers, {TMP}/npm-cache/_npx, the launch log of steps 9 and 10, and every node_modules/build-os folder below {TMP}", `${copy?.where ?? "(no project install)"}: ${copy?.files.size ?? 0} entries\n${projectLauncherText}wrapper lookup: ${launcherRecord.wrapper_lookup ?? "(none)"}\n${wrapperRuns.text}${fixRuns.text}${fixNpx.text}${again.folders}`, [
+    { check: `the project's node_modules/build-os holds exactly the tarball's ${id.files.size} regular files, each with the tarball's SHA-256, and its lockfile entry names version ${id.version}, the tarball file, and the integrity ${id.integrity}`, problems: copyProblems("the project install", copy, id, name) },
+    { check: `the project's launchers ${PROJECT_BINS.map((b) => `node_modules/.bin/${b}`).join(" and ")} ${WINDOWS ? "(the shell, .cmd, and PowerShell shims) are byte-equal to the shims that the selected npm's cmd-shim writes for" : "are npm's symbolic links and resolve to"} that package's bin files`, problems: launcherProblems("the project route", projectLaunchers, new Map(PROJECT_BINS.map((b) => [b, binFileIn(project, b)])), WINDOWS).map((p) => clean(p)) },
+    { check: "the wrapper's own lookup (localEntry of .os/scripts/pinned-version.cjs, in the project folder) chooses the project install's buildos bin file", problems: lookupProblems.map((p) => clean(p)) },
+    { check: "the launch probe of step 9 (the wrapper): the entry script of each Node.js process that it observed is the project install's buildos bin file or the project's own .os/scripts/pinned-version.cjs, and at least one is that bin file", problems: wrapperRuns.problems },
+    // Finding 3: the label says what ran only when the step ran it.
+    { check: fixRunSteps.length > 0 ? "the launch probe of the printed command of step 10: the entry script of each Node.js process that it observed is the project install's build-os bin file or one of the selected npm's own programs ({NPM}/bin), and at least one is that bin file" : "the launch probe: step 10 has no run of a printed command, so no launch of one is checked", problems: fixRuns.problems },
+    { check: "the launch probe of the entities validate --json runs of step 10: the entry script of each Node.js process that it observed is the npx install's buildos bin file or one of the selected npm's own programs ({NPM}/bin), and at least one is that bin file", problems: fixNpx.problems },
+    ...again.problems.map((c) => ({ check: `after step 10: ${c.check}`, problems: c.problems })),
+    { check: "no other build-os folder is below the temporary root (the global prefix {TMP}/npm-prefix included), and the whole root was read", problems: strayCheck(expected) },
+  ]);
+  const index = readCacheIndex(cache);
+  const entries = index.entries;
+  evidenceStep("registry guard (tarball mode): the npm cache holds only the tarball", "cache-guard", "no process; it reads the npm cache index {TMP}/npm-cache/_cacache/index-v5 and the cache content", entries.map((e) => `${clean(reportCacheKey(e.key, name))} ${e.integrity ?? "(no integrity)"}\n`).join(""), [
+    { check: `the npm cache index holds at least one entry, every entry is a pacote:tarball:file: entry for ${name} with the integrity ${id.integrity} (no registry response), and the whole index was read`, problems: [...index.incomplete.map((p) => `the npm cache index was not read completely: ${p}`), ...cacheIndexProblems(entries, id, name)].map((p) => clean(p)) },
+    { check: `the cache content for that integrity has the tarball's SHA-256 ${id.sha256}`, problems: cacheContentProblems(id, cacheContentSha256(cache, id.integrity)) },
+  ]);
 }
-writeFileSync(join(out, `smoke-${os}.md`), md.join("\n"));
-process.stdout.write(`build-os@${version} smoke on ${os}: ${passed ? "passed" : "FAILED"} (${steps.filter((s) => s.ok).length} of ${steps.length} steps)\n`);
-for (const s of steps) if (!s.ok) process.stdout.write(`  FAILED: ${s.name}: ${s.checks.filter((c) => !c.ok).map((c) => c.check).join("; ")}\n`);
-rmSync(root, { recursive: true, force: true, maxRetries: 5 });
-process.exit(passed ? 0 : 1);
+
+finish();

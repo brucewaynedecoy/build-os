@@ -506,34 +506,146 @@ describe("the owner checklist protects the refs before any secret exists (P8-F-0
 });
 
 // W1 R7 P8 t15 (2026-11-26): the published-package smoke workflow is not a
-// release workflow. It reads the public registry only: read-only repository
-// access, no secret, no environment, no OIDC token, actions pinned by SHA, and
-// the version input reaches the script only through the environment.
-describe("smoke workflow: read-only, no secret, pinned, three systems (t15)", () => {
+// release workflow: read-only repository access, no secret, no environment,
+// no OIDC token, actions pinned by SHA, and every input reaches a script only
+// through the environment. W1 R7 P9 F-P9-15: the tarball mode, from the
+// artifact of a buildos-release run (the only job with actions: read) or the
+// asset of a published release (no token), with the SHA-256 that the person
+// who starts the run gives; a pull request also runs the tarball mode on a
+// release build of its own tree. The check-inputs script is run here on good
+// and bad inputs.
+describe("smoke workflow: read-only, no secret, pinned, three systems, registry and tarball modes (t15, F-P9-15)", () => {
   const text = read("buildos-smoke.yml");
   const on = text.slice(text.indexOf("\non:\n"), text.indexOf("\npermissions:"));
+  const code = text.split("\n").filter((line) => !/^\s*#/.test(line)).join("\n");
+  const temps: string[] = [];
+  after(() => {
+    for (const dir of temps) rmSync(dir, { recursive: true, force: true });
+  });
 
-  it("runs by hand with a version input (default 0.1.0), and on a pull request only for its own files", () => {
-    assert.match(on, /\n {2}workflow_dispatch:\n {4}inputs:\n {6}version:\n[^]*?default: "0\.1\.0"\n/);
-    assert.ok(on.includes('  pull_request:\n    paths:\n      - ".github/workflows/buildos-smoke.yml"\n      - "toolkits/buildos/scripts/published-smoke.ts"\n'), on);
+  it("runs by hand with a source choice (default registry, version default 0.1.0), and on a pull request only for its own files", () => {
+    assert.match(on, /\n {6}source:\n[^]*?default: "registry"\n {8}type: choice\n {8}options: \[registry, release-run, release-tag\]\n/);
+    assert.match(on, /\n {6}version:\n[^]*?default: "0\.1\.0"\n/);
+    for (const input of ["release_run", "release_run_attempt", "release_tag", "tarball_sha256"]) assert.match(on, new RegExp(`\\n {6}${input}:\\n {8}description: `), input);
+    assert.ok(
+      on.includes(
+        '  pull_request:\n    paths:\n      - ".github/workflows/buildos-smoke.yml"\n      - "toolkits/buildos/scripts/published-smoke.ts"\n      - "toolkits/buildos/scripts/printed-fix-step.ts"\n      - "toolkits/buildos/scripts/smoke-evidence.ts"\n      - "toolkits/buildos/scripts/smoke-source.ts"\n      - "toolkits/buildos/scripts/tar-reader.mjs"\n',
+      ),
+      on,
+    );
     assert.doesNotMatch(on, /\n {2}push:|\n {2}release:|pull_request_target/);
   });
 
-  it("holds only contents: read, no secret, no environment, no id-token", () => {
+  it("review round 3 of pull request 12, finding 6: a pull-request run cancels the older run of its ref; each hand-started run has its own group (its run ID), so two never cancel each other", () => {
+    assert.ok(
+      text.includes(
+        "\nconcurrency:\n  group: ${{ github.event_name == 'pull_request' && format('buildos-smoke-pr-{0}', github.ref) || format('buildos-smoke-dispatch-{0}', github.run_id) }}\n  cancel-in-progress: ${{ github.event_name == 'pull_request' }}\n\njobs:\n",
+      ),
+      text.slice(text.indexOf("concurrency:"), text.indexOf("jobs:")),
+    );
+    assert.equal(text.match(/^concurrency:/gm)?.length, 1, "one concurrency block, at the workflow level");
+    assert.doesNotMatch(code, /group: buildos-smoke-\$\{\{ github\.ref \}\}/, "no group keyed by the ref alone");
+  });
+
+  it("holds contents: read for the workflow; only fetch-run adds actions: read; no secret, no environment, no id-token, and the token only in fetch-run", () => {
     assert.match(text, /\npermissions:\n {2}contents: read\n\n/);
-    assert.equal(text.match(/permissions:/g)?.length, 1);
-    assert.doesNotMatch(text, /secrets\.|environment:|id-token|GITHUB_TOKEN|github\.token/);
+    assert.equal(text.match(/permissions:/g)?.length, 2);
+    assert.match(job(text, "fetch-run"), /\n {4}permissions:\n {6}contents: read\n {6}actions: read\n {4}outputs:/);
+    assert.doesNotMatch(code, /secrets\.|environment:|id-token|GITHUB_TOKEN|write/);
+    assert.equal(code.match(/github\.token/g)?.length, 1);
+    assert.match(job(text, "fetch-run"), /\n {10}GH_TOKEN: \$\{\{ github\.token \}\}\n/);
+    assert.doesNotMatch(job(text, "fetch-tag"), /token|GH_|permissions:/);
     assert.match(text, /persist-credentials: false/);
   });
 
-  it("pins actions to commit SHAs, runs on three systems with Node 24, and passes the version through the environment", () => {
+  it("pins actions to commit SHAs, runs the smoke on three systems with Node 24, and no run: script holds a ${{ }} expression", () => {
     for (const use of text.match(/uses: \S+/g) ?? []) assert.match(use, /@[0-9a-f]{40}$/, use);
-    assert.match(text, /os: \[ubuntu-latest, windows-latest, macos-latest\]/);
+    assert.match(job(text, "smoke"), /os: \[ubuntu-latest, windows-latest, macos-latest\]\n {8}mode: \$\{\{ fromJSON\(needs\.check-inputs\.outputs\.modes\) \}\}\n/);
     assert.match(text, /node-version: "24"/);
-    assert.match(text, /SMOKE_VERSION: \$\{\{ inputs\.version \|\| '0\.1\.0' \}\}\n/);
-    const scripts = runScripts(text);
-    assert.deepEqual(scripts, ['node scripts/published-smoke.ts --version "$SMOKE_VERSION" --out "$RUNNER_TEMP/smoke"']);
+    for (const script of runScripts(text)) assert.doesNotMatch(script, /\$\{\{/, script);
     assert.match(text, /if: always\(\)\n {8}uses: actions\/upload-artifact@/);
+  });
+
+  it("the smoke step runs the script in registry, tarball, or local-pack mode, with the values from the environment", () => {
+    const smoke = runScripts(job(text, "smoke")).find((s) => s.includes("published-smoke.ts")) ?? "";
+    assert.ok(smoke.includes('registry) node scripts/published-smoke.ts --version "$SMOKE_VERSION" --out "$RUNNER_TEMP/smoke" ;;'), smoke);
+    assert.ok(smoke.includes('tarball) node scripts/published-smoke.ts --tarball "$RUNNER_TEMP/tarball/$TARBALL_NAME" --sha256 "$TARBALL_SHA256" --out "$RUNNER_TEMP/smoke" ;;'), smoke);
+    assert.ok(smoke.includes('local-pack) node scripts/published-smoke.ts --tarball "$LOCAL_TARBALL" --sha256 "$LOCAL_SHA256" --out "$RUNNER_TEMP/smoke" ;;'), smoke);
+    assert.match(job(text, "smoke"), /\n {10}TARBALL_SHA256: \$\{\{ needs\.check-inputs\.outputs\.sha256 \}\}\n/);
+    assert.match(job(text, "smoke"), /name: buildos-smoke-\$\{\{ matrix\.mode \}\}-\$\{\{ runner\.os \}\}\n/);
+  });
+
+  it("local-pack makes a release build of the tree with install scripts off; the tarball mode downloads only the artifact that a fetch job checked", () => {
+    const smoke = job(text, "smoke");
+    assert.match(smoke, /if: matrix\.mode == 'local-pack'\n {8}run: \|\n {10}node scripts\/check-dependencies\.ts\n {10}npm ci --ignore-scripts\n {10}node scripts\/check-dependencies\.ts --installed\n {10}node scripts\/release-build\.ts --out "\$RUNNER_TEMP\/local-pack"\n/);
+    // Review round 1 of pull request 12, finding 4: by the artifact ID from the fetch job, so a re-run of only a smoke job (a new run attempt) finds it.
+    assert.match(smoke, /if: matrix\.mode == 'tarball'\n {8}uses: actions\/download-artifact@[0-9a-f]{40} # v8\.0\.2\n {8}with:\n {10}artifact-ids: \$\{\{ needs\.fetch-run\.outputs\.input_artifact_id \|\| needs\.fetch-tag\.outputs\.input_artifact_id \}\}\n {10}path: \$\{\{ runner\.temp \}\}\/tarball\n/);
+    assert.doesNotMatch(smoke, /github\.run_attempt/);
+    for (const fetch of ["fetch-run", "fetch-tag"]) {
+      const body = job(text, fetch);
+      assert.match(body, /\n {4}outputs:\n {6}tarball_name: \$\{\{ steps\.fetch\.outputs\.tarball_name \}\}\n {6}input_artifact_id: \$\{\{ steps\.keep\.outputs\.artifact-id \}\}\n/, fetch);
+      assert.match(body, /- name: Keep the checked tarball for the smoke jobs\n {8}id: keep\n {8}uses: actions\/upload-artifact@[0-9a-f]{40} # v7\.0\.2\n/, fetch);
+    }
+    assert.match(smoke, /needs: \[check-inputs, fetch-run, fetch-tag\]\n {4}if: \$\{\{ !cancelled\(\) && needs\.check-inputs\.result == 'success' && needs\.fetch-run\.result != 'failure' && needs\.fetch-tag\.result != 'failure' \}\}\n/);
+  });
+
+  it("fetch-run reads only a buildos-release run, downloads buildos-release-<run>-<attempt>, and checks the one tarball's SHA-256", () => {
+    const fetch = runScripts(job(text, "fetch-run"))[0] ?? "";
+    assert.match(job(text, "fetch-run"), /if: needs\.check-inputs\.outputs\.source == 'release-run'\n/);
+    assert.ok(fetch.includes('[ "$workflow" = ".github/workflows/buildos-release.yml" ] || fail'), fetch);
+    assert.ok(fetch.includes('gh run download "$RUN" --repo "$REPO" --name "buildos-release-$RUN-$ATTEMPT" --dir "$RUNNER_TEMP/artifact"'), fetch);
+    assert.ok(fetch.includes('[ "${#files[@]}" -eq 1 ] || fail'), fetch);
+    assert.ok(fetch.includes('[ "$actual" = "$SHA256" ] || fail'), fetch);
+  });
+
+  it("fetch-tag downloads the public asset of a published release over https only, and checks its SHA-256", () => {
+    const fetch = runScripts(job(text, "fetch-tag"))[0] ?? "";
+    assert.match(job(text, "fetch-tag"), /if: needs\.check-inputs\.outputs\.source == 'release-tag'\n/);
+    assert.ok(fetch.includes(`curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --max-filesize 67108864 --output "$RUNNER_TEMP/tarball/$name" "https://github.com/$REPO/releases/download/$TAG/$name"`), fetch);
+    assert.ok(fetch.includes('[ "$actual" = "$SHA256" ] || fail'), fetch);
+  });
+
+  it("check-inputs accepts only digits for a run, v<semver> for a tag, and 64 lowercase hex characters for a SHA-256, and gives later jobs only the checked values", { skip: process.platform === "win32" ? "the script is bash; the Linux and macOS runs cover it" : false }, () => {
+    const script = runScripts(job(text, "check-inputs"))[0] ?? "";
+    const dir = mkdtempSync(join(tmpdir(), "buildos-smoke-inputs-"));
+    temps.push(dir);
+    const sha = "0123456789abcdef".repeat(4);
+    const runIt = (env: Record<string, string>) => {
+      const out = join(dir, `out-${Math.random().toString(36).slice(2)}`);
+      writeFileSync(out, "");
+      const r = spawnSync("bash", ["-c", script], { encoding: "utf8", env: { PATH: process.env["PATH"] ?? "", GITHUB_OUTPUT: out, EVENT: "workflow_dispatch", SOURCE: "registry", VERSION: "0.1.0", RUN: "", ATTEMPT: "1", TAG: "", SHA256: "", ...env } });
+      return { status: r.status, out: readFileSync(out, "utf8"), stdout: r.stdout };
+    };
+    assert.deepEqual(runIt({}), { status: 0, out: 'source=registry\nmodes=["registry"]\nversion=0.1.0\n', stdout: "" });
+    assert.equal(runIt({ EVENT: "pull_request", SOURCE: "" }).out, 'source=local-pack\nmodes=["registry","local-pack"]\nversion=0.1.0\n');
+    assert.equal(runIt({ SOURCE: "release-run", RUN: "45894295344", ATTEMPT: "2", SHA256: sha }).out, `source=release-run\nmodes=["tarball"]\nrelease_run=45894295344\nrelease_run_attempt=2\nsha256=${sha}\n`);
+    assert.equal(runIt({ SOURCE: "release-tag", TAG: "v0.2.0", SHA256: sha }).out, `source=release-tag\nmodes=["tarball"]\nrelease_tag=v0.2.0\nsha256=${sha}\n`);
+    const bad: Record<string, string>[] = [
+      { VERSION: "latest" },
+      { VERSION: "0.1.0 && echo" },
+      { VERSION: "0.1.0", SHA256: sha },
+      { SOURCE: "release-run", RUN: "123 ", SHA256: sha },
+      { SOURCE: "release-run", RUN: "12a", SHA256: sha },
+      { SOURCE: "release-run", RUN: "$(id)", SHA256: sha },
+      { SOURCE: "release-run", RUN: "123", ATTEMPT: "x", SHA256: sha },
+      { SOURCE: "release-run", RUN: "123", SHA256: sha.toUpperCase() },
+      { SOURCE: "release-run", RUN: "123", SHA256: sha.slice(1) },
+      { SOURCE: "release-run", RUN: "123", SHA256: "" },
+      { SOURCE: "release-run", RUN: "123", TAG: "v0.2.0", SHA256: sha },
+      { SOURCE: "release-tag", TAG: "0.2.0", SHA256: sha },
+      { SOURCE: "release-tag", TAG: "v0.2", SHA256: sha },
+      { SOURCE: "release-tag", TAG: "v0.2.0/../x", SHA256: sha },
+      { SOURCE: "release-tag", TAG: "v0.2.0\nx=1", SHA256: sha },
+      { SOURCE: "release-tag", TAG: `v0.2.0-${"a".repeat(130)}`, SHA256: sha },
+      { SOURCE: "release-tag", TAG: "v0.2.0", RUN: "1", SHA256: sha },
+      { SOURCE: "other" },
+    ];
+    for (const env of bad) {
+      const r = runIt(env);
+      assert.equal(r.status, 1, JSON.stringify(env));
+      assert.equal(r.out, "", JSON.stringify(env));
+      assert.match(r.stdout, /^::error::/, JSON.stringify(env));
+    }
   });
 
   it("the script refuses a version that is not plain, before any npm call", () => {
