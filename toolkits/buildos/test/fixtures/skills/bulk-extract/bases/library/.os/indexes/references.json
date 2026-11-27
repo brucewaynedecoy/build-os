@@ -1,0 +1,40 @@
+{
+  "references": [
+    {
+      "id": "REF-001",
+      "source": "assets/_intake/lending-policy.txt",
+      "converted": "assets/lending-policy/lending-policy.md",
+      "sha256": "f4a773f1a04b5197f80d47b609701dd1907d18d03c0a9442e4ff090f85f64ab0"
+    },
+    {
+      "id": "REF-002",
+      "source": "assets/_intake/branch-hours.xlsx",
+      "converted": "assets/branch-hours/main-branch.csv",
+      "sha256": "5012e28076527cc8ac35746a15a8db6953ff27f5bd198ced7f30088d48872eca"
+    },
+    {
+      "id": "REF-003",
+      "source": "assets/_intake/branch-hours.xlsx",
+      "converted": "assets/branch-hours/east-branch.csv",
+      "sha256": "5012e28076527cc8ac35746a15a8db6953ff27f5bd198ced7f30088d48872eca"
+    },
+    {
+      "id": "REF-004",
+      "source": "assets/_intake/patron-faq.txt",
+      "converted": "assets/patron-faq/patron-faq.md",
+      "sha256": "4f92dd9dfbbc7613eb84b60b4f04d30f096f22c5bd2f82c863e076ab67350a81"
+    },
+    {
+      "id": "REF-005",
+      "source": "assets/_intake/fines.txt",
+      "converted": "assets/fines/fines.md",
+      "sha256": "ba54dcdbe6995bc8d7244324efb4c39afaa931690d096b63ffc7a7eb891f4860"
+    },
+    {
+      "id": "REF-006",
+      "source": "assets/_intake/holds-notes.txt",
+      "converted": "assets/holds-notes/holds-notes.md",
+      "sha256": "a196b9c16d0143c9dff908089aa605fcf2ad149bef70108c2c5e4091819733f8"
+    }
+  ]
+}

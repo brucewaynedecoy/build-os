@@ -1,0 +1,78 @@
+{
+  "items": [
+    {
+      "work_item_type": "Epic",
+      "level": 1,
+      "title": "Holds & Notices <Phase 1>",
+      "summary": "Patrons place \"holds\" on books — café edition.",
+      "source_trace": {
+        "work_directory": "docs/work/2026-01-12-w1-r1-holds",
+        "index_file": "docs/work/2026-01-12-w1-r1-holds/00-index.md",
+        "task_ids": [
+          "t1",
+          "t2"
+        ],
+        "labels": [
+          "Holds"
+        ]
+      },
+      "tags": "Holds; Notices;Holds"
+    },
+    {
+      "work_item_type": "Feature",
+      "level": 2,
+      "title": "Hold shelf",
+      "summary": "",
+      "source_trace": {
+        "work_directory": "docs/work/2026-01-12-w1-r1-holds",
+        "index_file": "docs/work/2026-01-12-w1-r1-holds/00-index.md",
+        "task_ids": [
+          "t1",
+          "t2"
+        ],
+        "labels": [
+          "Holds"
+        ]
+      },
+      "effort": 5,
+      "iteration_path": "Library\\Sprint 1"
+    },
+    {
+      "work_item_type": "Product Backlog Item",
+      "level": 3,
+      "title": "Empty item",
+      "description": {
+        "use_case": [
+          "A patron wants a held book kept for them."
+        ],
+        "outcomes": [
+          "Keep a hold for seven days."
+        ],
+        "technical_details": [
+          "Store the hold expiry date.",
+          {
+            "text": "Notify the patron.",
+            "children": [
+              "By e-mail",
+              "By text message"
+            ]
+          }
+        ]
+      },
+      "acceptance_criteria": [
+        "  "
+      ],
+      "source_trace": {
+        "work_directory": "docs/work/2026-01-12-w1-r1-holds",
+        "index_file": "docs/work/2026-01-12-w1-r1-holds/00-index.md",
+        "task_ids": [
+          "t1",
+          "t2"
+        ],
+        "labels": [
+          "Holds"
+        ]
+      }
+    }
+  ]
+}

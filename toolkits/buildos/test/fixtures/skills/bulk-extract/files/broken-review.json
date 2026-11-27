@@ -1,0 +1,375 @@
+{
+  "format_version": 2,
+  "source": "assets/_intake/fines.txt",
+  "source_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "reviewed_by": "Circulation Analyst",
+  "reviewed_at": "last week",
+  "source_check": {
+    "result": "repaired",
+    "notes": "",
+    "repairs": []
+  },
+  "references": [
+    {
+      "id": "REF-005",
+      "converted": "assets/fines/other.md",
+      "outcome": "blocked",
+      "note": ""
+    },
+    {
+      "id": "REF-005",
+      "converted": "assets/fines/fines.md",
+      "outcome": "maybe"
+    },
+    {
+      "converted": "x"
+    }
+  ],
+  "candidates": [
+    "not an object",
+    {
+      "key": "dup",
+      "type": "requirement",
+      "action": "minted",
+      "review_state": "pending",
+      "row": {
+        "type": "requirement",
+        "title": "Renewal rule x",
+        "status": "draft",
+        "summary": "A patron can renew a loan (x).",
+        "source_anchor": "assets/fines/fines.md#L3",
+        "doc_anchor": null,
+        "source_refs": [
+          "assets/fines/fines.md#L3"
+        ],
+        "related": [],
+        "created_at": null,
+        "updated_at": null,
+        "statement": "The system shall allow two renewals per loan (x).",
+        "rationale": "The lending policy allows two renewals.",
+        "acceptance_refs": []
+      }
+    },
+    {
+      "key": "dup",
+      "type": "requirement",
+      "action": "minted",
+      "review_state": "pending",
+      "row": {
+        "type": "requirement",
+        "title": "Renewal rule y",
+        "status": "draft",
+        "summary": "A patron can renew a loan (y).",
+        "source_anchor": "assets/fines/fines.md#L3",
+        "doc_anchor": null,
+        "source_refs": [
+          "assets/fines/fines.md#L3"
+        ],
+        "related": [],
+        "created_at": null,
+        "updated_at": null,
+        "statement": "The system shall allow two renewals per loan (y).",
+        "rationale": "The lending policy allows two renewals.",
+        "acceptance_refs": []
+      }
+    },
+    {
+      "key": "",
+      "type": "requirement"
+    },
+    {
+      "key": "badtype",
+      "type": "book"
+    },
+    {
+      "key": "anchors",
+      "type": "requirement",
+      "action": "minted",
+      "review_state": "pending",
+      "row": {
+        "type": "requirement",
+        "title": "Renewal rule z",
+        "status": "draft",
+        "summary": "A patron can renew a loan (z).",
+        "source_anchor": "system/assets/fines/fines.md#L1",
+        "doc_anchor": null,
+        "source_refs": [
+          "assets/fines/fines.md#L99",
+          "https://example.org/x#y",
+          "notes",
+          "assets/fines/fines.md#row-1"
+        ],
+        "related": [
+          "CAP-1",
+          "REQ-001"
+        ],
+        "created_at": null,
+        "updated_at": null,
+        "statement": "The system shall allow two renewals per loan (z).",
+        "rationale": "The lending policy allows two renewals.",
+        "acceptance_refs": [
+          "TC-001",
+          "docs/tests/fines.md#t1",
+          "RES-1",
+          "maybe"
+        ],
+        "systems": [
+          "both"
+        ],
+        "env": "prod",
+        "tags": "fines"
+      }
+    },
+    {
+      "key": "status",
+      "type": "finding",
+      "action": "minted",
+      "review_state": "pending",
+      "target_id": "FIND-001",
+      "row": {
+        "type": "finding",
+        "title": "",
+        "status": "qualified",
+        "summary": "  ",
+        "source_anchor": "assets/fines/fines.md#L3",
+        "doc_anchor": "docs/",
+        "source_refs": [],
+        "related": [],
+        "created_at": "2026-13-45",
+        "updated_at": null,
+        "observed": "",
+        "basis_refs": [
+          "RUN-001",
+          "notes.md",
+          4
+        ],
+        "confidence": "certain",
+        "implications": [
+          "What about lost books?",
+          "REQ-001",
+          "A narrative note"
+        ],
+        "redirect": {}
+      }
+    },
+    {
+      "key": "result-row",
+      "type": "result",
+      "action": "minted",
+      "review_state": "pending",
+      "row": {
+        "type": "result",
+        "title": "Result",
+        "status": "draft",
+        "summary": "A result",
+        "source_anchor": "assets/fines/fines.md#L3",
+        "doc_anchor": null,
+        "source_refs": [],
+        "related": [],
+        "created_at": null,
+        "updated_at": null,
+        "target_id": "PB-001",
+        "outcome": "maybe",
+        "evidence_refs": [
+          "RUN-001",
+          "assets/fines/fines.md#L3",
+          "EXT-1"
+        ]
+      }
+    },
+    {
+      "key": "run-row",
+      "type": "run",
+      "action": "minted",
+      "review_state": "pending",
+      "row": {
+        "type": "run",
+        "title": "Run",
+        "status": "running",
+        "summary": "A run",
+        "source_anchor": "assets/fines/fines.md#L3",
+        "doc_anchor": null,
+        "source_refs": [],
+        "related": [],
+        "created_at": null,
+        "updated_at": null,
+        "playbook_id": "PLAY-1",
+        "started_at": "nope",
+        "ended_at": "later",
+        "inputs": [],
+        "outputs": "x"
+      }
+    },
+    {
+      "key": "tc-row",
+      "type": "test-case",
+      "action": "minted",
+      "review_state": "pending",
+      "row": {
+        "type": "test-case",
+        "title": "Case",
+        "status": "draft",
+        "summary": "A case",
+        "source_anchor": "assets/fines/fines.md#L3",
+        "doc_anchor": null,
+        "source_refs": [],
+        "related": [],
+        "created_at": null,
+        "updated_at": null,
+        "verifies": [
+          "REQ-001",
+          "FIND-001",
+          ""
+        ],
+        "preconditions": [],
+        "steps": [
+          "Return a late book"
+        ],
+        "expected": ""
+      }
+    },
+    {
+      "key": "persona-row",
+      "type": "persona",
+      "action": "minted",
+      "review_state": "pending",
+      "row": {
+        "type": "persona",
+        "title": "Patron",
+        "status": "superseded",
+        "summary": "A patron",
+        "source_anchor": "assets/fines/fines.md#L3",
+        "doc_anchor": null,
+        "source_refs": [],
+        "related": [],
+        "created_at": null,
+        "updated_at": null,
+        "description": "A patron who borrows books.",
+        "goals": [
+          "Borrow"
+        ],
+        "needs": [
+          "Renew"
+        ]
+      }
+    },
+    {
+      "key": "referenced",
+      "type": "requirement",
+      "action": "referenced",
+      "review_state": "pending",
+      "target_id": "REQ-1",
+      "row": {
+        "type": "requirement",
+        "title": "Renewal rule r",
+        "status": "draft",
+        "summary": "A patron can renew a loan (r).",
+        "source_anchor": "assets/fines/fines.md#L3",
+        "doc_anchor": null,
+        "source_refs": [
+          "assets/fines/fines.md#L3"
+        ],
+        "related": [],
+        "created_at": null,
+        "updated_at": null,
+        "statement": "The system shall allow two renewals per loan (r).",
+        "rationale": "The lending policy allows two renewals.",
+        "acceptance_refs": []
+      }
+    },
+    {
+      "key": "updated",
+      "type": "capability",
+      "action": "updated",
+      "review_state": "held",
+      "target_id": "CAP-001",
+      "base_sha256": "nope",
+      "row": {
+        "type": "capability",
+        "title": "Renewal rule u",
+        "status": "draft",
+        "summary": "A patron can renew a loan (u).",
+        "source_anchor": "assets/fines/fines.md#L3",
+        "doc_anchor": null,
+        "source_refs": [
+          "assets/fines/fines.md#L3"
+        ],
+        "related": [],
+        "created_at": null,
+        "updated_at": null,
+        "description": "",
+        "supports": [],
+        "limits": [],
+        "statement": "The system shall allow two renewals per loan (u).",
+        "rationale": "The lending policy allows two renewals.",
+        "id": "CAP-002"
+      }
+    },
+    {
+      "key": "wrong-type",
+      "type": "requirement",
+      "action": "referenced",
+      "review_state": "approved",
+      "target_id": "REQ-002",
+      "row": {
+        "type": "requirement",
+        "title": "Renewal rule w",
+        "status": "draft",
+        "summary": "A patron can renew a loan (w).",
+        "source_anchor": "assets/fines/fines.md#L3",
+        "doc_anchor": null,
+        "source_refs": [
+          "assets/fines/fines.md#L3"
+        ],
+        "related": [],
+        "created_at": null,
+        "updated_at": null,
+        "statement": "The system shall allow two renewals per loan (w).",
+        "rationale": "The lending policy allows two renewals.",
+        "acceptance_refs": []
+      }
+    },
+    {
+      "key": "nested",
+      "type": "requirement",
+      "action": "minted",
+      "review_state": "pending",
+      "row": {
+        "type": "requirement",
+        "title": "Renewal rule n",
+        "status": "draft",
+        "summary": "A patron can renew a loan (n).",
+        "source_anchor": "assets/fines/fines.md#L3",
+        "doc_anchor": null,
+        "source_refs": [
+          "assets/fines/fines.md#L3"
+        ],
+        "related": [],
+        "created_at": null,
+        "updated_at": null,
+        "statement": "The system shall allow two renewals per loan (n).",
+        "rationale": "The lending policy allows two renewals.",
+        "acceptance_refs": [],
+        "_stage": {}
+      },
+      "authored_by": " ",
+      "reviewed_by": 5,
+      "reviewed_at": "never"
+    }
+  ],
+  "unresolved": [
+    "",
+    3
+  ],
+  "applied": {
+    "ghost": {
+      "id": "REQ-009",
+      "action": "minted"
+    }
+  },
+  "extraction_ids": "EXT-001",
+  "publication_review": {
+    "reviewed_by": "Circulation Analyst",
+    "reviewed_at": "soon"
+  }
+}

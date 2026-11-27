@@ -1,0 +1,88 @@
+{
+  "case": "arguments",
+  "steps": [
+    {
+      "step": 0,
+      "args": [],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "usage: fitgap.py [-h] {frame,packages,uncited,merge,workbook} ...\nfitgap.py: error: the following arguments are required: cmd\n",
+      "files": {}
+    },
+    {
+      "step": 1,
+      "args": [
+        "score"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "usage: fitgap.py [-h] {frame,packages,uncited,merge,workbook} ...\nfitgap.py: error: argument cmd: invalid choice: 'score' (choose from 'frame', 'packages', 'uncited', 'merge', 'workbook')\n",
+      "files": {}
+    },
+    {
+      "step": 2,
+      "args": [
+        "frame"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "usage: fitgap.py frame [-h] --frame FRAME\nfitgap.py frame: error: the following arguments are required: --frame\n",
+      "files": {}
+    },
+    {
+      "step": 3,
+      "args": [
+        "packages",
+        "--frame",
+        "analysis/frame.json"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "usage: fitgap.py packages [-h] --frame FRAME --out OUT\n                          [--max-requirements MAX_REQUIREMENTS]\nfitgap.py packages: error: the following arguments are required: --out\n",
+      "files": {}
+    },
+    {
+      "step": 4,
+      "args": [
+        "packages",
+        "--frame",
+        "analysis/frame.json",
+        "--out",
+        "work",
+        "--max-requirements",
+        "many"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "usage: fitgap.py packages [-h] --frame FRAME --out OUT\n                          [--max-requirements MAX_REQUIREMENTS]\nfitgap.py packages: error: argument --max-requirements: invalid int value: 'many'\n",
+      "files": {}
+    },
+    {
+      "step": 5,
+      "args": [
+        "merge",
+        "--frame",
+        "analysis/frame.json",
+        "--out",
+        "deliver/fit-gap"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "usage: fitgap.py merge [-h] --frame FRAME --rows ROWS [ROWS ...]\n                       [--only [ONLY ...]] [--findings FINDINGS]\n                       [--todos [TODOS ...]] --out OUT [--date DATE] [--draft]\nfitgap.py merge: error: the following arguments are required: --rows\n",
+      "files": {}
+    },
+    {
+      "step": 6,
+      "args": [
+        "frame",
+        "--frame",
+        "analysis/frame.json",
+        "extra"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "usage: fitgap.py [-h] {frame,packages,uncited,merge,workbook} ...\nfitgap.py: error: unrecognized arguments: extra\n",
+      "files": {}
+    }
+  ]
+}

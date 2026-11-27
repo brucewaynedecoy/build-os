@@ -21,6 +21,7 @@ Three skill scripts become commands: `buildos extract bulk` from `buildos-bulk-e
 ## Entry Gate
 
 - P8 exit gate passed.
+- Departure from the default order (2026-11-24): the orchestrator started Stages 1 and 2 before the P8 exit gate, because P8 waits on owner actions. The work is implementation only, on its own branch `rewrite/ts-cli-p9` from `38d1e08`, so the `0.1.0` release candidate on `rewrite/ts-cli` does not gain the `0.2.0` commands. Stage 3 (skills, the no-Python check, docs, and the release) waits for the P8 exit gate. See [P9 Skill-Script Commands](./evidence.md#p9-skill-script-commands).
 
 ## Human Experience Outcome
 
@@ -64,13 +65,19 @@ Human Experience Review is separate. The agent opens one `buildos fitgap` workbo
 
 ### Tasks
 
-- [ ] t1: Build synthetic fixtures for each script under `toolkits/buildos/test/fixtures/skills/`.
-- [ ] t2: Run `system/.os/skills/buildos-bulk-extract/scripts/work.py`, `system/.os/skills/fit-gap-analysis/scripts/fitgap.py`, and `system/.os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs` on each fixture. Record stdout, stderr, exit codes, and written files under `toolkits/buildos/test/golden/skills/`.
-- [ ] t3: For `.xlsx` output, compare workbook content instead of archive bytes: sheet names and order, cell values, number formats, and the fills and fonts the skill sets. Record this as a parity exception with its reason, since two zip writers do not produce identical bytes.
+- [x] t1: Build synthetic fixtures for each script under `toolkits/buildos/test/fixtures/skills/`.
+- [x] t2: Run `system/.os/skills/buildos-bulk-extract/scripts/work.py`, `system/.os/skills/fit-gap-analysis/scripts/fitgap.py`, and `system/.os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs` on each fixture. Record stdout, stderr, exit codes, and written files under `toolkits/buildos/test/golden/skills/`.
+- [x] t3: For `.xlsx` output, compare workbook content instead of archive bytes: sheet names and order, cell values, number formats, and the fills and fonts the skill sets. Record this as a parity exception with its reason, since two zip writers do not produce identical bytes.
 
 ### Acceptance criteria
 
 - A76: Goldens exist for every fixture of the three scripts, and the `.xlsx` comparison rule is recorded in `parity-exceptions.json` with a reason and an owner decision.
+- Status (2026-11-24): goldens exist for all 60 cases (300 command runs); the rule is recorded as proposed parity exception PE-021 in `proposed-exceptions.json`, pending the owner decision, so A76 is not met yet.
+- Status (2026-11-25, review round 1): the fit-gap fixture moved from `build/` (hidden by the root `.gitignore`, the cause of CI run 45535678445) to `analysis/`, a guard test refuses ignored fixture and golden files, and a 61st case (`frame-csv-ragged`) was captured; `capture.ts --check` now compares reproducible facts only. A76 still waits for PE-021. See [P9 CI Run 45535678445](./evidence.md#p9-ci-run-45535678445).
+- Status (2026-11-25, review round 2): the `fitgap/packages` golden case now pins its stderr for SD-20 (a stale file that is not a package BuildOS wrote is kept and named); no golden changed, and `capture.ts --check` passes. A76 still waits for PE-021. See [P9 Review Round 2](./evidence.md#p9-review-round-2).
+- Status (2026-11-25, final check): no golden changed, and `capture.ts --check` passes on `576d9ce`. A76 waits only for the PE-021 owner decision. See [P9 Final Check for Stages 1 and 2](./evidence.md#p9-final-check-for-stages-1-and-2).
+- Status (2026-11-25, owner decisions): the owner approved PE-021, and it is in `parity-exceptions.json` with its reason and the owner decision. A76 is met. See [P9 Owner Decisions 2026-11-25](./evidence.md#p9-owner-decisions-2026-11-25).
+- Status (2026-11-25, intake JSON review round 1): PE-021 now separates the approved content rule from the SD-19 error-token relaxation, which waits for the owner. A76 stays met for the content rule. See [P9 Intake JSON Review Round 1](./evidence.md#p9-intake-json-review-round-1).
 
 ### Dependencies
 
@@ -80,16 +87,22 @@ Human Experience Review is separate. The agent opens one `buildos fitgap` workbo
 
 ### Tasks
 
-- [ ] t4: Port `work.py` to `src/core/extract/bulk.ts` and add `buildos extract bulk` in `src/cli/commands/extract.ts`.
-- [ ] t5: Port `fitgap.py` to `src/core/fitgap/` and add `buildos fitgap` in `src/cli/commands/fitgap.ts`. Write `.xlsx` with `fflate` and hand-written Office Open XML parts. Read owner names and colors from config, as P7 set up. If `fflate` was not admitted in P4, admit it now under the PRD 20 rules and update `SECURITY.md`.
-- [ ] t6: Port `azure_boards_csv.mjs` and its adapters to `src/core/export/azure-boards/` and add `buildos export azure-boards` in `src/cli/commands/export.ts`.
-- [ ] t7: Give all three commands the shared help, envelope, `--root`, `--json`, and exit codes.
-- [ ] t8: Add parity tests against the Stage 1 goldens on three operating systems.
+- [x] t4: Port `work.py` to `src/core/extract/bulk.ts` and add `buildos extract bulk` in `src/cli/commands/extract.ts`.
+- [x] t5: Port `fitgap.py` to `src/core/fitgap/` and add `buildos fitgap` in `src/cli/commands/fitgap.ts`. Write `.xlsx` with `fflate` and hand-written Office Open XML parts. Read owner names and colors from config, as P7 set up. If `fflate` was not admitted in P4, admit it now under the PRD 20 rules and update `SECURITY.md`.
+- [x] t6: Port `azure_boards_csv.mjs` and its adapters to `src/core/export/azure-boards/` and add `buildos export azure-boards` in `src/cli/commands/export.ts`.
+- [x] t7: Give all three commands the shared help, envelope, `--root`, `--json`, and exit codes.
+- [x] t8: Add parity tests against the Stage 1 goldens on three operating systems.
 
 ### Acceptance criteria
 
 - A77: Every script fixture passes parity on three operating systems: byte for byte for stdout, stderr, exit code, and CSV and Markdown files, and by the recorded rule for `.xlsx`.
 - A78: The three commands pass the P1 boundary test, and their `--json` output has all envelope fields.
+- Status (2026-11-24): A77 passes on macOS (64 parity tests; three-OS CI not run, nothing pushed); A78 passes.
+- Status (2026-11-25, review round 1): the 22 findings are fixed on `rewrite/ts-cli-p9-fix1` (`f364ee3`, `3fe6f9c`); A77 passes on macOS (65 parity tests) and in a fresh source archive; CI run 45535678445 had failed only the fit-gap cases (the hidden fixture), so a three-OS run of the fix branch is still needed; A78 passes. Divergences SD-15 to SD-19 are new; those that change a result are flagged for the owner. See [P9 Review Round 1](./evidence.md#p9-review-round-1).
+- Status (2026-11-25, review round 2): CI run 45542114946 of `9f5aee9` passed on Ubuntu and macOS and failed one Windows test (a test defect, P9-R2-03). The 13 findings are fixed on `rewrite/ts-cli-p9-fix2` (`7df73a1`); A77 passes on macOS (65 parity tests) and in a fresh source archive; a three-OS run of the fix branch is still needed; A78 passes. SD-20 is new and SD-05, SD-09, SD-13, SD-16, SD-18, and SD-19 changed; those that change a result are flagged for the owner. See [P9 CI Run 45542114946](./evidence.md#p9-ci-run-45542114946) and [P9 Review Round 2](./evidence.md#p9-review-round-2).
+- Status (2026-11-25, final check): CI run 45547048956 of `dd20021` passed on Ubuntu, macOS, and Windows (Node 24), with OSV, the Make Docs contract job, and the pack report. The 8 findings of review round 3 are fixed on `rewrite/ts-cli-p9-fix3` (`576d9ce`); A77 passes on macOS (65 parity tests) and in a fresh source archive, and needs a green three-OS run of this commit; A78 passes. SD-21 and SD-22 are new and SD-05, SD-16, SD-18, and SD-20 changed; each that changes a result is flagged for the owner. The review loop is closed under the project stop rule. See [P9 CI Run 45547048956](./evidence.md#p9-ci-run-45547048956) and [P9 Final Check for Stages 1 and 2](./evidence.md#p9-final-check-for-stages-1-and-2).
+- Status (2026-11-26, public repository): A77 is met. CI run 45911537818 (push) and run 45911543946 (pull request) of `b49a06d` in this repository passed the three `test` jobs (Ubuntu, macOS, and Windows, Node 24), each with 65 skill-script parity tests passed (35 bulk-extract, 15 fit-gap, 11 Azure Boards, 4 divergence) and none skipped (P9-O2 closed). `b49a06d` holds the code; the later commit that records this changes only docs. t4 to t8 stay done. See [P9 Review Round 1 on the Public Repository](./evidence.md#p9-review-round-1-on-the-public-repository-2026-11-26).
+- Status (2026-11-25, owner decisions): the owner accepted SD-04 (`fitgap` and `export azure-boards` read only files inside the project); no code change. By the owner decision on register `D-010`, `buildos intake` now prints the same envelope with `--json` (parity exception PE-022), so every domain command takes `--json`. See [P9 Owner Decisions 2026-11-25](./evidence.md#p9-owner-decisions-2026-11-25).
 
 ### Dependencies
 
@@ -123,4 +136,4 @@ Human Experience Review is separate. The agent opens one `buildos fitgap` workbo
 - Optional experience handoff: Pending phase close.
 - Explicit human acceptance gate: Maintainer approval of the `0.2.0` publication, per [PRD 20 Release](../../prd/20-buildos-cli-and-distribution.md#release). It blocks publication only.
 - Evidence report: Pending phase close.
-- Phase / capability status: Not started.
+- Phase / capability status: Stages 1 and 2 done; A77 met by CI run 45911537818 of `b49a06d` in this repository on three operating systems (P9-O2 closed); Stage 3 not started. On 2026-11-26 the Stage 1 and Stage 2 work, with the owner decisions of 2026-11-25 and 2026-11-26, came into this repository as file content only; see [P9 Move to the Public Repository](./evidence.md#p9-move-to-the-public-repository-2026-11-26). A76 is met (PE-021 approved), SD-04, SD-05, and SD-15 to SD-22 are accepted, and `intake --json` is built (`D-010`, PE-022). Stage 3 waits for the P8 exit gate, and adds the CSV formula-prefix note to the Azure Boards skill (F-P9-02).

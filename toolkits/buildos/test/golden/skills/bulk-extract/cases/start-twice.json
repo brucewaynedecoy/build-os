@@ -1,0 +1,56 @@
+{
+  "case": "start-twice",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "start",
+        "REF-001"
+      ],
+      "exit": 0,
+      "stdout": "Created: <root>/extractions/REF-001-lending-policy.json\n",
+      "stderr": "",
+      "files": {
+        "extractions/REF-001-lending-policy.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/lending-policy.txt\",\n  \"source_sha256\": \"f4a773f1a04b5197f80d47b609701dd1907d18d03c0a9442e4ff090f85f64ab0\",\n  \"reviewed_by\": \"\",\n  \"reviewed_at\": \"\",\n  \"source_check\": {\n    \"result\": \"unverified\",\n    \"notes\": \"\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-001\",\n      \"converted\": \"assets/lending-policy/lending-policy.md\",\n      \"outcome\": \"pending\",\n      \"note\": \"\"\n    }\n  ],\n  \"candidates\": [],\n  \"unresolved\": [],\n  \"applied\": {},\n  \"extraction_ids\": [],\n  \"publication_review\": null\n}\n"
+        }
+      }
+    },
+    {
+      "step": 1,
+      "args": [
+        "start",
+        "REF-001"
+      ],
+      "exit": 0,
+      "stdout": "Review already exists: <root>/extractions/REF-001-lending-policy.json\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 2,
+      "args": [
+        "check",
+        "REF-001"
+      ],
+      "exit": 1,
+      "stdout": "REF-001: in-progress (<root>/extractions/REF-001-lending-policy.json)\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 3,
+      "args": [
+        "next",
+        "--stage",
+        "extract",
+        "--count",
+        "2"
+      ],
+      "exit": 0,
+      "stdout": "REF-002\tpending\t2 twins\tassets/_intake/branch-hours.xlsx\nREF-004\tpending\t1 twins\tassets/_intake/patron-faq.txt\n",
+      "stderr": "",
+      "files": {}
+    }
+  ]
+}

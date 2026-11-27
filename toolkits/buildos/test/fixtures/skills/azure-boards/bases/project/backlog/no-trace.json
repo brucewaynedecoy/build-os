@@ -1,0 +1,12 @@
+{
+  "items": [
+    {
+      "work_item_type": "Epic",
+      "level": 1,
+      "title": "Holds & Notices <Phase 1>",
+      "summary": "Patrons place \"holds\" on books — café edition.",
+      "source_trace": {},
+      "tags": "Holds; Notices;Holds"
+    }
+  ]
+}

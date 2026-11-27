@@ -1,0 +1,17 @@
+{
+  "headline": [
+    "Only one."
+  ],
+  "layers": [
+    {
+      "layer_code": "CORE",
+      "text": "x"
+    },
+    {
+      "layer_code": "PAT",
+      "text": ""
+    }
+  ],
+  "opportunities": "none",
+  "open_questions": {}
+}

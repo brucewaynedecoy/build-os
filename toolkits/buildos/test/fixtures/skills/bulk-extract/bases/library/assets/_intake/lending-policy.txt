@@ -1,0 +1,4 @@
+Lending Policy
+Patrons may borrow up to five books.
+Loans last 21 days.
+Holds expire after 7 days.

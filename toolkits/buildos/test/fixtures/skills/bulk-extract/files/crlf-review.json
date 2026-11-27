@@ -1,0 +1,25 @@
+{
+  "format_version": 2,
+  "source": "assets/_intake/lending-policy.txt",
+  "source_sha256": "f4a773f1a04b5197f80d47b609701dd1907d18d03c0a9442e4ff090f85f64ab0",
+  "reviewed_by": "Circulation Analyst",
+  "reviewed_at": "2026-01-12",
+  "source_check": {
+    "result": "matched",
+    "notes": "Compared the converted text with the original policy.",
+    "repairs": []
+  },
+  "references": [
+    {
+      "id": "REF-001",
+      "converted": "assets/lending-policy/lending-policy.md",
+      "outcome": "reviewed",
+      "note": ""
+    }
+  ],
+  "candidates": [],
+  "unresolved": [],
+  "applied": {},
+  "extraction_ids": [],
+  "publication_review": null
+}

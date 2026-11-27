@@ -1,0 +1,64 @@
+{
+  "title": "Current Circulation System to Candidate Library Platform",
+  "mode": "replacement",
+  "baseline": {
+    "model": "../deliver/CIRC/circ-capability-model.json"
+  },
+  "target": {
+    "model": "../deliver/LIB/broken-model.json"
+  },
+  "objectives": [
+    {
+      "id": "OBJ-01",
+      "name": "Keep circulation desk operations running",
+      "weight": "must",
+      "rank": 1,
+      "statement": "Staff can check out, check in, renew, and hold books with no loss of function.",
+      "measure": "No built circulation capability is lost",
+      "source": "docs/charter.md, Goals"
+    },
+    {
+      "id": "OBJ-02",
+      "name": "Serve patrons on their own",
+      "weight": "should",
+      "rank": 2,
+      "statement": "Patrons register, get notices, and pay fines without staff help.",
+      "measure": "Half of renewals are self-service",
+      "source": "docs/charter.md, Goals"
+    },
+    {
+      "id": "OBJ-03",
+      "name": "Find books faster",
+      "weight": "could",
+      "statement": "Patrons find a book in the catalogue in under a minute.",
+      "measure": "",
+      "source": "docs/survey.md"
+    }
+  ],
+  "objectives_confirmed_by": "Library Director",
+  "tracks": [
+    {
+      "id": "T1",
+      "name": "Go-live",
+      "order": 1,
+      "timing": "Spring",
+      "description": "What the desk needs on day one."
+    },
+    {
+      "id": "T2",
+      "name": "After go-live",
+      "order": 2,
+      "description": "Improvements once the desk runs."
+    }
+  ],
+  "owners": [
+    "Library Staff",
+    "Platform Vendor",
+    "Volunteer Team"
+  ],
+  "owner_roles": {
+    "Library Staff": "Runs the circulation desk and decides policy.",
+    "Platform Vendor": "Configures and builds the platform."
+  },
+  "scoring": {}
+}

@@ -136,3 +136,68 @@ describe("P7-F-03: failing tests never print a planted value", () => {
     assert.equal(shown.length, 0, `${shown.length} planted value(s) appear in the failing output (${shown.map((value) => tag(value)).join(", ")})`);
   });
 });
+
+// W1 R7 P9 review round 1 (P9-R1-18): the skill-script test files compare
+// captured output, written files, and result objects only through the capped
+// helpers (assertSame, assertSameBytes, assertSameList, assertSameTree,
+// assertIncludes, assertNoProblems), which print sizes, counts, and tags.
+// A raw assert.equal is allowed only against a number, boolean, null, or
+// undefined literal (an exit code or a flag), and assert.ok only prints its
+// own message. Node's AssertionError would print both values in full.
+describe("P9-R1-18: the skill-script tests never compare content with a raw assertion", () => {
+  const FILES = ["test/skill-script-parity.test.ts", "test/skill-script-hostile.test.ts", "test/skill-script-review.test.ts", "test/skill-script-review-2.test.ts", "test/skill-script-support.ts", "test/fitgap-xlsx.test.ts", "test/xlsx-compare.test.ts"];
+
+  /** The arguments of each `assert.<name>(...)` call, split at top-level commas. */
+  function calls(text: string): { name: string; args: string[]; line: number }[] {
+    const out: { name: string; args: string[]; line: number }[] = [];
+    const re = /\bassert\.([A-Za-z]+)\(/g;
+    for (let m = re.exec(text); m !== null; m = re.exec(text)) {
+      let depth = 1;
+      let quote = "";
+      let start = re.lastIndex;
+      const args: string[] = [];
+      let i = re.lastIndex;
+      for (; i < text.length && depth > 0; i++) {
+        const c = text[i]!;
+        if (quote !== "") {
+          if (c === "\\") i++;
+          else if (c === quote) quote = "";
+          continue;
+        }
+        if (c === '"' || c === "'" || c === "`") quote = c;
+        else if ("([{".includes(c)) depth++;
+        else if (")]}".includes(c)) depth--;
+        else if (c === "," && depth === 1) {
+          args.push(text.slice(start, i).trim());
+          start = i + 1;
+        }
+      }
+      args.push(text.slice(start, i - 1).trim());
+      out.push({ name: m[1]!, args, line: text.slice(0, m.index).split("\n").length });
+    }
+    return out;
+  }
+
+  it("every raw assertion in the P9 test files compares a literal flag or count, or only prints its own message", () => {
+    const problems: string[] = [];
+    let seen = 0;
+    for (const file of FILES) {
+      const text = readFileSync(join(PACKAGE, ...file.split("/")), "utf8");
+      for (const call of calls(text)) {
+        seen++;
+        if (["ok", "throws", "rejects", "fail"].includes(call.name)) continue;
+        const literal = /^(-?[0-9]+|true|false|null|undefined)$/.test(call.args[1] ?? "");
+        if (["equal", "strictEqual", "notEqual", "notStrictEqual"].includes(call.name) && literal) continue;
+        problems.push(`${tag(file)} line ${call.line}: assert.${call.name} with a value that is not a literal flag or count`);
+      }
+    }
+    assertNoProblems(problems, "raw assertions in the skill-script tests");
+    assert.ok(seen > 40, "the scan found the assertions");
+  });
+
+  it("the scan catches a raw comparison of captured output", () => {
+    const planted = 'assert.equal(r.stdout, "x");\nassert.deepEqual(result, {});\nassert.equal(r.exit, 3);\n';
+    const found = calls(planted).filter((c) => !(["equal"].includes(c.name) && /^(-?[0-9]+|true|false|null|undefined)$/.test(c.args[1] ?? "")));
+    assertSameList(found.map((c) => `${c.name}:${c.line}`), ["equal:1", "deepEqual:2"], "planted raw assertions");
+  });
+});

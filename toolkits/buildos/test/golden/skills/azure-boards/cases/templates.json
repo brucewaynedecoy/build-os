@@ -1,0 +1,93 @@
+{
+  "case": "templates",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "template",
+        "--output",
+        "out/target17.csv"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"operation\": \"template\",\n  \"output\": \"<root>/out/target17.csv\",\n  \"profile\": \"target17-new\"\n}\n",
+      "stderr": "",
+      "files": {
+        "out/target17.csv": {
+          "text": "﻿ID,Work Item Type,Title 1,Title 2,Title 3,Title 4,State,Effort,Iteration Path,Repro Steps,Description,Acceptance Criteria,Design Notes,Solution,Solution Type,Tags,Assigned To"
+        }
+      }
+    },
+    {
+      "step": 1,
+      "args": [
+        "template",
+        "--output",
+        "out/new.csv",
+        "--profile",
+        "new"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"operation\": \"template\",\n  \"output\": \"<root>/out/new.csv\",\n  \"profile\": \"new\"\n}\n",
+      "stderr": "",
+      "files": {
+        "out/new.csv": {
+          "text": "﻿Work Item Type,Title 1,Title 2,Title 3,Title 4,Effort,Iteration Path,Repro Steps,Description,Acceptance Criteria,Design Notes,Solution,Solution Type,Tags"
+        }
+      }
+    },
+    {
+      "step": 2,
+      "args": [
+        "template",
+        "--output",
+        "out/update.csv",
+        "--profile",
+        "update"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"operation\": \"template\",\n  \"output\": \"<root>/out/update.csv\",\n  \"profile\": \"update\"\n}\n",
+      "stderr": "",
+      "files": {
+        "out/update.csv": {
+          "text": "﻿ID,Work Item Type,Title 1,Title 2,Title 3,Title 4,State,Effort,Iteration Path,Repro Steps,Description,Acceptance Criteria,Design Notes,Solution,Solution Type,Tags,Assigned To"
+        }
+      }
+    },
+    {
+      "step": 3,
+      "args": [
+        "template",
+        "--output",
+        "out/x.csv",
+        "--profile",
+        "auto"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Unknown profile 'auto'. Use target17-new, new, or update.\n",
+      "files": {}
+    },
+    {
+      "step": 4,
+      "args": [
+        "template"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Missing required option --output\n",
+      "files": {}
+    },
+    {
+      "step": 5,
+      "args": [
+        "template",
+        "--profile",
+        "new"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Missing required option --output\n",
+      "files": {}
+    }
+  ]
+}

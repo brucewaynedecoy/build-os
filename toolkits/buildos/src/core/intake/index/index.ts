@@ -12,7 +12,7 @@ import { goIsNotExist, goPathError, goStatOp } from "../../shared/go-os-error.ts
 import { goJoinAll, type GoPathPlatform } from "../../shared/go-path.ts";
 import { cleanRoot, hostPlatform, INTAKE_DEFAULT_PATHS, repoRelative, resolvePath } from "../convert/convert.ts";
 import { goAtoiExact, goEqualFold, goExt, goIntAdd, goPad3, goToSlash, utf8Bytes, utf8Text } from "../go-text.ts";
-import { IntakeFs, type IntakeContext } from "../io.ts";
+import { IntakeFs, withRecord, WriteRecord, type IntakeContext } from "../io.ts";
 import { checkReadBack, READ_LIMITS } from "../../shared/read-limits.ts";
 import { parseFrontmatter, type FrontmatterFields } from "./frontmatter.ts";
 
@@ -21,6 +21,8 @@ export interface IndexOptions {
   assetsRoot: string;
   playbooksRoot: string;
   output: string;
+  /** Keep a record of what the write made or changed (`--json`, PE-022; see `ConvertOptions.recordWrites`). Intake never undoes a write. */
+  recordWrites?: boolean;
 }
 
 export interface IndexResult {
@@ -142,10 +144,11 @@ const scalar = (fields: FrontmatterFields, key: string) => fields.scalars.get(ke
  * index larger than `readLimit`, the bound of the command that reads it
  * back, is not written (exit 4).
  */
-function writeIndex(fs: IntakeFs, outputPath: string, value: GoJsonValue, readLimit: number): void {
+function writeIndex(fs: IntakeFs, outputPath: string, value: GoJsonValue, readLimit: number, recordWrites: boolean | undefined): void {
   const data = utf8Bytes(`${goMarshalIndent(value, true)}\n`);
   checkReadBack(goToSlash(repoRelative(fs.repoRoot, outputPath, fs.platform), fs.platform), data.length, readLimit, fs.repoRoot);
-  fs.writeFileWithParents(outputPath, data);
+  const record = recordWrites === true ? new WriteRecord() : undefined;
+  withRecord(record, () => fs.writeFileWithParents(outputPath, data, record));
 }
 
 /** Go `BuildReferencesIndex`. */
@@ -186,7 +189,7 @@ export function buildReferencesIndex(context: IntakeContext, opts: IndexOptions)
   entries.sort(referenceIdLess);
   const references: GoJsonValue = entries.length === 0 ? null : entries.map((e) => ({ ...e }));
   // The next `intake index references` reads this index back (READ_LIMITS.intake).
-  writeIndex(fs, outputPath, { version: 1, next_id: goIntAdd(highest, 1n), references }, READ_LIMITS.intake);
+  writeIndex(fs, outputPath, { version: 1, next_id: goIntAdd(highest, 1n), references }, READ_LIMITS.intake, opts.recordWrites);
   return { outputPath, count: entries.length };
 }
 
@@ -237,6 +240,6 @@ export function buildPlaybooksIndex(context: IntakeContext, opts: IndexOptions):
   });
   entries.sort((a, b) => (a.id === b.id ? goCompare(a.path, b.path) : goCompare(a.id, b.id)));
   // Discovery reads this index back (READ_LIMITS.data).
-  writeIndex(fs, outputPath, { version: 1, playbooks: entries, runnable_playbooks: entries.filter((e) => e.status === "active") }, READ_LIMITS.data);
+  writeIndex(fs, outputPath, { version: 1, playbooks: entries, runnable_playbooks: entries.filter((e) => e.status === "active") }, READ_LIMITS.data, opts.recordWrites);
   return { outputPath, count: entries.length };
 }

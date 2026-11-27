@@ -1,0 +1,38 @@
+{
+  "case": "legacy-review",
+  "steps": [
+    {
+      "step": 1,
+      "args": [
+        "check",
+        "REF-001"
+      ],
+      "exit": 0,
+      "stdout": "REF-001: ready (<root>/extractions/REF-001-lending-policy.json)\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 2,
+      "args": [
+        "show",
+        "REF-001"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"key\": \"REF-001\",\n  \"source\": \"assets/_intake/lending-policy.txt\",\n  \"references\": [\n    {\n      \"id\": \"REF-001\",\n      \"converted\": \"assets/lending-policy/lending-policy.md\"\n    }\n  ],\n  \"review\": \"extractions/REF-001-lending-policy.json\",\n  \"candidates\": []\n}\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 3,
+      "args": [
+        "stage",
+        "REF-001"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: This is an older completed review; start a new source for new work\n",
+      "files": {}
+    }
+  ]
+}

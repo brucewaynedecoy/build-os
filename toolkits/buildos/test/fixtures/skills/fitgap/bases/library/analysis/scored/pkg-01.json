@@ -1,0 +1,123 @@
+[
+  {
+    "baseline_capability_id": "CIRC-COR-01",
+    "objective_ids": "OBJ-01",
+    "confidence": "high",
+    "effort": "low",
+    "marks": [
+      {
+        "requirement_id": "CIRC-COR-01-R01",
+        "mark": "met",
+        "target_capability_ids": [
+          "LIB-COR-01"
+        ],
+        "note": ""
+      },
+      {
+        "requirement_id": "CIRC-COR-01-R02",
+        "mark": "met",
+        "target_capability_ids": "LIB-COR-01",
+        "note": ""
+      }
+    ],
+    "evidence": "Rows for CIRC-COR-01. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-COR-02",
+    "objective_ids": [
+      "OBJ-01"
+    ],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [
+      {
+        "requirement_id": "CIRC-COR-02-R02",
+        "mark": "configured",
+        "target_capability_ids": [
+          "LIB-COR-01"
+        ],
+        "note": "Set the receipt template in the desk settings."
+      },
+      {
+        "requirement_id": "CIRC-COR-02-R01",
+        "mark": "met",
+        "target_capability_ids": [
+          "LIB-COR-02"
+        ],
+        "note": ""
+      }
+    ],
+    "evidence": "Rows for CIRC-COR-02. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "CIRC-COR-02-R02: the receipt needs a template.",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": "Library Staff | Platform Vendor"
+  },
+  {
+    "baseline_capability_id": "CIRC-COR-03",
+    "objective_ids": [
+      "OBJ-01"
+    ],
+    "confidence": "medium",
+    "effort": "high",
+    "marks": [
+      {
+        "requirement_id": "CIRC-COR-03-R01",
+        "mark": "partly",
+        "target_capability_ids": [
+          "LIB-COR-03"
+        ],
+        "note": "Renewals are counted per patron, not per loan."
+      },
+      {
+        "requirement_id": "CIRC-COR-03-R02",
+        "mark": "not_met",
+        "target_capability_ids": [],
+        "note": "Searched 'renewal block' and 'hold check'; no counterpart."
+      }
+    ],
+    "evidence": "Rows for CIRC-COR-03. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "CIRC-COR-03-R02: no block on renewing a held book.",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Platform Vendor"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-COR-04",
+    "objective_ids": [
+      "OBJ-01"
+    ],
+    "confidence": "low",
+    "effort": "unknown",
+    "marks": [
+      {
+        "requirement_id": "CIRC-COR-04-R01",
+        "mark": "not_met",
+        "target_capability_ids": "",
+        "note": "Searched 'holds queue' in the guide; nothing."
+      },
+      {
+        "requirement_id": "CIRC-COR-04-R02",
+        "mark": "not_met",
+        "target_capability_ids": [],
+        "note": "No away flag for a patron anywhere."
+      }
+    ],
+    "evidence": "Rows for CIRC-COR-04. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "No holds queue at all.",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T1",
+    "owners": [
+      "Library Staff",
+      "Volunteer Team"
+    ]
+  }
+]

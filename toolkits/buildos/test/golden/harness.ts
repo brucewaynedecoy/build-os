@@ -1067,6 +1067,8 @@ export interface ParityException {
    * stripLegacyNotice.
    */
   legacy_notice?: Record<string, string>;
+  /** W1 R7 P9 (PE-021, approved 2026-11-25): the .xlsx content rule of the skill-script parity test: its helper, goldens, and test. */
+  xlsx?: { helper: string; goldens: string; test: string };
 }
 
 /** The PE-016 notice line for `invocation`, or `undefined` when it has none. */
@@ -1252,6 +1254,8 @@ export interface ProposedException {
   pdf?: PdfWordGap[];
   /** Cases of test/intake-hostile.test.ts that differ from Go, with the exact allowed TypeScript result. That test checks them. */
   hostile?: HostileException[];
+  /** The .xlsx content rule of the skill-script parity test, as `xlsx` in parity-exceptions.json (PE-021 was proposed with it). */
+  xlsx?: { helper: string; goldens: string; test: string };
 }
 
 /**

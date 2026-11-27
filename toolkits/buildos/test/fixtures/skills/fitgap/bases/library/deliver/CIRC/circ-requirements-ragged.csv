@@ -1,0 +1,17 @@
+requirement_id,capability_id,requirement_kind,status,maturity,text,option_values
+CIRC-COR-01-R01,CIRC-COR-01,function,built,proven,Scan a patron card.
+CIRC-COR-01-R02,CIRC-COR-01,function,built,proven
+CIRC-COR-02-R01,CIRC-COR-02,function,built,proven,"Return a book, at any branch,
+the same day."
+CIRC-COR-02-R02,CIRC-COR-02,function,built,proven,Print a return receipt.
+CIRC-COR-03-R01,CIRC-COR-03,function,built,proven,Renew a loan twice.
+CIRC-COR-03-R02,CIRC-COR-03,function,built,proven,Block a renewal when the book is held.
+CIRC-COR-04-R01,CIRC-COR-04,function,built,proven,Queue holds in order.
+CIRC-COR-04-R02,CIRC-COR-04,function,built,proven,Skip a patron who is away.
+CIRC-PAT-01-R01,CIRC-PAT-01,function,built,proven,Record a patron's name and address.
+CIRC-PAT-01-R02,CIRC-PAT-01,function,built,proven,Issue a card number.
+CIRC-PAT-01-R03,CIRC-PAT-01,function,built,proven,Record a guardian for a child.
+CIRC-PAT-02-R01,CIRC-PAT-02,function,built,proven,Send an overdue notice.
+CIRC-PAT-03-R01,CIRC-PAT-03,function,built,proven,Charge ten cents a day.
+CIRC-PAT-03-R02,CIRC-PAT-03,function,built,proven,Cap a fine at the book's price.
+CIRC-CAT-02-R01,CIRC-CAT-02,function,built,proven,Print spine labels.

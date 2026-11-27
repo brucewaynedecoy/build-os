@@ -1,0 +1,42 @@
+{
+  "case": "show-group",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "show",
+        "REF-003"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"key\": \"REF-002\",\n  \"source\": \"assets/_intake/branch-hours.xlsx\",\n  \"references\": [\n    {\n      \"id\": \"REF-002\",\n      \"converted\": \"assets/branch-hours/main-branch.csv\"\n    },\n    {\n      \"id\": \"REF-003\",\n      \"converted\": \"assets/branch-hours/east-branch.csv\"\n    }\n  ],\n  \"review\": \"extractions/REF-002-branch-hours.json\",\n  \"candidates\": []\n}\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 1,
+      "args": [
+        "start",
+        "REF-002"
+      ],
+      "exit": 0,
+      "stdout": "Created: <root>/extractions/REF-002-branch-hours.json\n",
+      "stderr": "",
+      "files": {
+        "extractions/REF-002-branch-hours.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/branch-hours.xlsx\",\n  \"source_sha256\": \"5012e28076527cc8ac35746a15a8db6953ff27f5bd198ced7f30088d48872eca\",\n  \"reviewed_by\": \"\",\n  \"reviewed_at\": \"\",\n  \"source_check\": {\n    \"result\": \"unverified\",\n    \"notes\": \"\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-002\",\n      \"converted\": \"assets/branch-hours/main-branch.csv\",\n      \"outcome\": \"pending\",\n      \"note\": \"\"\n    },\n    {\n      \"id\": \"REF-003\",\n      \"converted\": \"assets/branch-hours/east-branch.csv\",\n      \"outcome\": \"pending\",\n      \"note\": \"\"\n    }\n  ],\n  \"candidates\": [],\n  \"unresolved\": [],\n  \"applied\": {},\n  \"extraction_ids\": [],\n  \"publication_review\": null\n}\n"
+        }
+      }
+    },
+    {
+      "step": 2,
+      "args": [
+        "show",
+        "REF-002"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"key\": \"REF-002\",\n  \"source\": \"assets/_intake/branch-hours.xlsx\",\n  \"references\": [\n    {\n      \"id\": \"REF-002\",\n      \"converted\": \"assets/branch-hours/main-branch.csv\"\n    },\n    {\n      \"id\": \"REF-003\",\n      \"converted\": \"assets/branch-hours/east-branch.csv\"\n    }\n  ],\n  \"review\": \"extractions/REF-002-branch-hours.json\",\n  \"candidates\": []\n}\n",
+      "stderr": "",
+      "files": {}
+    }
+  ]
+}

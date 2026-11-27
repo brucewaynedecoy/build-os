@@ -1,0 +1,150 @@
+{
+  "case": "update-flow",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "start",
+        "REF-001"
+      ],
+      "exit": 0,
+      "stdout": "Created: <root>/extractions/REF-001-lending-policy.json\n",
+      "stderr": "",
+      "files": {
+        "extractions/REF-001-lending-policy.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/lending-policy.txt\",\n  \"source_sha256\": \"f4a773f1a04b5197f80d47b609701dd1907d18d03c0a9442e4ff090f85f64ab0\",\n  \"reviewed_by\": \"\",\n  \"reviewed_at\": \"\",\n  \"source_check\": {\n    \"result\": \"unverified\",\n    \"notes\": \"\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-001\",\n      \"converted\": \"assets/lending-policy/lending-policy.md\",\n      \"outcome\": \"pending\",\n      \"note\": \"\"\n    }\n  ],\n  \"candidates\": [],\n  \"unresolved\": [],\n  \"applied\": {},\n  \"extraction_ids\": [],\n  \"publication_review\": null\n}\n"
+        }
+      }
+    },
+    {
+      "step": 2,
+      "args": [
+        "stage-update",
+        "REF-001",
+        "REQ-001",
+        "--key",
+        "fix-limit"
+      ],
+      "exit": 0,
+      "stdout": "Copied REQ-001 into extractions/REF-001-lending-policy.json; edit this draft, then run stage\n",
+      "stderr": "",
+      "files": {
+        "extractions/REF-001-lending-policy.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/lending-policy.txt\",\n  \"source_sha256\": \"f4a773f1a04b5197f80d47b609701dd1907d18d03c0a9442e4ff090f85f64ab0\",\n  \"reviewed_by\": \"Circulation Analyst\",\n  \"reviewed_at\": \"2026-01-12\",\n  \"source_check\": {\n    \"result\": \"matched\",\n    \"notes\": \"Compared the converted text with the original policy.\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-001\",\n      \"converted\": \"assets/lending-policy/lending-policy.md\",\n      \"outcome\": \"reviewed\",\n      \"note\": \"\"\n    }\n  ],\n  \"candidates\": [\n    {\n      \"key\": \"fix-limit\",\n      \"type\": \"requirement\",\n      \"action\": \"updated\",\n      \"review_state\": \"pending\",\n      \"target_id\": \"REQ-001\",\n      \"base_sha256\": \"571b69db6fa13b4b9fffa63ff15fdf53c998211dabdfe67c3ffcf968c8635677\",\n      \"row\": {\n        \"id\": \"REQ-001\",\n        \"type\": \"requirement\",\n        \"title\": \"Borrow limit\",\n        \"status\": \"draft\",\n        \"summary\": \"A patron can borrow up to five books.\",\n        \"source_anchor\": \"assets/lending-policy/lending-policy.md#L3\",\n        \"doc_anchor\": null,\n        \"source_refs\": [\n          \"assets/lending-policy/lending-policy.md#L3\"\n        ],\n        \"related\": [],\n        \"created_at\": \"2026-01-10T08:00:00Z\",\n        \"updated_at\": \"2026-01-10T08:00:00Z\",\n        \"statement\": \"The system shall limit a patron to five loans at once.\",\n        \"rationale\": \"The lending policy sets the limit.\",\n        \"acceptance_refs\": [],\n        \"shelf_note\": \"Keep this custom field\"\n      }\n    }\n  ],\n  \"unresolved\": [],\n  \"applied\": {},\n  \"extraction_ids\": [],\n  \"publication_review\": null\n}\n"
+        }
+      }
+    },
+    {
+      "step": 3,
+      "args": [
+        "stage-update",
+        "REF-001",
+        "REQ-001",
+        "--key",
+        "fix-limit"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: Candidate key already exists: fix-limit\n",
+      "files": {}
+    },
+    {
+      "step": 4,
+      "args": [
+        "stage-update",
+        "REF-001",
+        "REQ-404",
+        "--key",
+        "other"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: No supported row with ID REQ-404\n",
+      "files": {}
+    },
+    {
+      "step": 5,
+      "args": [
+        "check",
+        "REF-001"
+      ],
+      "exit": 0,
+      "stdout": "REF-001: ready-to-stage (<root>/extractions/REF-001-lending-policy.json)\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 6,
+      "args": [
+        "stage",
+        "REF-001"
+      ],
+      "exit": 0,
+      "stdout": "Staged 1 candidates; review: extractions/REF-001-lending-policy.json\n",
+      "stderr": "",
+      "files": {
+        "extractions/REF-001-lending-policy.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/lending-policy.txt\",\n  \"source_sha256\": \"f4a773f1a04b5197f80d47b609701dd1907d18d03c0a9442e4ff090f85f64ab0\",\n  \"reviewed_by\": \"Circulation Analyst\",\n  \"reviewed_at\": \"2026-01-12\",\n  \"source_check\": {\n    \"result\": \"matched\",\n    \"notes\": \"Compared the converted text with the original policy.\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-001\",\n      \"converted\": \"assets/lending-policy/lending-policy.md\",\n      \"outcome\": \"reviewed\",\n      \"note\": \"\"\n    }\n  ],\n  \"candidates\": [\n    {\n      \"key\": \"fix-limit\",\n      \"type\": \"requirement\"\n    }\n  ],\n  \"unresolved\": [],\n  \"applied\": {},\n  \"extraction_ids\": [],\n  \"publication_review\": null,\n  \"staged_at\": \"2026-01-15T12:00:00Z\"\n}\n"
+        },
+        "extractions/staging/requirements.jsonl": {
+          "text": "{\"id\": \"REQ-001\", \"type\": \"requirement\", \"title\": \"Borrow limit\", \"status\": \"draft\", \"summary\": \"A patron can borrow up to five books.\", \"source_anchor\": \"assets/lending-policy/lending-policy.md#L3\", \"doc_anchor\": null, \"source_refs\": [\"assets/lending-policy/lending-policy.md#L3\"], \"related\": [], \"created_at\": \"2026-01-10T08:00:00Z\", \"updated_at\": \"2026-01-10T08:00:00Z\", \"statement\": \"The system shall limit a patron to five loans at once.\", \"rationale\": \"The lending policy sets the limit.\", \"acceptance_refs\": [], \"shelf_note\": \"Keep this custom field\", \"_stage\": {\"key\": \"fix-limit\", \"action\": \"updated\", \"review_state\": \"pending\", \"target_id\": \"REQ-001\", \"base_sha256\": \"571b69db6fa13b4b9fffa63ff15fdf53c998211dabdfe67c3ffcf968c8635677\", \"ref_id\": \"REF-001\", \"authored_by\": \"Circulation Analyst\"}}\n"
+        }
+      }
+    },
+    {
+      "step": 7,
+      "args": [
+        "decide",
+        "REF-001",
+        "--reviewer",
+        "Branch Supervisor"
+      ],
+      "exit": 0,
+      "stdout": "Recorded 1 Stage 2 decisions for REF-001\n",
+      "stderr": "",
+      "files": {
+        "extractions/REF-001-lending-policy.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/lending-policy.txt\",\n  \"source_sha256\": \"f4a773f1a04b5197f80d47b609701dd1907d18d03c0a9442e4ff090f85f64ab0\",\n  \"reviewed_by\": \"Circulation Analyst\",\n  \"reviewed_at\": \"2026-01-12\",\n  \"source_check\": {\n    \"result\": \"matched\",\n    \"notes\": \"Compared the converted text with the original policy.\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-001\",\n      \"converted\": \"assets/lending-policy/lending-policy.md\",\n      \"outcome\": \"reviewed\",\n      \"note\": \"\"\n    }\n  ],\n  \"candidates\": [\n    {\n      \"key\": \"fix-limit\",\n      \"type\": \"requirement\"\n    }\n  ],\n  \"unresolved\": [],\n  \"applied\": {},\n  \"extraction_ids\": [],\n  \"publication_review\": {\n    \"reviewed_by\": \"Branch Supervisor\",\n    \"reviewed_at\": \"2026-01-15T12:00:00Z\"\n  },\n  \"staged_at\": \"2026-01-15T12:00:00Z\"\n}\n"
+        },
+        "extractions/staging/requirements.jsonl": {
+          "text": "{\"id\": \"REQ-001\", \"type\": \"requirement\", \"title\": \"Borrow limit\", \"status\": \"draft\", \"summary\": \"A patron can borrow up to five books.\", \"source_anchor\": \"assets/lending-policy/lending-policy.md#L3\", \"doc_anchor\": null, \"source_refs\": [\"assets/lending-policy/lending-policy.md#L3\"], \"related\": [], \"created_at\": \"2026-01-10T08:00:00Z\", \"updated_at\": \"2026-01-10T08:00:00Z\", \"statement\": \"The system shall limit a patron to five loans at once.\", \"rationale\": \"The lending policy sets the limit.\", \"acceptance_refs\": [], \"shelf_note\": \"Keep this custom field\", \"_stage\": {\"key\": \"fix-limit\", \"action\": \"updated\", \"review_state\": \"approved\", \"target_id\": \"REQ-001\", \"base_sha256\": \"571b69db6fa13b4b9fffa63ff15fdf53c998211dabdfe67c3ffcf968c8635677\", \"ref_id\": \"REF-001\", \"authored_by\": \"Circulation Analyst\", \"reviewed_by\": \"Branch Supervisor\", \"reviewed_at\": \"2026-01-15T12:00:00Z\"}}\n"
+        }
+      }
+    },
+    {
+      "step": 8,
+      "args": [
+        "publish",
+        "REF-001"
+      ],
+      "exit": 0,
+      "stdout": "Published 1 candidates as EXT-001.\n",
+      "stderr": "",
+      "files": {
+        ".os/data/extractions.jsonl": {
+          "text": "{\"id\": \"EXT-001\", \"type\": \"extraction\", \"title\": \"REF-001 source extraction\", \"status\": \"draft\", \"summary\": \"Reviewed source-backed rows from REF-001.\", \"source_anchor\": \"assets/lending-policy/lending-policy.md#L3\", \"doc_anchor\": null, \"source_refs\": [\"assets/lending-policy/lending-policy.md#L3\"], \"related\": [], \"created_at\": \"2026-01-15T12:00:00Z\", \"updated_at\": \"2026-01-15T12:00:00Z\", \"outcome_contract\": \"extraction-outcomes-v1\", \"minted\": [], \"updated\": [\"REQ-001\"], \"referenced\": [], \"extracted_by\": \"Circulation Analyst\", \"extracted_at\": \"2026-01-15T12:00:00Z\"}\n"
+        },
+        ".os/data/requirements.jsonl": {
+          "text": "{\"id\": \"REQ-001\", \"type\": \"requirement\", \"title\": \"Borrow limit\", \"status\": \"draft\", \"summary\": \"A patron can borrow up to five books.\", \"source_anchor\": \"assets/lending-policy/lending-policy.md#L3\", \"doc_anchor\": null, \"source_refs\": [\"assets/lending-policy/lending-policy.md#L3\"], \"related\": [], \"created_at\": \"2026-01-10T08:00:00Z\", \"updated_at\": \"2026-01-15T12:00:00Z\", \"statement\": \"The system shall limit a patron to five loans at once.\", \"rationale\": \"The lending policy sets the limit.\", \"acceptance_refs\": [], \"shelf_note\": \"Keep this custom field\"}\n"
+        },
+        "extractions/REF-001-lending-policy.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/lending-policy.txt\",\n  \"source_sha256\": \"f4a773f1a04b5197f80d47b609701dd1907d18d03c0a9442e4ff090f85f64ab0\",\n  \"reviewed_by\": \"Circulation Analyst\",\n  \"reviewed_at\": \"2026-01-12\",\n  \"source_check\": {\n    \"result\": \"matched\",\n    \"notes\": \"Compared the converted text with the original policy.\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-001\",\n      \"converted\": \"assets/lending-policy/lending-policy.md\",\n      \"outcome\": \"reviewed\",\n      \"note\": \"\"\n    }\n  ],\n  \"candidates\": [\n    {\n      \"key\": \"fix-limit\",\n      \"type\": \"requirement\"\n    }\n  ],\n  \"unresolved\": [],\n  \"applied\": {\n    \"fix-limit\": {\n      \"id\": \"REQ-001\",\n      \"action\": \"updated\",\n      \"candidate_sha256\": \"571b69db6fa13b4b9fffa63ff15fdf53c998211dabdfe67c3ffcf968c8635677\",\n      \"authored_by\": \"Circulation Analyst\",\n      \"reviewed_by\": \"Branch Supervisor\",\n      \"reviewed_at\": \"2026-01-15T12:00:00Z\"\n    }\n  },\n  \"extraction_ids\": [\n    \"EXT-001\"\n  ],\n  \"publication_review\": {\n    \"reviewed_by\": \"Branch Supervisor\",\n    \"reviewed_at\": \"2026-01-15T12:00:00Z\"\n  },\n  \"staged_at\": \"2026-01-15T12:00:00Z\"\n}\n"
+        },
+        "extractions/staging/requirements.jsonl": {
+          "text": ""
+        }
+      }
+    },
+    {
+      "step": 9,
+      "args": [
+        "check",
+        "REF-001"
+      ],
+      "exit": 0,
+      "stdout": "REF-001: complete (<root>/extractions/REF-001-lending-policy.json)\n",
+      "stderr": "",
+      "files": {}
+    }
+  ]
+}

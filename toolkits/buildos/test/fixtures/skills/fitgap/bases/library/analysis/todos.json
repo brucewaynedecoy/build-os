@@ -1,0 +1,71 @@
+[
+  {
+    "id": "TD-01",
+    "track": "T1",
+    "sequence": 1,
+    "owner": "Library Staff",
+    "support": [
+      "Platform Vendor"
+    ],
+    "type": "decision",
+    "title": "Decide the holds approach",
+    "detail": "Choose between a custom holds queue and a manual list for day one.",
+    "capability_ids": [
+      "CIRC-COR-04"
+    ],
+    "objective_ids": [
+      "OBJ-01"
+    ],
+    "depends_on": []
+  },
+  {
+    "id": "TD-02",
+    "track": "T1",
+    "sequence": 2,
+    "owner": "Platform Vendor",
+    "support": "",
+    "type": "vendor_question",
+    "title": "Confirm the notice centre date",
+    "detail": "Ask the vendor for the general availability date of the notice centre.",
+    "capability_ids": "CIRC-PAT-02 | CIRC-PAT-01",
+    "objective_ids": [
+      "OBJ-02"
+    ],
+    "depends_on": "TD-01"
+  },
+  {
+    "id": "TD-03",
+    "track": "T2",
+    "sequence": 1,
+    "owner": "Volunteer Team",
+    "support": [],
+    "type": "build",
+    "title": "Build the fine cap report",
+    "detail": "Build a weekly report that flags fines above the book price.",
+    "capability_ids": [
+      "CIRC-PAT-03"
+    ],
+    "objective_ids": [],
+    "depends_on": []
+  },
+  {
+    "id": "TD-04",
+    "track": "T2",
+    "owner": "Platform Vendor",
+    "support": [
+      "Library Staff"
+    ],
+    "type": "configure",
+    "title": "Configure renewal rules",
+    "detail": "Set two renewals per loan in the renewal rules profile.",
+    "capability_ids": [
+      "CIRC-COR-03"
+    ],
+    "objective_ids": [
+      "OBJ-01"
+    ],
+    "depends_on": [
+      "TD-01"
+    ]
+  }
+]

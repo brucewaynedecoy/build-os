@@ -1,0 +1,22 @@
+{
+  "baseline_to_target": [
+    {
+      "baseline_capability_id": "CIRC-COR-01",
+      "verdict": "native",
+      "evidence": "Prior run.",
+      "gap_detail": "",
+      "target_capability_ids": "LIB-COR-01 | LIB-COR-02"
+    },
+    {
+      "circ_capability_id": "CIRC-PAT-02",
+      "verdict": "preview_gap",
+      "lib_capability_ids": [
+        "LIB-PAT-02"
+      ]
+    },
+    {
+      "baseline_capability_id": "CIRC-GONE-01",
+      "verdict": "gap"
+    }
+  ]
+}

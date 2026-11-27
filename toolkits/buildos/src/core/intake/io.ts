@@ -13,7 +13,7 @@
  */
 
 import { FsReadFailure, FsWriteFailure, PathRefusedError, type FsFailureDetail } from "../shared/errors.ts";
-import type { FsDirEntry, FsPort, FsPortFactory, FsStat, InPlaceWritePort, InPlaceWritePortFactory } from "../shared/fs-port.ts";
+import { inPlaceEffectOf, inPlaceLinkRemovedOf, type FsDirEntry, type FsPort, type FsPortFactory, type FsStat, type InPlaceEffect, type InPlaceWritePort, type InPlaceWritePortFactory } from "../shared/fs-port.ts";
 import { GoError, mkdirAll, parentOf, readFileErrorText, type Location } from "../shared/go-fs.ts";
 import { goCompare } from "../shared/go-json.ts";
 import { goIsNotExist, goNotDirText, goPathError } from "../shared/go-os-error.ts";
@@ -69,6 +69,103 @@ export function newWritePlan(): WritePlan {
  * failure (missing, a folder, no permission), as Go's read failure.
  */
 export type DependentRead = { ok: true; data: Uint8Array } | { ok: false; reason: "outside" } | { ok: false; reason: "too-large"; limit: number } | { ok: false; reason: "unreadable" };
+
+/**
+ * W1 R7 P9 intake JSON review round 2 (findings 1 and 2, PE-022): intake
+ * does not undo. A failed run of `intake convert` or `intake index` keeps
+ * every folder and file that its writes made or changed, in `--json` mode
+ * as in the text form (Go parity). With `--json`, the envelope names what
+ * stayed. This record is that list. Each entry comes from the write call
+ * itself: a `mkdir` that succeeded made that folder, and the in-place
+ * writer says whether it created the file, changed an entry that was
+ * there, or left the name untouched (`InPlaceEffect`). No entry comes from
+ * a lookup before or after a write, so the file or folder of another
+ * program is never listed as BuildOS's.
+ */
+export interface WriteChange {
+  /** The Go path. */
+  path: string;
+  /** `created`: this run made it. `changed`: this run changed an entry that was there. */
+  reason: "created" | "changed";
+  folder: boolean;
+  /** Final check, finding 3: the change removed a link at the path; the file the link pointed to is not changed. */
+  link?: boolean;
+}
+
+/**
+ * What the writes of one run created or changed, each path once, in the
+ * order of the first change. Final check, finding 5: each file once too. A
+ * file write that the writer gave an identity for (the opened file's device
+ * and inode) is skipped when an earlier write of the run opened the same
+ * file under another spelling (`image1.png` and `IMAGE1.PNG` on a
+ * case-insensitive volume): the first spelling and reason stay. Distinct
+ * files have distinct identities, so they stay separate.
+ */
+export class WriteRecord {
+  private readonly changes = new Map<string, WriteChange>();
+  private readonly files = new Set<string>();
+
+  /** A folder or file that a write call of this run made. */
+  created(path: string, folder: boolean, identity?: string): void {
+    if (this.seen(identity)) return;
+    if (!this.changes.has(path)) this.changes.set(path, { path, reason: "created", folder });
+  }
+
+  /**
+   * An entry that a write call of this run changed. A path this run made
+   * first stays `created` (a second write to it, as with `--force` and two
+   * sources with one twin name, changed only what this run made).
+   */
+  changed(path: string, identity?: string, link = false): void {
+    if (this.seen(identity)) return;
+    if (!this.changes.has(path)) this.changes.set(path, { path, reason: "changed", folder: false, ...(link ? { link: true } : {}) });
+  }
+
+  /** True when an earlier file write of this run opened the file `identity`; records it otherwise. */
+  private seen(identity: string | undefined): boolean {
+    if (identity === undefined) return false;
+    if (this.files.has(identity)) return true;
+    this.files.add(identity);
+    return false;
+  }
+
+  list(): WriteChange[] {
+    return [...this.changes.values()];
+  }
+}
+
+/**
+ * A write of `intake convert` or `intake index` failed in `--json` mode
+ * after earlier write calls of the same run made or changed something.
+ * `failure` is the error; `changes` is what stays (never empty).
+ */
+export class IntakeWriteFailure extends Error {
+  readonly failure: unknown;
+  readonly changes: WriteChange[];
+
+  constructor(failure: unknown, changes: WriteChange[]) {
+    super(failure instanceof Error ? failure.message : String(failure));
+    this.name = "IntakeWriteFailure";
+    this.failure = failure;
+    this.changes = changes;
+  }
+}
+
+/**
+ * Runs `writes`. With a `record` (`--json`), a failure after a write call
+ * that made or changed something comes back as an `IntakeWriteFailure`
+ * with the record's list; a failure that changed nothing is thrown as it
+ * is. Nothing is removed or put back in either case.
+ */
+export function withRecord(record: WriteRecord | undefined, writes: () => void): void {
+  try {
+    writes();
+  } catch (error) {
+    const changes = record?.list() ?? [];
+    if (changes.length === 0) throw error;
+    throw new IntakeWriteFailure(error, changes);
+  }
+}
 
 /** Go `os.Stat`: the entry, or the OS error. */
 export type StatResult = { ok: true; stat: FsStat } | { ok: false; detail: FsFailureDetail };
@@ -287,16 +384,45 @@ export class IntakeFs {
     }
   }
 
-  /** Go `os.MkdirAll(filepath.Dir(path), 0o755)` then `os.WriteFile(path, data, 0o644)`. */
-  writeFileWithParents(path: string, data: Uint8Array): void {
+  /**
+   * Go `os.MkdirAll(filepath.Dir(path), 0o755)` then `os.WriteFile(path,
+   * data, 0o644)`. With `record` (`--json`, PE-022), each folder that a
+   * `mkdir` of this call made, and the file when the writer created or
+   * changed it, go into the record as the calls report them, also when a
+   * later step fails (review round 2). Nothing is removed after a failure.
+   *
+   * W1 R7 P9 intake JSON final check: `exists` (finding 1) is the Go error
+   * text of a command without `--force` (`output exists, use --force to
+   * overwrite: <path>`). The writer then never opens an entry at the name:
+   * an entry that another program made after the command's existence check
+   * gives this error and keeps its bytes. Finding 2: the writer is opened
+   * before the write, so a refusal of the writer itself is not taken as a
+   * change of the file.
+   */
+  writeFileWithParents(path: string, data: Uint8Array, record?: WriteRecord, exists?: string): void {
     const binding = this.writer(path);
-    mkdirAll(binding.port, binding.location(goDir(path, this.platform)));
+    const dir = binding.location(goDir(path, this.platform));
+    mkdirAll(binding.port, dir, record === undefined ? undefined : (made) => record.created(made.go, true));
+    const target = binding.location(path);
+    const writer = binding.inPlace();
+    let identity: string | undefined;
+    const options = { ...(exists === undefined ? {} : { overwrite: false }), opened: (id: string) => (identity = id) };
+    let effect: InPlaceEffect;
     try {
-      binding.inPlace().writeFileInPlace(binding.location(path).port, data, 0o644);
+      effect = writer.writeFileInPlace(target.port, data, 0o644, options);
     } catch (error) {
+      if (record !== undefined) note(record, target.go, inPlaceEffectOf(error), identity, inPlaceLinkRemovedOf(error));
       if (!(error instanceof FsWriteFailure)) throw error;
+      if (exists !== undefined && error.fs.errno === "EEXIST" && error.fs.step === "open") throw new GoError(exists);
       const op = error.fs.step === "write" ? "write" : error.fs.step === "close" ? "close" : "open";
       throw new GoError(goPathError(op, path, error.fs));
     }
+    if (record !== undefined) note(record, target.go, effect, identity, false);
   }
+}
+
+/** Puts what one in-place write did at `path` into `record`. */
+function note(record: WriteRecord, path: string, effect: InPlaceEffect, identity: string | undefined, linkRemoved: boolean): void {
+  if (effect === "created") record.created(path, false, identity);
+  else if (effect === "changed") record.changed(path, identity, linkRemoved);
 }

@@ -1,0 +1,125 @@
+{
+  "case": "frame-variants",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "frame",
+        "--frame",
+        "analysis/frame-no-objectives.json"
+      ],
+      "exit": 0,
+      "stdout": "baseline CIRC  Current Circulation System: 3 layers, 9 capabilities, 16 requirements (1 whole-capability marks)\ntarget   LIB   Candidate Library Platform: 4 layers, 8 capabilities, 9 requirements\nobjectives: 0 ({}), confirmed by: -\ntracks: 2; owners: Library Staff, Platform Vendor, Volunteer Team\n  WARN  no objectives yet. Draft them and get the person to confirm them before packages.\n  WARN  objectives_confirmed_by is empty. The person has not confirmed the objectives and weights yet. merge refuses a final build until they do.\n  WARN  layer codes differ. Baseline only: -. Target only: ['RPT']. Layer views follow the baseline.\n  frame OK\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 1,
+      "args": [
+        "frame",
+        "--frame",
+        "analysis/frame-scoring.json"
+      ],
+      "exit": 0,
+      "stdout": "baseline CIRC  Current Circulation System: 3 layers, 9 capabilities, 16 requirements (1 whole-capability marks)\ntarget   LIB   Candidate Library Platform: 4 layers, 8 capabilities, 9 requirements\nobjectives: 3 ({'must': 1, 'should': 1, 'could': 1}), confirmed by: Library Director\ntracks: 2; owners: Library Staff, Platform Vendor, Volunteer Team\n  WARN  OBJ-03: no measure of success\n  WARN  layer codes differ. Baseline only: -. Target only: ['RPT']. Layer views follow the baseline.\n  frame OK\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 2,
+      "args": [
+        "frame",
+        "--frame",
+        "analysis/frame-csv.json"
+      ],
+      "exit": 0,
+      "stdout": "baseline CIRC  Current Circulation System: 3 layers, 9 capabilities, 16 requirements (1 whole-capability marks)\ntarget   LIB   Candidate Library Platform: 4 layers, 8 capabilities, 9 requirements\nobjectives: 3 ({'must': 1, 'should': 1, 'could': 1}), confirmed by: Library Director\ntracks: 2; owners: Library Staff, Platform Vendor, Volunteer Team\n  WARN  OBJ-03: no measure of success\n  WARN  layer codes differ. Baseline only: -. Target only: ['RPT']. Layer views follow the baseline.\n  frame OK\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 3,
+      "args": [
+        "frame",
+        "--frame",
+        "analysis/frame-prior.json"
+      ],
+      "exit": 0,
+      "stdout": "prior fit-gap: 2 baseline rows found\nbaseline CIRC  Current Circulation System: 3 layers, 9 capabilities, 16 requirements (1 whole-capability marks)\ntarget   LIB   Candidate Library Platform: 4 layers, 8 capabilities, 9 requirements\nobjectives: 3 ({'must': 1, 'should': 1, 'could': 1}), confirmed by: Library Director\ntracks: 2; owners: Library Staff, Platform Vendor, Volunteer Team\n  WARN  OBJ-03: no measure of success\n  WARN  layer codes differ. Baseline only: -. Target only: ['RPT']. Layer views follow the baseline.\n  frame OK\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 4,
+      "args": [
+        "frame",
+        "--frame",
+        "analysis/frame-prior-csv.json"
+      ],
+      "exit": 0,
+      "stdout": "prior fit-gap: 1 baseline rows found\nbaseline CIRC  Current Circulation System: 3 layers, 9 capabilities, 16 requirements (1 whole-capability marks)\ntarget   LIB   Candidate Library Platform: 4 layers, 8 capabilities, 9 requirements\nobjectives: 3 ({'must': 1, 'should': 1, 'could': 1}), confirmed by: Library Director\ntracks: 2; owners: Library Staff, Platform Vendor, Volunteer Team\n  WARN  OBJ-03: no measure of success\n  WARN  layer codes differ. Baseline only: -. Target only: ['RPT']. Layer views follow the baseline.\n  frame OK\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 5,
+      "args": [
+        "frame",
+        "--frame",
+        "analysis/frame-colors.json"
+      ],
+      "exit": 0,
+      "stdout": "baseline CIRC  Current Circulation System: 3 layers, 9 capabilities, 16 requirements (1 whole-capability marks)\ntarget   LIB   Candidate Library Platform: 4 layers, 8 capabilities, 9 requirements\nobjectives: 3 ({'must': 1, 'should': 1, 'could': 1}), confirmed by: Library Director\ntracks: 2; owners: Library Staff, Platform Vendor, Volunteer Team\n  WARN  OBJ-03: no measure of success\n  WARN  layer codes differ. Baseline only: -. Target only: ['RPT']. Layer views follow the baseline.\n  frame OK\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 6,
+      "args": [
+        "frame",
+        "--frame",
+        "analysis/frame-no-plan.json"
+      ],
+      "exit": 0,
+      "stdout": "baseline CIRC  Current Circulation System: 3 layers, 9 capabilities, 16 requirements (1 whole-capability marks)\ntarget   LIB   Candidate Library Platform: 4 layers, 8 capabilities, 9 requirements\nobjectives: 3 ({'must': 1, 'should': 1, 'could': 1}), confirmed by: Library Director\n  WARN  OBJ-03: no measure of success\n  WARN  layer codes differ. Baseline only: -. Target only: ['RPT']. Layer views follow the baseline.\n  frame OK\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 7,
+      "args": [
+        "frame",
+        "--frame",
+        "analysis/frame-bad.json"
+      ],
+      "exit": 1,
+      "stdout": "baseline CIRC  Current Circulation System: 3 layers, 9 capabilities, 16 requirements (1 whole-capability marks)\ntarget   CIRC  Current Circulation System: 3 layers, 9 capabilities, 15 requirements\nobjectives: 4 ({'nice': 1, 'must': 1, 'should': 1, 'could': 1}), confirmed by: -\ntracks: 3; owners: Library Staff\n  WARN  OBJ-1: no measure of success\n  WARN  OBJ-01: no measure of success\n  WARN  OBJ-01: no measure of success\n  WARN  ?: no measure of success\n  WARN  objectives_confirmed_by is empty. The person has not confirmed the objectives and weights yet. merge refuses a final build until they do.\nframe: 18 problem(s)\n  FAIL  baseline and target have the same code\n  FAIL  mode must be 'replacement' or 'selection'\n  FAIL  objective id OBJ-01 is used 2 times\n  FAIL  objective id 'OBJ-1' must look like OBJ-01\n  FAIL  OBJ-1: weight 'nice' must be one of must, should, could\n  FAIL  OBJ-1: name is empty\n  FAIL  OBJ-1: rank must be a number (1 = most important)\n  FAIL  OBJ-01: statement is empty\n  FAIL  objective id '?' must look like OBJ-01\n  FAIL  track T1: needs id, name and a numeric order\n  FAIL  track T1: needs id, name and a numeric order\n  FAIL  track ?: needs id, name and a numeric order\n  FAIL  track id T1 is used 2 times\n  FAIL  owner_colors.Library Staff must be {\"fill\": \"RRGGBB\", \"font\": \"RRGGBB\"}\n  FAIL  owner_colors: 'Stranger' is not in the frame owners\n  FAIL  scoring.mark_points.met must be 0 to 100\n  FAIL  scoring.objective_factor.none must be 0 to 1\n  FAIL  scoring.maturity_factor.deferred must be 0 to 1\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 8,
+      "args": [
+        "frame",
+        "--frame",
+        "analysis/frame-owner-colors-shape.json"
+      ],
+      "exit": 1,
+      "stdout": "baseline CIRC  Current Circulation System: 3 layers, 9 capabilities, 16 requirements (1 whole-capability marks)\ntarget   LIB   Candidate Library Platform: 4 layers, 8 capabilities, 9 requirements\nobjectives: 3 ({'must': 1, 'should': 1, 'could': 1}), confirmed by: Library Director\ntracks: 2; owners: Library Staff, Platform Vendor, Volunteer Team\n  WARN  OBJ-03: no measure of success\n  WARN  layer codes differ. Baseline only: -. Target only: ['RPT']. Layer views follow the baseline.\nframe: 1 problem(s)\n  FAIL  owner_colors must map each owner to {\"fill\": \"RRGGBB\", \"font\": \"RRGGBB\"}\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 9,
+      "args": [
+        "frame",
+        "--frame",
+        "analysis/frame-tracks-no-owners.json"
+      ],
+      "exit": 1,
+      "stdout": "baseline CIRC  Current Circulation System: 3 layers, 9 capabilities, 16 requirements (1 whole-capability marks)\ntarget   LIB   Candidate Library Platform: 4 layers, 8 capabilities, 9 requirements\nobjectives: 3 ({'must': 1, 'should': 1, 'could': 1}), confirmed by: Library Director\ntracks: 2; owners: \n  WARN  OBJ-03: no measure of success\n  WARN  layer codes differ. Baseline only: -. Target only: ['RPT']. Layer views follow the baseline.\nframe: 1 problem(s)\n  FAIL  the frame has tracks but no owners list\n",
+      "stderr": "",
+      "files": {}
+    }
+  ]
+}

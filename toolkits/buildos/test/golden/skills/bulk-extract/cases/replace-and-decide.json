@@ -1,0 +1,285 @@
+{
+  "case": "replace-and-decide",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "start",
+        "REF-001"
+      ],
+      "exit": 0,
+      "stdout": "Created: <root>/extractions/REF-001-lending-policy.json\n",
+      "stderr": "",
+      "files": {
+        "extractions/REF-001-lending-policy.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/lending-policy.txt\",\n  \"source_sha256\": \"f4a773f1a04b5197f80d47b609701dd1907d18d03c0a9442e4ff090f85f64ab0\",\n  \"reviewed_by\": \"\",\n  \"reviewed_at\": \"\",\n  \"source_check\": {\n    \"result\": \"unverified\",\n    \"notes\": \"\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-001\",\n      \"converted\": \"assets/lending-policy/lending-policy.md\",\n      \"outcome\": \"pending\",\n      \"note\": \"\"\n    }\n  ],\n  \"candidates\": [],\n  \"unresolved\": [],\n  \"applied\": {},\n  \"extraction_ids\": [],\n  \"publication_review\": null\n}\n"
+        }
+      }
+    },
+    {
+      "step": 2,
+      "args": [
+        "decide",
+        "REF-001",
+        "--reviewer",
+        "Branch Supervisor"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: Stage 1 is not finished\n",
+      "files": {}
+    },
+    {
+      "step": 3,
+      "args": [
+        "stage",
+        "REF-001"
+      ],
+      "exit": 0,
+      "stdout": "Staged 2 candidates; review: extractions/REF-001-lending-policy.json\n",
+      "stderr": "",
+      "files": {
+        "extractions/REF-001-lending-policy.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/lending-policy.txt\",\n  \"source_sha256\": \"f4a773f1a04b5197f80d47b609701dd1907d18d03c0a9442e4ff090f85f64ab0\",\n  \"reviewed_by\": \"Circulation Analyst\",\n  \"reviewed_at\": \"2026-01-12\",\n  \"source_check\": {\n    \"result\": \"matched\",\n    \"notes\": \"Compared the converted text with the original policy.\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-001\",\n      \"converted\": \"assets/lending-policy/lending-policy.md\",\n      \"outcome\": \"reviewed\",\n      \"note\": \"\"\n    }\n  ],\n  \"candidates\": [\n    {\n      \"key\": \"renewals\",\n      \"type\": \"requirement\"\n    },\n    {\n      \"key\": \"hold-time\",\n      \"type\": \"requirement\"\n    }\n  ],\n  \"unresolved\": [],\n  \"applied\": {},\n  \"extraction_ids\": [],\n  \"publication_review\": null,\n  \"staged_at\": \"2026-01-15T12:00:00Z\"\n}\n"
+        },
+        "extractions/staging/requirements.jsonl": {
+          "text": "{\"type\": \"requirement\", \"title\": \"Renewal rule a\", \"status\": \"draft\", \"summary\": \"A patron can renew a loan (a).\", \"source_anchor\": \"assets/lending-policy/lending-policy.md#L3\", \"doc_anchor\": null, \"source_refs\": [\"assets/lending-policy/lending-policy.md#L3\"], \"related\": [], \"created_at\": null, \"updated_at\": null, \"statement\": \"The system shall allow two renewals per loan (a).\", \"rationale\": \"The lending policy allows two renewals.\", \"acceptance_refs\": [], \"_stage\": {\"key\": \"renewals\", \"action\": \"minted\", \"review_state\": \"pending\", \"ref_id\": \"REF-001\", \"authored_by\": \"Circulation Analyst\"}}\n{\"type\": \"requirement\", \"title\": \"Renewal rule b\", \"status\": \"draft\", \"summary\": \"A patron can renew a loan (b).\", \"source_anchor\": \"assets/lending-policy/lending-policy.md#L5\", \"doc_anchor\": null, \"source_refs\": [\"assets/lending-policy/lending-policy.md#L5\"], \"related\": [], \"created_at\": null, \"updated_at\": null, \"statement\": \"The system shall allow two renewals per loan (b).\", \"rationale\": \"The lending policy allows two renewals.\", \"acceptance_refs\": [], \"_stage\": {\"key\": \"hold-time\", \"action\": \"minted\", \"review_state\": \"pending\", \"ref_id\": \"REF-001\", \"authored_by\": \"Circulation Analyst\"}}\n"
+        }
+      }
+    },
+    {
+      "step": 4,
+      "args": [
+        "replace-row",
+        "REF-001",
+        "renewals"
+      ],
+      "exit": 0,
+      "stdout": "Replaced staged renewals in extractions/staging/requirements.jsonl\n",
+      "stderr": "",
+      "files": {
+        "extractions/staging/requirements.jsonl": {
+          "text": "{\"type\": \"requirement\", \"title\": \"Renewal rule, corrected\", \"status\": \"draft\", \"summary\": \"A patron can renew a loan (c).\", \"source_anchor\": \"assets/lending-policy/lending-policy.md#L3\", \"doc_anchor\": null, \"source_refs\": [\"assets/lending-policy/lending-policy.md#L3\"], \"related\": [], \"created_at\": null, \"updated_at\": null, \"statement\": \"The system shall allow two renewals per loan (c).\", \"rationale\": \"The lending policy allows two renewals.\", \"acceptance_refs\": [], \"_stage\": {\"key\": \"renewals\", \"action\": \"minted\", \"review_state\": \"pending\", \"ref_id\": \"REF-001\", \"authored_by\": \"Circulation Analyst\"}}\n{\"type\": \"requirement\", \"title\": \"Renewal rule b\", \"status\": \"draft\", \"summary\": \"A patron can renew a loan (b).\", \"source_anchor\": \"assets/lending-policy/lending-policy.md#L5\", \"doc_anchor\": null, \"source_refs\": [\"assets/lending-policy/lending-policy.md#L5\"], \"related\": [], \"created_at\": null, \"updated_at\": null, \"statement\": \"The system shall allow two renewals per loan (b).\", \"rationale\": \"The lending policy allows two renewals.\", \"acceptance_refs\": [], \"_stage\": {\"key\": \"hold-time\", \"action\": \"minted\", \"review_state\": \"pending\", \"ref_id\": \"REF-001\", \"authored_by\": \"Circulation Analyst\"}}\n"
+        }
+      }
+    },
+    {
+      "step": 5,
+      "args": [
+        "replace-row",
+        "REF-001",
+        "renewals"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: Pass one BuildOS row object without _stage on standard input\n",
+      "files": {}
+    },
+    {
+      "step": 6,
+      "args": [
+        "replace-row",
+        "REF-001",
+        "renewals"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: Row needs repair: Candidate renewals title needs nonempty text\n",
+      "files": {}
+    },
+    {
+      "step": 7,
+      "args": [
+        "replace-row",
+        "REF-001",
+        "nobody"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: No unique candidate link: nobody\n",
+      "files": {}
+    },
+    {
+      "step": 8,
+      "args": [
+        "replace-row",
+        "REF-001",
+        "renewals"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)\n",
+      "files": {}
+    },
+    {
+      "step": 9,
+      "args": [
+        "decide",
+        "REF-001",
+        "--reviewer",
+        "Circulation Analyst"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: The Stage 2 reviewer must differ from the extraction reviewer\n",
+      "files": {}
+    },
+    {
+      "step": 10,
+      "args": [
+        "decide",
+        "REF-001",
+        "--reviewer",
+        "Branch Supervisor"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: Held candidate renewals needs a review_note\n",
+      "files": {}
+    },
+    {
+      "step": 11,
+      "args": [
+        "decide",
+        "REF-001",
+        "--reviewer",
+        "Branch Supervisor"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: Each decision needs a distinct linked candidate key\n",
+      "files": {}
+    },
+    {
+      "step": 12,
+      "args": [
+        "decide",
+        "REF-001",
+        "--reviewer",
+        "Branch Supervisor"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: Invalid review_state for renewals\n",
+      "files": {}
+    },
+    {
+      "step": 13,
+      "args": [
+        "decide",
+        "REF-001",
+        "--reviewer",
+        "Branch Supervisor"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: Give a reviewer name and a JSON list of decisions\n",
+      "files": {}
+    },
+    {
+      "step": 14,
+      "args": [
+        "decide",
+        "REF-001",
+        "--reviewer",
+        "Branch Supervisor"
+      ],
+      "exit": 0,
+      "stdout": "Recorded 2 Stage 2 decisions for REF-001\n",
+      "stderr": "",
+      "files": {
+        "extractions/REF-001-lending-policy.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/lending-policy.txt\",\n  \"source_sha256\": \"f4a773f1a04b5197f80d47b609701dd1907d18d03c0a9442e4ff090f85f64ab0\",\n  \"reviewed_by\": \"Circulation Analyst\",\n  \"reviewed_at\": \"2026-01-12\",\n  \"source_check\": {\n    \"result\": \"matched\",\n    \"notes\": \"Compared the converted text with the original policy.\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-001\",\n      \"converted\": \"assets/lending-policy/lending-policy.md\",\n      \"outcome\": \"reviewed\",\n      \"note\": \"\"\n    }\n  ],\n  \"candidates\": [\n    {\n      \"key\": \"renewals\",\n      \"type\": \"requirement\"\n    },\n    {\n      \"key\": \"hold-time\",\n      \"type\": \"requirement\"\n    }\n  ],\n  \"unresolved\": [],\n  \"applied\": {},\n  \"extraction_ids\": [],\n  \"publication_review\": {\n    \"reviewed_by\": \"Branch Supervisor\",\n    \"reviewed_at\": \"2026-01-15T12:00:00Z\"\n  },\n  \"staged_at\": \"2026-01-15T12:00:00Z\"\n}\n"
+        },
+        "extractions/staging/requirements.jsonl": {
+          "text": "{\"type\": \"requirement\", \"title\": \"Renewal rule, corrected\", \"status\": \"draft\", \"summary\": \"A patron can renew a loan (c).\", \"source_anchor\": \"assets/lending-policy/lending-policy.md#L3\", \"doc_anchor\": null, \"source_refs\": [\"assets/lending-policy/lending-policy.md#L3\"], \"related\": [], \"created_at\": null, \"updated_at\": null, \"statement\": \"The system shall allow two renewals per loan (c).\", \"rationale\": \"The lending policy allows two renewals.\", \"acceptance_refs\": [], \"_stage\": {\"key\": \"renewals\", \"action\": \"minted\", \"review_state\": \"held\", \"ref_id\": \"REF-001\", \"authored_by\": \"Circulation Analyst\", \"reviewed_by\": \"Branch Supervisor\", \"reviewed_at\": \"2026-01-15T12:00:00Z\", \"review_note\": \"Check the renewal count.\"}}\n{\"type\": \"requirement\", \"title\": \"Renewal rule b\", \"status\": \"draft\", \"summary\": \"A patron can renew a loan (b).\", \"source_anchor\": \"assets/lending-policy/lending-policy.md#L5\", \"doc_anchor\": null, \"source_refs\": [\"assets/lending-policy/lending-policy.md#L5\"], \"related\": [], \"created_at\": null, \"updated_at\": null, \"statement\": \"The system shall allow two renewals per loan (b).\", \"rationale\": \"The lending policy allows two renewals.\", \"acceptance_refs\": [], \"_stage\": {\"key\": \"hold-time\", \"action\": \"minted\", \"review_state\": \"pending\", \"ref_id\": \"REF-001\", \"authored_by\": \"Circulation Analyst\", \"reviewed_by\": \"Branch Supervisor\", \"reviewed_at\": \"2026-01-15T12:00:00Z\"}}\n"
+        }
+      }
+    },
+    {
+      "step": 15,
+      "args": [
+        "check",
+        "REF-001"
+      ],
+      "exit": 0,
+      "stdout": "REF-001: held (<root>/extractions/REF-001-lending-policy.json)\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 16,
+      "args": [
+        "publish",
+        "REF-001"
+      ],
+      "exit": 0,
+      "stdout": "No approved, unpublished candidates; held and pending rows remain staged\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 17,
+      "args": [
+        "decide",
+        "REF-001",
+        "--reviewer",
+        "Branch Supervisor"
+      ],
+      "exit": 0,
+      "stdout": "Recorded 1 Stage 2 decisions for REF-001\n",
+      "stderr": "",
+      "files": {
+        "extractions/staging/requirements.jsonl": {
+          "text": "{\"type\": \"requirement\", \"title\": \"Renewal rule, corrected\", \"status\": \"draft\", \"summary\": \"A patron can renew a loan (c).\", \"source_anchor\": \"assets/lending-policy/lending-policy.md#L3\", \"doc_anchor\": null, \"source_refs\": [\"assets/lending-policy/lending-policy.md#L3\"], \"related\": [], \"created_at\": null, \"updated_at\": null, \"statement\": \"The system shall allow two renewals per loan (c).\", \"rationale\": \"The lending policy allows two renewals.\", \"acceptance_refs\": [], \"_stage\": {\"key\": \"renewals\", \"action\": \"minted\", \"review_state\": \"approved\", \"ref_id\": \"REF-001\", \"authored_by\": \"Circulation Analyst\", \"reviewed_by\": \"Branch Supervisor\", \"reviewed_at\": \"2026-01-15T12:00:00Z\"}}\n{\"type\": \"requirement\", \"title\": \"Renewal rule b\", \"status\": \"draft\", \"summary\": \"A patron can renew a loan (b).\", \"source_anchor\": \"assets/lending-policy/lending-policy.md#L5\", \"doc_anchor\": null, \"source_refs\": [\"assets/lending-policy/lending-policy.md#L5\"], \"related\": [], \"created_at\": null, \"updated_at\": null, \"statement\": \"The system shall allow two renewals per loan (b).\", \"rationale\": \"The lending policy allows two renewals.\", \"acceptance_refs\": [], \"_stage\": {\"key\": \"hold-time\", \"action\": \"minted\", \"review_state\": \"pending\", \"ref_id\": \"REF-001\", \"authored_by\": \"Circulation Analyst\", \"reviewed_by\": \"Branch Supervisor\", \"reviewed_at\": \"2026-01-15T12:00:00Z\"}}\n"
+        }
+      }
+    },
+    {
+      "step": 18,
+      "args": [
+        "replace-row",
+        "REF-001",
+        "renewals"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: Reset an approved decision before changing its row\n",
+      "files": {}
+    },
+    {
+      "step": 19,
+      "args": [
+        "publish",
+        "REF-001"
+      ],
+      "exit": 0,
+      "stdout": "Published 1 candidates as EXT-001.\n",
+      "stderr": "",
+      "files": {
+        ".os/data/extractions.jsonl": {
+          "text": "{\"id\": \"EXT-001\", \"type\": \"extraction\", \"title\": \"REF-001 source extraction\", \"status\": \"draft\", \"summary\": \"Reviewed source-backed rows from REF-001.\", \"source_anchor\": \"assets/lending-policy/lending-policy.md#L3\", \"doc_anchor\": null, \"source_refs\": [\"assets/lending-policy/lending-policy.md#L3\"], \"related\": [], \"created_at\": \"2026-01-15T12:00:00Z\", \"updated_at\": \"2026-01-15T12:00:00Z\", \"outcome_contract\": \"extraction-outcomes-v1\", \"minted\": [\"REQ-002\"], \"updated\": [], \"referenced\": [], \"extracted_by\": \"Circulation Analyst\", \"extracted_at\": \"2026-01-15T12:00:00Z\"}\n"
+        },
+        ".os/data/requirements.jsonl": {
+          "text": "{\"id\":\"REQ-001\",\"type\":\"requirement\",\"title\":\"Borrow limit\",\"status\":\"draft\",\"summary\":\"A patron can borrow up to five books.\",\"source_anchor\":\"assets/lending-policy/lending-policy.md#L3\",\"doc_anchor\":null,\"source_refs\":[\"assets/lending-policy/lending-policy.md#L3\"],\"related\":[],\"created_at\":\"2026-01-10T08:00:00Z\",\"updated_at\":\"2026-01-10T08:00:00Z\",\"statement\":\"The system shall limit a patron to five loans at once.\",\"rationale\":\"The lending policy sets the limit.\",\"acceptance_refs\":[],\"shelf_note\":\"Keep this custom field\"}\n{\"type\": \"requirement\", \"title\": \"Renewal rule, corrected\", \"status\": \"draft\", \"summary\": \"A patron can renew a loan (c).\", \"source_anchor\": \"assets/lending-policy/lending-policy.md#L3\", \"doc_anchor\": null, \"source_refs\": [\"assets/lending-policy/lending-policy.md#L3\"], \"related\": [], \"created_at\": \"2026-01-15T12:00:00Z\", \"updated_at\": \"2026-01-15T12:00:00Z\", \"statement\": \"The system shall allow two renewals per loan (c).\", \"rationale\": \"The lending policy allows two renewals.\", \"acceptance_refs\": [], \"id\": \"REQ-002\"}\n"
+        },
+        "extractions/REF-001-lending-policy.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/lending-policy.txt\",\n  \"source_sha256\": \"f4a773f1a04b5197f80d47b609701dd1907d18d03c0a9442e4ff090f85f64ab0\",\n  \"reviewed_by\": \"Circulation Analyst\",\n  \"reviewed_at\": \"2026-01-12\",\n  \"source_check\": {\n    \"result\": \"matched\",\n    \"notes\": \"Compared the converted text with the original policy.\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-001\",\n      \"converted\": \"assets/lending-policy/lending-policy.md\",\n      \"outcome\": \"reviewed\",\n      \"note\": \"\"\n    }\n  ],\n  \"candidates\": [\n    {\n      \"key\": \"renewals\",\n      \"type\": \"requirement\"\n    },\n    {\n      \"key\": \"hold-time\",\n      \"type\": \"requirement\"\n    }\n  ],\n  \"unresolved\": [],\n  \"applied\": {\n    \"renewals\": {\n      \"id\": \"REQ-002\",\n      \"action\": \"minted\",\n      \"candidate_sha256\": \"fabad902f9865231755b079f6b5d1eb2bc2c69997a16b1f9c372dce2cc78e9a0\",\n      \"authored_by\": \"Circulation Analyst\",\n      \"reviewed_by\": \"Branch Supervisor\",\n      \"reviewed_at\": \"2026-01-15T12:00:00Z\"\n    }\n  },\n  \"extraction_ids\": [\n    \"EXT-001\"\n  ],\n  \"publication_review\": {\n    \"reviewed_by\": \"Branch Supervisor\",\n    \"reviewed_at\": \"2026-01-15T12:00:00Z\"\n  },\n  \"staged_at\": \"2026-01-15T12:00:00Z\"\n}\n"
+        },
+        "extractions/staging/requirements.jsonl": {
+          "text": "{\"type\": \"requirement\", \"title\": \"Renewal rule b\", \"status\": \"draft\", \"summary\": \"A patron can renew a loan (b).\", \"source_anchor\": \"assets/lending-policy/lending-policy.md#L5\", \"doc_anchor\": null, \"source_refs\": [\"assets/lending-policy/lending-policy.md#L5\"], \"related\": [], \"created_at\": null, \"updated_at\": null, \"statement\": \"The system shall allow two renewals per loan (b).\", \"rationale\": \"The lending policy allows two renewals.\", \"acceptance_refs\": [], \"_stage\": {\"key\": \"hold-time\", \"action\": \"minted\", \"review_state\": \"pending\", \"ref_id\": \"REF-001\", \"authored_by\": \"Circulation Analyst\", \"reviewed_by\": \"Branch Supervisor\", \"reviewed_at\": \"2026-01-15T12:00:00Z\"}}\n"
+        }
+      }
+    },
+    {
+      "step": 20,
+      "args": [
+        "status"
+      ],
+      "exit": 0,
+      "stdout": "5 sources; 6 converted records\nProgress comes from root review files and tagged staged rows; check REF-ID verifies links.\ncomplete: 0\nready-to-stage: 0\nstaged: 1\nreviewed: 0\nheld: 0\npublishing: 0\nin-progress: 0\nblocked: 0\nneeds-repair: 0\npending: 4\n",
+      "stderr": "",
+      "files": {}
+    }
+  ]
+}

@@ -28,7 +28,8 @@
 // happened on a system the developer cannot run.
 
 import assert from "node:assert/strict";
-import { execFileSync, spawnSync, type SpawnSyncReturns } from "node:child_process";
+import { spawnSync, type SpawnSyncReturns } from "node:child_process";
+import { createHash } from "node:crypto";
 import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, truncateSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
@@ -1388,25 +1389,40 @@ describe("the wrapper helper's installed-package and PATH rules", () => {
   });
 });
 
-/** The Go-era `buildos` wrapper, exactly as commit 7cfc0b7 shipped it (from git, or the same text when git is not there). */
+/**
+ * The Go-era `buildos` wrapper, exactly as commit 7cfc0b7 shipped it. That
+ * commit is in the earlier history, which exists only in the private archive
+ * repository `brucewaynedecoy/build-os-archive`, so the text is kept here and
+ * never read from git. Its SHA-256 is GO_ERA_WRAPPER_SHA256.
+ */
+const GO_ERA_WRAPPER_SHA256 = "ba55476467d14d9de6ed1ba682206604eb645d6b472d1d1821b6aad0f4f158c8";
 function goEraWrapper(): string {
-  try {
-    return execFileSync("git", ["show", "7cfc0b7:system/.os/scripts/buildos"], { cwd: repoRoot, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
-  } catch {
-    return [
-      "#!/usr/bin/env sh",
-      "set -eu",
-      "",
-      'if [ "${BUILDOS_BIN:-}" ]; then',
-      '  exec "$BUILDOS_BIN" "$@"',
-      "fi",
-      "",
-      "if command -v buildos >/dev/null 2>&1; then",
-      '  exec buildos "$@"',
-      "fi",
-      "",
-    ].join("\n");
-  }
+  const text = [
+    "#!/usr/bin/env sh",
+    "set -eu",
+    "",
+    'if [ "${BUILDOS_BIN:-}" ]; then',
+    '  exec "$BUILDOS_BIN" "$@"',
+    "fi",
+    "",
+    "if command -v buildos >/dev/null 2>&1; then",
+    '  exec buildos "$@"',
+    "fi",
+    "",
+    'script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)',
+    'dev_root=$(CDPATH= cd -- "$script_dir/../../.." && pwd)',
+    'local_bin="$dev_root/toolkits/buildos/bin/buildos"',
+    "",
+    'if [ -x "$local_bin" ]; then',
+    '  exec "$local_bin" "$@"',
+    "fi",
+    "",
+    "printf '%s\\n' \"buildos binary not found. Set BUILDOS_BIN or build the staged source binary with 'just build-buildos'.\" >&2",
+    "exit 127",
+    "",
+  ].join("\n");
+  assert.equal(createHash("sha256").update(text).digest("hex"), GO_ERA_WRAPPER_SHA256, "the Go-era wrapper text changed");
+  return text;
 }
 
 // P6-R2-14: `cmd.exe` reads redirection and command characters even in a comment line.

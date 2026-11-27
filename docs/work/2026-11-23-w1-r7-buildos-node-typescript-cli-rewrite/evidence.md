@@ -65,6 +65,9 @@ This report keeps acceptance, review, and performance evidence for the [W1 R7 ba
 | 2026-11-25 | Answer 7: parity exception PE-021 approved. `.xlsx` parity is checked by workbook content, not by file bytes. Built on the `0.2.0` branch `rewrite/ts-cli-p9`. | `0.2.0` (`fitgap` workbook output) | Owner decision relayed by the orchestrating maintainer chat; [Owner Decisions 2026-11-25](#owner-decisions-2026-11-25) |
 | 2026-11-25 | Answer 8: SD-04 accepted. `fitgap` and `export azure-boards` read only files inside the project. Built on the `0.2.0` branch `rewrite/ts-cli-p9`. | `0.2.0` (`fitgap`, `export azure-boards`) | Owner decision relayed by the orchestrating maintainer chat; [Owner Decisions 2026-11-25](#owner-decisions-2026-11-25) |
 | 2026-11-25 | Orchestrator design decision (pin-first review round 1): the wrappers stop starting the program on `PATH` to learn its version. They accept only an npm install of exactly the pinned version, found from its `package.json`, and run its bin file with the same Node.js; any other layout runs the pinned version through `npx`. | PRD 06 wrapper resolution; `Q-015` | Orchestrator decision; [Pin-First Wrappers Review Round 1](#pin-first-wrappers-review-round-1) |
+| 2026-11-25 | `D-010` is decided with option A: `buildos intake` gains the shared `--json` envelope in `0.2.0`, for `intake convert`, `intake index references`, and `intake index playbooks`. The owner approved the difference from the Go intake tool as parity exception PE-022. | W1 R7 P9; PRD 20 Output and Exit Contract; register `D-010` | Owner decision of 2026-11-25 (option A for each), relayed by the orchestrating maintainer chat; [P9 Owner Decisions 2026-11-25](#p9-owner-decisions-2026-11-25) |
+| 2026-11-25 | The owner approved parity exception PE-021 as written (option A of P9 owner question 1): `.xlsx` parity is checked by workbook content, not by file bytes. It moved from `proposed-exceptions.json` to `parity-exceptions.json`. | W1 R7 P9 t3 and A76 | Owner decision of 2026-11-25 (option A for each), relayed by the orchestrating maintainer chat; [P9 Owner Decisions 2026-11-25](#p9-owner-decisions-2026-11-25) |
+| 2026-11-25 | The owner accepted `SD-04` (option A of P9 owner question 2): `fitgap` and `export azure-boards` read only files inside the project, with or without `--allow-outside-root`. No code change. | W1 R7 P9; `test/golden/skills/divergences.json` SD-04 | Owner decision of 2026-11-25 (option A for each), relayed by the orchestrating maintainer chat; [P9 Owner Decisions 2026-11-25](#p9-owner-decisions-2026-11-25) |
 
 ## P1 TypeScript Package Foundation
 
@@ -5577,3 +5580,790 @@ Check results for this round (2026-11-26, macOS, this machine's Node.js 26.13.1,
 | `git diff --check` | clean |
 
 Not done in this round: the full `npm test` (no source or test changed), and the Windows `.cmd` form of the workaround.
+
+## P9 Skill-Script Commands
+
+On 2026-11-24, W1 R7 P9 Stage 1 (script goldens, t1 to t3) and Stage 2 (commands, t4 to t8) were built on the branch `rewrite/ts-cli-p9` from `38d1e08`, on macOS arm64 with Node 26.13.1 and Python 3.14.10 (for the capture only). Nothing was pushed, merged, published, staged, tagged, or released. The package version stays `0.0.0-dev`, and `release-candidates.json` is unchanged.
+
+Commit hashes and branch names in the P9 sections of this report, in the P9 history records, and in the P9 test and golden files (for example `38d1e08`, `576d9ce`, and the branches `rewrite/ts-cli-p9` to `rewrite/ts-cli-p9-owner4`) name commits and branches of the earlier history, which exists only in the private archive repository `brucewaynedecoy/build-os-archive`: the public repository starts from one clean commit (owner decision of 2026-11-25). The P9 Stage 1 and Stage 2 work came into the public repository on 2026-11-26 as file content only; see [P9 Move to the Public Repository](#p9-move-to-the-public-repository-2026-11-26).
+
+### Order Departure
+
+The phase entry gate is "P8 exit gate passed". P8 waits on owner actions, so the orchestrator started Stages 1 and 2 early, implementation only, on a separate branch, so that the `0.1.0` release candidate on `rewrite/ts-cli` does not gain the `0.2.0` commands. This is a recorded departure from the default arc. Stage 3 (skill updates and script deletion, the no-Python CI check, the CI image without Python, the guide and README, and the release) is not started and waits for the P8 exit gate.
+
+### Commands
+
+| Command | Subcommands | Shared options |
+| --- | --- | --- |
+| `buildos extract bulk` | `status`, `next [--count N] [--stage extract\|review]`, `show REF-ID`, `start REF-ID`, `template TYPE`, `check REF-ID`, `stage REF-ID [--author NAME]`, `stage-update REF-ID ROW-ID --key KEY`, `replace-row REF-ID KEY` (row on standard input), `decide REF-ID --reviewer NAME` (decisions on standard input), `publish REF-ID` | `--root`, `--json` |
+| `buildos fitgap` | `frame`, `packages`, `uncited`, `merge`, `workbook` (the script's options, below) | `--root`, `--json`, `--allow-outside-root` |
+| `buildos export azure-boards` | `emit`, `validate`, `template`, `adapters` (the script's options, below) | `--root`, `--json`, `--allow-outside-root` |
+
+Each command has domain help (`buildos extract --help`, `buildos extract bulk --help`, `buildos fitgap --help`, `buildos export --help`, `buildos export azure-boards --help`), the shared JSON envelope (`extract.bulk.<subcommand>`, `fitgap.<subcommand>`, `export.azure-boards`), and PRD 20 exit codes. Root help lists `extract`, `fitgap`, and `export`. They are new commands with no Go equivalent, so no Go golden covers them; the only Go-parity effect is the exact root help value that parity exception PE-001 pins (updated; no golden file changed). The skills router was not changed: no test needs it, and Stage 3 updates the skills.
+
+### Script Surface and Fixture Coverage (t1)
+
+Fixtures are in `toolkits/buildos/test/fixtures/skills/<script>/`, made by `test/fixtures/skills/generate-<script>.ts` (deterministic; run once after a change). Every input is invented, on the one neutral topic (a community library's book-lending system). A case copies a base project, lays an overlay over it, and runs its steps: a command, a file written into the project (an agent's edit), or a removal. 60 cases, 300 command runs: `bulk-extract` 35 cases (142 runs), `fitgap` 14 (62), `azure-boards` 11 (96). Each fixture folder keeps its bytes on every OS (`.gitattributes` `-text`).
+
+`work.py` (`buildos extract bulk`):
+
+| Subcommand or option | Cases |
+| --- | --- |
+| `--repo-root` (BuildOS: `--root`) | every case |
+| `status` | `status-fresh`, `full-flow`, `blocked-and-no-rows`, `replace-and-decide`, `needs-repair`, `bad-review-json`, `large-queue` (300 sources), every `index-errors-*` |
+| `next`, `--count`, `--stage` | `status-fresh`, `start-twice`, `full-flow`, `large-queue`, `index-errors-empty`, `next-count-zero`, `next-count-negative`, `usage-errors` (a bad `--stage`) |
+| `show` | `show-group` (two converted files), `full-flow`, `legacy-review`, `large-queue`, `check-pending` (unknown ID), `staged-file-errors` |
+| `start` | `start-twice` (also the file that exists), and every flow case |
+| `template` (all seven types) | `templates`; `usage-errors` (a bad type) |
+| `check` | `check-pending` (pending), `start-twice` (in progress), `csv-anchors` (CSV row anchors with a quoted line break, a row past the end), `needs-repair` (36 problems of one review), `legacy-review` and `legacy-review-broken` (format before version 2, also with a publication review), `bad-review-json`, `blocked-and-no-rows` (blocked with notes; complete), `full-flow` (ready to stage, staged, reviewed, complete), `update-flow`, `data-errors-json`, `data-errors-duplicate`, `staged-file-errors` |
+| `stage`, `--author` | `full-flow`, `author-rules` (a blank name), `stage-before-review`, `needs-repair`, `legacy-review`, `csv-anchors`, `unicode-faq`, `row-too-long`, `update-flow`, `data-crlf` |
+| `stage-update`, `--key` | `update-flow` (a copy, a key that exists, an unknown row), `data-crlf`; `usage-errors` (no `--key`) |
+| `replace-row` (standard input) | `replace-and-decide`: a good row, a row with `_stage`, a row that fails a check, an unknown key, input that is not JSON, an approved row |
+| `decide`, `--reviewer` (standard input) | `full-flow`, `blocked-and-no-rows` (an empty list), `stage-before-review`, `replace-and-decide` (before staging, the same reviewer, held with no note, an unknown key, a bad state, not a list, held and pending, approved); `usage-errors` (no `--reviewer`) |
+| `publish` | `full-flow` (also a second time), `update-flow` (an updated row replaces the saved row), `replace-and-decide` (nothing approved, then one row), `blocked-and-no-rows` (no rows to publish), `row-too-long` (a run row over 64 KiB is refused), `stage-before-review`, `data-crlf` (CRLF and blank lines kept), `unicode-faq` |
+| Index and data errors | `index-errors-missing`, `-json`, `-shape`, `-duplicate`, `-record`, `-leaves`, `-absolute`, `-hash`, `-empty` (`references: null`) |
+| Unicode, CRLF, byte order mark | `unicode-faq` (a converted file with a byte order mark and CRLF; non-ASCII rows and reviewer), `data-crlf`, `csv-anchors` |
+
+Not covered, and why: resuming a publication that a crash interrupted (`publishing`, `changed during publication`, `Pending publication does not match`): it needs a crash between two writes of one publication, and the intent's hashes cannot be written by hand reliably; the TypeScript code is a line-by-line port of `resume_publication`, and `full-flow` runs the same function on its normal path. Lock contention: `flock` waits, which a golden cannot show (a hostile test covers BuildOS's lock file, SD-09). Write failures (permissions): not reproducible on Windows or in git (hostile tests cover BuildOS). The Windows `msvcrt` lock branch: macOS capture only.
+
+`fitgap.py` (`buildos fitgap`):
+
+| Subcommand or option | Cases |
+| --- | --- |
+| `frame --frame` | `frame-ok`; `frame-variants` (no objectives, scoring overrides with floats, CSV systems with a byte order mark and quoted line breaks, prior fit-gap JSON and CSV, owner colors, no plan, every check that fails, `owner_colors` of the wrong shape, tracks with no owners); `frame-stops` (an unknown scoring key, no target, a CSV with no maturity, incomplete CSV options, an unknown layer, duplicate IDs, a bad maturity, no code, a missing model, a model and a frame that are not JSON, a missing frame) |
+| `packages --frame --out [--max-requirements]` | `packages`: the default 180, 4 (with prior rows), 0 (one capability each, CSV systems), a stale `pkg-09.json` removed, no objectives |
+| `uncited --frame --rows [--out]` | `uncited`: a quoted pattern with an output file, one named file, a pattern that matches nothing and one with a character class |
+| `merge --frame --rows [--only] [--findings] [--todos] --out [--date] [--draft]` | `merge-draft`; `merge-and-workbook` (final, with tracks, owners, and to-dos); `merge-problems` (25, 79, and 26 problems, so the `… and N more` line, a file that is not an array, a missing gap detail, no target-only rows, no findings, unconfirmed objectives, no to-do list, unscored capabilities); every `workbook-*` case (the default `--date` from the fixed clock in three of them) |
+| `workbook --frame --fitgap [--out]` | `merge-and-workbook` (the default output path), `workbook-owner-colors` (`--out`, one owner colored by the frame, the others by the palette), `workbook-no-palette` (plain owners), `workbook-no-plan` (no Roadmap and To-Dos, a draft), `workbook-scoring` (float scoring, selection mode), `workbook-mismatch` (other models, a model error, a missing merged file) |
+| Owner names and colors | from the frame (`owners`, `owner_roles`, `owner_colors`) and from the palette fallback (`.os/skills/fit-gap-analysis/config/owner-colors.json` in the project; beside the script for the capture) |
+| Usage | `arguments` (no subcommand, an unknown one, missing options, a bad number, an extra argument) |
+| Unicode | an em dash and accented letters in a capability name, an emoji in a target capability name |
+
+Not covered, and why: the openpyxl-missing stop (`workbook needs openpyxl`): BuildOS needs no openpyxl. A workbook that fails its own check: the script keeps it (exit 1); a hostile test covers BuildOS (SD-12). A division by zero (a baseline with no capabilities) and other Python crashes on malformed values: hostile tests (SD-11).
+
+`azure_boards_csv.mjs` (`buildos export azure-boards`):
+
+| Subcommand or option | Cases |
+| --- | --- |
+| `emit --input --output [--profile]` | `emit-synthetic` (the skill's synthetic manifest; equal to its golden CSV), `emit-holds-profiles` (all three profiles, escaping, tags, defaults, nested lists, a nested output folder, a manifest with a byte order mark, a filled `Assigned To` refused), `emit-d365` |
+| `--adapter`, `--adapter-params`, `--publisher-prefix` | `emit-d365`, `adapter-params-errors` (bad JSON, not an object, `new_`, an unknown adapter, a missing, default, invalid, and long prefix, an adapter on a manifest without its rows), `adapter-rules` (every Dynamics 365 CE rule and warning, a wrong prefix, two prefixes, no work item) |
+| `validate --input [--profile ...\|auto]` | `emit-synthetic`, `emit-holds-profiles`, `emit-d365`, `adapter-rules`, `csv-checks` (every check: no byte order mark, empty, unterminated, headers only, wrong headers, field count, two titles, wrong type, no parent, IDs in a new profile, placeholders and a checkbox, Description structure, HTML tags, more than 1,000 rows, the update and new profiles, LF records, Unicode, a missing file) |
+| `template --output [--profile]` | `templates` (each profile, `auto` refused, missing `--output`) |
+| `adapters` | `adapters` |
+| `help`, `--help`, `-h`, no command | `help` |
+| Argument errors and manifest errors | `arguments`, `manifest-errors` (every manifest check, not JSON, a missing file, a folder, `null`) |
+
+Not covered: a write failure of `emit` or `template` (a hostile test covers BuildOS).
+
+### Capture Record (t2)
+
+`toolkits/buildos/test/golden/skills/capture.ts` writes the goldens (`test/golden/skills/<script>/cases/<case>.json`, and the workbooks openpyxl wrote in `test/golden/skills/fitgap/xlsx/`), and `--check` compares and writes nothing:
+
+```sh
+node test/golden/skills/capture.ts --python <venv>/bin/python            # all three scripts
+node test/golden/skills/capture.ts --check --script fitgap --python <venv>/bin/python
+```
+
+It reads each script from git at `38d1e08` (`git show`) and refuses one whose SHA-256 differs from `test/golden/skills/script-sha256.json`: `work.py` `1ab581af…e1b5`, `fitgap.py` `796aca12…88e6`, `azure_boards_csv.mjs` `e5f3b616…0318`, `adapters/dynamics-365-ce.mjs` `5f20eea0…f5d4`. `capture-record.json` names Python 3.14.10 (`-P -s`, `PYTHONHASHSEED=0`, `TZ=UTC`, `LC_ALL=C.UTF-8`, `PYTHONIOENCODING=utf-8`), openpyxl 3.1.5 and et_xmlfile 2.0.0 with the SHA-256 of each one's installed `RECORD` file (`42867ad4…1f45`, `137ac111…85c6`), Node v26.13.1, `darwin arm64`, and the clock. The openpyxl copy came from the local uv cache into a throwaway virtual environment under the temporary folder (the network check for PyPI failed in the sandbox); nothing was installed globally or committed.
+
+Determinism: the scripts embed the time (`work.py` time stamps, `fitgap.py` `--date`), so a small runner fixes the clock at `2026-01-15T12:00:00Z` (it replaces `datetime.datetime.now` for `work.py` and `datetime.date.today` for `fitgap.py`, then runs the script with `runpy`); BuildOS gets the same clock through `RunOptions.now`. `work.py` writes the keys of a Python set, whose order changes with each run's hash seed, so the capture fixes `PYTHONHASHSEED=0` (divergence SD-08). Normalizations: N1 the project folder (as given and resolved) becomes `<root>`, and on Windows a `\` after `<root>` in BuildOS output becomes `/`; N2 a Python traceback keeps its last line; N3 a workbook is recorded by its SHA-256 and compared by content; N4 the fixed clock. `--check` passed for all three scripts after the final capture (openpyxl writes the current time into each workbook, so `--check` compares workbooks by content).
+
+### The `.xlsx` Rule (t3, proposed PE-021)
+
+`test/xlsx-compare.ts` reads both workbooks with the repository's own reader, `src/core/fitgap/xlsx-read.ts` (the port of Go's `encoding/xml` and the intake ZIP reader, extended for styles, tables, links, and conditional formats), and compares content. Proposed parity exception PE-021 in `test/golden/proposed-exceptions.json`, pending an owner decision (A76), says:
+
+> Skill-script parity for a .xlsx file compares workbook content, not archive bytes: buildos fitgap workbook writes its own Office Open XML parts (zipped with the bundled fflate), and the fitgap.py script wrote them with openpyxl, so the bytes always differ. Equal are the sheet names and order and the opening sheet; every cell that has a value or a style, with its value and type (text, number, boolean, formula), font (bold, italic, underline, size, color), solid fill color, alignment (vertical, wrap), and number format; merged cells, column widths, row heights, and frozen panes; internal links; tables (name, range, columns, style, row stripes); conditional formats (range, type, priority, operator, formula, the format's fill and font color, color-scale and data-bar points and colors); the landscape fit-to-width page setup; and the document title and creator. Not compared: archive bytes, ZIP times and entry order, XML spelling, style and string indexes, the color alpha byte (openpyxl writes 00, BuildOS FF), the document times (BuildOS writes the fixed 2000-01-01T00:00:00Z), the application name, and parts the skill does not set.
+
+A difference is reported by sheet, cell, and field only, never a cell value (`test/xlsx-compare.test.ts` shows it). All six workbook steps compare equal.
+
+Update 2026-11-25: the owner approved PE-021 as written, and it moved to `test/golden/parity-exceptions.json`. See [P9 Owner Decisions 2026-11-25](#p9-owner-decisions-2026-11-25).
+
+### Port Map (t4 to t6)
+
+| Script function | TypeScript |
+| --- | --- |
+| `work.py` `normalize_anchor_path`, `saved_anchor_issue`, `utc_datetime_ok`, `extraction_row_issues`, `list_field_issues`, `is_date`, `is_reference`, `is_narrative_reference`, `row_field_issues`, `candidate_template`, `row_hash`, `json_line`, `next_id`, `valid_publication_review` | `src/core/extract/bulk-rules.ts` (the same rules as `src/core/validate/checks.ts`; `is_date` is Python's C `fromisoformat`, `src/core/shared/py-datetime.ts`) |
+| `work.py` `file_at`, `groups_from_index`, `group_for`, `canonical_records`, `digest`, `converted_anchor_issue`, `legacy_review_state`, `source_issues`, `candidate_issues`, `modern_review_state`, `review_state`, `require_modern`, `read_stage`, `all_stage_rows`, `write_stage`, `pure_row`, `stage`, `stage_update`, `replace_row`, `decide`, `pending_publications`, `publication_plan`, `apply_operations`, `row_limit_issues` (the read-limits rule of `src/core/shared/read-limits.ts`), `resume_publication`, `publish`, `main` | `src/core/extract/bulk.ts` (`runBulk`); file access in `bulk-files.ts`; line and CSV row counts and `PurePath.suffix` in `py-lines.ts` |
+| `work.py` `save_json`, `save_bytes`, `replace_file`, `lock_directory`, `unlock_directory` | `BulkFs.replace` (the port's atomic write), `BulkFs.lock` and `unlock` (a lock file, SD-09) |
+| `fitgap.py` `load`, `dump`, `globs`, `split_list`, `J`, `color_pair`, `owner_color_problems`, `owner_colors`, `die`, `fail_on`, `read_frame`, `resolve`, `read_csv`, `layer_sort`, `load_system`, `load_prior`, `load_rows`, `cmd_frame`, `cmd_packages`, `cited_targets`, `cmd_uncited`, `derive_verdict`, `cmd_merge` | `src/core/fitgap/fitgap.ts`; Python value rules (`round`, `sum`, f-string widths, `sorted`, reprs) in `src/core/fitgap/py.ts` |
+| `fitgap.py` `cmd_workbook` (openpyxl) | `src/core/fitgap/workbook.ts` (sheets), `xlsx-write.ts` (Office Open XML parts), `xlsx-read.ts` (the check after the write), `xlsx-model.ts`; ZIP through `src/adapters/xlsx-zip.ts` (`fflate` `zipSync`, admitted in P4) |
+| `azure_boards_csv.mjs` and `adapters/dynamics-365-ce.mjs` | `src/core/export/azure-boards/csv.ts`, `dynamics-365-ce.ts`, `export.ts` |
+| Python `json` (order, `int` and `float`, error text), `repr`, `str.strip`, `splitlines`, UTF-8 errors, `OSError` text | `src/core/shared/py-json.ts`, `src/core/shared/py-text.ts` |
+| File reads and planned writes of the commands | `src/core/shared/project-files.ts` (`ProjectFiles`, `WritePlan`) |
+| CLI | `src/cli/commands/extract.ts`, `fitgap.ts`, `export.ts`, `skill-output.ts`; standard input in `src/cli/io.ts`; the clock in `RunOptions.now` |
+
+`fflate` 0.8.3 was already admitted (P4, owner decision 2026-11-23); no package was added. Core loads no outside package: the ZIP writer is behind the adapter.
+
+### Divergences From the Scripts (t8)
+
+`toolkits/buildos/test/golden/skills/divergences.json` records each one; `test/skill-script-parity.test.ts` fails on any difference that no entry allows and on an entry that no longer differs.
+
+| ID | Divergence | Changes a result |
+| --- | --- | --- |
+| SD-01 | Exit codes follow PRD 20 (2 usage, 3 input, 4 check, 5 write, 10 not undone); the scripts exited 1 or 2. A rule table maps each script exit | Only the failing code |
+| SD-02 | Usage and help text name `buildos` (argparse and the script's own usage before) | No |
+| SD-03 | `fitgap`: one plain line instead of a traceback, exit 3; each crash step's text is pinned | No |
+| SD-04 | Reads stay inside the project folder (the scripts read any path) | **Yes, for a run that reads a file outside the project (owner question 2)** |
+| SD-05 | Writes are inside the project unless `--allow-outside-root`, checked before the first write, atomic, and undone after a failure | Yes, for an output outside the project: pass the switch |
+| SD-06 | Bounded reads (128 MiB; 512 MiB for hashed sources), bounded standard input, 512 JSON levels, read-back sizes | Only past a limit |
+| SD-07 | The root as given (not resolved); relative paths in messages use `/` on every system | No |
+| SD-08 | A fixed key order of an extraction row's outcome lists (the script's order changed with the hash seed) | No |
+| SD-09 | A lock file instead of `flock`; a second command stops instead of waiting | Only for two commands at once |
+| SD-10 | UTF-8 on every system (the script used the locale on Windows); a failed command removes the empty folders it made | Yes, on Windows, for non-ASCII review text |
+| SD-11 | Malformed values that crashed a script give one plain line | No |
+| SD-12 | The workbook is BuildOS's own writer's (content compared, PE-021), written only when its check passes, with a fixed document time | No |
+| SD-13 | The palette is read from the project's `.os/skills/fit-gap-analysis/config/`; patterns expand inside the project | No |
+| SD-14 | A prototype name is an unknown profile (the script crashed) | No |
+
+Byte-for-byte results: every stdout, stderr, CSV, Markdown, JSON, and JSONL file of the 300 runs equals the script's, except the 20 usage and help steps (SD-02) and the 5 crash steps (SD-03); every exit code equals its SD-01 rule; all six workbooks equal openpyxl's by content.
+
+### Hostile-Input Tests (t8)
+
+`test/skill-script-hostile.test.ts` (23 tests): reads outside the root (an input, a model a frame names, a frame through a folder link, an index source through a link), writes outside the root (refused, then allowed with the switch; a folder link out), a failed write that puts back every file (`fitgap packages` with a blocked later file), an output folder that cannot be written (POSIX only), empty folders removed after a failure, a 128 MiB + 1 manifest not read, JSON 600 levels deep, standard input over 128 MiB, the lock file, two marks with no requirement ID, a frame of the wrong type, a workbook whose check fails (no file), a prototype profile name, the `--json` envelope of every command on success and failure (A78), and help and usage errors. `test/fitgap-xlsx.test.ts` (3 tests) checks the package structure (well-formed XML, a content type for every part, every relationship target, style, string, format, and table index in range, table columns equal to their header cells, valid and unique sheet and table names, the schema order of sheet elements, the fixed document time, and no user name) and that two builds give the same bytes. The boundary test (P1) scans the new core files with the rest; it passes (A78).
+
+### Human Experience Review (fit-gap workbook part)
+
+The agent read the BuildOS workbook beside openpyxl's for the main fixture through the content model: the same 13 sheets in the same order with the Summary first, the same headings, owner names, and verdict, mark, and owner colors; the comparison found no difference. openpyxl 3.1.5 opened the BuildOS workbook with warnings turned into errors and read the sheet names, the frozen pane, the tables, and the fonts. It was not opened in Microsoft Excel, LibreOffice, or Numbers: none is on this machine, and the sandbox blocks starting apps. Result: `satisfied` with that limit; the phase-close review is still open.
+
+### Acceptance Criteria (Stages 1 and 2)
+
+| ID | Result | Evidence |
+| --- | --- | --- |
+| A76 | Open: goldens exist for all 60 cases; the rule is recorded as proposed PE-021, pending the owner decision | [The `.xlsx` Rule](#the-xlsx-rule-t3-proposed-pe-021) |
+| A77 | Pass on macOS (64 parity tests); three-OS CI not run (nothing pushed) | `test/skill-script-parity.test.ts` |
+| A78 | Pass | the boundary test; `test/skill-script-hostile.test.ts` envelope tests |
+
+### Check Results (P9 Stages 1 and 2)
+
+From `toolkits/buildos/` unless noted. macOS arm64, Node 26.13.1; npm with a cache folder under the temporary folder.
+
+| Check | Result |
+| --- | --- |
+| `npm ci --ignore-scripts` | exit 0 (fresh worktree) |
+| `npm run typecheck` | exit 0 |
+| `npm run build` | exit 0; `dist/buildos.js` 3,638,507 bytes (3,312,247 at `38d1e08`: +326,260) |
+| `npm test` after the build | exit 0; 2,491 tests, 2,479 pass, 0 fail, 12 skipped (the same Windows-only and POSIX-only cases); 93 new tests (64 parity, 23 hostile and envelope, 3 workbook structure, 3 workbook comparison) |
+| `npm run check:deps`, `check:deps:installed` | both `dependency policy: ok` |
+| `node scripts/reproducible-pack.ts --allow-dirty` | pass: 173 entries, the same SHA-256 twice |
+| `npm pack`, offline install, `BUILDOS_GOLDEN_BIN_DIR=<installed .bin> node --test test/golden/compare.test.ts` | 173 files; 167 of 167; no golden file changed |
+| `capture.ts --check` (all three scripts) | exit 0 with Python 3.14.10, openpyxl 3.1.5, Node 26.13.1 |
+| End to end, installed tarball, a project from `buildos init --skip-make-docs` | `intake convert` and `index references`, then `extract bulk` status, start, check, stage, decide, publish; `validate` and `entities validate --mode compat` pass on the published rows; `fitgap` frame, packages, uncited, merge, and workbook; `export azure-boards` emit (equal to the skill's golden CSV), validate, and adapters |
+| Deny-list check, an invented list, `--root ../.. --pack .` | 0 matches; 173 of 173 package files read; 0 shipped files not fully scanned |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | `passed`, 16 PRD files |
+| `make-docs project path-hygiene validate --target-root .` (repository root) | valid, 0 failing findings |
+| `git diff --check` (new files included with intent-to-add, then reset) | exit 0 |
+
+### P9 Open Items
+
+- P9-O1: PE-021 needs the owner decision (A76).
+- P9-O2: A three-OS CI run of this branch (A77 on Linux and Windows). The Windows-specific paths not run here: the `\` to `/` normalization after `<root>`, NTFS atomic replace over a folder in the rollback test, and folder links (skipped where Windows refuses them).
+- P9-O3: The goldens were captured with Node 26.13.1; CI runs Node 24. The `export azure-boards` steps that print a `JSON.parse` message take it from the running Node's V8; if Node 24's text differs, those steps differ on CI.
+- P9-O4: Stage 3 (t9 to t13) after the P8 exit gate: skill updates, script deletion, the no-Python check and CI image, the guide and README, release notes, and the `0.2.0` release.
+- P9-O5: `capability-matrix` still writes and runs its own Python tool (P7-O13); P9 plans no command for it.
+
+### Owner Questions (P9 Stages 1 and 2)
+
+1. PE-021, the `.xlsx` content rule (A76). Options: (A) approve it as written; (B) ask for a byte-level rule, which no two ZIP and XML writers can meet. Recommendation: A.
+2. SD-04, contained reads. The commands read only inside the project folder; the scripts read any path, so a frame that names a model outside the project now stops (exit 3). Options: (A) keep reads contained, as PRD 20 states for project data; (B) let `--allow-outside-root` widen these reads too, which needs a PRD 20 change. Recommendation: A; the skill's examples keep every input inside the project.
+
+## P9 CI Run 45535678445
+
+The first three-OS CI run of `4c02048` (`rewrite/ts-cli-p9`) failed 25 tests on Ubuntu, macOS, and Windows (Node 24): the 14 fit-gap parity cases, the 3 workbook structure tests, and 8 fit-gap hostile and envelope tests. Every other test passed, the `extract bulk` and `export azure-boards` parity cases too, so Node 24 prints the same `JSON.parse` messages as Node 26.13.1, which captured the goldens (P9-O3 closed: no normalization rule is needed).
+
+Cause (finding P9-R1-09): the root `.gitignore` rule `build/` matched `toolkits/buildos/test/fixtures/skills/fitgap/bases/library/build/`, so the 36 files the fixture generator wrote there were never committed. The local runs passed because the files were on disk.
+
+Fix (`f364ee3`): the fixture folder is `analysis/`; the generator, the cases, the 14 fit-gap goldens (captured again with the scripts at `38d1e08`; only the folder name and the time openpyxl writes into a workbook changed), the SD-03 pins, and the tests use it. No ignore rule changed. `test/fixture-tracking.test.ts` asks git whether any file under `test/fixtures/` or `test/golden/` matches an ignore rule (`git check-ignore --no-index`) and shows that the old folder would be caught; it skips with a reason outside a git checkout. The decisive check, a fresh `git archive` of the final commit, is in [Check Results (P9 Review Round 1)](#check-results-p9-review-round-1).
+
+## P9 Review Round 1
+
+On 2026-11-25 the findings of the independent review of `4c02048` were fixed on the branch `rewrite/ts-cli-p9-fix1` (from `4c02048`), in `f364ee3` (P9-R1-09) and `3fe6f9c` (the rest), on macOS arm64 with Node 26.13.1. Each finding was checked against the code first, and each fix has a test that fails without it: the new tests, run against the source of `4c02048` with the new fixtures, fail 29 of 31 there (the other two: the number-spelling test of P9-R1-22 passes, because that finding fixes the records only, and the git guard skips outside a checkout). Nothing was pushed, merged, published, staged, tagged, or released.
+
+### Findings and Dispositions (P9 Round 1)
+
+| ID | Disposition | Test |
+| --- | --- | --- |
+| P9-R1-01 | Fixed. Each row a publication would write passes `buildos validate`'s row checks (`checkEntityLines` with the config index of `.os/config/instance.yaml`). `check` (needs-repair, exit 4), `stage`, `decide`, and `publish` refuse a failing candidate; `publish` checks the final rows (minted IDs, the extraction row) again with the config as it is then, so a retired owner stops it (exit 4, nothing written). SD-16 | `test/skill-script-review.test.ts` P9-R1-01 |
+| P9-R1-02 | Fixed. A pattern expands from its literal folder as typed (relative, absolute, `..`); that folder and every match must be inside the project, else exit 3 (never an empty match); a pattern inside it that matches nothing gives no rows, as `glob.glob`. `--rows`, `--only`, and `--todos` share it. SD-13 | P9-R1-02: absolute, relative, `..`, outside, `--only`, `--todos` |
+| P9-R1-03 | Fixed. Sheet names are checked before anything is built (forbidden characters, apostrophe at an end, 31 characters, unique ignoring case); the stop names the code (exit 4, no file). An apostrophe inside a code is valid and links double it. SD-17 | P9-R1-03 (two tests) |
+| P9-R1-04 | Fixed. `WritePlan` never reads a destination: the new file is written whole under a private name, an existing entry is moved aside by a same-folder rename (a link moves as a link: replaced at the written name, never followed), then the new file is renamed into place; a failure renames back (same link identity) and removes only the entry it wrote; the backups are removed at the end. The port's `rename` takes `entries` (no link followed at either name). SD-05 | P9-R1-04 and P9-R1-06 (two tests, links outside the root, injected failure) |
+| P9-R1-05 | Fixed. Every project read goes through `readFileLimited` with `followLinkInRoot` (`ProjectFiles.readBytes`, `BulkFs.readBytes`); the config, the lock file, and the bulk snapshots use it without following a link. See the read-site audit below | P9-R1-05: no `readBytes`, `readText`, or `openRead` call in a full flow of the three commands |
+| P9-R1-06 | Fixed. `fitgap packages` lists the destination folder itself (`ProjectFiles.listDestination`, names only), also an authorized one outside the project, and removes only its own `pkg-*.json` files and links as steps of the same plan | P9-R1-04 and P9-R1-06: 9 stale outside packages, 1 left |
+| P9-R1-07 | Fixed (inherited script defect). `uncited` reads target IDs with `split_list`, as `merge`. SD-15; flagged below | P9-R1-07 |
+| P9-R1-08 | Fixed (inherited script defect). The workbook also compares the target code, both requirement counts the merged file records, the baseline row IDs in model order, and every cited or target-only ID (the merged file records no fingerprint). SD-18; flagged below | P9-R1-08: another target with the same count; the same code with another ID |
+| P9-R1-09 | Fixed in `f364ee3`; see [P9 CI Run 45535678445](#p9-ci-run-45535678445) | `test/fixture-tracking.test.ts`; the fresh-archive run |
+| P9-R1-10 | Fixed. `BulkFs` queues each write of a command (later reads in it see the queued bytes), `apply` checks every destination (size, folder, no folder at a file's name) before the first change, then writes in the script's order, each atomic; a failure undoes in reverse, each step only while the entry is the one it wrote, and stops at the first step it cannot undo (what a crash there would leave; for `publish` the intent written first names the pending files, and the next `publish` resumes it). `write_status` is `applied` only after a real change, `not_requested` after a complete undo (exit 5) and for a no-op, `partially_applied` with the paths and exit 10 otherwise. SD-05 | P9-R1-10: read-only `.os/data/` (POSIX), injected failure in `stage`, incomplete undo then resume |
+| P9-R1-11 | Fixed. `apply` refuses before the first change any queued file over its reader's 128 MiB bound: every review, intent, staged file, and data file of `start`, `stage`, `stage-update`, `replace-row`, `decide`, and `publish` | P9-R1-11 (the rule on a small bound) |
+| P9-R1-12 | Fixed. JSON mode is read before the shared flags are parsed (`wantsJson`) | P9-R1-12: `--root --json` for all three domains |
+| P9-R1-13 | Fixed. `ProjectFiles` applies the shared rule (`isInstalledLayout`, `userPathRel`) to every relative typed path, as PRD 20 and the other domains do | P9-R1-13: both layouts, inputs and outputs |
+| P9-R1-14 | Fixed. A CSV row with surplus fields keeps them aside and a short row gets `None`, as `csv.DictReader` | New golden case `frame-csv-ragged` (captured from the script) |
+| P9-R1-15 | Fixed. `--help` and `-h` at every level print the help and exit 0 before any required-option check; SD-02 now says that the Azure parser needs separate option and value tokens, like its original | P9-R1-15 (six spellings) |
+| P9-R1-16 | Fixed. Oversized standard input is exit 3 (`Error: standard input is larger than 128 MiB, so BuildOS did not read it`); the Azure manifest and `--adapter-params` have the 512-level bound (strings skipped). SD-06 | `skill-script-hostile.test.ts` size limits; P9-R1-16 |
+| P9-R1-17 | Fixed. `capture.ts --check` compares the script revision and hashes, flags, clock, case counts, normalizations, and every output; `provenance` keeps the Python, Node, openpyxl, and et_xmlfile versions, the OS, and the SHA-256 of each wheel file (`openpyxl-3.1.5-py2.py3-none-any.whl` `5282c12b…9de2`, `et_xmlfile-2.0.0-py3-none-any.whl` `7a91720b…2caa`, as PyPI publishes them, from the local uv cache) and is never compared | `capture.ts --check`, exit 0 |
+| P9-R1-18 | Fixed. The P9 test files compare output, files, and results only through the capped helpers; a new block in `test/test-output-safety.test.ts` scans them (a raw assertion is allowed only against a number, boolean, null, or undefined literal) and catches a planted one; the case-to-golden test compares both name sets | `test/test-output-safety.test.ts` P9-R1-18 |
+| P9-R1-19 | Fixed. Each sheet's last row is found once with a loop | P9-R1-19: 26,000 marks, a sheet of more than 200,000 cells (the old code fails) |
+| P9-R1-20 | Fixed. `count` is the number of string cells; entered `_xHHHH_` text is written `_x005F_x…_`, and the reader decodes the escape | P9-R1-20 and P9-R1-21; `fitgap-xlsx.test.ts` (count and uniqueCount) |
+| P9-R1-21 | Fixed. Error-token text stays text, and the content rule counts an error cell and a text cell with the same token as the same value (SD-19); a control character, noncharacter, or lone surrogate in the document title is dropped | P9-R1-20 and P9-R1-21; `xlsx-compare.test.ts` error token |
+| P9-R1-22 | Fixed in the records: SD-11 (two marks with no ID are a check failure, exit 4), SD-02 (`٢` and `1_0` are refused), SD-09 (a crash also stops a single user; the lock records process, host, and time, and the message says how to check and clear it; no automatic clearing, because a process ID can be reused and a shared folder can hold another host's lock), SD-13 (plain owners even where the script had its own palette), SD-04 (`work.py` already refused index paths that leave the project) | P9-R1-22 (three tests) |
+| CSV formula prefixes | Kept for import parity; `SECURITY.md` Known Limits says so; follow-up P9-R1-F1 for the skill's documentation in Stage 3 | None (parity) |
+
+### Divergences From the Scripts (Round 1)
+
+`toolkits/buildos/test/golden/skills/divergences.json` holds each one. Bold marks a divergence that changes a result for a realistic project; each has a recommendation for the owner.
+
+| ID | Divergence | Changes a result |
+| --- | --- | --- |
+| SD-01 | PRD 20 exit codes | Only the failing code |
+| SD-02 | Usage and help name `buildos`; help at every level; Azure options are separate tokens; ASCII whole numbers only | No |
+| SD-03 | One plain line instead of a fit-gap traceback | No |
+| SD-04 | Contained reads (fit-gap and Azure Boards; bulk extract already contained its index paths) | **Yes, for an input outside the project: move it in (owner question 2)** |
+| SD-05 | Contained, checked writes; rename-based rollback; the bulk transaction; truthful `write_status` | **Yes, for an output outside the project: pass `--allow-outside-root`** |
+| SD-06 | Bounds: files, standard input (exit 3), read-back sizes, 512 JSON levels for every JSON input | Only past a limit |
+| SD-07 | The root as given; `/` in relative paths | No |
+| SD-08 | Fixed outcome-list order | No |
+| SD-09 | A lock file instead of `flock` | **Yes, after a crash: the next command stops until the lock file is deleted (recommendation: keep; the message says how to check and clear it)** |
+| SD-10 | UTF-8 on every system | **Yes, on Windows, for non-ASCII review text (recommendation: keep)** |
+| SD-11 | Plain lines for malformed values | No |
+| SD-12 | BuildOS's workbook writer; written only when its check passes | No |
+| SD-13 | Palette from the project; patterns and typed paths by the shared rules | **Yes, for a project without its palette file: plain owners (recommendation: keep; `buildos init` installs the file, and frame colors still apply)** |
+| SD-14 | A prototype name is an unknown profile | No |
+| SD-15 | `uncited` reads string target IDs as `merge` | **Yes, fewer uncited capabilities for string IDs (recommendation: keep the fix)** |
+| SD-16 | Rows checked with `buildos validate`'s rules before publication | **Yes, a row with an ID the config does not define is refused (recommendation: keep)** |
+| SD-17 | Sheet names checked before the workbook is built | **Yes, a stop instead of a workbook Excel cannot open (recommendation: keep)** |
+| SD-18 | Both models' identities compared | **Yes, a stop instead of a misleading workbook (recommendation: keep)** |
+| SD-19 | Error-token text stays text; `_xHHHH_` escaped; title cleaned; true string count | Only for such text |
+
+### Read-Site Audit (P9 Round 1)
+
+Every read of the three commands, its bound, and its reader. "Checked" is `FsPort.readFileLimited`: one open of the entry at the name, checked against its `lstat` identity and its folder's identity before and after (see `SECURITY.md` Contained Reads); "link in root" adds `followLinkInRoot` (a link is read only when it leads to a regular file inside the project).
+
+| Command | Read | Bound | Reader |
+| --- | --- | --- | --- |
+| `extract bulk` | `.os/indexes/references.json` | 128 MiB | checked, link in root |
+| `extract bulk` | a source file it hashes; a converted file whose lines or CSV rows it counts | 512 MiB | checked, link in root |
+| `extract bulk` | `extractions/REF-*.json`, `extractions/staging/*.jsonl`, `.os/data/*.jsonl` | 128 MiB | checked, link in root |
+| `extract bulk` | `.os/config/instance.yaml` (row checks) | 1 MiB (validate's config bound) | checked, no link (a link gives the empty index, as validate refuses a link) |
+| `extract bulk` | a lock file it finds | 4 KiB | checked, no link |
+| `extract bulk` | each destination before the first change (for the undo) | 128 MiB | checked, no link; a link is read as its text (`readLink`) |
+| `extract bulk` | standard input of `replace-row` and `decide` | 128 MiB | the CLI's bounded reader |
+| `fitgap` | the frame; the models or CSV files and the prior fit-gap file it names; scored, target-only, findings, and to-do files; the merged JSON; the skill palette | 128 MiB | checked, link in root |
+| `fitgap` | a pattern's folders | names only | `stat` and `list` through the root port, inside the project |
+| `fitgap` | a write destination folder (`packages` cleanup) | names only | `readDir` of the destination, inside the project or authorized outside it; no file content |
+| `fitgap` | the workbook it wrote (its check) | in memory | the bytes it built, read back with the bounded ZIP reader |
+| `export azure-boards` | the manifest (`emit`); the CSV (`validate`) | 128 MiB | checked, link in root |
+
+No write of `fitgap` or `export azure-boards` reads a destination.
+
+### Check Results (P9 Review Round 1)
+
+From `toolkits/buildos/` unless noted. macOS arm64, Node 26.13.1 (no Node 24 on this machine; CI runs Node 24); npm 11.20.0 with a cache folder under the temporary folder.
+
+| Check | Result |
+| --- | --- |
+| `npm ci --ignore-scripts` | exit 0 |
+| `npm run typecheck` | exit 0 |
+| `npm run build` | exit 0; `dist/buildos.js` 3,661,564 bytes (3,638,507 at `4c02048`: +23,057) |
+| `npm test` after the build | exit 0; 2,527 tests, 2,515 pass, 0 fail, 12 skipped (the same Windows-only and POSIX-only cases); 36 new tests (30 in `skill-script-review.test.ts`, 2 guard, 2 output-safety, 1 golden case, 1 error-token compare) |
+| `npm test` with a space in `TMPDIR` | the same: 2,527, 0 fail, 12 skipped |
+| Fresh archive of `3fe6f9c` (`git archive`, extracted under the temporary folder, `npm ci --ignore-scripts --offline`, typecheck, build, `npm test`); the commit after it changes documents only | The `analysis/` fixture is complete (30 entries). As extracted, with no `.git`: 2,527 tests, 2,505 pass, 0 fail, 16 skipped (4 more than in a checkout, among them the 2 git guard tests), and 4 SBOM subtests of `test/release.test.ts` (P8) report failure because they run `git`. The same files as a new git repository (`git init`, `git add -A`, one commit; the root `.gitignore` applies): 2,527 tests, 2,515 pass, 0 fail, 12 skipped, with the guard run. So the suite passes with only committed files |
+| `npm run check:deps`, `check:deps:installed` | both `dependency policy: ok` |
+| `node scripts/reproducible-pack.ts` | pass: 173 entries, the same SHA-256 twice |
+| `npm pack`, offline install, `BUILDOS_GOLDEN_BIN_DIR=<installed .bin> node --test test/golden/compare.test.ts` | 173 files; 167 of 167; no golden file changed |
+| `capture.ts --check` (all three scripts) | exit 0 with Python 3.14.10, openpyxl 3.1.5, et_xmlfile 2.0.0, Node 26.13.1 |
+| End to end, installed tarball, a project from `buildos init --skip-make-docs` | `extract bulk` status, start, check, stage, decide, publish (`applied`), publish again (`not_requested`), then `buildos validate` and `entities validate --mode compat` pass; `fitgap` frame, packages, uncited, merge, workbook; `export azure-boards` emit (equal to the skill's golden CSV), validate, adapters |
+| openpyxl 3.1.5 opens the produced workbook, warnings as errors (throwaway virtual environment) | 13 sheets, 11 tables, frozen pane `E2`, 66 internal links; also a workbook whose target code holds an apostrophe (links `'LIB''S Capabilities'!A2`) |
+| Deny-list check, an invented list, `--root ../.. --pack .` | 0 matches; 173 of 173 package files read; 0 shipped files not fully scanned |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | `passed`, 16 PRD files |
+| `make-docs project path-hygiene validate --target-root .` (repository root) | valid, 0 failing findings |
+| `git diff --check` | exit 0 |
+
+### P9 Open Items (Round 1)
+
+- P9-O1: PE-021 still needs the owner decision (A76).
+- P9-O2: a three-OS CI run of `rewrite/ts-cli-p9-fix1` (nothing was pushed). Not run here: the Windows paths (an NTFS rename of a backup and of a new file, folder links skipped where Windows refuses them), Linux, and Node 24 itself.
+- P9-O3: closed. CI run 45535678445 shows Node 24 gives the goldens' `JSON.parse` messages on all three systems.
+- P9-O4: Stage 3 (t9 to t13) after the P8 exit gate.
+- P9-O5: `capability-matrix` still writes and runs its own Python tool (P7-O13).
+- P9-R1-F1: Stage 3 adds a note on CSV formula prefixes to the `buildos-export-azure-boards` skill (the skill was not edited in this round).
+- Not verified: the workbook in Microsoft Excel, LibreOffice, or Numbers (none on this machine, and the sandbox blocks starting apps).
+
+### Owner Questions (P9 Round 1)
+
+1. PE-021 and 2. SD-04: unchanged from [Owner Questions (P9 Stages 1 and 2)](#owner-questions-p9-stages-1-and-2).
+3. SD-15 and SD-18, inherited script defects that the fix changes. SD-15: `uncited` now counts a target ID given in a `|`-separated string, so it lists fewer capabilities than the script for such rows. SD-18: `workbook` now stops on a merged file made for another target model with the same capability counts, where the script built a workbook with the earlier analysis under the new headings. Options: (A) keep both fixes; (B) restore the script's results. Recommendation: A; both script results were wrong, and `merge` already read the strings as IDs.
+
+## P9 CI Run 45542114946
+
+The three-OS CI run of `9f5aee9` (`rewrite/ts-cli-p9`, review round 1) passed on Ubuntu and macOS (Node 24). On Windows the three skill-parity suites passed, and one test failed: `P9-R1-13: a typed path follows the shared layout rule` in `test/skill-script-review.test.ts`.
+
+Cause (finding P9-R2-03): the test searched the `validate` report for `\system\csv\good.csv` with single backslashes, but the report is JSON, which writes each Windows backslash as two. The command was right; the test was wrong. Fix (`7df73a1`): the test parses the report and compares its `input` field with `join(dir, "system", "csv", "good.csv")`. The neighboring test named "the same for a fit-gap output and an emit output" ran only `fitgap`; it now also runs `export azure-boards emit` with a `system/` output and checks the written file and the reported output path. Every P9 test file was read again for separator assumptions: paths that a command reports are compared after `JSON.parse` or as the port's `/` form, typed paths are built with `join`, and the round 2 tests use a junction for a folder link on Windows. A three-OS run of the fix branch is still needed (nothing was pushed).
+
+## P9 Review Round 2
+
+On 2026-11-25 the findings of the second independent review, of `9f5aee9`, were fixed on the branch `rewrite/ts-cli-p9-fix2` (from `9f5aee9`) in `7df73a1`, on macOS arm64 with Node 26.13.1. Each finding was checked against the code first; none was wrong. Each fix has a test that fails without it: the 33 tests of the new `test/skill-script-review-2.test.ts`, run against the source of `9f5aee9` (with a one-line export of its old `fnmatchRegex` so the file loads), fail 32 of 33; the one that passes is the control test that a path really outside the project is still exit 3. The P9-R2-03 change fixes a test, not the code, so the corrected test passes on both. As the reviewer asked, write faults are injected before a port call and after it took effect: the test port lets the rename happen and then throws as the adapter does when the folder flush fails (an `FsWriteFailure` at `sync-parent` that carries `WriteLeftovers.committed`), and one test uses the real adapter's `sync-parent` hook on POSIX. Nothing was pushed, merged, published, staged, tagged, or released.
+
+### Findings and Dispositions (P9 Round 2)
+
+| ID | Disposition | Test |
+| --- | --- | --- |
+| P9-R2-01 | Fixed. `BulkFs.apply` journals the port's `committed` entry of a failed write before the undo runs, so a requirement file renamed into place is put back. Each undo of a path expects the entry the later step put back (round 1's undo failed on the second of two writes of one file, the review's intent and its final state). The undo stops at the first file it cannot put back for sure: an earlier file put back whose folder flush failed is `unsure`, so the publication intent stays while any data file of the publication is not surely back, and the report is exit 10, `partially_applied`, with every path and reason. The resume was already idempotent by the recorded before and after hashes. Every mutating bulk command goes through `apply`; `start`, `stage`, `stage-update`, `replace-row`, and `decide` each get a fault after their first write took effect. The shared writer got the same audit (P9-R2-07) | `skill-script-review-2.test.ts` P9-R2-01 (9 tests: undo complete, undo incomplete with the intent kept and a retry with one copy, the final review write, the real adapter hook, and the five other commands) |
+| P9-R2-02 | Fixed (inherited script defect). `fitgap packages` removes only a `pkg-*.json` that has a numbered name as it writes them (`pkg-01.json` to `pkg-99.json`, then `pkg-100.json` and up), is a regular file, and is UTF-8 JSON with exactly the fields of a package item, in order (each requirement too). It reads each such file once, at most 128 MiB, with no link followed, through the destination's own port (`ProjectFiles.readDestination`). Every other `pkg-*.json` is kept and named on stderr and in `result.kept`. SD-05 and `SECURITY.md` corrected; SD-20 new; flagged below | P9-R2-02 (inside the project and an authorized outside folder, a user's file, a hand-made numbered file, a link; the human notice); the parity case `fitgap/packages` pins the new stderr |
+| P9-R2-03 | Fixed (a test defect); see [P9 CI Run 45542114946](#p9-ci-run-45542114946) | `skill-script-review.test.ts` P9-R1-13 (both tests) |
+| P9-R2-04 | Fixed. A resumed publication checks the rows its intent records with the config as it is then, before any write; a row that would fail stops it (exit 4), the intent stays, and the message says how to go on: restore the config entry and publish again; or, when no data file holds a row of it yet, withdraw it by deleting the review's `publication` entry by hand (BuildOS has no withdraw command), then reset the decision with `decide` and fix the row with `replace-row`; when a data file already holds rows of it, restore the config and finish. SD-16 | P9-R2-04 (no data file written yet; a data file already holds part of it) |
+| P9-R2-05 | Fixed. A `decide` whose decisions only withdraw approval (`pending` or `held`) is accepted when a row no longer passes the checks; an approval still needs a review that passes. `replace-row` already checked the new row, so the reset, the repair, the approval, and the publication now go through, as with the script | P9-R2-05 (the full repair after an owner is retired) |
+| P9-R2-06 | Fixed. A regular file that `fitgap` or `export azure-boards` replaces keeps its permission bits: the new file gets exactly them (`NewFileOptions.exactMode`, an `fchmod` after the write). A destination that cannot be opened for writing (`FsPort.checkWritable`: a read-only file, or the read-only attribute on Windows, where Node reports such a file as mode `0444` and the open fails with `EPERM`) stops the command before the first change, exit 5, as the scripts' writes in place refused it. A link at the destination is still replaced (PE-012), and the new file then gets the default mode | P9-R2-06 (`0600` kept and a fit-gap `0640` kept on POSIX; a read-only CSV refused on every system, not as root) |
+| P9-R2-07 | Fixed. Every leftover of the shared writer is a `NotRestored` entry (path, reason, `left` or `unsure`), the shape `buildos init` reports: an earlier file still under its backup name (the reason names the backup and says to rename it back), a new file or temporary file that could not be removed, a folder that could not be removed, a temporary file the adapter could not remove. A committed temporary file and a rename that took effect before it reported an error are undone too. After a failed write with any leftover: exit 10, `partially_applied`, `result.not_restored`, and one `undo_incomplete` diagnostic per path, as `init`. After a complete write whose backup could not be deleted: exit 0, `applied`, a `cleanup_incomplete` warning, `result.left_behind`, and a stderr line, because the outputs are complete and correct and the backup is a hidden private name that no command reads (`init` has no success with a leftover, so this is the one added case) | P9-R2-07 (a failed backup restore, a backup that cannot be deleted, a committed temporary file removed, and one that cannot be removed) |
+| P9-R2-08 | Fixed. Only `EEXIST` gives the "another write is active" message (exit 4); any other failure to create the lock file is a write error at the lock path (exit 5). A lock file that cannot be removed when the command ends is named with its path, exit 10 and `partially_applied`, also when the command's own writes completed, because it would stop the next command; stdout keeps the command's result. SD-09 | P9-R2-08 (three tests) |
+| P9-R2-09 | Fixed. The workbook compares baseline capabilities by ID in any order (each once, the same set), as it joins rows to capabilities by ID, and checks that each mark's requirement is one of its capability's requirements; a different code or ID set still stops it. SD-18 | P9-R2-09 (the same model reversed builds; a requirement moved to another capability stops) |
+| P9-R2-10 | Fixed. A typed absolute path that is not inside the root as spelled is compared by identity: from the path upward, the first existing folder that is the root itself (device and inode through every link, `FsPort.resolvedId` on a port bound to the path's volume) makes the rest of the path, as typed, the path inside the project; the root port then applies its usual checks. This covers every typed path of `fitgap` and `export azure-boards` (inputs, outputs, and patterns); `extract bulk` takes no typed path. SD-13 | P9-R2-10 (a link to the project folder; another letter case, probed; the unresolved temporary folder spelling, probed; a real outside path stays exit 3). On this Mac both probes ran |
+| P9-R2-11 | Fixed. `extract bulk` reads the config with `buildos validate`'s `readConfig` (one implementation: strict UTF-8, the 1 MiB bound, no link). A config validate cannot read as text (not UTF-8, a link, too large, unreadable) stops `check`, `stage`, `decide`, and `publish` with validate's finding (exit 4) before any write. A finding about the config's own content stays validate's to report (the round 1 test config lacked two `description` fields; the shared test config now has them). SD-16 | P9-R2-11 |
+| P9-R2-12 | Fixed. `fnmatchRegex` is a port of Python 3.12+ `fnmatch.translate` with the `u` flag: `?` one code point, a leading `]` in a set, `!` negation, a range with reversed ends removed (so `[z-a]` matches nothing, `[!z-a]` anything), an empty set matching nothing, every other character literal; on Windows it ignores case, as `fnmatch` compares `os.path.normcase` names | P9-R2-12: 34 patterns over 24 names equal Python 3.14.10's results (recorded in the test); `uncited` with `pkg-[]].json` (5 of 8) and `pkg-0[2-1].json` (8 of 8), as the script |
+| P9-R2-13 | Fixed. One rule: free text (cells, shared strings, the document title) loses every character XML 1.0 cannot hold (openpyxl's control characters, silently as the script; U+FFFE, U+FFFF, and lone surrogates, with a stderr notice that counts them); a model code that would put one into a sheet name, a link, or a column heading stops the workbook before it is built (exit 4, the character named); the writer's `xmlText` stops on any such character that still reached it (an internal error). Table names are fixed ASCII. SD-19 | P9-R2-13 (U+FFFE in the title and U+FFFF in a cell: built and opened by openpyxl; a form feed in a code: exit 4) |
+| Partial round 1 items | R1-01 (journal replay, config encoding): P9-R2-04 and P9-R2-11. R1-04 and R1-10: P9-R2-01 and P9-R2-07. R1-06: P9-R2-02. R1-08: P9-R2-09. R1-21: P9-R2-13 | As above |
+
+### Divergences From the Scripts (Round 2)
+
+`toolkits/buildos/test/golden/skills/divergences.json` holds each one. Only the entries this round changed are listed. Bold marks a divergence that changes a result for a realistic project; each has a recommendation for the owner. The parity test now pins the stderr of every step a divergence lists with `allowed` (SD-03 and SD-20), and stdout and files stay the script's.
+
+| ID | Change this round | Changes a result |
+| --- | --- | --- |
+| SD-05 | Post-commit undo; kept modes and the read-only refusal (both as the scripts); exact leftovers | Only the exit code and report of a failure; a kept mode and a refused read-only file now match the scripts |
+| SD-09 | Lock errors classified; a lock that stays is exit 10 | Only when the lock file cannot be created or removed |
+| SD-13 | Typed absolute paths by identity; Python's `fnmatch` | No: both now match the script where round 1 differed |
+| SD-16 | Resume checked with the current config; withdraw allowed on an invalid row (as the script); the validator's config reader | **Yes: a publication left pending when the config changed is refused until the config defines the IDs again (the script finished it), and a config with bytes that are not UTF-8 stops the bulk commands (the script went on with replacement characters). Recommendation: keep; both script results left a project that `buildos validate` refuses** |
+| SD-18 | Models compared by ID in any order, with each mark's requirement under its capability | **Yes, as before for a merged file of other models; a reordered model now builds as the script did. Recommendation: keep** |
+| SD-19 | One XML-safe rule for every part; a code with such a character refused | Only for such text: the script wrote a workbook that did not parse |
+| SD-20 | New: `fitgap packages` deletes only its own earlier package files | **Yes: a `pkg-*.json` that BuildOS did not write stays (and is named) where the script deleted it; an agent that reads `packages/*.json` then also sees it. Recommendation: keep; deleting a user's file loses data, and the notice says how to clear a stale one** |
+
+### Read-Site Audit Changes (P9 Round 2)
+
+Two rows of [Read-Site Audit (P9 Round 1)](#read-site-audit-p9-round-1) change. `extract bulk` reads `.os/config/instance.yaml` with `buildos validate`'s reader (1 MiB, no link; a link is now a stop with validate's finding, not the empty index). `fitgap packages` reads each numbered `pkg-NN.json` in the packages folder that it would delete (128 MiB, no link followed, through the destination's port, also in an authorized folder outside the project), to confirm it is its own output; no other destination is read. A typed absolute path outside the root as spelled is resolved for identity only (`resolvedId` of its folders, metadata), never read through another port.
+
+### Check Results (P9 Review Round 2)
+
+From `toolkits/buildos/` unless noted. macOS arm64, Node 26.13.1 (no Node 24 on this machine); npm 11.20.0 with a cache folder under the temporary folder.
+
+| Check | Result |
+| --- | --- |
+| `npm ci --ignore-scripts`, `npm run typecheck`, `npm run build` | exit 0 |
+| `npm test` after the build | exit 0; 2,560 tests, 2,548 pass, 0 fail, 12 skipped (the same Windows-only and POSIX-only cases); 33 new tests in `skill-script-review-2.test.ts` |
+| `npm test` with a space in `TMPDIR` | the same: 2,560, 0 fail, 12 skipped |
+| Fresh archive of `7df73a1` (`git archive`, extracted under the temporary folder, `git init` and one commit, `npm ci --ignore-scripts --offline`, typecheck, build, `npm test`) | exit 0; 2,560 tests, 2,548 pass, 0 fail, 12 skipped, with the git guard run; the `analysis/` fixture is complete (30 entries). So the suite passes with only committed files. The documentation commit after it changes no code |
+| `npm run check:deps`, `check:deps:installed` | both `dependency policy: ok` |
+| `node scripts/reproducible-pack.ts` (on `7df73a1`, clean tree) | pass: 173 entries, the same SHA-256 twice (`d278327c…3e32`); the dev build was rebuilt after it |
+| `npm pack`, offline install, `BUILDOS_GOLDEN_BIN_DIR=<installed .bin> node --test test/golden/compare.test.ts` | 173 files; 167 of 167; no golden file changed |
+| `capture.ts --check --python <venv>` (all three scripts) | exit 0: bulk-extract 35, fitgap 15, azure-boards 11 cases, with Python 3.14.10, openpyxl 3.1.5, and et_xmlfile 2.0.0 (a throwaway virtual environment that loads both from the local uv cache) |
+| End to end, installed tarball, a project from `buildos init --skip-make-docs` (the bulk-extract fixture's index, sources, and data copied in) | `extract bulk` status, start, check, stage, decide, publish (`applied`), publish again (`not_requested`), then `buildos validate` (OK, no problems) and `entities validate --mode compat` pass; `fitgap` frame, packages, uncited, merge, workbook; `export azure-boards` emit, validate, adapters; all exit 0 |
+| openpyxl 3.1.5 opens the produced workbook, warnings as errors (throwaway virtual environment) | 13 sheets, 11 tables, frozen pane `E2`, 66 internal links; also a workbook whose title held U+FFFE and a cell U+FFFF (6 characters removed and reported; the title has none) |
+| Deny-list check, an invented list, `--root ../.. --pack .` | 0 matches; 173 of 173 package files read; 0 shipped files not fully scanned |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | `passed`, 16 PRD files |
+| `make-docs project path-hygiene validate --target-root .` (repository root) | valid, 0 failing findings |
+| `git diff --check` | exit 0 |
+
+### P9 Open Items (Round 2)
+
+- P9-O1: PE-021 still needs the owner decision (A76).
+- P9-O2: a three-OS CI run of `rewrite/ts-cli-p9-fix2` (nothing was pushed). Not run here: Windows (the read-only attribute refusal, junction aliases, the case-variant probe on NTFS, the skipped folder flush), Linux, and Node 24 itself.
+- P9-O4, P9-O5, P9-R1-F1: unchanged.
+- Not verified: the workbook in Microsoft Excel, LibreOffice, or Numbers (none on this machine, and the sandbox blocks starting apps).
+
+### Owner Questions (P9 Round 2)
+
+1. PE-021 and 2. SD-04: unchanged from [Owner Questions (P9 Stages 1 and 2)](#owner-questions-p9-stages-1-and-2).
+3. SD-20, an inherited script defect that the fix changes: `fitgap packages` keeps a `pkg-*.json` that it did not write, where the script deleted it. Options: (A) keep the fix; (B) restore the script's deletion of every `pkg-*.json`. Recommendation: A; the script deleted a user's own file, and the notice names each kept file.
+4. SD-16, the resume check: a publication left pending is refused while its rows would fail `buildos validate`, and BuildOS has no withdraw command (the message says how to withdraw by hand). Options: (A) keep the refusal and the hand steps; (B) also add a `buildos extract bulk withdraw REF-ID` command in a later round. Recommendation: A now, B only if adopters hit it.
+
+## P9 CI Run 45547048956
+
+The three-OS CI run of `dd20021` (`rewrite/ts-cli-p9`, review round 2) passed: the test jobs on Ubuntu, macOS, and Windows with Node 24, the OSV gate, the Make Docs contract job, and the cross-OS pack report. The deny-list workflow run 45547048934 passed with the invented list. So the round 2 fixes pass on all three systems (P9-O2 closed for `dd20021`); the commit of this final check needs its own green run.
+
+## P9 Final Check for Stages 1 and 2
+
+On 2026-11-25 the findings of the third independent review, of `dd20021`, were fixed on the branch `rewrite/ts-cli-p9-fix3` (from `dd20021`) in `576d9ce`, on macOS arm64 with Node 26.13.1. Under the project stop rule this is the last fix pass: no further review follows, and the orchestrator verifies through CI and this evidence. Each finding was checked against the code first; none was wrong. Each fix has a test in the new `test/skill-script-review-3.test.ts` (22 tests). Run against the source of `dd20021`, 18 of the 22 fail; the 4 that pass are control tests that must keep passing (a requirement ID shared by two capabilities is valid, a retired owner is still refused, the P9-R2-05 withdrawal still works, and a content read through a folder link stays refused with the switch). One round 1 test (`P9-R1-04 and P9-R1-06`, a failed later write outside the root) put a non-package file at `pkg-01.json`, which is now the refused case; it now uses an earlier package BuildOS wrote, so it still checks the undo. Nothing was pushed, merged, published, staged, tagged, or released.
+
+### Findings and Dispositions (Final Check)
+
+| ID | Disposition | Test |
+| --- | --- | --- |
+| P9-F-01 | Fixed. `fitgap packages` knows every package name the run writes before any change. When a file it would keep (by the round 2 ownership rule: not a numbered, package-shaped regular file, for example a generated package with a grader's notes added, or a link) is at one of those names, the run stops with exit 4 (PRD 20: a contract conflict prevents the operation; the same code as every other `fitgap` stop), `write_status` `not_requested`, and nothing changed. The message names each such file with its reason and says what to do: move or rename the file, or choose another `--out` folder. A kept file is never one the same run writes over. SD-20, SD-05, and `SECURITY.md` corrected | P9-F-01 (inside the project and an authorized outside folder; a link at `pkg-01.json`; a kept `pkg-02.json` that the run does not write is still only named) |
+| P9-F-02 | Fixed. A resumed publication places each data file first by the recorded whole-file hashes (before: apply; after: already applied). A file that matches neither is read row by row, and each row the publication writes is looked up by the ID the intent gave it: an appended row is there when exactly one row has its ID and equals the recorded row, and absent when no row has its ID; an updated row is there when its one row equals the recorded update, and absent when that row's hash is still the base hash its staged candidate recorded. All there: the file is already applied. None there: the publication's operations are applied once to the file as it is now. Anything else (a mix, an ID used twice, a row with the ID that is neither, a line that is not JSON) is a conflict: exit 10 (`needs_operator_review`, `write_status` `not_requested`), nothing written, the intent kept; the message names each file and its row IDs, says that the file changed since the publication started and that BuildOS cannot tell whether the rows are in it, and gives steps that cannot write a row twice (put each listed ID right by hand, then publish again; never delete the intent, because a new publication would give the same rows new IDs). Withdrawal by hand is offered only when every data file matches its recorded before-hash. SD-22 new; SD-16 | P9-F-02 (the reviewer's case: a row written, an unrelated row appended, the owner retired: no withdrawal, then one copy; an unrelated append with the row present: one copy; with the row absent: applied once; the row absent and the owner retired: no withdrawal; a conflict: exit 10, then the safe repair gives one copy) |
+| P9-F-03 | Fixed (inherited script defect). The workbook compares, by capability ID, the score-driving model fields that the merged rows carry with the model as it is now. From the scoring code (`cmdMerge`): the one model field in the score is the baseline capability's `maturity` (the maturity factor of the priority, and the `decision` and `live_loss` reasons); the marks, objectives, weights, and scoring factors come from the scored rows and the frame, and the workbook shows them from the merged file. A difference stops the workbook (exit 4, no file), names the first five capabilities with both values, and says `Run merge again.` SD-18 | P9-F-03 (`proven` to `planned`: exit 4, named, no file; after a new merge the workbook builds) |
+| P9-F-04 | Fixed (inherited script defect). Every command that loads a model refuses a requirement ID used more than once within one capability, naming the model role, the capability, and the ID (exit 4, nothing written): `frame`, `packages`, `merge`, and `workbook` load both models, `uncited` loads the target (as the script). Duplicate capability IDs stay refused. A requirement ID repeated under two different capabilities stays valid: the script scopes requirement IDs to their capability (the marks check, the scoring, and the workbook join marks to requirements within one capability, and `target-requirements.csv` carries the capability ID with each one). SD-21 new | P9-F-04 (all five commands with a copied ID, in the baseline and in the target; a shared ID across capabilities is valid) |
+| P9-F-05 | Fixed. `extract bulk` builds the config index with `buildos validate`'s own findings budget (`VALIDATE_LIMITS.maxFindings`), so it is the same index validate builds for that config; the budget of the messages bulk shows no longer cuts the owner index short. SD-16 | P9-F-05 (20 config findings that do not concern owners: publish accepts the owner, and validate reports those 20 findings and none on the rows; with the owner retired, bulk refuses it as validate does) |
+| P9-F-06 | Fixed. `decide` reads the config before any decision; a config that validate cannot read stops it with validate's finding (exit 4, the code `buildos validate` gives such a config, and the same as `check`, `stage`, and `publish`), also a decision that only withdraws approval. The read error is its own type, so it is never taken for a row finding. A readable config that retired the row's owner still lets the withdrawal through. SD-16 | P9-F-06 (a non-UTF-8 byte: exit 4, `not_requested`, nothing changed; the P9-R2-05 repair flow: exit 0) |
+| P9-F-07 | Fixed. After a publish whose undo was incomplete and listed the review, the message reads the review on disk: it still holds the pending publication; it is complete (no intent, every row of this publication in `applied`, its extraction ID listed: do not publish again); it is as it was before this publish (no intent, no row of it published); or, when BuildOS cannot read or place it, it says that it cannot tell and gives `buildos extract bulk check REF-ID` | P9-F-07 (put back, complete, still pending, unreadable) |
+| P9-F-08 | Fixed. With `--allow-outside-root`, a destination that is inside the project as spelled but whose folder resolves outside it through a folder link is written as if its outside path had been named, through the port of its volume (the scripts wrote through the link). Without the switch it is refused (exit 3) with the message that names the switch. The final-file link rule (PE-012: a link at the written file itself is replaced, never followed) and the contained content reads stay. SD-05 | P9-F-08 (`export azure-boards template` and `fitgap packages`, without and with the switch, and a rerun that replaces its own packages; a content read through the same link stays refused with the switch) |
+
+### Evidence Wording Corrected (Final Check)
+
+- SD-05 and SD-20 (file preservation): round 2 said every `pkg-*.json` that BuildOS did not write "is kept"; a kept file at a name the run wrote was then replaced. Now exactly true: a kept file is never written over, because the run stops before any change when one is at a name it writes.
+- SD-16 (config agreement and withdrawal safety): round 2 said bulk uses "the same config index" as validate, but a display budget of 20 could cut the owner index short, and said a config that cannot be read stops the bulk commands, but a withdrawing `decide` went through. Now exactly true for both. The round 2 resume message offered withdrawal when no file matched its after-hash; it is now offered only when every file matches its before-hash.
+- SD-18 (the model check): round 2 said the check makes sure the merged file comes from the models the frame names now; it compared IDs and counts only. It now also compares the one score-driving model field, so a stale priority cannot reach the workbook. It still records no content fingerprint, so a change to a field that does not drive the score (a name or a summary) builds a workbook with the new text, as the script did.
+- The recovery message: round 2 said "the review still holds the pending publication" whenever the review was among the paths not put back; it now says what the review holds.
+
+### Divergences From the Scripts (Full List)
+
+`toolkits/buildos/test/golden/skills/divergences.json` holds each entry with its tests. **Bold** marks a divergence that changes a result for a realistic project; each such entry has an owner recommendation in the file (all: keep).
+
+| ID | Divergence | Changes a result |
+| --- | --- | --- |
+| SD-01 | PRD 20 exit codes | Only the exit code of a failure |
+| SD-02 | Usage and help name `buildos` | No |
+| SD-03 | One plain line instead of a traceback | No |
+| SD-04 | Contained reads | **Yes: a `fitgap` or `export azure-boards` input outside the project stops (owner question)** |
+| SD-05 | Contained, checked, atomic writes, undone after a failure; a folder link out written with the switch (this pass) | **Yes: an output outside the project needs `--allow-outside-root`** |
+| SD-06 | Bounded reads | Only past a limit |
+| SD-07 | The root as given; `/` in messages | No |
+| SD-08 | A fixed key order in outcome lists | No |
+| SD-09 | A lock file instead of `flock` | **Yes: after a crash the next command stops until the lock file is deleted; a second command stops instead of waiting** |
+| SD-10 | UTF-8 on every system | **Yes, on Windows, for non-ASCII review text** |
+| SD-11 | Malformed values give one plain line | No |
+| SD-12 | BuildOS's own workbook writer (PE-021) | No |
+| SD-13 | The palette from the project; patterns as Python's `fnmatch` | **Yes: a project without the palette file gets plain owner cells** |
+| SD-14 | A prototype name is an unknown profile | No |
+| SD-15 | `uncited` reads `\|`-separated target IDs | **Yes: fewer uncited capabilities for such rows** |
+| SD-16 | Published rows pass `buildos validate`; the same config index and reader; safe withdrawal (this pass) | **Yes: a row validate would refuse is not published; a pending publication waits for the config; an unreadable config stops every bulk write** |
+| SD-17 | Sheet names checked before the build | **Yes: a stop instead of a workbook Excel cannot open** |
+| SD-18 | The merged file must match the models, now with maturity (this pass) | **Yes: a stop instead of a misleading workbook; run `merge` again** |
+| SD-19 | One XML-safe text rule | Only for such text |
+| SD-20 | `fitgap packages` deletes only its own files and never writes over another (this pass) | **Yes: a user's `pkg-*.json` stays; at a name the run writes it stops the run** |
+| SD-21 | New: a requirement ID repeated within one capability is refused | **Yes: a stop instead of a score that silently leaves one requirement out** |
+| SD-22 | New: a pending publication over a changed data file is placed by row ID, or stops for review | **Yes: an unrelated row no longer blocks recovery; an unclear file is exit 10 (the script: exit 2) with steps that never duplicate a row** |
+
+### Read-Site Audit Changes (Final Check)
+
+One row of [Read-Site Audit (P9 Round 1)](#read-site-audit-p9-round-1) changes. A resumed `extract bulk publish` reads each data file of the pending publication once (128 MiB, contained) and, when it matches neither recorded hash, parses its rows to look up the publication's IDs, and reads the staged files for the base hashes of its updated rows; no new path is read. A write destination whose folder leads out through a link is written through the volume port only with the switch; no destination is read through it except the numbered `pkg-NN.json` ownership check, as before.
+
+### Acceptance Criteria (Stages 1 and 2, Final)
+
+| ID | Result | Evidence |
+| --- | --- | --- |
+| A76 | Open, pending owner: goldens exist for all 61 cases, and `capture.ts --check` passes on `576d9ce`; the `.xlsx` rule is recorded as proposed PE-021 and needs the owner decision before it moves to `parity-exceptions.json` | [The `.xlsx` Rule](#the-xlsx-rule-t3-proposed-pe-021) |
+| A77 | Pass on three systems for `dd20021` (CI run 45547048956); pass on macOS for `576d9ce` (65 parity tests, in the work tree and in a fresh source archive); a three-OS run of `576d9ce` is still needed | `test/skill-script-parity.test.ts` |
+| A78 | Pass: the boundary test and the envelope tests; the new `review` outcome has every envelope field | `test/boundary.test.ts`, `test/skill-script-hostile.test.ts` |
+
+### Check Results (Final Check)
+
+From `toolkits/buildos/` unless noted. macOS arm64, Node 26.13.1 (no Node 24 on this machine); npm 11.20.0 with a cache folder under the temporary folder (the default cache gives EPERM in the sandbox).
+
+| Check | Result |
+| --- | --- |
+| `npm ci --ignore-scripts`, `npm run typecheck`, `npm run build` | exit 0 |
+| `npm test` after the dev build | exit 0; 2,582 tests, 2,570 pass, 0 fail, 12 skipped (the same Windows-only and POSIX-only cases); 22 new tests in `skill-script-review-3.test.ts` |
+| `npm test` with a space in `TMPDIR` | the same: 2,582, 0 fail, 12 skipped |
+| Fresh archive of `576d9ce` (`git archive`, extracted under the temporary folder, `git init` and one commit, `npm ci --ignore-scripts --offline`, typecheck, build, `npm test`) | exit 0; 2,582 tests, 2,570 pass, 0 fail, 12 skipped. The documentation commit after it changes no code |
+| `npm run check:deps`, `check:deps:installed` | both `dependency policy: ok` |
+| `node scripts/reproducible-pack.ts` (on `576d9ce`, clean tree) | pass: 173 entries, the same SHA-256 twice (`1c1c7e1b…ebad`); the dev build was rebuilt after it |
+| `npm pack`, offline install, `BUILDOS_GOLDEN_BIN_DIR=<installed .bin> node --test test/golden/compare.test.ts` | 173 files; 167 of 167; no golden file changed |
+| `capture.ts --check --python <venv>` (all three scripts) | exit 0: bulk-extract 35, fitgap 15, azure-boards 11 cases, with Python 3.14.10, openpyxl 3.1.5, and et_xmlfile 2.0.0 (a throwaway virtual environment that loads both from the local uv cache) |
+| End to end, installed tarball, a project from `buildos init --skip-make-docs` (the fixtures' index, sources, data, analysis, models, and backlog copied in) | `extract bulk` status, start, check, stage, decide, publish (`applied`), publish again (`not_requested`), check (`complete`), then `buildos validate` (OK, no problems) and `entities validate --mode compat`; `fitgap` frame, packages, uncited, merge, workbook; `export azure-boards` emit, validate, adapters; all exit 0, and `buildos validate` passes at the end |
+| openpyxl 3.1.5 opens the produced workbook, warnings as errors (throwaway virtual environment) | 13 sheets, 11 tables, frozen pane `E2`, 66 internal links |
+| Deny-list check, an invented list, `--root ../.. --pack .` | exit 0; 0 matches; 173 of 173 package files read; 0 shipped files not fully scanned |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | `passed` |
+| `make-docs project path-hygiene validate --target-root .` (repository root) | valid, 0 failing findings |
+| `git diff --check` | exit 0 |
+
+### Not Verified (Final Check)
+
+- Windows and Linux for `576d9ce`, and Node 24 itself: the folder-link write through a junction on Windows, the row-ID resume on NTFS, and the new tests there. The CI run of this commit covers them.
+- The workbook in Microsoft Excel, LibreOffice, or Numbers: no agent opened one (none is on this machine, and the sandbox blocks starting apps). The Open XML SDK validation in review rounds 2 and 3 found zero errors, and openpyxl opens it.
+
+### Follow-ups (P9)
+
+- F-P9-01: open a produced workbook in Microsoft Excel and LibreOffice by hand before `0.2.0` (no agent did; the Open XML SDK validation found zero errors).
+- F-P9-02: Stage 3 adds the CSV formula-prefix note to the `buildos-export-azure-boards` skill docs (P9-R1-F1).
+- F-P9-03: a `buildos extract bulk withdraw REF-ID` command, only if adopters hit the hand step (owner question 4 of round 2, option B).
+- F-P9-04: `capability-matrix` still writes and runs its own Python tool (P9-O5, P7-O13); P9 plans no command for it.
+- F-P9-05: noted by the round 3 reviewer, no fix asked: a whitespace warning at the end of one file, and the Win32 case-folded path shortcut on Windows directories that are set to be case-sensitive (a special configuration).
+- F-P9-06: the dispatcher (`src/cli/run.ts`, unexpected failure) prints an `internal_error` envelope and also a stderr line for an unexpected error of a domain that does not report it itself, for example `buildos validate --json` with a filesystem fault. PRD 20 now limits the one-output-form rule to `intake`, `discovery`, and `design`. Recorded in [P9 Intake JSON Review Round 2](#p9-intake-json-review-round-2); the dispatcher was not changed.
+
+### Review Loop Closed
+
+The P9 Stages 1 and 2 review loop is closed under the project stop rule: round 1 had 22 findings (8 blockers), round 2 had 13 findings (2 blockers), round 3 had 8 findings (4 blockers); all are fixed with tests. No further review follows; a green three-OS CI run of this branch is the last gate for Stages 1 and 2.
+
+### What Remains (P9)
+
+Stage 3 (t9 to t13): the skills call the commands, the three scripts and their adapters are deleted, the no-Python CI check and the run in an image without Python, the guide and the README, and the `0.2.0` release. It waits on the P8 release and the owner decisions below.
+
+### Owner Questions (P9, Final)
+
+1. PE-021, the `.xlsx` content rule (A76). Recommendation: approve as written.
+2. SD-04, contained reads, and SD-05, contained writes with `--allow-outside-root`: confirm. Recommendation: keep both.
+3. The result-changing divergences SD-15 to SD-20 (recorded in rounds 1 and 2, SD-16, SD-18, and SD-20 extended in this pass): confirm. Recommendation: keep each; each script result was wrong or lost data.
+4. SD-21 (a requirement ID repeated within one capability is refused). Options: (A) keep the refusal; (B) restore the script's silent drop. Recommendation: A.
+5. SD-22 (a pending publication over a changed data file is placed by row ID, or stops with exit 10). Options: (A) keep it; (B) restore the script's stop on any changed file. Recommendation: A; an unrelated row should not block recovery, and an unclear file needs a person.
+
+Update 2026-11-25: question 1 (PE-021) and the SD-04 part of question 2 are decided; see [P9 Owner Decisions 2026-11-25](#p9-owner-decisions-2026-11-25). The SD-05 part of question 2 and questions 3 to 5 are still open.
+
+Update 2026-11-26: the SD-05 part of question 2 and questions 3 to 5 are decided; see [Owner Decisions 2026-11-26](#owner-decisions-2026-11-26). No owner question of this list is open.
+
+## P9 Owner Decisions 2026-11-25
+
+On 2026-11-25 the owner chose option A for each open item below. The orchestrating maintainer chat relayed the answers. The work is on the branch `rewrite/ts-cli-p9-owner1` from `befc751`, on macOS arm64 with Node 26.13.1. Nothing was pushed, merged, published, staged, tagged, or released.
+
+### Decisions
+
+| Item | Decision | What changed on this branch |
+| --- | --- | --- |
+| A. `D-010` | Decided: `buildos intake` gains the shared `--json` envelope in `0.2.0`. | `intake convert`, `intake index references`, and `intake index playbooks` print the envelope with `--json`. Parity exception PE-022 records the difference from the Go tool. Register `D-010` is closed. PRD 20 Output and Exit Contract names every command that takes `--json`, with a requirement history entry. The guide (chapter 4) and the package README list `intake`. |
+| B. `PE-021` | Approved: `.xlsx` parity is checked by workbook content, not by file bytes. | PE-021 moved from `test/golden/proposed-exceptions.json` to `test/golden/parity-exceptions.json` with the owner decision. No exception is pending. The tests and the code comments no longer call it proposed. A76 is met. |
+| C. `SD-04` | Accepted: `fitgap` (and `export azure-boards`) read only files inside the project. | SD-04 in `test/golden/skills/divergences.json` records the owner decision. No code change. |
+
+Other answers, one line each:
+
+- The release flow is confirmed: a draft, the prepare run, and the required reviewer before staging.
+- Wrappers are pin-first (`Q-015`). This was done on the `0.1.0` branch.
+- The project-local legacy scripts print the notice and go in `0.3.0` (`Q-016`). This was done on the `0.1.0` branch.
+- `0.1.0` ships without the PDF reader lazy load (`PERF-001` recheck).
+- The public repository starts fresh with one clean commit. The old history stays in a private archive. This replaces the 2026-11-24 answer (a history rewrite and a force-push).
+
+### The Intake Envelope (PE-022)
+
+The intake commands use the rules of PE-011 (`src/cli/commands/go-tool.ts`), the same as `discovery` and `design`:
+
+- `--json` counts only as a whole argument in flag position of the subcommand. `-json`, `--json=true`, `--source --json`, `-- --json`, and `--json` before the subcommand behave as in Go.
+- `command` is `intake.convert`, `intake.index.references`, or `intake.index.playbooks`. `root` is `--repo-root` as Go cleans it, or empty when the flags did not parse.
+- `write_status` is `planned` for a dry run, `applied` for a write, and `not_requested` for a failure.
+- `result` for `convert`: `outputs` (each with `path`, `source`, `type`, `status`, `sha256`), `side_artifacts`, `warnings`, and `dry_run`. For an index: `output_path` and `count`.
+- A conversion warning (an image BuildOS did not copy) is a `warning` diagnostic, `image_not_copied`, and not a stderr line.
+- A failure has `ok` false, `result` null, and one error diagnostic: `usage_error` for a flag or usage error, `command_failed` for a Go error, or the core code of a refusal.
+- stdout holds only the envelope, and stderr is empty. The exit code is the one of the text form: 0; 1 for a Go or usage error, as the Go tool; 3 for a write outside the root.
+- Help and the usage text stay the Go text (PE-001, PE-002), so the usage text does not list `--json`.
+- Without `--json`, the output is the Go text, byte for byte.
+
+One fix came with it: `usageFailure` in `go-tool.ts` now keeps the switches already found, so `intake convert --json` without `--source` prints the envelope. For `discovery` and `design`, it is called only before the flags are parsed, so their output does not change.
+
+### Tests
+
+- `toolkits/buildos/test/intake-json.test.ts` (new, 13 tests): for each of the three commands, the envelope of a success, of a usage error, and of a failed run; a warning as a diagnostic; the unchanged text form; the flag-position rule; and PE-022 in `parity-exceptions.json`.
+- `test/golden/self-test.test.ts`: the approved list ends with PE-021 and PE-022, and no exception is pending.
+- `test/skill-script-parity.test.ts`: PE-021 is approved with the owner decision and is no longer proposed.
+
+### Check Results (Owner Decisions 2026-11-25)
+
+From `toolkits/buildos/` unless noted. macOS arm64, Node 26.13.1 (no Node 24 on this machine); npm with a cache folder under the temporary folder (the default cache gives EPERM in the sandbox).
+
+| Check | Result |
+| --- | --- |
+| `npm ci`, `npm run typecheck`, `npm run build` | exit 0 |
+| `npm test` | exit 0; 2,595 tests, 2,583 pass, 0 fail, 12 skipped (the same Windows-only and POSIX-only cases); 13 new tests in `intake-json.test.ts`. Every Go parity golden passes, so the text form is unchanged |
+| `npm run check:deps`, `check:deps:installed` | both `dependency policy: ok` |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | `passed` |
+| `make-docs project path-hygiene validate --target-root .` (repository root) | valid, 0 failing findings |
+| `node tools/build-guide.mjs` (in `guide/`) | the guide app is rebuilt from the changed chapter 4 |
+| `git diff --check` | exit 0 |
+
+Not run: `capture.ts --check` (it needs Python and openpyxl). Only the text of note N3 changed, in `capture.ts` and in `capture-record.json` alike; no golden changed. Windows and Linux: the CI run of this work covers them.
+
+### Still Open (P9)
+
+- Decided on 2026-11-26: the SD-05 part of P9 owner question 2, P9 owner questions 3 to 5 (SD-15 to SD-22), and the maintainer route. See [Owner Decisions 2026-11-26](#owner-decisions-2026-11-26).
+- P9-O2: a three-OS CI run of this work (nothing was pushed).
+- F-P9-01: open a produced workbook in Microsoft Excel and LibreOffice by hand before `0.2.0`.
+- Stage 3 (t9 to t13): the skills, the script deletion, the no-Python check, the guide and README for the three skill-script commands, the `0.2.0` release notes, and the release. `RELEASE_NOTES.md` has no `0.2.0` section yet, so this branch adds no release note; Stage 3 adds the intake `--json` line there.
+
+## P9 Intake JSON Review Round 1
+
+On 2026-11-25 the findings of the independent review of the intake `--json` envelope (`4705e52` and `e07b993`, PE-022) were fixed on the branch `rewrite/ts-cli-p9-owner2` (from `e07b993`), on macOS arm64 with Node 26.13.1. The orchestrator accepted all eight findings. Each code fix has a test in `toolkits/buildos/test/intake-json.test.ts` that fails without it: the new test file, run against the source of `e07b993` (a `git archive` extract), fails 10 of 21 tests. The failures are the seven tests for findings 1 to 5 and the three success tests with the new path form. Finding 6 and finding 7 change text only, and the strengthened text test of finding 8 passes on both, because the text form did not change. Text output without `--json` is the same, byte for byte, and every Go parity golden passes. Nothing was pushed, merged, published, staged, tagged, or released.
+
+### Findings and Dispositions (Intake JSON Round 1)
+
+| Finding | What changed | Test |
+| --- | --- | --- |
+| 1 (major) A partial conversion reported `not_requested` | With `--json`, `intake convert` and `intake index` keep a write log (`WriteLog` in `src/core/intake/io.ts`): each folder that `MkdirAll` makes and each new file, with its identity right after the write, and each earlier file that a write changed (`--force`). After a failed write, the log removes, newest first, each folder and file this run made, only while it is still that entry, and never an entry that was there before. A complete undo gives `not_requested` and the failure's exit code. When something stays, the envelope has `partially_applied`, `result.not_restored` (path, reason, `state`), one `undo_incomplete` diagnostic per entry, and exit 10, in the form of `extract bulk` and `fitgap` (`skill-output.ts`). Without `--json`, nothing is undone, as in Go (exit 1). PE-022, PRD 20, `SECURITY.md`, and register `D-010` say how the two modes differ | Finding 1 (3 tests): disk full on the second write of the workbook fixture (JSON: everything this run made is gone and `assets/.gitkeep` stays; text: Go's files stay); a folder that another program filled during the run (exit 10, `assets/inventory/`, the foreign file kept); `--force` over earlier twins (exit 10, both replaced paths named; text form exit 1); an index write into new folders |
+| 2 (major) An unexpected error printed two forms | `fail` in `go-tool.ts` reports an unexpected error itself, in the mode the leaf parser decided and with the leaf's root: the envelope with an `internal_error` diagnostic and nothing on stderr, or the dispatcher's line `buildos: internal error: <first line>` (exit 1). The dispatcher no longer sees the error, so it never scans the raw arguments again. This also applies to `discovery` and `design`, which use the same `fail`; their text form is unchanged | Finding 2: a port fault with `--json` gives only the envelope, with the project root (not `/`); with `--source --json`, `--json` after a positional argument, or after `--`, only the text line |
+| 3 (major) A dry run approved an over-limit twin | `checkTwinSizes` runs before the dry run returns. The text form of a dry run changes only for such a twin (more than 512 MiB with its front matter); this is the rule PE-019 already states ("the dry run too"), and PE-019 now names this case. No golden changes | Finding 3: with a 100-byte test limit, the 18-byte CSV gives exit 4 and the same `file_too_large_to_read_back` diagnostic in the JSON dry run and the JSON write; the text dry run gives exit 4 with the same message |
+| 4 (major) Wrong `root` | `root` is intake's own cleaned root (Go `cleanRoot`: `filepath.Abs`, also of an empty `--repo-root`) from the moment the flags parse: for a success, for `convert requires --source`, and for a failure. Before the parse it stays empty, as for `discovery` and `design`. `discovery` and `design` keep `.` for an empty `--repo-root`, because their Go cleaning returns `.` there; the rule is the same (the root the command uses), and PE-022 says so | Finding 4: `--json --repo-root <project>` without `--source` gives the project; `--repo-root=` and `--repo-root ""` give the current folder; a flag error gives `""` |
+| 5 (major) Result paths were absolute and native | `reportPath` (`convert.ts`): a path inside the project is relative to `root` with `/`; a destination outside the project that `--allow-outside-root` allowed is the absolute path with `/` (the P9 commands report the path as typed; a fixed form is used here so the field is the same on every host). This applies to `outputs[].path`, `side_artifacts`, `output_path`, and `not_restored`. The text form keeps Go's native spelling | Finding 5: the workbook dry run (three twins and the side artifact, relative with `/`); the text line with the native path; an allowed outside index (`slashed(outside)`, without a host separator assumption) |
+| 6 (minor) PE-021 overstated the comparator | PE-021 now says that the error-token relaxation (`#N/A` as an error cell or a text cell) belongs to SD-19, which waits for the owner, and that the approval covers the content rule only | Text only; `skill-script-parity.test.ts` checks the PE-021 entry |
+| 7 (minor) Docs overpromised on help and stderr | The behavior stays, because it is already the behavior of `discovery` and `design`: `buildos intake help`, `buildos intake --help`, and `buildos help intake` print text, also with `--json`; `--help` after a subcommand is a Go flag request (exit 1; a `usage_error` envelope with `--json`). PRD 20, the README, and guide chapter 4 say which help forms print text. PE-022 and register `D-010` limit the empty-stderr promise to `buildos intake` and refer to PE-016 for the legacy name `buildos-intake` | Finding 7: the four text forms, and `--json --help` against `intake convert`, `discovery run discovery`, and `design promote finding` |
+| 8 (minor) Weak tests | The index tests seed one valid entry (a converted twin, a playbook with every required field) and compare the exact text and the exact JSON result (`count` 1, exit 0) | The index success tests and the text-form test |
+
+### Check Results (Intake JSON Round 1)
+
+From `toolkits/buildos/` unless noted. macOS arm64, Node 26.13.1 (no Node 24 on this machine); npm with a cache folder under the temporary folder.
+
+| Check | Result |
+| --- | --- |
+| `npm ci --ignore-scripts`, `npm run typecheck`, `npm run build` | exit 0 |
+| `npm test` | exit 0; 2,603 tests, 2,591 pass, 0 fail, 12 skipped (the same Windows-only and POSIX-only cases); `intake-json.test.ts` has 21 tests (8 new). Every Go parity golden passes |
+| The new `intake-json.test.ts` against the source of `e07b993` | 10 of 21 fail, as listed above |
+| `npm run check:deps`, `check:deps:installed` | both `dependency policy: ok` |
+| `dist/buildos-intake.js convert --json --dry-run` and `dist/buildos.js intake convert --json --dry-run` | the envelope on stdout with relative paths; the legacy name writes only the PE-016 line on stderr, the canonical name nothing |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | `passed` |
+| `make-docs project path-hygiene validate --target-root .` (repository root) | valid, 0 failing findings |
+| `node tools/build-guide.mjs` (in `guide/`) | the guide app is rebuilt from the changed chapter 4 |
+| `git diff --check` | exit 0 |
+
+Not run: `capture.ts --check` (it needs Python and openpyxl; no golden or capture file changed). Windows and Linux: the CI run of this work covers them; the new tests compare paths with `/` or with `join`, never with a fixed separator.
+
+### Open Items (Intake JSON Round 1)
+
+- SD-19 still waits for the owner decision; the error-token relaxation of the `.xlsx` comparator depends on it (finding 6).
+- The undo cannot put back an earlier file that `--force` replaced in place (the in-place writer keeps no copy); such a file is named in `not_restored`. Keeping a copy would be a new write design and was not in scope.
+- P9-O2: a three-OS CI run of this work (nothing was pushed).
+
+## P9 Intake JSON Review Round 2
+
+On 2026-11-25 the findings of review round 2 of the intake `--json` envelope (`e1f2154`, PE-022) were fixed on the branch `rewrite/ts-cli-p9-owner3` (from `e1f2154`), on macOS arm64 with Node 26.13.1. The orchestrator decided: remove the undo and report the truth. Intake does not undo; the envelope names what stayed. Each code fix has a test in `toolkits/buildos/test/intake-json.test.ts` or `toolkits/buildos/test/fs-port.test.ts` that fails without it: the new `intake-json.test.ts`, run against the source of `e1f2154` (a `git archive` extract with a stub for the new test helper `withInPlaceEffect`), fails 10 of 28 tests, which are all 10 new round 2 tests. The two blocker tests fail there on the deletion itself (`the other program's folder stays`, `the other program's file stays`). Text output without `--json` is the same, byte for byte, and every Go parity golden passes. Nothing was pushed, merged, published, staged, tagged, or released.
+
+### Findings and Dispositions (Intake JSON Round 2)
+
+| Finding | What changed | Test |
+| --- | --- | --- |
+| 1 and 2 (blockers) The undo could delete a file or folder of another program | The undo is gone (`WriteLog`, `withUndo`, `IntakeUndoneFailure`, and every `remove` after a failure). A failed write removes and puts back nothing, with and without `--json`, as Go. `WriteRecord` in `src/core/intake/io.ts` lists only what the write operations themselves report: `mkdirAll` (`src/core/shared/go-fs.ts`) tells each folder level whose non-recursive `mkdir` succeeded, and `InPlaceWritePort.writeFileInPlace` now returns `created` or `changed`, and adds `created`, `changed`, or `untouched` to a thrown error (`InPlaceEffect`, `inPlaceEffectOf` in `src/core/shared/fs-port.ts`), also when the write or the close fails after the open. No identity lookup before or after a write is left. With `--json`, a failure after a change gives `partially_applied`, `result.left_in_place` (`path`, `reason` `created` or `changed`, `state` `left`; a folder ends in `/`), one `left_in_place` diagnostic per path, and exit 10; a failure that changed nothing gives `not_requested`, `result` null, and the text form's exit code. `not_restored` is renamed to `left_in_place`, because nothing is restored now. PE-022, PRD 20, register `D-010`, `SECURITY.md` updated | Findings 1 and 2 (5 tests): disk full on the second write keeps every folder and file in both forms and lists each once; a folder that another program made just before BuildOS's `mkdir` stays and is not listed; a file that another program put in place of the run's file stays; a failed index open lists nothing (`not_requested`, exit 1), new index folders are listed, `--force` lists the replaced files as `changed`. `fs-port.test.ts` (2 tests): the real writer reports `created`, `changed`, and `untouched`, also in a refusal, a failed open, and a write that fails after the open, and `changed` for a replaced link |
+| 3 (major) A folder below an allowed outside link was missed | The per-operation record has no read containment, so `mkdir` through the link reports the folder | Finding 3: `--assets-root assets/ext` with `assets/ext` a link out of the root and `--allow-outside-root`; both new folders and both files are listed (POSIX only, as the other intake link tests) |
+| 4 (major) A refusal before the open gave exit 10 | A refusal before the open is `untouched`, so nothing is listed | Finding 4: `intake index playbooks --output assets/CON.json` (the port refuses a device name on every platform), a link to `/dev/null` (POSIX), and a folder that refuses the open (POSIX, not as root): exit 3, 3, and 1, the same as the text form, `not_requested`, `result` null |
+| 5 (major) Two writes to one path gave false recovery text | `WriteRecord` keeps the first change of a path: a path the run created stays `created` | Finding 5: `inputs/pages/` with `a b.html` and `a-b.html` and `--force`; the path `assets/pages/a-b.md` is listed once as `created`, with no recovery text |
+| 6 (minor) A POSIX-only error text in tests | The fault writer and the assertions use `goErrnoText` for `ENOSPC`, which gives `There is not enough space on the disk.` on Windows. The new tests were checked for the same problem: paths use `join` or `/` forms, the link tests are POSIX only, and the device-name case runs on every platform | Every disk-full assertion |
+| 7 (minor) Envelope paths with a leading `..` name | `reportPath` treats a path as outside only when its first component, split with the platform's separator, is `..`. `outputs[].source` now uses `reportPath` of the source path (`ConvertResult.sourcePath`); the twin's front matter keeps Go's `repoRelative` text | Finding 7 (2 tests): a project-root `..draft.csv` gives `source` `..draft.csv` while the front matter keeps Go's absolute path; on POSIX, a folder named `..\draft` and an assets root `..\out` stay relative, and the text line keeps the native path |
+| 8 (minor) The index diagnostic blamed `--force` | An index that a failed write changed gets: the existing index was partly or fully overwritten before the failure, and its earlier content is lost. No message names `--force` for the index commands | In the findings 1 and 8 test |
+| 9 (minor) Help order | Behavior unchanged. The guide shows both orders (`intake convert --json --help` gives a JSON error, `intake convert --help --json` the text error); the README, PRD 20, and PE-022 say the same | The help test now also runs `--help --json` for intake, discovery, and design: exit 1, stdout empty, the text on stderr |
+| 10 (minor) PRD 20 promised one output form for every command | The sentence now covers `intake`, `discovery`, and `design` only. `buildos validate --json` with an injected filesystem fault still prints the envelope and the stderr line `buildos: internal error: injected` (checked on this branch); this is follow-up F-P9-06. The dispatcher was not changed | Text only |
+
+### Check Results (Intake JSON Round 2)
+
+From `toolkits/buildos/` unless noted. macOS arm64, Node 26.13.1 (no Node 24 on this machine); npm with a cache folder under the temporary folder.
+
+| Check | Result |
+| --- | --- |
+| `npm ci --ignore-scripts`, `npm run typecheck`, `npm run build` | exit 0 |
+| `npm test` | exit 0; 2,612 tests, 2,600 pass, 0 fail, 12 skipped (the same Windows-only and POSIX-only cases); `intake-json.test.ts` has 28 tests (3 round 1 undo tests replaced, 10 new), `fs-port.test.ts` 2 new. Every Go parity golden passes |
+| The new `intake-json.test.ts` against the source of `e1f2154` | 10 of 28 fail: the 10 round 2 tests |
+| `npm run check:deps`, `check:deps:installed` | both `dependency policy: ok` |
+| `dist/buildos.js intake convert --json --dry-run` and `dist/buildos-intake.js convert --dry-run` | the envelope with relative paths; the legacy text form with the PE-016 line and the native path |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | `passed` |
+| `make-docs project path-hygiene validate --target-root .` (repository root) | valid, 0 failing findings |
+| `node tools/build-guide.mjs` (in `guide/`) | the guide app is rebuilt from the changed chapter 4 |
+| `git diff --check` | exit 0 |
+
+Not run: `capture.ts --check` (it needs Python and openpyxl; no golden or capture file changed). Windows and Linux: the CI run of this work covers them.
+
+### Open Items (Intake JSON Round 2)
+
+- F-P9-06: the dispatcher's two output forms for an unexpected error of the other domains.
+- The in-place writer still removes a new file that it made itself when a check after its own `O_EXCL` open fails (a refusal), only while the folder and the entry are still the ones it made (`SECURITY.md`). This is not the removed undo: it runs in the text form too and acts only on the file of its own open. A short window between its check and its `unlink` stays, as `SECURITY.md` states.
+- A path in `left_in_place` is what the run made or changed. Another program can still change it after the run; the list does not look again.
+- P9-O2: a three-OS CI run of this work (nothing was pushed).
+
+## P9 Intake JSON Final Check
+
+On 2026-11-25 the seven findings of review round 3 of the intake `--json` envelope (`4f4fb08`, PE-022) were fixed on the branch `rewrite/ts-cli-p9-owner4` (from `4f4fb08`), on macOS arm64 with Node 26.13.1. The three-round review limit is reached. This pass closes the review: no review round 4 follows. Each fix is as small as possible, and no new design work started. Each code fix has a test in `toolkits/buildos/test/intake-json.test.ts` or `toolkits/buildos/test/fs-port.test.ts` that fails without it: the two test files, run against the source of `4f4fb08` (a `git archive` extract), fail 11 of 151 tests, which are the 9 new tests and the 2 extended round 2 tests (finding 4). Text output without `--json` is the same, byte for byte, in every case that has no race, and every Go parity golden passes. Nothing was pushed, merged, published, staged, tagged, or released.
+
+### Findings and Dispositions (Intake JSON Final Check)
+
+| Finding | What changed | Test |
+| --- | --- | --- |
+| 1 (major) Without `--force`, the writer could truncate a twin or side artifact that another program made after the last existence check | Go had the same race: its `writeConvertedOutput` and `writeSideArtifact` call `os.Stat`, then `os.WriteFile` (`O_TRUNC`), at the baseline `263f5ca`. The fix stays. `writeFileInPlace` takes `InPlaceWriteOptions` (`src/core/shared/fs-port.ts`). With `overwrite: false`, the adapter (`src/adapters/node-fs.ts`) never opens an entry at the name, and an `O_EXCL` collision is not tried again as an overwrite; it throws `FsWriteFailure` (step `open`, `EEXIST`). `IntakeFs.writeFileWithParents` (`src/core/intake/io.ts`) takes the Go error text, and `writeConvertedOutput` and `writeSideArtifact` (`convert.ts`) pass it without `--force`, so the collision gives `output exists, use --force to overwrite: <path>` or `side artifact exists, ...` (exit 1) and the other file keeps its bytes. With `--json`, the folders the run made before the collision are listed (exit 10). The racing case differs from Go (Go overwrote and exited 0); PE-010 now states it. `--force` and the index commands keep the overwrite | `fs-port.test.ts`: an entry at the check and an entry made before the `O_EXCL` open are both `EEXIST` and `untouched`, the bytes stay; the default still overwrites. `intake-json.test.ts` (2 tests): a twin made after the existence check, and a side artifact made just before the exclusive create, in the text form (exit 1, Go's text) and with `--json` (exit 10, the run's folders listed) |
+| 2 (major) A refusal of the writer factory (`openWriter`) gave exit 10 and listed the absent file as `changed` | `writeFileWithParents` opens the writer (`binding.inPlace()`) before the `try` that records effects, so a factory refusal is not taken as an untagged write error | A factory that throws `PathRefusedError` for `intake index playbooks` with an existing output folder: text exit 3; JSON exit 3, `not_requested`, `result` null, one diagnostic, no file |
+| 3 (major) An open failure after the writer removed an index link said the index was overwritten and its content lost | The adapter tags the error (`withInPlaceEffect(error, effect, linkRemoved)`, `inPlaceLinkRemovedOf`). `WriteChange.link` carries it; the diagnostic says that the run removed the link at the path, that the file the link pointed to is not changed, and to make the link again. The entry stays `changed`, exit 10 | POSIX only (a link): `.os/indexes/references.json` a link to `real.json`, an injected `EACCES` at the open: exit 10, `changed`, the link diagnostic, `real.json` unchanged, the link gone |
+| 4 (major) The recovery text could make an operator delete another program's replacement | The `created` text now says what the run did at that time and that another program can have changed the path after that. The correction says to look at the entry that is at the path now before removing anything. `SECURITY.md` qualifies the ownership statement: a listed path is not proof that BuildOS owns the entry there now | The round 2 test "a file that another program put in place" now asserts the diagnostic and the correction; the round 2 disk-full test asserts the new text |
+| 5 (minor) On a case-insensitive volume, `image1.png` and `IMAGE1.PNG` with `--force` were listed twice | The writer already has the identity of the opened file (its `fstat` right after the open; an inode of 0 is no identity). It gives it through `InPlaceWriteOptions.opened`, with no new lookup. `WriteRecord` skips a file write whose identity an earlier write of the run opened, so the first spelling and reason stay; distinct files keep distinct identities | `fs-port.test.ts`: one file gives one identity, two files two. `intake-json.test.ts`: a `.docx` with both media names, `--force`, a failure at the twin: one `created` image entry on a case-insensitive volume, two on a case-sensitive one (the test checks the volume). On Linux CI, the end-to-end test also passes on the old code; the adapter test covers the identity there |
+| 6 (minor) No deterministic close fault after a successful write | A test hook `writeRaceHooks.afterStep` (`close-in-place`) runs right after the in-place writer's real close; a test throws from it | `fs-port.test.ts`: step `close`, `EIO`, `created` for a new file and `changed` for an existing one, the bytes complete. `intake-json.test.ts`: an index write with the close fault gives exit 10, `created`, a `close ...` message, then `changed` on the next run |
+| 7 (minor) PRD 20 and PE-022 promised equal exit codes and also said a partial write exits 1 in text mode | PRD 20 and PE-022 now say: the text form keeps the exit code of the underlying failure (1 for a failed write, 3 for a refusal); with `--json`, a failure after a recorded change exits 10, also when the text form gives another code (an index whose parent folder the run made before the port refused the file: 3 and 10). PRD 20 has a requirement history entry | Text only |
+
+### Check Results (Intake JSON Final Check)
+
+From `toolkits/buildos/` unless noted. macOS arm64, Node 26.13.1 (no Node 24 on this machine); npm with a cache folder under the temporary folder.
+
+| Check | Result |
+| --- | --- |
+| `npm ci --ignore-scripts`, `npm run typecheck`, `npm run build` | exit 0 |
+| `npm test` | exit 0; 2,621 tests, 2,609 pass, 0 fail, 12 skipped (the same Windows-only and POSIX-only cases); `intake-json.test.ts` has 34 tests (6 new, 2 extended), `fs-port.test.ts` 3 new. Every Go parity golden passes |
+| The two test files against the source of `4f4fb08` | 11 of 151 fail, as listed above |
+| `npm run check:deps`, `check:deps:installed` | both `dependency policy: ok` |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | `passed` |
+| `make-docs project path-hygiene validate --target-root .` (repository root) | valid, 0 failing findings |
+| `git diff --check` | exit 0 |
+
+Not run: `capture.ts --check` (it needs Python and openpyxl; no golden or capture file changed). The guide source did not change, so the guide app was not rebuilt. Windows and Linux: the CI run of this work covers them; the new tests use `join` or `/` paths, the link test is POSIX only, and the case test reads the volume's behavior.
+
+### Follow-Ups (Intake JSON Final Check)
+
+- No new follow-up: all seven findings are fixed. No fix needed a large change.
+- F-P9-06 stays open: the dispatcher's two output forms for an unexpected error of the other domains.
+- P9-O2: a three-OS CI run of this work (nothing was pushed).
+
+## Owner Decisions 2026-11-26
+
+The owner answered the two questions that the orchestrator asked on 2026-11-26. Each answer is option A, the recommendation.
+
+| Question | Decision |
+| --- | --- |
+| The `0.2.0` commands `extract bulk`, `fitgap`, and `export azure-boards` differ from the Python scripts where a script result was wrong or lost data | Keep the new behavior. This confirms SD-05 (contained writes; `--allow-outside-root` for an output outside the project), SD-15 to SD-20, SD-21 (a requirement ID repeated within one capability is refused), and SD-22 (a pending publication over a changed data file is placed by row ID, or stops with exit 10). The SD-19 rule that counts `#N/A` as an error cell or a text cell with the same value is confirmed with it. |
+| Who approves a release | The sole-maintainer route, as the repository is set up now. The owner can change to the two-maintainer route later; `toolkits/buildos/SECURITY.md` gives the steps. |
+
+No code changed for these decisions. The behavior that the final check recorded is the approved behavior.
+
+## P9 Move to the Public Repository (2026-11-26)
+
+On 2026-11-26 the P9 Stage 1 and Stage 2 work came into this repository as file content only, on the branch `rewrite/p9-skill-commands`. The source is the diff of the private archive repository from `38d1e08` (the merge-base with the P8 branch there) to `1240758` (17 commits there): 332 files, 49,225 lines added and 179 removed. The diff was applied as a plain patch, and new commits were written here; no commit, commit message, or author data of the archive came along. The base is the head of pull request 5 (`release/0.1.0-post-publication-checks`, `6db975a`), because that pull request was not merged yet. Stage 3 (t9 to t13) is not part of this move.
+
+### Conflicts
+
+Four files did not apply cleanly. Each was merged by content, with the archive's `38d1e08` file as the common base.
+
+| File | Resolution |
+| --- | --- |
+| `docs/prd/20-buildos-cli-and-distribution.md` | Both sides add requirement history entries at the same place: both are kept, the P8 entries first. |
+| `toolkits/buildos/SECURITY.md` | The bundle line takes the P9 text (the fit-gap workbook) with the package name `build-os`. Known Limits keeps this repository's Git history line and adds the four P9 lines (skill scripts, the `extract bulk` lock file, CSV formula prefixes, `fitgap` workbook text). |
+| `docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md` | The decision log keeps this repository's rows and adds the three P9 rows (PE-021, SD-04, `D-010`); the fourth P9 row repeats the P8 decisions and is dropped. Both sides' sections are kept, the P8 sections first. The P9 heading `Owner Decisions 2026-11-25` is now `P9 Owner Decisions 2026-11-25`, because the P8 sections have a heading with the same name. Two P9 "Update 2026-11-25" lines that repeat a line of the P8 sections are dropped. |
+| `guide/BuildOS-Guide.html` | Generated: the P9 chapter 4 source is taken, and the guide app is rebuilt with `node tools/build-guide.mjs` (in `guide/`). |
+
+### Changes After the Patch
+
+- Links: 15 added lines in 9 files named `#owner-decisions-2026-11-25` for the P9 decisions; they now name `#p9-owner-decisions-2026-11-25`. A 16th such line was one of the two repeated lines above and is gone.
+- `test/golden/compare.test.ts` accepts an owner decision link to `evidence.md#owner-decisions` or `evidence.md#p9-owner-decisions`, because PE-021 and PE-022 now link to the P9 section.
+- The P9 introduction says that the archive commit hashes and branch names in the P9 records name commits and branches of the private archive (13 P9 commit IDs plus the earlier Go baseline commit `263f5ca`, and the branches `rewrite/ts-cli-p9` to `rewrite/ts-cli-p9-owner4`). Recount on 2026-11-26 (review round 1 on the public repository, finding 3): the moved text has 14 distinct commit IDs that do not resolve here, the 13 P9 IDs `38d1e08`, `3fe6f9c`, `4705e52`, `4c02048`, `4f4fb08`, `576d9ce`, `7df73a1`, `9f5aee9`, `befc751`, `dd20021`, `e07b993`, `e1f2154`, and `f364ee3`, and `263f5ca`. This move record also names `1240758`, the end of the moved range.
+- The P9 phase status names this move and the owner decisions of 2026-11-26.
+
+### Check Results (Move)
+
+From `toolkits/buildos/` unless noted. macOS arm64, Node 26.13.1; npm with a cache folder under the temporary folder.
+
+| Check | Result |
+| --- | --- |
+| `npm ci --ignore-scripts`, `npm run typecheck`, `npm run build` | exit 0 |
+| `npm test` | exit 0; 2,732 tests, 2,719 pass, 0 fail, 13 skipped |
+| `node dist/buildos.js help` | lists `extract`, `fitgap`, and `export` |
+| `make-docs project paths validate` (repository root) | valid, 0 failing findings |
+| `make-docs check prd` (repository root) | passed, 0 diagnostics |
+| `make-docs project markdown validate` (repository root) | 178 findings, the same as the base `6db975a` |
+| `node tools/build-guide.mjs` (in `guide/`), run twice | the second run gives the same file |
+| `node scripts/check-deny-list.mjs --root ../.. --pack .` with the real list | 0 matches, 0 home folder paths, 173 of 173 package files read |
+| Added lines against `6db975a`: absolute home paths, the machine user name, new `~/` paths, `file://`, email addresses | 0 of each |
+
+Not run here: Node 24, Linux, and Windows (the CI run of the pull request covers them), and `capture.ts --check` (it needs Python and openpyxl). No captured golden output changed in the move; in `test/golden/`, only the owner decision links of `parity-exceptions.json`, `proposed-exceptions.json`, and `skills/divergences.json`, and the matching checks in `self-test.test.ts` and `compare.test.ts`, changed.
+
+## P9 Review Round 1 on the Public Repository (2026-11-26)
+
+An independent review of pull request 6 (head `511436e`) gave FAIL with one blocker, one should-fix, and two notes. The orchestrator accepted all four. The fixes are new commits on `rewrite/p9-skill-commands`, on macOS arm64 with Node 26.13.1. Pull request 5 was not merged, so the base stays `6db975a`.
+
+| Finding | Resolution | Check |
+| --- | --- | --- |
+| 1 (blocker) the skill-script capture read the scripts from the private archive commit `38d1e08`, so `capture.ts --check` failed in a public clone | `test/golden/skills/script-source.ts` holds the capture revision: `085927e3c1324fc73fe57af9493ca0b01fcaed18`, the first commit of this repository. The four scripts and the fit-gap palette have the same SHA-256 there as at `38d1e08`; the palette is now pinned too (`script-sha256.json`). `capture-record.json` names the new revision; no golden changed. `38d1e08` stays as capture provenance in `test/golden/CAPTURE.md` (Skill-Script and Validator Sources) and the tool header. Two more run-time archive references: the validator capture (`test/golden/validate/capture.ts`) read `0560ba1`, which no public commit can replace, because the script was deleted before the public repository started; it now needs `--script <path>` and keeps the SHA-256 check. `test/wrappers.test.ts` read the Go-era wrapper from `7cfc0b7` and fell back to a shorter text in a public clone; it now holds the exact text with its SHA-256. | `test/capture-sources.test.ts`: the revision is a full SHA, equals the commit CAPTURE.md documents and the record names, resolves here as the root commit reachable from `HEAD`, and holds every pinned file with its hash; no code or workflow file names a commit-like literal that does not resolve here, except listed provenance-only literals in files that never run git. CI checks out the full history for it (`buildos-ci.yml`, `fetch-depth: 0`). With `38d1e08` put back as the revision, all three tests fail. |
+| 2 (should-fix) t4 to t8 ticked before A77 passes | A77 is met by the CI run of the fix commit `b49a06d` (below), so t4 to t8 stay done. | [CI Run of `b49a06d`](#ci-run-of-b49a06d) |
+| 3 (note) the archive note said 13 commit IDs | The note in [Changes After the Patch](#changes-after-the-patch) now says 13 P9 commit IDs plus the earlier Go baseline commit, and lists every ID. | Recount of the moved text |
+| 4 (note) the body of `511436e` paraphrased its history record | Not rewritten. `b49a06d` copies the first `## Changes` paragraph of its history record. The docs-only commit `baf86db` has its own one-paragraph body. | Commit messages |
+
+### Check Results (Review Round 1 on the Public Repository)
+
+From `toolkits/buildos/` unless noted. macOS arm64, Node 26.13.1, Python 3.14.10.
+
+| Check | Result |
+| --- | --- |
+| `node test/golden/skills/capture.ts --check --script azure-boards` | exit 0, 11 cases |
+| `node test/golden/skills/capture.ts --check --script bulk-extract` | exit 0, 35 cases |
+| `node test/golden/skills/capture.ts --check --script fitgap --python <venv>/bin/python` | exit 0, 15 cases; openpyxl 3.1.5 and et_xmlfile 2.0.0 from the pinned wheel hashes, in a throwaway virtual environment under the temporary folder |
+| `node test/golden/skills/capture.ts --check --python <venv>/bin/python` (every script and `capture-record.json`) | exit 0 |
+| `node test/golden/validate/capture.ts --check --script <copy>` | exit 0, 85 cases; the copy is `validate_config.py` at `0560ba1`, read from the private archive, SHA-256 `20350b47…905c`; without `--script` the tool stops with exit 1 |
+| `npm ci --ignore-scripts`, `npm run typecheck`, `npm run build` | exit 0 |
+| `npm test` | exit 0; 2,735 tests, 2,722 pass, 0 fail, 13 skipped |
+| `make-docs project paths validate` (repository root) | valid, 0 failing findings |
+| `node scripts/check-deny-list.mjs --root ../.. --pack .` with the real list | 0 matches |
+
+### CI Run of `b49a06d`
+
+`b49a06d` holds the review round 1 fixes. Its CI runs in this repository passed: buildos-ci [run 45911537818](https://github.com/brucewaynedecoy/build-os/actions/runs/45911537818) (push) and [run 45911543946](https://github.com/brucewaynedecoy/build-os/actions/runs/45911543946) (pull request 6). In run 45911537818, each `test` job (Ubuntu, macOS, and Windows, Node 24) passed with 0 failures, and each passed all 65 tests of the four A77 suites (35 bulk-extract, 15 fit-gap, 11 Azure Boards, 4 divergence; corrected from 68 in review round 2) in `test/skill-script-parity.test.ts`, with none skipped. `test/capture-sources.test.ts` ran with the full history and passed on each system. The OSV gate, the Make Docs contract job, the cross-OS pack report, the smoke jobs, and the invented-list deny-list job passed too; the real-list deny-list job runs on the default branch only and was skipped.
+
+- A77: met (P9-O2 closed for `b49a06d`).
+- The commit that records this run changes only docs, and its push starts new runs. This record cites the run of `b49a06d`, the commit that holds the code.

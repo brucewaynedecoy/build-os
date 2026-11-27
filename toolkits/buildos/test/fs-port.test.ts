@@ -8,7 +8,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { classifyPathText, createNodeFsPort, createNodeInPlaceWriter, isDevicePathText, isInsideRoot, writeRaceHooks } from "../src/adapters/node-fs.ts";
 import { exitCodeFor } from "../src/cli/exit-codes.ts";
 import { FsWriteFailure, PathRefusedError, type PathRefusalReason } from "../src/core/shared/errors.ts";
-import type { FsPort, InPlaceWritePort } from "../src/core/shared/fs-port.ts";
+import { inPlaceEffectOf, type FsPort, type InPlaceWritePort } from "../src/core/shared/fs-port.ts";
 import { goPathError, goReadFileError } from "../src/core/shared/go-os-error.ts";
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -37,6 +37,16 @@ after(() => {
 });
 
 /** Asserts that `action` throws a PathRefusedError with `reason`, mapped to exit 3. */
+/** The error that `action` throws (fails when it does not throw). */
+function thrown(action: () => unknown): unknown {
+  try {
+    action();
+  } catch (error) {
+    return error;
+  }
+  assert.fail("expected a throw");
+}
+
 function assertRefused(action: () => unknown, reason: PathRefusalReason): void {
   let caught: unknown;
   try {
@@ -89,6 +99,92 @@ describe("node:fs in-place writer (intake output only)", () => {
     writeFileSync(join(root, "in-place", "old.txt"), "a long old body");
     writer.writeFileInPlace("in-place/old.txt", new Uint8Array([110]), 0o644);
     assert.equal(readFileSync(join(root, "in-place", "old.txt"), "utf8"), "n");
+  });
+
+  it("says what it did at the name: created, changed, or untouched, also in a thrown error (W1 R7 P9 intake JSON review round 2)", () => {
+    mkdirSync(join(root, "effect"), { recursive: true });
+    assert.equal(writer.writeFileInPlace("effect/new.txt", new Uint8Array([104]), 0o644), "created");
+    assert.equal(writer.writeFileInPlace("effect/new.txt", new Uint8Array([105]), 0o644), "changed");
+    // A refusal before the open changes nothing.
+    writeFileSync(join(outside, "effect-linked.txt"), "outside body");
+    linkSync(join(outside, "effect-linked.txt"), join(root, "effect", "hard-link.txt"));
+    const refused = thrown(() => writer.writeFileInPlace("effect/hard-link.txt", new Uint8Array([120]), 0o644));
+    assert.ok(refused instanceof PathRefusedError);
+    assert.equal(inPlaceEffectOf(refused), "untouched");
+    // A failed open (a folder at the name) changes nothing.
+    mkdirSync(join(root, "effect", "dir"));
+    assert.equal(inPlaceEffectOf(thrown(() => writer.writeFileInPlace("effect/dir", new Uint8Array([120]), 0o644))), "untouched");
+    // A write that fails after the open: the new file stays `created`; an existing file truncated is `changed`.
+    class Failing extends Uint8Array {
+      override get byteLength(): number {
+        throw new Error("injected write fault");
+      }
+    }
+    const failedNew = thrown(() => writer.writeFileInPlace("effect/partial.txt", new Failing(1), 0o644));
+    assert.ok(failedNew instanceof FsWriteFailure);
+    assert.deepEqual([failedNew.fs.step, inPlaceEffectOf(failedNew), existsSync(join(root, "effect", "partial.txt"))], ["write", "created", true]);
+    assert.equal(inPlaceEffectOf(thrown(() => writer.writeFileInPlace("effect/new.txt", new Failing(1), 0o644))), "changed");
+    assert.equal(readFileSync(join(root, "effect", "new.txt"), "utf8"), "", "the existing file was truncated");
+  });
+
+  it("says `created` or `changed` with the step `close` when the close fails after a complete write (W1 R7 P9 intake JSON final check, finding 6)", () => {
+    mkdirSync(join(root, "close-fault"), { recursive: true });
+    writeFileSync(join(root, "close-fault", "old.txt"), "old body");
+    writeRaceHooks.afterStep = () => {
+      throw Object.assign(new Error("EIO: injected close fault"), { code: "EIO", syscall: "close" });
+    };
+    try {
+      for (const [name, effect] of [["new.txt", "created"], ["old.txt", "changed"]] as const) {
+        const failed = thrown(() => writer.writeFileInPlace(`close-fault/${name}`, new Uint8Array([104, 105]), 0o644));
+        assert.ok(failed instanceof FsWriteFailure, name);
+        assert.deepEqual([failed.fs.step, failed.fs.errno, inPlaceEffectOf(failed)], ["close", "EIO", effect], name);
+        assert.equal(readFileSync(join(root, "close-fault", name), "utf8"), "hi", `${name}: the write was complete before the close`);
+      }
+    } finally {
+      delete writeRaceHooks.afterStep;
+    }
+  });
+
+  it("without overwrite, never opens an entry at the name, also one that appears before the exclusive create (W1 R7 P9 intake JSON final check, finding 1)", () => {
+    mkdirSync(join(root, "no-overwrite"), { recursive: true });
+    writeFileSync(join(root, "no-overwrite", "there.txt"), "another program");
+    const seen = thrown(() => writer.writeFileInPlace("no-overwrite/there.txt", new Uint8Array([120]), 0o644, { overwrite: false }));
+    assert.ok(seen instanceof FsWriteFailure);
+    assert.deepEqual([seen.fs.step, seen.fs.errno, inPlaceEffectOf(seen)], ["open", "EEXIST", "untouched"]);
+    assert.equal(readFileSync(join(root, "no-overwrite", "there.txt"), "utf8"), "another program");
+    // Another program makes the file between the check and the O_EXCL open.
+    writeRaceHooks.beforeOpen = (step, entry) => {
+      if (step === "in-place") writeFileSync(entry, "another program");
+    };
+    try {
+      const raced = thrown(() => writer.writeFileInPlace("no-overwrite/raced.txt", new Uint8Array([120]), 0o644, { overwrite: false }));
+      assert.ok(raced instanceof FsWriteFailure);
+      assert.deepEqual([raced.fs.step, raced.fs.errno, inPlaceEffectOf(raced)], ["open", "EEXIST", "untouched"]);
+      assert.equal(readFileSync(join(root, "no-overwrite", "raced.txt"), "utf8"), "another program", "the collision is not tried again as an overwrite");
+    } finally {
+      writeRaceHooks.beforeOpen = undefined;
+    }
+    // The default still writes an existing file in place.
+    assert.equal(writer.writeFileInPlace("no-overwrite/there.txt", new Uint8Array([120]), 0o644), "changed");
+  });
+
+  it("gives the identity of the file it opened: the same for one file, different for two (W1 R7 P9 intake JSON final check, finding 5)", () => {
+    mkdirSync(join(root, "identity"), { recursive: true });
+    const ids: string[] = [];
+    const opened = (id: string) => ids.push(id);
+    writer.writeFileInPlace("identity/a.txt", new Uint8Array([97]), 0o644, { opened });
+    writer.writeFileInPlace("identity/a.txt", new Uint8Array([98]), 0o644, { opened });
+    writer.writeFileInPlace("identity/b.txt", new Uint8Array([99]), 0o644, { opened });
+    assert.equal(ids.length, 3);
+    assert.equal(ids[0], ids[1]);
+    assert.notEqual(ids[0], ids[2]);
+  });
+
+  it("says `changed` when it replaced a link at the name (W1 R7 P9 intake JSON review round 2)", posixOnly, () => {
+    mkdirSync(join(root, "effect-link"), { recursive: true });
+    symlinkSync(join(outside, "effect-missing.txt"), join(root, "effect-link", "twin.md"));
+    assert.equal(writer.writeFileInPlace("effect-link/twin.md", new Uint8Array([120]), 0o644), "changed");
+    assert.equal(lstatSync(join(root, "effect-link", "twin.md")).isFile(), true);
   });
 
   it("refuses a file with a second hard link, before it truncates anything", () => {

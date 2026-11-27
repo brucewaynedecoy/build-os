@@ -1,0 +1,15 @@
+{
+  "case": "index-errors-shape",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "status"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: Reference index has no references list\n",
+      "files": {}
+    }
+  ]
+}

@@ -1,0 +1,146 @@
+[
+  {
+    "baseline_capability_id": "CIRC-PAT-01",
+    "objective_ids": [
+      "OBJ-02"
+    ],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [
+      {
+        "requirement_id": "CIRC-PAT-01-R01",
+        "mark": "met",
+        "target_capability_ids": [
+          "LIB-PAT-01"
+        ],
+        "note": ""
+      },
+      {
+        "requirement_id": "CIRC-PAT-01-R02",
+        "mark": "configured",
+        "target_capability_ids": [
+          "LIB-PAT-01"
+        ],
+        "note": "Card number format set in account rules."
+      },
+      {
+        "requirement_id": "CIRC-PAT-01-R03",
+        "mark": "unreleased",
+        "target_capability_ids": [
+          "LIB-PAT-02"
+        ],
+        "note": "Guardians are on the roadmap for the next release."
+      }
+    ],
+    "evidence": "Rows for CIRC-PAT-01. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "Guardian link waits for the next release.",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T2",
+    "owners": [
+      "Platform Vendor"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-PAT-02",
+    "objective_ids": [
+      "OBJ-02"
+    ],
+    "confidence": "low",
+    "effort": "low",
+    "marks": [
+      {
+        "requirement_id": "CIRC-PAT-02-R01",
+        "mark": "unreleased",
+        "target_capability_ids": [
+          "LIB-PAT-02"
+        ],
+        "note": "Notice centre is in preview only."
+      }
+    ],
+    "evidence": "Rows for CIRC-PAT-02. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "Notices wait for general availability.",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T2",
+    "owners": [
+      "Platform Vendor"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-PAT-03",
+    "objective_ids": [
+      "OBJ-02",
+      "OBJ-03"
+    ],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [
+      {
+        "requirement_id": "CIRC-PAT-03-R01",
+        "mark": "met",
+        "target_capability_ids": [
+          "LIB-PAT-01"
+        ],
+        "note": ""
+      },
+      {
+        "requirement_id": "CIRC-PAT-03-R02",
+        "mark": "unreleased",
+        "target_capability_ids": [],
+        "note": "The fine cap is named in the roadmap only."
+      }
+    ],
+    "evidence": "Rows for CIRC-PAT-03. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "No fine cap yet.",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T2",
+    "owners": [
+      "Volunteer Team"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-CAT-01",
+    "objective_ids": [
+      "OBJ-03"
+    ],
+    "confidence": "high",
+    "effort": "low",
+    "marks": [
+      {
+        "requirement_id": "CIRC-CAT-01-WHOLE",
+        "mark": "met",
+        "target_capability_ids": [
+          "LIB-CAT-01"
+        ],
+        "note": ""
+      }
+    ],
+    "evidence": "Rows for CIRC-CAT-01. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T2",
+    "owners": [
+      "Library Staff"
+    ]
+  },
+  {
+    "baseline_capability_id": "CIRC-CAT-02",
+    "objective_ids": [],
+    "confidence": "high",
+    "effort": "none",
+    "marks": [
+      {
+        "requirement_id": "CIRC-CAT-02-R01",
+        "mark": "descoped",
+        "target_capability_ids": [],
+        "note": "The library decided to stop printing spine labels."
+      }
+    ],
+    "evidence": "Rows for CIRC-CAT-02. The candidate platform documents this in its circulation guide, and the desk staff confirmed the steps in a walk-through.",
+    "gap_detail": "",
+    "migration_note": "Configure the platform and train the desk staff.",
+    "track": "T2",
+    "owners": [
+      "Library Staff"
+    ]
+  }
+]

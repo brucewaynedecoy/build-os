@@ -1,0 +1,262 @@
+{
+  "meta": {
+    "code": "CIRC",
+    "name": "Current Circulation System",
+    "title": "CIRC capability model"
+  },
+  "layers": [
+    {
+      "id": "L1",
+      "code": "CORE",
+      "name": "Circulation"
+    },
+    {
+      "id": "L2",
+      "code": "PAT",
+      "name": "Patrons"
+    },
+    {
+      "id": "L3",
+      "code": "CAT",
+      "name": "Catalogue"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "CIRC-COR-01",
+      "parent_id": null,
+      "name": "Check out books",
+      "layer_id": "L1",
+      "doc_ref": "D-01",
+      "type": "process",
+      "status": "built",
+      "maturity": "proven",
+      "summary": "Check out books at the circulation desk.",
+      "requirements": [
+        {
+          "id": "CIRC-COR-01-R01",
+          "kind": "function",
+          "status": "built",
+          "maturity": "proven",
+          "text": "Scan a patron card.",
+          "option_values": null
+        },
+        {
+          "id": "CIRC-COR-01-R02",
+          "kind": "function",
+          "status": "built",
+          "maturity": "proven",
+          "text": "Scan the book barcode.",
+          "option_values": null
+        }
+      ]
+    },
+    {
+      "id": "CIRC-COR-02",
+      "parent_id": null,
+      "name": "Check in books",
+      "layer_id": "L1",
+      "doc_ref": "D-02",
+      "type": "process",
+      "status": "built",
+      "maturity": "proven",
+      "summary": "Check in books at the circulation desk.",
+      "requirements": [
+        {
+          "id": "CIRC-COR-02-R01",
+          "kind": "function",
+          "status": "built",
+          "maturity": "proven",
+          "text": "Return a book at any branch.",
+          "option_values": null
+        },
+        {
+          "id": "CIRC-COR-02-R02",
+          "kind": "function",
+          "status": "built",
+          "maturity": "proven",
+          "text": "Print a return receipt.",
+          "option_values": "paper | e-mail"
+        }
+      ]
+    },
+    {
+      "id": "CIRC-COR-03",
+      "parent_id": null,
+      "name": "Renew loans",
+      "layer_id": "L1",
+      "doc_ref": "D-03",
+      "type": "process",
+      "status": "built",
+      "maturity": "available",
+      "summary": "Renew loans at the circulation desk.",
+      "requirements": [
+        {
+          "id": "CIRC-COR-03-R01",
+          "kind": "function",
+          "status": "built",
+          "maturity": "proven",
+          "text": "Renew a loan twice.",
+          "option_values": null
+        },
+        {
+          "id": "CIRC-COR-03-R02",
+          "kind": "function",
+          "status": "built",
+          "maturity": "proven",
+          "text": "Block a renewal when the book is held.",
+          "option_values": null
+        }
+      ]
+    },
+    {
+      "id": "CIRC-COR-04",
+      "parent_id": null,
+      "name": "Holds queue",
+      "layer_id": "L1",
+      "doc_ref": "D-04",
+      "type": "process",
+      "status": "built",
+      "maturity": "proven",
+      "summary": "Holds queue at the circulation desk.",
+      "requirements": [
+        {
+          "id": "CIRC-COR-04-R01",
+          "kind": "function",
+          "status": "built",
+          "maturity": "proven",
+          "text": "Queue holds in order.",
+          "option_values": null
+        },
+        {
+          "id": "CIRC-COR-04-R02",
+          "kind": "function",
+          "status": "built",
+          "maturity": "proven",
+          "text": "Skip a patron who is away.",
+          "option_values": null
+        }
+      ]
+    },
+    {
+      "id": "CIRC-PAT-01",
+      "parent_id": null,
+      "name": "Register patrons",
+      "layer_id": "L2",
+      "doc_ref": "D-01",
+      "type": "process",
+      "status": "built",
+      "maturity": "proven",
+      "summary": "Register patrons at the circulation desk.",
+      "requirements": [
+        {
+          "id": "CIRC-PAT-01-R01",
+          "kind": "function",
+          "status": "built",
+          "maturity": "proven",
+          "text": "Record a patron's name and address.",
+          "option_values": null
+        },
+        {
+          "id": "CIRC-PAT-01-R02",
+          "kind": "function",
+          "status": "built",
+          "maturity": "proven",
+          "text": "Issue a card number.",
+          "option_values": null
+        },
+        {
+          "id": "CIRC-PAT-01-R03",
+          "kind": "function",
+          "status": "built",
+          "maturity": "proven",
+          "text": "Record a guardian for a child.",
+          "option_values": null
+        }
+      ]
+    },
+    {
+      "id": "CIRC-PAT-02",
+      "parent_id": null,
+      "name": "Patron notices",
+      "layer_id": "L2",
+      "doc_ref": "D-02",
+      "type": "process",
+      "status": "built",
+      "maturity": "partial",
+      "summary": "Patron notices at the circulation desk.",
+      "requirements": [
+        {
+          "id": "CIRC-PAT-02-R01",
+          "kind": "function",
+          "status": "built",
+          "maturity": "proven",
+          "text": "Send an overdue notice.",
+          "option_values": null
+        }
+      ]
+    },
+    {
+      "id": "CIRC-PAT-03",
+      "parent_id": null,
+      "name": "Patron fines — café desk",
+      "layer_id": "L2",
+      "doc_ref": "D-03",
+      "type": "process",
+      "status": "built",
+      "maturity": "available",
+      "summary": "Patron fines at the circulation desk.",
+      "requirements": [
+        {
+          "id": "CIRC-PAT-03-R01",
+          "kind": "function",
+          "status": "built",
+          "maturity": "proven",
+          "text": "Charge ten cents a day.",
+          "option_values": null
+        },
+        {
+          "id": "CIRC-PAT-03-R02",
+          "kind": "function",
+          "status": "built",
+          "maturity": "proven",
+          "text": "Cap a fine at the book's price.",
+          "option_values": null
+        }
+      ]
+    },
+    {
+      "id": "CIRC-CAT-01",
+      "parent_id": null,
+      "name": "Catalogue search",
+      "layer_id": "L3",
+      "doc_ref": "D-01",
+      "type": "process",
+      "status": "built",
+      "maturity": "available",
+      "summary": "Catalogue search at the circulation desk.",
+      "requirements": []
+    },
+    {
+      "id": "CIRC-CAT-02",
+      "parent_id": null,
+      "name": "Shelf labels",
+      "layer_id": "L3",
+      "doc_ref": "D-02",
+      "type": "process",
+      "status": "planned",
+      "maturity": "planned",
+      "summary": "Shelf labels at the circulation desk.",
+      "requirements": [
+        {
+          "id": "CIRC-CAT-02-R01",
+          "kind": "function",
+          "status": "built",
+          "maturity": "proven",
+          "text": "Print spine labels.",
+          "option_values": null
+        }
+      ]
+    }
+  ]
+}

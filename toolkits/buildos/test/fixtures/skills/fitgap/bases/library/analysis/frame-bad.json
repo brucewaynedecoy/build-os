@@ -1,0 +1,80 @@
+{
+  "title": "Current Circulation System to Candidate Library Platform",
+  "mode": "migration",
+  "baseline": {
+    "model": "../deliver/CIRC/circ-capability-model.json"
+  },
+  "target": {
+    "model": "../deliver/CIRC/circ-capability-model.json"
+  },
+  "objectives": [
+    {
+      "id": "OBJ-1",
+      "name": "",
+      "weight": "nice",
+      "statement": "x",
+      "rank": "first"
+    },
+    {
+      "id": "OBJ-01",
+      "name": "A",
+      "weight": "must",
+      "statement": "",
+      "measure": "  "
+    },
+    {
+      "id": "OBJ-01",
+      "name": "B",
+      "weight": "should",
+      "statement": "y"
+    },
+    {
+      "name": "No id",
+      "weight": "could",
+      "statement": "z"
+    }
+  ],
+  "objectives_confirmed_by": "",
+  "tracks": [
+    {
+      "id": "T1",
+      "name": "Go-live",
+      "order": "first"
+    },
+    {
+      "id": "T1"
+    },
+    {
+      "name": "No id",
+      "order": 3
+    }
+  ],
+  "owners": [
+    "Library Staff"
+  ],
+  "owner_roles": {
+    "Library Staff": "Runs the circulation desk and decides policy.",
+    "Platform Vendor": "Configures and builds the platform."
+  },
+  "scoring": {
+    "mark_points": {
+      "met": 120
+    },
+    "objective_factor": {
+      "none": -0.1
+    },
+    "maturity_factor": {
+      "deferred": 2
+    }
+  },
+  "owner_colors": {
+    "Library Staff": {
+      "fill": "zzzzzz",
+      "font": "000000"
+    },
+    "Stranger": {
+      "fill": "FFFFFF",
+      "font": "000000"
+    }
+  }
+}

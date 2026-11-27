@@ -114,9 +114,7 @@ export function validateProject(input: ValidateInput): Validated {
   const contract = readChecked(fs, out, CONTRACT_PATH, VALIDATE_LIMITS.configMaxBytes, "contract");
   if (contract.text !== undefined) checkContractText(out, CONTRACT_PATH, contract.text);
 
-  let index: ConfigIndex = EMPTY_INDEX;
-  const config = readChecked(fs, out, CONFIG_PATH, VALIDATE_LIMITS.configMaxBytes, "config");
-  if (config.text !== undefined) index = checkConfigText(out, CONFIG_PATH, config.text);
+  const index = readConfig(fs, out);
 
   const frontmatterFiles: string[] = [];
   for (const path of scopedMarkdownPaths(fs, out)) {
@@ -182,6 +180,17 @@ export function* jsonlLines(text: string): Generator<string> {
 
 interface ReadOutcome {
   text?: string;
+}
+
+/**
+ * Reads and checks `.os/config/instance.yaml` (the same reader and decoding
+ * for every caller: W1 R7 P9 review round 2, P9-R2-11): its findings go to
+ * `out`, and the index of its IDs is returned (the empty index when it cannot
+ * be read). `buildos extract bulk` checks the rows it would publish with it.
+ */
+export function readConfig(fs: FsPort, out: Findings): ConfigIndex {
+  const config = readChecked(fs, out, CONFIG_PATH, VALIDATE_LIMITS.configMaxBytes, "config");
+  return config.text === undefined ? EMPTY_INDEX : checkConfigText(out, CONFIG_PATH, config.text);
 }
 
 /**

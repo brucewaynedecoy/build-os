@@ -1,0 +1,67 @@
+[
+  {
+    "id": "TD-1",
+    "track": "T9",
+    "owner": "Stranger",
+    "support": [
+      "Nobody"
+    ],
+    "type": "wish",
+    "title": "",
+    "detail": "short",
+    "capability_ids": [
+      "CIRC-NOPE"
+    ],
+    "objective_ids": [
+      "OBJ-77"
+    ],
+    "depends_on": [
+      "TD-99"
+    ]
+  },
+  {
+    "id": "TD-01",
+    "track": "T1",
+    "sequence": 1,
+    "owner": "Library Staff",
+    "support": [
+      "Platform Vendor"
+    ],
+    "type": "decision",
+    "title": "Decide the holds approach",
+    "detail": "Choose between a custom holds queue and a manual list for day one.",
+    "capability_ids": [
+      "CIRC-COR-04"
+    ],
+    "objective_ids": [
+      "OBJ-01"
+    ],
+    "depends_on": []
+  },
+  {
+    "id": "TD-01",
+    "track": "T1",
+    "sequence": 1,
+    "owner": "Library Staff",
+    "support": [
+      "Platform Vendor"
+    ],
+    "type": "decision",
+    "title": "Decide the holds approach",
+    "detail": "Choose between a custom holds queue and a manual list for day one.",
+    "capability_ids": [
+      "CIRC-COR-04"
+    ],
+    "objective_ids": [
+      "OBJ-01"
+    ],
+    "depends_on": []
+  },
+  {
+    "title": "No id",
+    "detail": "A to-do with no id at all, long enough.",
+    "owner": "Library Staff",
+    "track": "T1",
+    "type": "test"
+  }
+]

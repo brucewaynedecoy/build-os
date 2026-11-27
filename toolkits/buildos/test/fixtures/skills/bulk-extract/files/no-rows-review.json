@@ -1,0 +1,25 @@
+{
+  "format_version": 2,
+  "source": "assets/_intake/holds-notes.txt",
+  "source_sha256": "a196b9c16d0143c9dff908089aa605fcf2ad149bef70108c2c5e4091819733f8",
+  "reviewed_by": "Circulation Analyst",
+  "reviewed_at": "2026-01-12",
+  "source_check": {
+    "result": "matched",
+    "notes": "Compared the converted text with the original policy.",
+    "repairs": []
+  },
+  "references": [
+    {
+      "id": "REF-006",
+      "converted": "assets/holds-notes/holds-notes.md",
+      "outcome": "no-new-rows",
+      "note": "The notes repeat REQ-001."
+    }
+  ],
+  "candidates": [],
+  "unresolved": [],
+  "applied": {},
+  "extraction_ids": [],
+  "publication_review": null
+}

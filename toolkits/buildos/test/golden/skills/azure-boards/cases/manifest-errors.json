@@ -1,0 +1,299 @@
+{
+  "case": "manifest-errors",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/not-object.json",
+        "--output",
+        "export/x.csv"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Manifest must be a JSON object.\n",
+      "files": {}
+    },
+    {
+      "step": 1,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/items-empty.json",
+        "--output",
+        "export/x.csv"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Manifest items must be a nonempty array.\n",
+      "files": {}
+    },
+    {
+      "step": 2,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/items-too-many.json",
+        "--output",
+        "export/x.csv"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Azure Boards CSV imports support at most 1,000 work item rows.\n",
+      "files": {}
+    },
+    {
+      "step": 3,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/item-not-object.json",
+        "--output",
+        "export/x.csv"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "items[0] must be an object.\n",
+      "files": {}
+    },
+    {
+      "step": 4,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/item-bad-level.json",
+        "--output",
+        "export/x.csv"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "items[0].level must be 1, 2, 3, or 4.\n",
+      "files": {}
+    },
+    {
+      "step": 5,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/item-wrong-type.json",
+        "--output",
+        "export/x.csv"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "items[0].work_item_type must be 'Epic' for level 1.\n",
+      "files": {}
+    },
+    {
+      "step": 6,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/item-no-title.json",
+        "--output",
+        "export/x.csv"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "items[0].title must be a nonempty string.\n",
+      "files": {}
+    },
+    {
+      "step": 7,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/pbi-no-description.json",
+        "--output",
+        "export/x.csv"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "items[2].description must be an object.\n",
+      "files": {}
+    },
+    {
+      "step": 8,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/pbi-empty-list.json",
+        "--output",
+        "export/x.csv"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "items[2].acceptance_criteria[0] contains an empty list item.\n",
+      "files": {}
+    },
+    {
+      "step": 9,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/pbi-bad-children.json",
+        "--output",
+        "export/x.csv"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "items[2].acceptance_criteria[0] children must be an array.\n",
+      "files": {}
+    },
+    {
+      "step": 10,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/pbi-bad-item.json",
+        "--output",
+        "export/x.csv"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "items[2].acceptance_criteria[0] must contain strings or {text, children} objects.\n",
+      "files": {}
+    },
+    {
+      "step": 11,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/pbi-empty-object.json",
+        "--output",
+        "export/x.csv"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "items[2].acceptance_criteria[0] object requires nonempty text.\n",
+      "files": {}
+    },
+    {
+      "step": 12,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/no-trace.json",
+        "--output",
+        "export/x.csv"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "items[0].source_trace has no trace values.\n",
+      "files": {}
+    },
+    {
+      "step": 13,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/trace-not-object.json",
+        "--output",
+        "export/x.csv"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "items[0].source_trace must be an object.\n",
+      "files": {}
+    },
+    {
+      "step": 14,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/summary-not-string.json",
+        "--output",
+        "export/x.csv"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "summary must be a string.\n",
+      "files": {}
+    },
+    {
+      "step": 15,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/placeholder.json",
+        "--output",
+        "export/x.csv"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Generated CSV failed validation:\nRow 2 contains a placeholder.\n",
+      "files": {}
+    },
+    {
+      "step": 16,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/orphan.json",
+        "--output",
+        "export/x.csv"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Generated CSV failed validation:\nRow 2 Title 3 has no preceding Title 2 parent.\n",
+      "files": {}
+    },
+    {
+      "step": 17,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/broken.json",
+        "--output",
+        "export/x.csv"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Unexpected end of JSON input\n",
+      "files": {}
+    },
+    {
+      "step": 18,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/null.json",
+        "--output",
+        "export/x.csv"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Cannot read properties of null (reading 'profile')\n",
+      "files": {}
+    },
+    {
+      "step": 19,
+      "args": [
+        "emit",
+        "--input",
+        "backlog/missing.json",
+        "--output",
+        "export/x.csv"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "ENOENT: no such file or directory, open 'backlog/missing.json'\n",
+      "files": {}
+    },
+    {
+      "step": 20,
+      "args": [
+        "emit",
+        "--input",
+        "backlog",
+        "--output",
+        "export/x.csv"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "EISDIR: illegal operation on a directory, read 'backlog'\n",
+      "files": {}
+    }
+  ]
+}

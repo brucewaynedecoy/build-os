@@ -1,0 +1,15 @@
+{
+  "case": "index-errors-json",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "status"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: Expecting value: line 2 column 1 (char 17)\n",
+      "files": {}
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "case": "help",
+  "steps": [
+    {
+      "step": 0,
+      "args": [],
+      "exit": 0,
+      "stdout": "Usage:\n  node azure_boards_csv.mjs emit --input <manifest.json> --output <file.csv> [--profile target17-new|new|update]\n  node azure_boards_csv.mjs validate --input <file.csv> [--profile target17-new|new|update|auto] [--adapter <id>] [--adapter-params <json>] [--publisher-prefix <value>]\n  node azure_boards_csv.mjs template --output <file.csv> [--profile target17-new|new|update]\n  node azure_boards_csv.mjs adapters\n\nRegistered adapters: dynamics-365-ce\nOn emit, the adapter comes from the manifest keys 'adapter' and 'adapter_params'.\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 1,
+      "args": [
+        "help"
+      ],
+      "exit": 0,
+      "stdout": "Usage:\n  node azure_boards_csv.mjs emit --input <manifest.json> --output <file.csv> [--profile target17-new|new|update]\n  node azure_boards_csv.mjs validate --input <file.csv> [--profile target17-new|new|update|auto] [--adapter <id>] [--adapter-params <json>] [--publisher-prefix <value>]\n  node azure_boards_csv.mjs template --output <file.csv> [--profile target17-new|new|update]\n  node azure_boards_csv.mjs adapters\n\nRegistered adapters: dynamics-365-ce\nOn emit, the adapter comes from the manifest keys 'adapter' and 'adapter_params'.\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 2,
+      "args": [
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Usage:\n  node azure_boards_csv.mjs emit --input <manifest.json> --output <file.csv> [--profile target17-new|new|update]\n  node azure_boards_csv.mjs validate --input <file.csv> [--profile target17-new|new|update|auto] [--adapter <id>] [--adapter-params <json>] [--publisher-prefix <value>]\n  node azure_boards_csv.mjs template --output <file.csv> [--profile target17-new|new|update]\n  node azure_boards_csv.mjs adapters\n\nRegistered adapters: dynamics-365-ce\nOn emit, the adapter comes from the manifest keys 'adapter' and 'adapter_params'.\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 3,
+      "args": [
+        "-h"
+      ],
+      "exit": 0,
+      "stdout": "Usage:\n  node azure_boards_csv.mjs emit --input <manifest.json> --output <file.csv> [--profile target17-new|new|update]\n  node azure_boards_csv.mjs validate --input <file.csv> [--profile target17-new|new|update|auto] [--adapter <id>] [--adapter-params <json>] [--publisher-prefix <value>]\n  node azure_boards_csv.mjs template --output <file.csv> [--profile target17-new|new|update]\n  node azure_boards_csv.mjs adapters\n\nRegistered adapters: dynamics-365-ce\nOn emit, the adapter comes from the manifest keys 'adapter' and 'adapter_params'.\n",
+      "stderr": "",
+      "files": {}
+    }
+  ]
+}

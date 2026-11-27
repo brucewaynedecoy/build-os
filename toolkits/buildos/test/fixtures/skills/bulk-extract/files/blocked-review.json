@@ -1,0 +1,28 @@
+{
+  "format_version": 2,
+  "source": "assets/_intake/fines.txt",
+  "source_sha256": "ba54dcdbe6995bc8d7244324efb4c39afaa931690d096b63ffc7a7eb891f4860",
+  "reviewed_by": "Circulation Analyst",
+  "reviewed_at": "2026-01-12",
+  "source_check": {
+    "result": "matched",
+    "notes": "Compared the converted text with the original policy.",
+    "repairs": []
+  },
+  "references": [
+    {
+      "id": "REF-005",
+      "converted": "assets/fines/fines.md",
+      "outcome": "blocked",
+      "note": "The lost-book price list is missing."
+    }
+  ],
+  "candidates": [],
+  "unresolved": [
+    "Which price list applies to lost books?",
+    "Do fines stop at a cap?"
+  ],
+  "applied": {},
+  "extraction_ids": [],
+  "publication_review": null
+}

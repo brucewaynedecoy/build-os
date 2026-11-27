@@ -1,0 +1,52 @@
+{
+  "case": "needs-repair",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "start",
+        "REF-005"
+      ],
+      "exit": 0,
+      "stdout": "Created: <root>/extractions/REF-005-fines.json\n",
+      "stderr": "",
+      "files": {
+        "extractions/REF-005-fines.json": {
+          "text": "{\n  \"format_version\": 2,\n  \"source\": \"assets/_intake/fines.txt\",\n  \"source_sha256\": \"ba54dcdbe6995bc8d7244324efb4c39afaa931690d096b63ffc7a7eb891f4860\",\n  \"reviewed_by\": \"\",\n  \"reviewed_at\": \"\",\n  \"source_check\": {\n    \"result\": \"unverified\",\n    \"notes\": \"\",\n    \"repairs\": []\n  },\n  \"references\": [\n    {\n      \"id\": \"REF-005\",\n      \"converted\": \"assets/fines/fines.md\",\n      \"outcome\": \"pending\",\n      \"note\": \"\"\n    }\n  ],\n  \"candidates\": [],\n  \"unresolved\": [],\n  \"applied\": {},\n  \"extraction_ids\": [],\n  \"publication_review\": null\n}\n"
+        }
+      }
+    },
+    {
+      "step": 2,
+      "args": [
+        "check",
+        "REF-005"
+      ],
+      "exit": 1,
+      "stdout": "REF-005: needs-repair (<root>/extractions/REF-005-fines.json)\n- Source or source hash differs from reference index\n- Wrong converted path: REF-005\n- Add a reason for REF-005\n- Duplicate reference entry: REF-005\n- Invalid outcome: REF-005\n- A reference entry is invalid\n- Record the conversion repair\n- Describe the source comparison\n- reviewed_at needs an ISO date\n- unresolved must be a list of nonempty notes\n- A candidate is invalid\n- Missing or duplicate candidate key: 'dup'\n- Missing or duplicate candidate key: ''\n- Invalid candidate type: badtype\n- Candidate anchors source_anchor must not start with system/, the source-package folder\n- Candidate anchors source_refs #L99 is outside assets/fines/fines.md (4 lines or rows)\n- Candidate anchors source_refs cannot resolve #row-1 in assets/fines/fines.md\n- Candidate anchors systems holds the reserved value 'both'; list each configured ID instead\n- Candidate anchors tags must be a list of strings\n- Candidate anchors env is an old scoped field; use systems, environments, and owners\n- Candidate anchors related needs entity IDs: 'CAP-1'\n- Candidate anchors source_refs needs path#anchor or entity ID: 'https://example.org/x#y'\n- Candidate anchors source_refs needs path#anchor or entity ID: 'notes'\n- Candidate anchors acceptance_refs has an invalid reference: 'maybe'\n- Candidate status minted row needs draft status and no global ID\n- Candidate status basis_refs must be a list of strings\n- Candidate status redirect is only for a superseded row\n- Candidate status title needs nonempty text\n- Candidate status summary needs nonempty text\n- Candidate status created_at needs an ISO date or null\n- Candidate status doc_anchor needs a path#anchor reference with text after the first #; use docs/path.md#anchor, or null\n- Candidate status observed needs text\n- Candidate status basis_refs needs a list of nonempty strings\n- Candidate status confidence needs low, medium, or high\n- Candidate status implications is for related IDs or narrative references; put questions in unresolved: 'What about lost books?'\n- Candidate status basis_refs needs a RUN, RES, EXT, or file reference: 'notes.md'\n- Candidate result-row target_id has the wrong ID type\n- Candidate result-row outcome is invalid\n- Candidate result-row evidence_refs needs a RUN, FIND, or file reference: 'EXT-1'\n- Candidate run-row minted row needs draft status and no global ID\n- Candidate run-row non-draft row needs doc_anchor\n- Candidate run-row playbook_id needs a PB ID or null\n- Candidate run-row run dates need ISO dates\n- Candidate run-row inputs and outputs have the wrong types\n- Candidate tc-row verifies needs a list of nonempty strings\n- Candidate tc-row expected needs text\n- Candidate tc-row verifies has an invalid reference: 'FIND-001'\n- Candidate tc-row verifies has an invalid reference: ''\n- Candidate persona-row minted row needs draft status and no global ID\n- Candidate persona-row superseded row needs a redirect\n- Candidate persona-row non-draft row needs doc_anchor\n- Candidate referenced needs a matching target_id\n- Candidate updated held claim needs a review_note\n- Candidate updated updated row needs its target ID and base_sha256\n- Candidate updated description needs text\n- Candidate wrong-type target_id is absent or has the wrong type\n- Candidate nested authored_by must be a nonblank name\n- Candidate nested reviewed_by must be a nonblank name\n- Candidate nested reviewed_at must be a date\n- Candidate nested row must not contain a nested _stage block\n- applied contains an unknown candidate key\n- Invalid or missing extraction ID: E\n- Invalid or missing extraction ID: X\n- Invalid or missing extraction ID: T\n- Invalid or missing extraction ID: -\n- Invalid or missing extraction ID: 0\n- Invalid or missing extraction ID: 0\n- Invalid or missing extraction ID: 1\n- Extraction outcomes differ from the applied candidate list\n- extraction_ids must be a list\n- Candidate cites REF-005 without a reviewed outcome\n- Review decisions need a separate named, dated publication_review\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 3,
+      "args": [
+        "stage",
+        "REF-005"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: Review needs repair: Source or source hash differs from reference index; Wrong converted path: REF-005; Add a reason for REF-005; Duplicate reference entry: REF-005; Invalid outcome: REF-005; A reference entry is invalid; Record the conversion repair; Describe the source comparison; reviewed_at needs an ISO date; unresolved must be a list of nonempty notes; A candidate is invalid; Missing or duplicate candidate key: 'dup'; Missing or duplicate candidate key: ''; Invalid candidate type: badtype; Candidate anchors source_anchor must not start with system/, the source-package folder; Candidate anchors source_refs #L99 is outside assets/fines/fines.md (4 lines or rows); Candidate anchors source_refs cannot resolve #row-1 in assets/fines/fines.md; Candidate anchors systems holds the reserved value 'both'; list each configured ID instead; Candidate anchors tags must be a list of strings; Candidate anchors env is an old scoped field; use systems, environments, and owners; Candidate anchors related needs entity IDs: 'CAP-1'; Candidate anchors source_refs needs path#anchor or entity ID: 'https://example.org/x#y'; Candidate anchors source_refs needs path#anchor or entity ID: 'notes'; Candidate anchors acceptance_refs has an invalid reference: 'maybe'; Candidate status minted row needs draft status and no global ID; Candidate status basis_refs must be a list of strings; Candidate status redirect is only for a superseded row; Candidate status title needs nonempty text; Candidate status summary needs nonempty text; Candidate status created_at needs an ISO date or null; Candidate status doc_anchor needs a path#anchor reference with text after the first #; use docs/path.md#anchor, or null; Candidate status observed needs text; Candidate status basis_refs needs a list of nonempty strings; Candidate status confidence needs low, medium, or high; Candidate status implications is for related IDs or narrative references; put questions in unresolved: 'What about lost books?'; Candidate status basis_refs needs a RUN, RES, EXT, or file reference: 'notes.md'; Candidate result-row target_id has the wrong ID type; Candidate result-row outcome is invalid; Candidate result-row evidence_refs needs a RUN, FIND, or file reference: 'EXT-1'; Candidate run-row minted row needs draft status and no global ID; Candidate run-row non-draft row needs doc_anchor; Candidate run-row playbook_id needs a PB ID or null; Candidate run-row run dates need ISO dates; Candidate run-row inputs and outputs have the wrong types; Candidate tc-row verifies needs a list of nonempty strings; Candidate tc-row expected needs text; Candidate tc-row verifies has an invalid reference: 'FIND-001'; Candidate tc-row verifies has an invalid reference: ''; Candidate persona-row minted row needs draft status and no global ID; Candidate persona-row superseded row needs a redirect; Candidate persona-row non-draft row needs doc_anchor; Candidate referenced needs a matching target_id; Candidate updated held claim needs a review_note; Candidate updated updated row needs its target ID and base_sha256; Candidate updated description needs text; Candidate wrong-type target_id is absent or has the wrong type; Candidate nested authored_by must be a nonblank name; Candidate nested reviewed_by must be a nonblank name; Candidate nested reviewed_at must be a date; Candidate nested row must not contain a nested _stage block; applied contains an unknown candidate key; Invalid or missing extraction ID: E; Invalid or missing extraction ID: X; Invalid or missing extraction ID: T; Invalid or missing extraction ID: -; Invalid or missing extraction ID: 0; Invalid or missing extraction ID: 0; Invalid or missing extraction ID: 1; Extraction outcomes differ from the applied candidate list; extraction_ids must be a list; Candidate cites REF-005 without a reviewed outcome; Review decisions need a separate named, dated publication_review\n",
+      "files": {}
+    },
+    {
+      "step": 4,
+      "args": [
+        "status"
+      ],
+      "exit": 0,
+      "stdout": "5 sources; 6 converted records\nProgress comes from root review files and tagged staged rows; check REF-ID verifies links.\ncomplete: 0\nready-to-stage: 0\nstaged: 0\nreviewed: 0\nheld: 0\npublishing: 0\nin-progress: 0\nblocked: 0\nneeds-repair: 1\npending: 4\n",
+      "stderr": "",
+      "files": {}
+    }
+  ]
+}

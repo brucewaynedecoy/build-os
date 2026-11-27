@@ -186,15 +186,18 @@ describe("planted differences at the comparator", () => {
 
   it("keeps every real exception on a real difference", () => {
     const exceptions = loadExceptions();
-    assert.deepEqual(exceptions.exceptions.map((e) => e.id), ["PE-001", "PE-002", "PE-003", "PE-004", "PE-005", "PE-006", "PE-007", "PE-008", "PE-009", "PE-010", "PE-011", "PE-012", "PE-013", "PE-014", "PE-015", "PE-016", "PE-017", "PE-018", "PE-019", "PE-020"]);
+    assert.deepEqual(exceptions.exceptions.map((e) => e.id), ["PE-001", "PE-002", "PE-003", "PE-004", "PE-005", "PE-006", "PE-007", "PE-008", "PE-009", "PE-010", "PE-011", "PE-012", "PE-013", "PE-014", "PE-015", "PE-016", "PE-017", "PE-018", "PE-019", "PE-020", "PE-021", "PE-022"]);
   });
 
-  it("no proposed exception is pending: PE-018 and PE-019 were approved on 2026-11-24 and carry the owner decision", () => {
+  it("no exception is pending; PE-018 and PE-019 (2026-11-24) and PE-021 (2026-11-25, the .xlsx content rule) were approved and carry the owner decision", () => {
     assert.deepEqual(loadProposed().proposed, []);
     for (const id of ["PE-018", "PE-019"]) {
       const entry = loadExceptions().exceptions.find((e) => e.id === id) as { owner_decision?: string } | undefined;
       assert.match(entry?.owner_decision ?? "", /evidence\.md#owner-decisions \(2026-11-24, the owner approved/);
     }
+    const pe021 = loadExceptions().exceptions.find((e) => e.id === "PE-021");
+    assert.match(pe021?.owner_decision ?? "", /evidence\.md#p9-owner-decisions-2026-11-25 \(2026-11-25, the owner approved PE-021/);
+    assert.equal(pe021?.xlsx?.helper, "test/xlsx-compare.ts compareWorkbooks");
   });
 
   it("PE-016: requires exactly the legacy-name notice line first on stderr and removes it once", () => {

@@ -1,0 +1,15 @@
+{
+  "case": "index-errors-leaves",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "status"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: Path leaves repo: ../outside.txt\n",
+      "files": {}
+    }
+  ]
+}

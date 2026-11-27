@@ -1,0 +1,15 @@
+{
+  "case": "index-errors-duplicate",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "status"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: Duplicate reference ID: REF-001\n",
+      "files": {}
+    }
+  ]
+}

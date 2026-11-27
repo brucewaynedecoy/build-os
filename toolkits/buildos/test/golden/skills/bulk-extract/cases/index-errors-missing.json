@@ -1,0 +1,15 @@
+{
+  "case": "index-errors-missing",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "status"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "Error: [Errno 2] No such file or directory: '<root>/.os/indexes/references.json'\n",
+      "files": {}
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "source": "assets/_intake/lending-policy.txt",
+  "source_sha256": "f4a773f1a04b5197f80d47b609701dd1907d18d03c0a9442e4ff090f85f64ab0",
+  "reviewed_by": "Circulation Analyst",
+  "reviewed_at": "2026-01-02",
+  "source_check": {
+    "result": "matched",
+    "notes": "Checked.",
+    "repairs": []
+  },
+  "references": [
+    {
+      "id": "REF-001",
+      "converted": "assets/lending-policy/lending-policy.md",
+      "outcome": "reviewed"
+    }
+  ],
+  "candidates": [
+    {
+      "key": "old",
+      "type": "requirement",
+      "row": {
+        "type": "requirement",
+        "status": "draft",
+        "title": "Old need",
+        "summary": "An old need.",
+        "source_anchor": "assets/lending-policy/lending-policy.md#L3",
+        "source_refs": [],
+        "related": [],
+        "acceptance_refs": []
+      }
+    }
+  ],
+  "unresolved": [],
+  "applied": {},
+  "extraction_ids": []
+}

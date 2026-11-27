@@ -1,11 +1,12 @@
 /**
  * Output for the domains ported from the separate Go tools
- * (`buildos-discovery`, `buildos-design`). Without `--json`, the output is the
+ * (`buildos-intake`, `buildos-discovery`, `buildos-design`). Without `--json`, the output is the
  * Go tool's, byte for byte: the result lines on stdout, and on failure the
  * Go `flag` output (if any) and `<tool>: error: <message>` on stderr, exit 1.
  *
- * `--json` is a TypeScript addition (parity exception PE-011; PRD 20 Output
- * and Exit Contract; the Go tools have no JSON mode). It counts only as a
+ * `--json` is a TypeScript addition (parity exceptions PE-011 for discovery
+ * and design, PE-022 for intake; PRD 20 Output and Exit Contract; the Go
+ * tools have no JSON mode). It counts only as a
  * whole argument in flag position, with Go `flag` rules (see `GO_TOOL_EXTRAS`
  * and `goParseFlags`): `--title --json` sets the title to `--json`, and a
  * `--json` after `--` or after the first non-flag argument is not a switch,
@@ -70,24 +71,45 @@ export function envelopeRoot(repoRoot: string | undefined, context: CommandConte
   return repoRoot === "" ? "." : rootAsGiven(repoRoot, context.io.cwd);
 }
 
-/** A success: Go's stdout text, or the envelope. */
-export function succeed(run: GoToolRun, stdout: string, root: string, dryRun: boolean, result: unknown): CommandOutcome {
-  if (!run.json) return { command: run.command, json: false, rendered: { stdout, stderr: "", exitCode: EXIT_CODES.ok } };
+/**
+ * A success: Go's stdout text, or the envelope. `warnings` (intake only,
+ * PE-022): the human form prints `stderr` as given, and the envelope carries
+ * each warning as a diagnostic, with nothing on stderr.
+ */
+export function succeed(run: GoToolRun, stdout: string, root: string, dryRun: boolean, result: unknown, warnings: { stderr: string; diagnostics: Diagnostic[] } = { stderr: "", diagnostics: [] }): CommandOutcome {
+  if (!run.json) return { command: run.command, json: false, rendered: { stdout, stderr: warnings.stderr, exitCode: EXIT_CODES.ok } };
   const writeStatus: WriteStatus = dryRun ? "planned" : "applied";
-  return { command: run.command, json: true, rendered: { stdout: envelope(run, true, root, writeStatus, result, []), stderr: "", exitCode: EXIT_CODES.ok } };
+  return { command: run.command, json: true, rendered: { stdout: envelope(run, true, root, writeStatus, result, warnings.diagnostics), stderr: "", exitCode: EXIT_CODES.ok } };
 }
 
 /**
  * A failure. A Go error, a flag error, or a usage error exits 1, as the Go
  * tool does. A typed core error (a refusal by the filesystem port, which the
  * Go tool never makes) keeps its central exit code.
+ *
+ * W1 R7 P9 intake JSON review round 1 (finding 2): an unexpected error (not
+ * one of these) is reported here too, in the mode the leaf parser decided
+ * and with the leaf's root, so there is exactly one output form. The text
+ * form is the dispatcher's line (`buildos: internal error: <first line>`,
+ * exit 1); with `--json` it is only the envelope, with an `internal_error`
+ * diagnostic, and nothing on stderr. The dispatcher never scans the raw
+ * arguments for `--json` again.
+ *
+ * `stayed` (W1 R7 P9 intake JSON review round 2, intake with `--json`):
+ * what the write calls of a failed run made or changed. Intake does not
+ * undo, so all of it is still there. When it is not empty, the envelope
+ * reports `partially_applied`, exit 10, each entry once in
+ * `result.left_in_place` (the item form of the skill-script commands'
+ * `not_restored`: `path`, `reason`, `state`), and one `left_in_place`
+ * diagnostic per entry that says what happened.
  */
-export function fail(run: GoToolRun, error: unknown, root: string, preamble = ""): CommandOutcome {
+export function fail(run: GoToolRun, error: unknown, root: string, preamble = "", stayed: readonly Stayed[] = []): CommandOutcome {
   let message: string;
   let output = preamble;
   let exitCode: ExitCode = EXIT_CODES.internal;
   let code = "command_failed";
   let correction = "Correct the input named in the message, then run the command again.";
+  let textLine: string | undefined;
   if (error instanceof GoFlagError) {
     applyExtras(run, error.extras);
     message = error.message;
@@ -101,16 +123,43 @@ export function fail(run: GoToolRun, error: unknown, root: string, preamble = ""
     code = error.code;
     if (error.correction !== undefined) correction = error.correction;
   } else {
-    throw error;
+    message = firstLine(error);
+    code = "internal_error";
+    correction = "Report this BuildOS failure with the command you ran.";
+    textLine = `buildos: internal error: ${message}\n`;
   }
-  if (!run.json) return { command: run.command, json: false, rendered: { stdout: "", stderr: `${output}${run.tool}: error: ${message}\n`, exitCode } };
-  const diagnostic: Diagnostic = { code, severity: "error", message, correction };
-  return { command: run.command, json: true, rendered: { stdout: envelope(run, false, root, "not_requested", null, [diagnostic]), stderr: "", exitCode } };
+  if (!run.json) return { command: run.command, json: false, rendered: { stdout: "", stderr: textLine ?? `${output}${run.tool}: error: ${message}\n`, exitCode } };
+  const diagnostics: Diagnostic[] = [{ code, severity: "error", message, correction }];
+  if (stayed.length === 0) return { command: run.command, json: true, rendered: { stdout: envelope(run, false, root, "not_requested", null, diagnostics), stderr: "", exitCode } };
+  for (const entry of stayed) diagnostics.push({ code: "left_in_place", severity: "error", message: `${entry.item.path}: ${entry.message}`, correction: "BuildOS does not undo a failed intake run. Before you remove anything, look at the entry that is at this path now: it can be another program's. Then run the command again." });
+  return { command: run.command, json: true, rendered: { stdout: envelope(run, false, root, "partially_applied", { left_in_place: stayed.map((entry) => entry.item) }, diagnostics), stderr: "", exitCode: EXIT_CODES.needsOperatorReview } };
 }
 
-/** A command-line failure (`missing command`, `unknown command`, a missing subcommand): Go prints `usage` first when given. */
-export function usageFailure(run: GoToolRun, message: string, usage = ""): CommandOutcome {
-  return fail(run, new GoFlagError(message, usage), "");
+/** One path that a failed run made or changed and that stays (`fail`): the result item and the diagnostic text. */
+export interface Stayed {
+  item: { path: string; reason: "created" | "changed"; state: "left" };
+  message: string;
+}
+
+/** The first line of an unexpected error's text, as the dispatcher reports it (`run.ts`). */
+function firstLine(error: unknown): string {
+  const text = error instanceof Error ? error.message : String(error);
+  const line = (text.split(/\r?\n/, 1)[0] ?? "").trim();
+  return line === "" ? "unexpected failure" : line;
+}
+
+/**
+ * A command-line failure (`missing command`, `unknown command`, a missing
+ * subcommand, intake's `convert requires --source`): Go prints `usage` first
+ * when given. The switches already found on `run` stay, so a usage error
+ * found after the flags were parsed keeps `--json`. `root` is the cleaned
+ * root when the flags were parsed (finding 4), else empty.
+ */
+export function usageFailure(run: GoToolRun, message: string, usage = "", root = ""): CommandOutcome {
+  const extras = new Set<string>();
+  if (run.json) extras.add("--json");
+  if (run.allowOutsideRoot === true) extras.add(ALLOW_OUTSIDE_ROOT);
+  return fail(run, new GoFlagError(message, usage, extras), root);
 }
 
 function envelope(run: GoToolRun, ok: boolean, root: string, writeStatus: WriteStatus, result: unknown, diagnostics: Diagnostic[]): string {

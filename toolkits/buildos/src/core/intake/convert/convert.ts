@@ -16,7 +16,7 @@ import { goQuote } from "../../shared/go-quote.ts";
 import { isInstalledLayout, userPathRel } from "../../shared/buildos-layout.ts";
 import { rootAsGiven } from "../../shared/root.ts";
 import { goExt, goFromSlash, goIsAbs, goRel, goToLower, goToSlash, goTrimSpace, normalizeSpace, slugify, utf8Bytes, utf8Text } from "../go-text.ts";
-import { IntakeFs, newWritePlan, type IntakeContext } from "../io.ts";
+import { IntakeFs, newWritePlan, withRecord, WriteRecord, type IntakeContext } from "../io.ts";
 import { readCsv, writeCsv } from "./csv.ts";
 import { docxTokens, documentXmlToMarkdown, parseNumbering } from "./docx.ts";
 import { htmlAttr, htmlToMarkdown, renderHtml } from "./html.ts";
@@ -37,6 +37,13 @@ export interface ConvertOptions {
   type: string;
   force: boolean;
   dryRun: boolean;
+  /**
+   * W1 R7 P9 intake JSON review round 2 (PE-022): keep a record of what the
+   * write calls made or changed (`WriteRecord`), so a failed run can name
+   * what stayed. The CLI sets it with `--json`. Intake never undoes a
+   * write, with or without it.
+   */
+  recordWrites?: boolean;
 }
 
 /** One converted twin: its Go path, the front matter fields, and its body bytes. */
@@ -51,6 +58,12 @@ export interface ConvertedOutput {
 
 export interface ConvertResult {
   outputs: ConvertedOutput[];
+  /**
+   * W1 R7 P9 intake JSON review round 2 (finding 7): the source as an
+   * absolute Go path, for the envelope's `source` (`reportPath`). The
+   * twins' `source` keeps Go's `repoRelative` text for the front matter.
+   */
+  sourcePath: string;
   /** Side artifact paths, in the order Go reports them. */
   sideArtifacts: string[];
   /**
@@ -157,6 +170,22 @@ export function repoRelative(repoRoot: string, path: string, platform: GoPathPla
   const rel = goRel(repoRoot, path, platform);
   if (rel === undefined || rel.startsWith("..")) return path;
   return rel;
+}
+
+/**
+ * W1 R7 P9 intake JSON review round 1 (finding 5, PE-022): how the envelope
+ * shows a path: relative to the project root with `/` when it is inside the
+ * root as spelled (`.` for the root itself), else (a destination outside the
+ * project that `--allow-outside-root` allowed) the absolute path with `/`.
+ * The text form keeps Go's native spelling.
+ */
+export function reportPath(repoRoot: string, path: string, platform: GoPathPlatform): string {
+  const rel = goRel(repoRoot, path, platform);
+  // Review round 2 (finding 7): outside only when the first path component
+  // is `..`, with this platform's separator. A name such as `..draft.csv`,
+  // or on POSIX a folder named `..\draft`, is inside.
+  const inside = rel !== undefined && rel.split(platform === "win32" ? "\\" : "/", 1)[0] !== "..";
+  return goToSlash(inside ? rel : goClean(path, platform), platform);
 }
 
 /** Go `detectType`. */
@@ -267,10 +296,15 @@ function frontmatter(output: ConvertedOutput, now: Date): string {
   ].join("\n");
 }
 
-/** Go `writeSideArtifact`. */
-function writeSideArtifact(fs: IntakeFs, out: string, data: Uint8Array, force: boolean): void {
-  if (!force && fs.statTarget(out).ok) throw new GoError(`side artifact exists, use --force to overwrite: ${out}`);
-  fs.writeFileWithParents(out, data);
+/**
+ * Go `writeSideArtifact`. W1 R7 P9 intake JSON final check (finding 1):
+ * without `--force`, the writer never overwrites, so a file that another
+ * program makes after the check gives the same error and keeps its bytes.
+ */
+function writeSideArtifact(fs: IntakeFs, out: string, data: Uint8Array, force: boolean, record: WriteRecord | undefined): void {
+  const exists = `side artifact exists, use --force to overwrite: ${out}`;
+  if (!force && fs.statTarget(out).ok) throw new GoError(exists);
+  fs.writeFileWithParents(out, data, record, force ? undefined : exists);
 }
 
 /**
@@ -278,12 +312,7 @@ function writeSideArtifact(fs: IntakeFs, out: string, data: Uint8Array, force: b
  * `writeConvertedOutput` for each twin, in Go's order, with nothing
  * written: the first one that would fail throws Go's error for it.
  */
-function preflightWrites(fs: IntakeFs, pending: readonly { out: string }[], outputs: readonly ConvertedOutput[], force: boolean, now: Date): void {
-  // W1 R7 P7 review round 3 (P7-R3-04): `intake index references` reads each twin back (READ_LIMITS.intake).
-  for (const output of outputs) {
-    const size = utf8Bytes(frontmatter(output, now)).length + output.body.length;
-    checkReadBack(goToSlash(repoRelative(fs.repoRoot, output.path, fs.platform), fs.platform), size, READ_LIMITS.intake, fs.repoRoot);
-  }
+function preflightWrites(fs: IntakeFs, pending: readonly { out: string }[], outputs: readonly ConvertedOutput[], force: boolean): void {
   const plan = newWritePlan();
   for (const item of pending) {
     if (!force && fs.plannedStat(plan, item.out).ok) throw new GoError(`side artifact exists, use --force to overwrite: ${item.out}`);
@@ -299,18 +328,33 @@ function preflightWrites(fs: IntakeFs, pending: readonly { out: string }[], outp
   }
 }
 
-/** Go `writeConvertedOutput`. */
-function writeConvertedOutput(fs: IntakeFs, output: ConvertedOutput, force: boolean, now: Date): void {
+/**
+ * W1 R7 P7 review round 3 (P7-R3-04): `intake index references` reads each
+ * twin back (READ_LIMITS.intake), so a twin with its front matter may not be
+ * larger. W1 R7 P9 intake JSON review round 1 (finding 3): checked also in
+ * a dry run, before it returns, so a dry run never plans a twin that the
+ * write would refuse (PE-019: stop before an over-limit write).
+ */
+function checkTwinSizes(fs: IntakeFs, outputs: readonly ConvertedOutput[], now: Date): void {
+  for (const output of outputs) {
+    const size = utf8Bytes(frontmatter(output, now)).length + output.body.length;
+    checkReadBack(goToSlash(repoRelative(fs.repoRoot, output.path, fs.platform), fs.platform), size, READ_LIMITS.intake, fs.repoRoot);
+  }
+}
+
+/** Go `writeConvertedOutput`. Final check, finding 1: as `writeSideArtifact`, the writer never overwrites without `--force`. */
+function writeConvertedOutput(fs: IntakeFs, output: ConvertedOutput, force: boolean, now: Date, record: WriteRecord | undefined): void {
+  const exists = `output exists, use --force to overwrite: ${output.path}`;
   if (!force) {
     const existing = fs.statTarget(output.path);
-    if (existing.ok) throw new GoError(`output exists, use --force to overwrite: ${output.path}`);
+    if (existing.ok) throw new GoError(exists);
     if (!goIsNotExist(existing.detail)) throw new GoError(goPathError(goStatOp(), output.path, existing.detail));
   }
   const head = utf8Bytes(frontmatter(output, now));
   const data = new Uint8Array(head.length + output.body.length);
   data.set(head, 0);
   data.set(output.body, head.length);
-  fs.writeFileWithParents(output.path, data);
+  fs.writeFileWithParents(output.path, data, record, force ? undefined : exists);
 }
 
 interface Job {
@@ -632,7 +676,8 @@ export async function convert(context: IntakeContext, opts: ConvertOptions): Pro
     default:
       throw new GoError(`unsupported source type ${goQuote(sourceType)}`);
   }
-  const result: ConvertResult = { outputs, sideArtifacts: job.sideArtifacts, warnings: job.warnings };
+  const result: ConvertResult = { outputs, sourcePath, sideArtifacts: job.sideArtifacts, warnings: job.warnings };
+  checkTwinSizes(fs, outputs, now());
   if (opts.dryRun) return result;
   // Every write is checked, in Go's order, before the first one (PE-013):
   // a target the port refuses (outside the repository root without
@@ -641,9 +686,15 @@ export async function convert(context: IntakeContext, opts: ConvertOptions): Pro
   // folder or a read-only file at the name, a file in the way of a folder,
   // a folder that refuses a new entry) stop the command with Go's text and
   // exit code, and no file is written.
-  preflightWrites(fs, job.pending, outputs, opts.force, now());
-  for (const item of job.pending) writeSideArtifact(fs, item.out, item.data, opts.force);
-  for (const output of outputs) writeConvertedOutput(fs, output, opts.force, now());
+  preflightWrites(fs, job.pending, outputs, opts.force);
+  // W1 R7 P9 intake JSON review round 2 (PE-022): intake does not undo.
+  // With `recordWrites` (`--json`), a failure after a write call that made
+  // or changed something reports what stayed (`IntakeWriteFailure`).
+  const record = opts.recordWrites === true ? new WriteRecord() : undefined;
+  withRecord(record, () => {
+    for (const item of job.pending) writeSideArtifact(fs, item.out, item.data, opts.force, record);
+    for (const output of outputs) writeConvertedOutput(fs, output, opts.force, now(), record);
+  });
   return result;
 }
 

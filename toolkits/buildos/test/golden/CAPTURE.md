@@ -134,6 +134,22 @@ Use Go 1.24.1 with `GOTOOLCHAIN=local`, `GOFLAGS=-mod=readonly`, and `CGO_ENABLE
 
 This is the record of the retired process, for a reader of the capture records. The per-OS sets came from the capture workflow (`.github/workflows/buildos-golden-capture.yml`, deleted in W1 R7 P8). It ran on a push to a branch named `golden-capture/**`, built the four Go tools from source on Linux, Windows, and macOS with a checksum-pinned Go 1.24.1, captured every case with `capture.mjs --report`, proved that a second capture was byte-identical (`--check`), and uploaded each system's set as an artifact. A maintainer verified each downloaded artifact with `--verify-artifact` and committed it with the reason in the commit message and the evidence report. The shared set came from a local `capture.mjs --write-shared` on macOS. Each case ran in a fresh temporary copy of its fixture, with the working folder set to the copy (`PWD` too), `TZ=UTC`, and umask `022`, and the capture recorded stdout, stderr, the exit code, and every added, changed, or removed file and folder. Drift, changed goldens, stale golden folders, and exit-code mismatches failed a capture unless `--report` recorded them for review.
 
+## Skill-Script and Validator Sources
+
+Two Python-backed capture tools, outside the Go baseline, read old scripts. Neither runs in CI, and no test needs Python. `test/capture-sources.test.ts` checks that every commit a capture tool reads is in this repository.
+
+| Fact | Value |
+| --- | --- |
+| Skill scripts and palette are read from (the first commit of the public repository) | `085927e3c1324fc73fe57af9493ca0b01fcaed18` |
+| Skill-script goldens were captured from (capture provenance) | `38d1e08` |
+| Validator goldens were captured from (capture provenance) | `0560ba1` |
+
+The skill-script capture (`test/golden/skills/capture.ts`, `test/golden/skills/script-source.ts`) reads the four skill scripts and the fit-gap palette with `git show` at the first public commit. It checks each file's SHA-256 against `test/golden/skills/script-sha256.json`. The committed goldens were captured from `38d1e08`, where the five files have the same SHA-256, so the goldens did not change when the source commit changed (W1 R7 P9 review round 1 on the public repository).
+
+The validator capture (`test/golden/validate/capture.ts`) needs `--script <path>`: a copy of `system/.os/scripts/validate_config.py` at `0560ba1`, with the SHA-256 that the tool pins. The script was deleted in W1 R7 P7, before the public repository started, so no commit here holds it.
+
+`38d1e08` and `0560ba1` are in the earlier history, which exists only in the private archive repository `brucewaynedecoy/build-os-archive` (owner decision of 2026-11-25; see [Frozen Go Baseline](#frozen-go-baseline)). No tool reads them from git.
+
 ## Normalizations
 
 Only values that change from run to run are normalized. `cases.json` lists each one with its reason:

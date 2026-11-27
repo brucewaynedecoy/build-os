@@ -1,0 +1,27 @@
+{
+  "case": "legacy-review-broken",
+  "steps": [
+    {
+      "step": 1,
+      "args": [
+        "check",
+        "REF-005"
+      ],
+      "exit": 1,
+      "stdout": "REF-005: needs-repair (<root>/extractions/REF-005-fines.json)\n- Source or source hash differs from reference index\n- Add a reason for REF-005\n- source_check needs notes and repairs\n- Candidate old source_anchor #L9 is outside assets/fines/fines.md (4 lines or rows)\n- Candidate old needs draft status without a global ID\n- Candidate old needs title and summary\n- Candidate old source_refs must be a list of strings\n- Candidate old acceptance_refs must be a list of strings\n- Missing or duplicate candidate key: 'old'\n- Invalid candidate type or row: kind\n- Candidate cites REF-005 without a reviewed outcome\n- unresolved must be a list of nonempty notes\n- applied must be an object\n- Extraction ID is absent from .os/data: EXT-1\n- Invalid extraction ID: 7\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 3,
+      "args": [
+        "check",
+        "REF-005"
+      ],
+      "exit": 1,
+      "stdout": "REF-005: needs-repair (<root>/extractions/REF-005-fines.json)\n- Applied candidate fine-rate changed after publication; stage a new correction\n- Extraction outcomes differ from the applied candidate list\n- Review decisions need a separate named, dated publication_review\n",
+      "stderr": "",
+      "files": {}
+    }
+  ]
+}

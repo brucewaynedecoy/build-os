@@ -1,0 +1,20 @@
+[
+  {
+    "target_capability_id": "LIB-RPT-01",
+    "objective_ids": [
+      "OBJ-02"
+    ],
+    "confidence": "high",
+    "effort": "low",
+    "evidence": "Lending reports count loans by branch and by month, from the platform guide.",
+    "opportunity": "Replace the monthly spreadsheet."
+  },
+  {
+    "target_capability_id": "LIB-RPT-02",
+    "objective_ids": "",
+    "confidence": "medium",
+    "effort": "medium",
+    "evidence": "Dashboards are on the roadmap with no date; the guide names them once.",
+    "opportunity": "Not worth phase one."
+  }
+]

@@ -1,0 +1,25 @@
+{
+  "case": "index-errors-empty",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "status"
+      ],
+      "exit": 0,
+      "stdout": "0 sources; 0 converted records\nProgress comes from root review files and tagged staged rows; check REF-ID verifies links.\ncomplete: 0\nready-to-stage: 0\nstaged: 0\nreviewed: 0\nheld: 0\npublishing: 0\nin-progress: 0\nblocked: 0\nneeds-repair: 0\npending: 0\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 1,
+      "args": [
+        "next"
+      ],
+      "exit": 0,
+      "stdout": "",
+      "stderr": "",
+      "files": {}
+    }
+  ]
+}

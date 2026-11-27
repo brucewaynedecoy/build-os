@@ -1,0 +1,16 @@
+{
+  "references": [
+    {
+      "id": "REF-002",
+      "source": "assets/_intake/branch-hours.xlsx",
+      "converted": "assets/branch-hours/main-branch.csv",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "id": "REF-003",
+      "source": "assets/_intake/branch-hours.xlsx",
+      "converted": "assets/branch-hours/east-branch.csv",
+      "sha256": "5012e28076527cc8ac35746a15a8db6953ff27f5bd198ced7f30088d48872eca"
+    }
+  ]
+}
