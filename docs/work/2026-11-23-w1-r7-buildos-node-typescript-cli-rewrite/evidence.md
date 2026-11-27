@@ -6486,7 +6486,7 @@ A80 reads "Each command runs successfully in the CI image without Python." The j
 
 The `no-python` job is unchanged: on macOS and Windows (and Ubuntu) the hosted runner images have Python installed, and that job proves only that the commands find none on the `PATH` it gives them.
 
-Wording for A80 (the criterion's text is unchanged): A80 is met for Linux by the image: each command runs in the `node:24-slim` image, which holds no Python at all. For macOS and Windows it is met by the restricted `PATH`: the commands run with no Python on `PATH`, on runner images that do have Python. The words of A80 ask for "the CI image without Python" and do not name the three systems, so this round claims it on that reading. If the owner reads A80 as an image without Python on all three systems, it is not met for macOS and Windows, and no hosted image without Python exists for them. Status: pending the CI run of the review fixes, recorded below when it has run.
+Wording for A80 (the criterion's text is unchanged): A80 is met for Linux by the image: each command runs in the `node:24-slim` image, which holds no Python at all. For macOS and Windows it is met by the restricted `PATH`: the commands run with no Python on `PATH`, on runner images that do have Python. The words of A80 ask for "the CI image without Python" and do not name the three systems, so this round claims it on that reading. If the owner reads A80 as an image without Python on all three systems, it is not met for macOS and Windows, and no hosted image without Python exists for them. Status: met, by [CI run 45921131235](#ci-run-of-bf6db38-stage-3-review-round-1) of `bf6db38`.
 
 ### Upgrade Test (Finding 2)
 
@@ -6576,3 +6576,14 @@ From `toolkits/buildos/` unless noted. macOS arm64, Node 26.13.1.
 | Added lines: absolute home paths, the machine user name, new `~/` paths, `file://` | 0 of each |
 
 Not run here: the `no-python-image` job (Docker is not on this machine), Node 24, Linux, and Windows; the CI run of the pull request covers them.
+
+### CI Run of `bf6db38` (Stage 3 Review Round 1)
+
+`bf6db38` holds the review round 1 fixes. Its buildos-ci [run 45921131235](https://github.com/brucewaynedecoy/build-os/actions/runs/45921131235) (push) passed every job; the buildos-deny-list run 45921131057 (invented list) passed, and the real-list job runs on the default branch only and was skipped. The first run of the fixes, run 45920836350 of `1620f79`, failed in the `no-python-image` job on `/usr/share/gcc/python` (see the filesystem proof above); `bf6db38` changed the search rule.
+
+- `no-python-image` (`ubuntu-latest`): `docker pull` got `sha256:873f586f3794f52281bd039bf02c048a0be08fde619338f9941bad1eb6b34530`. In the image: Node `v24.22.3`, npm `11.19.1`; the no-Python check passed (59 files); "PATH: 6 folder(s); no python, python3, or py program on it."; "filesystem: 8321 entries under / searched (not searched: /proc, /sys, /dev, /build-os); no Python that can run"; one other entry with a Python name, `/usr/share/gcc/python` (folder); 64 `.py` source files in 8 folders (58 in npm's node-gyp, 1 in `/usr/local/share/doc/node`, 4 under `/usr/share/gcc/python/libstdcxx`, 1 under `/usr/share/gdb/auto-load`), with no Python to run them; "wrapper: every skill command passed"; 35 bulk-extract cases (142 steps), 15 fit-gap cases (64 steps), and 11 Azure Boards cases (96 steps) passed; `test/skill-script-parity.test.ts` 65 of 65.
+- `no-python` on Ubuntu, macOS, and Windows: passed, as before.
+- `test` on Ubuntu, macOS, and Windows: passed; on Ubuntu the test step had 2,457 tests (0 fail), the golden harness 287 (0 fail), and the installed-tarball step 167 (0 fail).
+- The OSV gate, the Make Docs contract job, and the cross-OS pack report passed.
+
+A80: met. For Linux by the image: each command runs in the `node:24-slim` image, which holds no Python at all. For macOS and Windows by the restricted `PATH`: the commands run with no Python on `PATH`, on runner images that do have Python. A79 stays open until the `capability-matrix` command exists (owner decision 2026-11-26); A81 stays open (t13). No Stage 3 task is ticked.

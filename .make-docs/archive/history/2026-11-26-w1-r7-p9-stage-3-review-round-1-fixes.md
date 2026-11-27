@@ -20,6 +20,8 @@ Fixed the five findings and two notes of review round 1 of pull request 7 on `re
 
 CI fix (same day): the first run of the `no-python-image` job (run 45920836350) failed on `/usr/share/gcc/python`, a folder of GDB helper sources that Debian's `libstdc++6` installs, because the filesystem search failed on any entry with a Python name. The search now fails only on a Python that can run (a `py`, `python*`, or `pypy*` program or link, a `libpython*` library, or a `python<N>` library folder) and lists the other entries; `test/check-no-python.test.ts` plants both kinds.
 
+CI record (same day): CI run 45921131235 of `bf6db38` passed every job; the `no-python-image` job searched 8,321 entries of the `node:24-slim` image and found no Python that can run, and the smoke and the 65 parity tests passed in it, so A80 is met for Linux by the image and for macOS and Windows by the restricted `PATH`.
+
 Framing: [W1 R7 backlog](../../../docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/00-index.md), [P9 phase](../../../docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/09-skill-script-commands-0-2-0.md), and the [evidence report](../../../docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#p9-stage-3-review-round-1-2026-11-26).
 
 | Area | Summary |
