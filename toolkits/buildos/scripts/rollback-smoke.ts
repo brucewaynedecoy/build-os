@@ -19,8 +19,8 @@
 // guide command runs as the guide writes it: through `sh -c` on Linux and
 // macOS, and on Windows in its Command Prompt form (rollback-steps.ts), with
 // `cmd /d /v:off /s /c`. Command Prompt asks before `copy` replaces a file;
-// the run sets COPYCMD=/Y, which answers yes, as a person at the prompt
-// would. Upgrade step 6 (the pin) is an edit, made here by changing only
+// the run sets COPYCMD=/Y, which answers yes, as the guide tells a person at
+// the prompt to do (review round 1 of pull request 15, finding 3). Upgrade step 6 (the pin) is an edit, made here by changing only
 // that one field. After the rollback, the project wrapper must run the
 // pinned 0.1.0 (its version, its JSON source revision equal to that of
 // `npx -y build-os@0.1.0 version --json`, no 0.2.0 domain in help, and a
@@ -43,18 +43,56 @@
 // The run asserts that true behavior on Windows (exit 0 and the 0.1.0 error
 // text). The steps named "F-P9-17 evidence" find the layer that loses the
 // code: they run the same failure through each layer of the wrapper's npx
-// route, and on Windows they record the exit code without a check.
+// route, and on Windows they record the exit code without a check. Review
+// round 1 of pull request 15, finding 2: on Windows one more evidence step
+// starts the project's own helper directly with node.exe
+// (`pinned-version.cjs --cmd <buildos.cmd> <manifest> capability-matrix
+// --help`, no batch file) and records its exit code next to that of
+// `buildos.cmd` for the same command: 2 there and 0 through the batch file
+// shows cause (b), the batch wrapper's own exit path; 0 in both shows cause
+// (a), the cmd.exe that the helper starts for npm's npx.cmd. On Linux and
+// macOS the same step starts the helper's `--npx` route directly and checks
+// exit 2.
+//
+// The route guard (review round 1 of pull request 15, finding 1): the
+// wrapper's helper runs a `node_modules/build-os` install in the project
+// folder or in any folder above it, or above npm's local project folder, in
+// place of npx, and npx without `--prefix` (the reference and setup
+// commands) takes an install from npm's local project folder too. So before
+// any npx command (with the repository's own helper, for the temporary root
+// and every folder above it), again after the copy before the first wrapper
+// run, and again after the last one (both with the project's own
+// `.os/scripts/pinned-version.cjs`, for the test project and the original
+// project), the run fails when any `node_modules/build-os` entry is in a
+// folder that the helper's lookup reads (`wrapperLookupFolders`, with the
+// helper's own `npmLocalPrefix`), when a buildos program is in a PATH folder
+// as the helper reads PATH (on Windows with its own `splitWindowsPath`), or
+// when npm's global prefix is not empty. The positive proof is the launch
+// probe of scripts/published-smoke.ts (a preload through NODE_OPTIONS and
+// npm's `node-options`): after the run, every Node.js process that it
+// observed in each wrapper step has as its entry script the project's own
+// helper, a program of the selected npm, or a bin file of the npx folder of
+// the npm cache that holds build-os at the step's pin, and at least one is
+// that bin file. What the probe cannot observe is PROBE_LIMIT.
 
 import { spawnSync, type SpawnSyncOptions } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { homedir, tmpdir, userInfo } from "node:os";
-import { delimiter, dirname, join } from "node:path";
+import * as nodePath from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { commandPromptArgs } from "./printed-fix-step.ts";
 import { readCacheIndex, readNpxFolders } from "./smoke-evidence.ts";
-import { scrubAbsolutePaths } from "./smoke-source.ts";
+import { launchProblems, launchRecords, npmPrograms, PROBE_LIMIT, PROBE_LOG_VARIABLE, PROBE_SOURCE, probeNodeOptions, scrubAbsolutePaths } from "./smoke-source.ts";
 import {
   ALL_COMMANDS,
+  ancestorInstalls,
   cacheProblems,
+  fP917Reading,
+  pathBuildosPrograms,
+  wrapperLookupFolders,
+  type WrapperHelper,
   changedLines,
   changePin,
   commandPromptForm,
@@ -122,8 +160,15 @@ mkdirSync(cache);
 mkdirSync(globalPrefix);
 const original = join(root, "original");
 const project = join(root, "project");
+// The launch probe (finding 1 of review round 1 of pull request 15), as in scripts/published-smoke.ts.
+const probeDir = join(root, "launch-probe");
+const probe = join(probeDir, "probe.cjs");
+mkdirSync(probeDir);
+writeFileSync(probe, PROBE_SOURCE);
 const env: NodeJS.ProcessEnv = {
-  ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !/^npm_config_(cache|prefix|ignore[-_]scripts|update[-_]notifier|fund|audit)$/i.test(key) && !key.startsWith("BUILDOS_") && !/^GIT_/.test(key))),
+  ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !/^npm_config_(cache|prefix|ignore[-_]scripts|update[-_]notifier|fund|audit|node[-_]options)$/i.test(key) && !/^node_options$/i.test(key) && key.toUpperCase() !== PROBE_LOG_VARIABLE && !key.startsWith("BUILDOS_") && !/^GIT_/.test(key))),
+  NODE_OPTIONS: probeNodeOptions(probe),
+  npm_config_node_options: probeNodeOptions(probe),
   npm_config_cache: cache,
   npm_config_prefix: globalPrefix,
   npm_config_ignore_scripts: "true",
@@ -174,11 +219,16 @@ function clean(text: string): string {
 }
 
 const steps: Step[] = [];
+/** The launch log of each step that started a process. */
+const stepLaunchLog = new WeakMap<Step, string>();
+/** Each run of the project wrapper (or of its helper, started directly), with the pin and the project folder at the time of the run. */
+const wrapperRuns: { step: Step; pin: string; dir: string }[] = [];
 
-function run(name: string, shown: string, file: string, args: string[], expected: number | null, cwd: string, opts: { shell?: boolean; verbatim?: boolean } = {}): Step {
+function run(name: string, shown: string, file: string, args: string[], expected: number | null, cwd: string, opts: { shell?: boolean; verbatim?: boolean; extraEnv?: NodeJS.ProcessEnv; wrapperRoute?: boolean } = {}): Step {
+  const launchLog = join(probeDir, `step-${steps.length + 1}.jsonl`);
   const options: SpawnSyncOptions = {
     cwd,
-    env,
+    env: { ...env, ...opts.extraEnv, [PROBE_LOG_VARIABLE]: launchLog },
     // No TTY. stdin is an empty pipe, not closed: some Command Prompt programs (xcopy) need a stdin handle.
     input: "",
     stdio: ["pipe", "pipe", "pipe"],
@@ -200,6 +250,8 @@ function run(name: string, shown: string, file: string, args: string[], expected
     ok: false,
   };
   steps.push(step);
+  stepLaunchLog.set(step, launchLog);
+  if (opts.wrapperRoute === true || /^\.os[\\/]scripts[\\/]/.test(shown)) wrapperRuns.push({ step, pin: readPin(cwd), dir: cwd });
   return step;
 }
 
@@ -320,12 +372,69 @@ function need(step: Step, what: string): void {
   if (!step.checks.every((c) => c.ok)) finish(`${what} failed, so the later steps did not run`);
 }
 
-// 0. No buildos on PATH, so the wrapper can only run a version through npx.
-{
-  const names = WINDOWS ? ["buildos.cmd", "buildos.exe", "buildos.bat", "buildos.ps1", "buildos"] : ["buildos"];
-  const found = (env["PATH"] ?? env["Path"] ?? "").split(delimiter).filter((d) => d !== "").flatMap((d) => names.map((n) => join(d, n)).filter((p) => existsSync(p)));
-  evidenceStep("no buildos on PATH", "no process; it looks for a buildos program in each PATH folder", found.map((f) => `${f}\n`).join(""), [{ check: "no PATH folder holds a buildos program (so the wrapper finds no global install and runs the pinned version through npx)", problems: found.map((f) => `found ${f}`) }]);
+/** True when an entry of any kind (a link too) is at `path`. */
+function entryExists(path: string): boolean {
+  try {
+    lstatSync(path);
+    return true;
+  } catch {
+    return false;
+  }
 }
+
+/** The functions of a pinned-version.cjs helper that the route guard uses, or the reason it cannot be loaded. */
+function loadHelper(file: string): WrapperHelper | string {
+  try {
+    const h = createRequire(import.meta.url)(file) as Partial<WrapperHelper>;
+    if (typeof h.npmLocalPrefix !== "function" || typeof h.splitWindowsPath !== "function") return `${file} does not export npmLocalPrefix and splitWindowsPath`;
+    return h as WrapperHelper;
+  } catch (e) {
+    return `${file} cannot be loaded (${(e as Error).message})`;
+  }
+}
+
+/** The PATH value of the run's environment (any spelling of the name, as Windows reads it). */
+const pathValue = Object.entries(env).find(([k]) => (WINDOWS ? k.toUpperCase() === "PATH" : k === "PATH"))?.[1] ?? "";
+
+/**
+ * The route guard (finding 1 of review round 1 of pull request 15): no
+ * `node_modules/build-os` entry in any folder that the helper `helperFile`
+ * reads for a run in each project folder of `places`, no buildos program in
+ * a PATH folder as that helper reads PATH, and npm's global prefix empty. So
+ * the wrapper (and npx) can only run a version that npx fetches.
+ */
+function routeGuard(name: string, helperFile: string, helperLabel: string, places: readonly string[]): void {
+  const helper = loadHelper(helperFile);
+  const installs: string[] = [];
+  const programs: string[] = [];
+  let folders = 0;
+  if (typeof helper !== "string") {
+    for (const dir of places) {
+      const lookup = wrapperLookupFolders(dir, dir, helper, nodePath);
+      folders += lookup.length;
+      installs.push(...ancestorInstalls(lookup, entryExists, nodePath));
+      programs.push(...pathBuildosPrograms(pathValue, dir, WINDOWS, helper, entryExists, nodePath));
+    }
+  }
+  const prefix = readdirSync(globalPrefix);
+  evidenceStep(
+    name,
+    `no process; with the lookup of ${helperLabel} (npmLocalPrefix, splitWindowsPath), it reads each folder of the wrapper's node_modules lookup for ${places.map((d) => clean(d)).join(" and ")}, each PATH folder, and npm's global prefix`,
+    `${folders} lookup folders read (each project folder and each folder above it, then npm's local project folder and each folder above it)\n`,
+    [
+      { check: `the helper ${helperLabel} loads`, problems: typeof helper === "string" ? [helper] : [] },
+      { check: "no node_modules/build-os entry (of any kind, any version) in a folder that the wrapper's lookup reads (so no local install can stand in for npx)", problems: [...new Set(installs)].map((f) => `found ${f}`) },
+      { check: "no buildos program in a PATH folder, PATH read as the wrapper's helper reads it (so the wrapper finds no global install)", problems: [...new Set(programs)].map((f) => `found ${f}`) },
+      { check: "npm's global prefix is empty (so npx finds no global install)", problems: prefix.length > 0 ? [`the global prefix holds ${prefix.join(", ")}`] : [] },
+    ],
+  );
+}
+
+// 0. The route guard before any npx command: the repository's own helper (the
+// same file as the project wrappers of 0.1.0 and 0.2.0), for the temporary
+// root and each folder above it. Every folder of the run is in the root.
+const repositoryHelper = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "system", ".os", "scripts", "pinned-version.cjs");
+routeGuard("route guard (before any npx command)", repositoryHelper, "system/.os/scripts/pinned-version.cjs of this repository", [root]);
 
 // 1. The reference versions, from the registry.
 const revision: Record<string, string> = {};
@@ -355,6 +464,7 @@ mkdirSync(original);
   check(status, "no app folder (.claude, .agents, .github), so the app-folder steps do not apply", apps.length === 0);
   need(status, "the copy");
 }
+routeGuard("route guard (before the first wrapper run)", join(project, ".os", "scripts", "pinned-version.cjs"), "the test project's .os/scripts/pinned-version.cjs", [project, original]);
 
 // Upgrade step 1: commit ("nothing to commit" is fine), the work folder, the backup.
 guide(UPGRADE_COMMIT[0]!, 0);
@@ -443,6 +553,22 @@ for (const c of ROLLBACK_PUT_BACK) need(guide(c, 0), c.sh);
   // there the run asserts 0, the true behavior, until F-P9-17 is fixed.
   const cm = wrapper("rollback 5 (also)", "capability-matrix --help", WINDOWS ? 0 : 2);
   check(cm, `${FROM_VERSION} runs it and stops with unknown command "capability-matrix" (stderr: version ${FROM_VERSION} and the usage error)`, unknownCommand(cm.stderr, FROM_VERSION, "capability-matrix"));
+  // F-P9-17 evidence (finding 2 of review round 1 of pull request 15): the
+  // same command through the project's own helper, started directly by
+  // node.exe (no batch file), with the variables that buildos.cmd sets.
+  const helperFile = join(project, ".os", "scripts", "pinned-version.cjs");
+  if (WINDOWS) {
+    const self = join(project, ".os", "scripts", "buildos.cmd");
+    const manifest = join(project, ".os", "scripts", "..", "manifest.json");
+    const args = [helperFile, "--cmd", self, manifest, "capability-matrix", "--help"];
+    const direct = run(`rollback 5 (F-P9-17 evidence): node.exe .os\\scripts\\pinned-version.cjs --cmd .os\\scripts\\buildos.cmd <manifest> capability-matrix --help (no batch file)`, ["node", ...args].join(" "), process.execPath, args, null, project, { extraEnv: { BUILDOS_WRAPPER_ACTIVE: "1", NoDefaultCurrentDirectoryInExePath: "1" }, wrapperRoute: true });
+    check(direct, `${FROM_VERSION} runs it and stops with unknown command "capability-matrix" (stderr)`, unknownCommand(direct.stderr, FROM_VERSION, "capability-matrix"));
+    evidenceStep("rollback 5 (F-P9-17 evidence): which layer loses the exit code", "no process; it compares the exit code of the helper started directly by node.exe with that of buildos.cmd, for the same command (recorded, no check)", `node.exe pinned-version.cjs --cmd ... capability-matrix --help: exit ${direct.exit}\n.os\\scripts\\buildos.cmd capability-matrix --help: exit ${cm.exit}\n${fP917Reading(direct.exit, cm.exit, 2)}\n`, []);
+  } else if (npmRoot !== undefined) {
+    const args = [helperFile, "--npx", join(npmRoot, "bin", "npx-cli.js"), FROM_VERSION, "capability-matrix", "--help"];
+    const direct = run("rollback 5 (F-P9-17 evidence): node .os/scripts/pinned-version.cjs --npx <npx> 0.1.0 capability-matrix --help (the helper's npx route, started directly)", ["node", ...args].join(" "), process.execPath, args, 2, project, { extraEnv: { BUILDOS_WRAPPER_ACTIVE: "1" }, wrapperRoute: true });
+    check(direct, `${FROM_VERSION} runs it and stops with unknown command "capability-matrix" (stderr)`, unknownCommand(direct.stderr, FROM_VERSION, "capability-matrix"));
+  }
   // F-P9-17: 0.1.0 exits 1 here; on Windows the .cmd wrapper exits 0, as above.
   const legacy = guide({ step: "rollback 5 (also)", sh: ".os/scripts/buildos-intake version", guide: "literal" }, WINDOWS ? 0 : 1);
   check(legacy, `the legacy project script runs ${FROM_VERSION}: its notice, and "unknown command" for version (it shows the legacy route works; the version itself is shown by the wrapper checks above)`, legacy.stderr.startsWith(`${LEGACY_NOTICE}\n`) && legacy.stderr.includes('buildos-intake: error: unknown command "version"'));
@@ -477,6 +603,54 @@ for (const c of ROLLBACK_CHECK_COMPARE) {
   check(s, `.os/manifest.json pins ${FROM_VERSION}`, readPin(original) === FROM_VERSION);
   const v = wrapper("original", "version", 0, original);
   check(v, `stdout names version ${FROM_VERSION}`, v.stdout.includes(`version: ${FROM_VERSION}\n`));
+}
+
+// The route guard again, after the last wrapper run.
+routeGuard("route guard (after the last wrapper run)", join(project, ".os", "scripts", "pinned-version.cjs"), "the test project's .os/scripts/pinned-version.cjs", [project, original]);
+
+// The positive proof (finding 1 of review round 1 of pull request 15): the
+// entry scripts that the launch probe observed in each wrapper run.
+{
+  const allowedNpm = npmRoot !== undefined ? npmPrograms(npmRoot, WINDOWS) : [];
+  const npxBins = new Map<string, string[]>();
+  for (const f of readNpxFolders(cache, (p) => p).filter((x) => x.hasBuildOs)) {
+    const pkgDir = join(f.dir, "node_modules", "build-os");
+    try {
+      const pkg = JSON.parse(readFileSync(join(pkgDir, "package.json"), "utf8")) as { version?: string; bin?: Record<string, string> };
+      const bins = Object.values(pkg.bin ?? {}).map((b) => {
+        try {
+          return realpathSync.native(join(pkgDir, b));
+        } catch {
+          return join(pkgDir, b);
+        }
+      });
+      if (typeof pkg.version === "string") npxBins.set(pkg.version, [...(npxBins.get(pkg.version) ?? []), ...new Set(bins)]);
+    } catch {
+      // A folder without a readable package.json gives no expected bin file.
+    }
+  }
+  const problems: string[] = [];
+  const lines: string[] = [];
+  for (const w of wrapperRuns) {
+    const log = stepLaunchLog.get(w.step);
+    const records = log !== undefined && existsSync(log) ? launchRecords(readFileSync(log, "utf8")) : [];
+    let helper = join(w.dir, ".os", "scripts", "pinned-version.cjs");
+    try {
+      helper = realpathSync.native(helper);
+    } catch {
+      // The plain path is compared then.
+    }
+    const expected = npxBins.get(w.pin) ?? [];
+    lines.push(`${clean(w.step.name)} (pin ${w.pin}): ${records.length > 0 ? records.map((r) => clean(r.real ?? r.argv1 ?? "(none)")).join(", ") : "(no Node.js process)"}\n`);
+    if (expected.length === 0) problems.push(`step "${clean(w.step.name)}": the npx cache has no build-os ${w.pin} with a bin file`);
+    problems.push(...launchProblems(w.step.name, records, expected.length > 0 ? expected : ["(the npx bin file of build-os " + w.pin + ")"], [helper, ...allowedNpm], WINDOWS).map((p) => clean(p)));
+  }
+  evidenceStep(
+    "launch probe: each wrapper run started the pinned build-os from the npx cache",
+    `no process; it reads the launch probe's records of each of the ${wrapperRuns.length} wrapper runs. ${PROBE_LIMIT}`,
+    lines.join(""),
+    [{ check: `in each of the ${wrapperRuns.length} wrapper runs, the entry script of each Node.js process that the probe observed is a bin file of the npx folder of the npm cache that holds build-os at the step's pin, the project's own .os/scripts/pinned-version.cjs, or a program of the selected npm ({NPM}/bin), and at least one is that bin file`, problems: wrapperRuns.length === 0 ? ["no wrapper run was recorded"] : problems }],
+  );
 }
 
 // Where each version came from: the registry, with the registry's integrity.

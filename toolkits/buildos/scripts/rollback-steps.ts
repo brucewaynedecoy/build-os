@@ -186,3 +186,79 @@ export function cacheProblems(entries: readonly { key: string; integrity: string
   for (const v of Object.keys(integrity)) if (!seen.has(v)) problems.push(`no cache entry for the registry tarball of build-os ${v}`);
   return problems;
 }
+
+/**
+ * The two functions of the project wrapper's helper
+ * (`.os/scripts/pinned-version.cjs`) that the route guard of the rollback
+ * smoke uses, so that it reads the same folders as the wrapper (review round
+ * 1 of pull request 15, finding 1).
+ */
+export interface WrapperHelper {
+  npmLocalPrefix(cwd: string): string;
+  splitWindowsPath(value: string): string[];
+}
+
+/** The path functions of the system under test (node:path, or path.win32 or path.posix in a test). */
+export interface PathFunctions {
+  resolve(...parts: string[]): string;
+  dirname(path: string): string;
+  join(...parts: string[]): string;
+}
+
+/**
+ * Every folder whose `node_modules/build-os` the wrapper's helper reads for a
+ * wrapper run in `cwd` for the project at `projectRoot`, in its order
+ * (pinned-version.cjs `localEntry`): the project folder and each folder
+ * above it, then npm's local project folder for `cwd` (the helper's own
+ * `npmLocalPrefix`) and each folder above it. Each folder is listed once.
+ */
+export function wrapperLookupFolders(projectRoot: string, cwd: string, helper: Pick<WrapperHelper, "npmLocalPrefix">, p: PathFunctions): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const start of [p.resolve(projectRoot), p.resolve(helper.npmLocalPrefix(cwd))]) {
+    for (let dir = start; ; dir = p.dirname(dir)) {
+      if (!seen.has(dir)) {
+        seen.add(dir);
+        out.push(dir);
+      }
+      if (p.dirname(dir) === dir) break;
+    }
+  }
+  return out;
+}
+
+/**
+ * The `node_modules/build-os` entries in `folders` that exist (`exists` sees
+ * an entry of any kind, a link too). Any such entry fails the route guard,
+ * whatever its version: the guard does not ask whether the wrapper would
+ * take it, it asks that nothing is there to take.
+ */
+export function ancestorInstalls(folders: readonly string[], exists: (path: string) => boolean, p: PathFunctions): string[] {
+  return folders.map((dir) => p.join(dir, "node_modules", "build-os")).filter((f) => exists(f));
+}
+
+/** The names of a buildos program that the guard looks for in each PATH folder: on Windows each name of the wrapper's PATHEXT search, and more. */
+export function buildosNames(windows: boolean): string[] {
+  return windows ? ["buildos.com", "buildos.exe", "buildos.bat", "buildos.cmd", "buildos.ps1", "buildos"] : ["buildos"];
+}
+
+/**
+ * The buildos programs on `pathValue` that exist, with PATH read as the
+ * wrapper's helper reads it for a run in `cwd`: on macOS and Linux split at
+ * `:`, an empty entry is the current folder and a relative entry is relative
+ * to it (pinned-version.cjs `findPosixBuildos`); on Windows the helper's own
+ * `splitWindowsPath` (a `;` inside double quotes is part of the folder name),
+ * each folder resolved from the current folder (`findOnPath`). Any such
+ * program fails the route guard.
+ */
+export function pathBuildosPrograms(pathValue: string, cwd: string, windows: boolean, helper: Pick<WrapperHelper, "splitWindowsPath">, exists: (path: string) => boolean, p: PathFunctions): string[] {
+  const dirs = windows ? helper.splitWindowsPath(pathValue) : pathValue.split(":").map((d) => (d === "" ? "." : d));
+  return dirs.flatMap((d) => buildosNames(windows).map((n) => p.resolve(cwd, d, n))).filter((f) => exists(f));
+}
+
+/** The reading of the F-P9-17 diagnostic on Windows: the exit code of the helper started directly by node.exe, next to that of buildos.cmd, for the same failing command. */
+export function fP917Reading(direct: number | null, wrapper: number | null, expected: number): string {
+  if (direct === expected && wrapper === 0) return `cause (b) shown: the helper started directly returns ${expected}, and buildos.cmd returns 0, so the code is lost in the batch wrapper's own exit path`;
+  if (direct === 0 && wrapper === 0) return "cause (a) shown: the helper started directly returns 0 too, so the code is lost below it, in the cmd.exe that it starts for npm's npx.cmd";
+  return `neither pattern: the helper started directly returns ${direct ?? "(no code)"}, buildos.cmd returns ${wrapper ?? "(no code)"}`;
+}
