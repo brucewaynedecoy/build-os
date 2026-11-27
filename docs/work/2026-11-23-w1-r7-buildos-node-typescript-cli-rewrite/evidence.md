@@ -6853,3 +6853,12 @@ Approved output: no golden file changed, and no parity exception changed. `build
 #### Checks (Review Round 2)
 
 Local, from `toolkits/buildos/` (macOS arm64, Node 26.13.1, npm 11.20.0): `npm ci --ignore-scripts`, `npm run typecheck`, and `npm run build` exit 0; `npm test` exit 0, 2,809 tests, 2,796 pass, 0 fail, 13 skipped; `node test/golden/skills/capture.ts --check` reports the same 6 fit-gap workbook differences with and without this change (the local Python and `openpyxl`, not this change); `make-docs project paths validate` and `make-docs check prd` as recorded in the history record; the deny-list check with the real list, 0 matches.
+
+CI of commit `70ab339` (the fixes): `buildos-ci` run 45941006127 (pull request) and 45941001330 (push), `buildos-smoke` run 45941006338, `buildos-deny-list` runs 45941006119 and 45941001363: all passed. The local `node scripts/published-smoke.ts --version 0.1.0` with the new step module passed, 13 of 13 steps.
+
+| Job (run 45941006127) | Result |
+| --- | --- |
+| `test` on windows-latest | Unit tests 2,356, 2,240 pass, 0 fail, 116 skipped (POSIX-only); the labelled command ran for all 8 folder names (with `bang!it!` and ``all $` %OS% ^ & ! z``) in Command Prompt with its default settings, in Command Prompt with `/v:off` (the smoke form), and through `cmd /v:off` from PowerShell; each quoted folder word reached the program exactly in the three forms; the finding 3 init label tests passed. Golden harness 299, 294 pass, 0 fail, 5 skipped |
+| `test` on ubuntu-latest and macos-latest | Unit tests 2,497, 0 fail (15 and 12 skipped); golden harness 299, 298 pass, 0 fail; installed tarball 167 of 167 |
+| `no Python` (three systems), the image job, the deny list (invented list), the Make Docs contract, the OSV scan | passed |
+| `buildos-smoke` for `0.1.0` (the pull request touches the script) | passed on Linux, macOS, and Windows |

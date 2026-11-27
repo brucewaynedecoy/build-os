@@ -29,6 +29,8 @@ Framing: [W1 R7 backlog](../../../docs/work/2026-11-23-w1-r7-buildos-node-typesc
 | Tests | `test/printed-commands-review-2.test.ts` (new), `test/post-publication-scripts.test.ts`, `test/run-command.test.ts`, `test/entities-cli.test.ts`, and the init tests for the new wording |
 | Records | PRD 20, the risk register (R-003 entry), the evidence report, the user guide, `RELEASE_NOTES.md`, `SECURITY.md` |
 
+CI: every job of commit `70ab339` passed on three systems (`buildos-ci` run 45941006127, `buildos-smoke` run 45941006338), with the labelled command run on Windows in Command Prompt, with `/v:off`, and through `cmd /v:off` from PowerShell for folder names with `!`.
+
 Deferred obligations and Unassisted Goal Testing: `not-needed-now`; no `O-###` or `NUAT-###` applies. Guide coverage: `update-existing`; the entity consolidation user guide.
 
 ## Documentation
