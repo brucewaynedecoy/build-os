@@ -8590,9 +8590,9 @@ The adopter effect and the severity recommendation of [F-P9-17 After Run 2](#f-p
 - Option 1, a `0.2.1` patch: only the Windows batch wrapper `system/.os/scripts/buildos.cmd` (likely one line, a hypothesis until a Windows test proves it) and its tests change; adopters on Windows get correct exit codes sooner, after a refresh of `.os/scripts/`; it is one more release through the full release process.
 - Option 2, in `0.3.0`: no extra release; Windows adopters keep the wrong exit code until `0.3.0`.
 - Orchestrator's recommendation: open (for the orchestrator to fill in).
-- Owner decision: open.
+- Owner decision (2026-11-27): Option 1, in the owner's words: "Option 1; a small `0.2.1` release soon." The release that carries the fix is `0.2.1`. This question is closed ([0.2.1 Release Preparation](#021-release-preparation-2026-11-27)).
 
-Pull request 16 (2026-11-27): the mechanism is shown on Windows and the fix is in the repository, a two-line change in `system/.os/scripts/buildos.cmd` ([F-P9-17 Mechanism and Fix](#f-p9-17-mechanism-and-fix-pull-request-16-2026-11-27)). This question, the release that carries the fix, stays open.
+Pull request 16 (2026-11-27): the mechanism is shown on Windows and the fix is in the repository, a two-line change in `system/.os/scripts/buildos.cmd` ([F-P9-17 Mechanism and Fix](#f-p9-17-mechanism-and-fix-pull-request-16-2026-11-27)). This question, the release that carries the fix, stayed open until the owner decision above.
 
 ### Facts for the Next Release Notes (Not Changed Here)
 
@@ -8863,3 +8863,31 @@ On 2026-11-27, macOS, from `toolkits/buildos/` and the repository root, the sand
 | `buildos-ci` run 46068381377 (`de7e8b6`, the fix) | passed on all jobs |
 
 No golden capture ran. No workflow was started by hand.
+
+## 0.2.1 Release Preparation (2026-11-27)
+
+The owner decided the [owner question for F-P9-17](#owner-question-for-f-p9-17) on 2026-11-27, in these words: "Option 1; a small `0.2.1` release soon." So the fix of [F-P9-17](#f-p9-17-mechanism-and-fix-pull-request-16-2026-11-27) ships in `0.2.1`. No other owner decision is recorded here. This pull request, on the branch `release/0.2.1-version` from `main` at `c10655f` (pull request 16 merged), prepares the version files only: nothing is tagged, released, staged, or published, and `toolkits/buildos/release-candidates.json` is unchanged.
+
+What it changes:
+
+- The version: `toolkits/buildos/package.json` and `toolkits/buildos/package-lock.json` say `0.2.1`, and `test/package.test.ts` uses `0.2.1` as the release that package.json names after the bump, as pull request 11 did for `0.2.0`.
+- The docs that name the current version, the same places as for `0.2.0`: `README.md` (and its release-notes link), `toolkits/buildos/README.md`, guide chapters 3, 4 (above "Update and roll back"), and 19, and `docs/assets/user/upgrade-an-existing-buildos-project.md`, which also points to the new guide section. `toolkits/buildos/SECURITY.md` is not changed: its check examples name the published `0.2.0` (they say "Use the version you install"), and its release procedure and its `git show v0.2.0:` extraction line belong to the release process. The commands of the guide's "From 0.1.0 to 0.2.0" steps keep their versions.
+- `toolkits/buildos/RELEASE_NOTES.md`: a `## 0.2.1` section above `## 0.2.0`, with the draft status line, and the sections "Fixed", "Update a project from 0.2.0" (the copy of `.os/scripts/buildos.cmd` from a clean `0.2.1` copy, in Command Prompt and `sh`, with a backup first; macOS and Linux need no copy unless someone uses the project on Windows), "Known limits" (the cases that [What Stays Unproven](#what-stays-unproven) lists, and the Command Prompt forms of the upgrade steps), "Check the package", and "Roll back". The `0.2.0` notes are not changed. `test/release-notes.test.ts` also runs the `0.2.0` filter with only the version changed on a scratch copy tagged `v0.2.1`, and checks the five `0.2.1` headings, the draft line removed, and nothing of `0.2.0`.
+- Guide chapter 4: the new section "From 0.2.0 to 0.2.1" with "Roll back from 0.2.1 to 0.2.0", before "From 0.1.0 to 0.2.0"; the update and rollback items point to it; the Windows sentence of "From 0.1.0 to 0.2.0" says that `0.2.1` fixes the wrapper and that a project gets it only by the copy. `guide/BuildOS-Guide.html` is rebuilt. The rollback smoke reads the guide from "From 0.1.0 to 0.2.0" to the "Not available yet" note, so the new section is outside its text; `scripts/rollback-smoke.ts`, `scripts/rollback-steps.ts`, and the versions they run (`0.1.0` and `0.2.0`) are not changed. `test/rollback-smoke.test.ts` has the new Windows sentence and checks the new section: its place, its backup, its one-file copy, and that each of its Command Prompt lines is the guide's Windows form of its `sh` line.
+- `R-003` in the risk register records the decision.
+
+Not changed: `SECURITY.md`, the workflows (the smoke default stays `0.2.0` until `0.2.1` is published, as pull request 11 kept `0.1.0`), the release scripts, and the ledger. The follow-up of [The Smokes](#the-smokes) (a failing-command step through this tree's wrapper in the tarball and local-pack modes of `scripts/published-smoke.ts`) stays open for this release.
+
+### Facts That Depend on the 0.2.1 Release
+
+| Place | Fact | Today |
+| --- | --- | --- |
+| `README.md`, `toolkits/buildos/README.md`, guide chapters 03, 04, 19, `docs/assets/user/upgrade-an-existing-buildos-project.md` | `npx -y build-os@0.2.1 …`, `npm install -g build-os@0.2.1`, `npm pack build-os@0.2.1`, file name `build-os-0.2.1.tgz` | Not true until `0.2.1` is published: npm has no `0.2.1` |
+| Guide chapter 4, "From 0.1.0 to 0.2.0" (and `test/rollback-smoke.test.ts`) | "BuildOS `0.2.1` fixes the wrapper" | True only after `0.2.1` is published |
+| Guide chapter 4, "From 0.2.0 to 0.2.1" and "Roll back from 0.2.1 to 0.2.0"; `RELEASE_NOTES.md`, "Update a project from 0.2.0" and "Roll back"; the upgrade doc's update item | A clean `npx -y build-os@0.2.1 init` copy holds the fixed `buildos.cmd`; the checks print `version: 0.2.1`, and `echo %ERRORLEVEL%` prints `2` after `cmd /d /c .os\scripts\buildos.cmd no-such-command` | Not run: `0.2.1` is not published. The fixed wrapper is `system/.os/scripts/buildos.cmd` on `main`, and `buildos init` copies it byte for byte. The steps have run in no shell yet |
+| `RELEASE_NOTES.md`, "Known limits" | "The Command Prompt forms of the `0.2.0` to `0.2.1` steps above have not run yet." | True today; check it before the tag |
+| `RELEASE_NOTES.md`, the `0.2.1` status line | Draft | Removed when `0.2.1` is published |
+| `RELEASE_NOTES.md`, "Check the package" | The `0.2.1` signature, attestation, SBOM file `buildos-0.2.1.cdx.json`, and the `v0.2.1` ledger entry | Not true until the reviewed entry, the tag, and the release exist |
+| `.github/workflows/buildos-smoke.yml` and its test; `SECURITY.md` examples | Default and examples `0.2.0` | Unchanged here; after publication, the release process decides |
+
+The release steps for `0.2.1` wait for the owner's decision on the release process (the owner asked for the Make Docs pattern; a separate task proposes it).

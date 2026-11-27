@@ -281,15 +281,53 @@ describe("review round 1 of pull request 15, finding 2: the F-P9-17 diagnostic",
 
 // Review round 2 of pull request 15, finding 2: run 3 saw the 0.1.0 usage error with exit 0 through the
 // Windows wrapper's npx route (F-P9-17), so the guide names that exception where it says exit code 2.
-// Pull request 16 (the F-P9-17 fix): the guide names the versions with the defect and says the fix waits for a release.
+// Pull request 16 (the F-P9-17 fix): the guide names the versions with the defect. The 0.2.1 version pull request: it says that 0.2.1 fixes the wrapper and points to its upgrade section, which comes before the 0.1.0 to 0.2.0 section, outside the guide text that the tests above read.
 describe("review round 2 of pull request 15, finding 2: the guide names the Windows exit code of F-P9-17", () => {
   it("the first description of the failure names the exception, and the repeated claim points to it", () => {
-    const first = "a skill command stops with `unknown command` (exit code `2`). On Windows, in BuildOS `0.1.0` and `0.2.0`, the project wrapper `.os\\scripts\\buildos.cmd` and the `.cmd` scripts with the old names give exit code `0` when they are started by `cmd /c` without `call` or by PowerShell, which is how a script or an agent usually starts them. The error text is right, so check the text, not only the code. The fix is in the BuildOS repository and waits for a release.";
+    const first = "a skill command stops with `unknown command` (exit code `2`). On Windows, in BuildOS `0.1.0` and `0.2.0`, the project wrapper `.os\\scripts\\buildos.cmd` and the `.cmd` scripts with the old names give exit code `0` when they are started by `cmd /c` without `call` or by PowerShell, which is how a script or an agent usually starts them. The error text is right, so check the text, not only the code. BuildOS `0.2.1` fixes the wrapper, and a project gets the fixed wrapper only when you copy it: see \"From 0.2.0 to 0.2.1\" above.";
     const repeated = "the command stops with `unknown command` (exit code `2`, or `0` on Windows through the project wrapper of `0.1.0` or `0.2.0`, as above).";
     assert.ok(guideText.includes(first));
     assert.ok(guideText.includes(repeated));
     assert.ok(guideText.indexOf(first) < guideText.indexOf(repeated));
     // No other claim of exit code 2 for unknown command is left without the exception.
     assert.equal((guideText.match(/`unknown command` \(exit code `2`\)/g) ?? []).length, 1);
+  });
+});
+
+// The 0.2.1 version pull request: the guide's "From 0.2.0 to 0.2.1" section copies the fixed Windows
+// wrapper (F-P9-17). It stands before "From 0.1.0 to 0.2.0", so the rollback smoke's guide text above
+// (from that heading to the "Not available yet" note) does not hold it, and the smoke runs only 0.1.0 and 0.2.0.
+describe("the guide's 0.2.0 to 0.2.1 section (the F-P9-17 wrapper copy)", () => {
+  const from = guideText.indexOf("### From 0.2.0 to 0.2.1");
+  const to = guideText.indexOf("### From 0.1.0 to 0.2.0");
+  const part = guideText.slice(from, to);
+  const blocks = (language: string) => [...part.matchAll(new RegExp("```" + language + "\\n([^]*?)\\n *```", "g"))].flatMap((m) => m[1]!.split("\n").map((l) => l.trim())).filter((l) => l !== "");
+
+  it("comes before the 0.1.0 to 0.2.0 section, which the rollback smoke reads, and has its rollback", () => {
+    assert.ok(from > 0 && to > from);
+    assert.equal(guideText.indexOf("### From 0.2.0 to 0.2.1", from + 1), -1);
+    assert.ok(part.includes("#### Roll back from 0.2.1 to 0.2.0"));
+    assert.ok(!section.includes("0.2.1 init"), "the rollback smoke's section holds no 0.2.1 command");
+  });
+
+  it("copies the one wrapper file from a clean 0.2.1 copy, with a backup first, and puts it back on rollback", () => {
+    const sh = blocks("sh");
+    for (const line of [
+      "mkdir ../buildos-upgrade-0.2.1",
+      "cp .os/scripts/buildos.cmd ../buildos-upgrade-0.2.1/backup/buildos.cmd",
+      "npx -y build-os@0.2.1 init --root ../buildos-upgrade-0.2.1/new --skip-make-docs",
+      "cp ../buildos-upgrade-0.2.1/new/.os/scripts/buildos.cmd .os/scripts/buildos.cmd",
+      "cp ../buildos-upgrade-0.2.1/backup/buildos.cmd .os/scripts/buildos.cmd",
+    ]) assert.ok(sh.includes(line), line);
+    assert.ok(sh.indexOf("cp .os/scripts/buildos.cmd ../buildos-upgrade-0.2.1/backup/buildos.cmd") < sh.indexOf("cp ../buildos-upgrade-0.2.1/new/.os/scripts/buildos.cmd .os/scripts/buildos.cmd"), "the backup comes first");
+    // Only the version file and the wrapper are copied; no skill.
+    for (const line of sh.filter((l) => l.startsWith("cp "))) assert.match(line, /(manifest\.json|buildos\.cmd)$/, line);
+    assert.ok(part.includes('change `"buildos_version"` from `"0.2.0"` to `"0.2.1"`'));
+  });
+
+  it("each sh command has its Command Prompt form, made by the guide's rule, in the same order", () => {
+    const sh = blocks("sh");
+    const bat = blocks("bat");
+    assert.deepEqual(bat, sh.map((l) => commandPromptForm(l)));
   });
 });

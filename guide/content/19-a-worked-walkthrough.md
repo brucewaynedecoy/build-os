@@ -66,7 +66,7 @@ Keep the project outside a synced cloud folder. [Before you start](03-before-you
 BuildOS is one npm package. In the project folder, your agent runs:
 
 ```sh
-npx -y build-os@0.2.0 init
+npx -y build-os@0.2.1 init
 ```
 
 It stops first with exit code `10` and one question for you: set up Make Docs too? Answer it on purpose, because with the tested Make Docs version a No cannot be undone later in this folder, and the planning hops (12 onwards) use Make Docs. Your agent then runs the one command `buildos init` printed for your answer. BuildOS adds `.os/`, `assets/`, `playbooks/`, `workspace/`, and its section of `AGENTS.md`, `CLAUDE.md`, and `.gitignore`; with Make Docs you also get `docs/`.

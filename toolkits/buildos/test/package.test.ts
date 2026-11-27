@@ -477,7 +477,7 @@ describe("project wrappers with real npm installs (pin-first review rounds 1 and
 
   // Finding 3: after the release bump, package.json says the release while a plain `npm run build` reports dev.
   describe("finding 3: a package.json version that differs from the bundle's own version", () => {
-    const RELEASE = "0.2.0";
+    const RELEASE = "0.2.1";
     let devBuild: string;
     let releaseTarball: string;
     before(

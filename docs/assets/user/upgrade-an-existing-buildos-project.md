@@ -40,7 +40,7 @@ The earlier BuildOS tools were separate Go programs (`buildos-intake`, `buildos-
 In the project root, run:
 
 ```sh
-npx -y build-os@0.2.0 init --dry-run
+npx -y build-os@0.2.1 init --dry-run
 ```
 
 The dry run shows what adoption would write and writes nothing. BuildOS adopts a folder that has an `.os/` folder, no `.os/manifest.json`, and the marks of a Go-era project (an `.os/data/` folder, or all of `.os/`, `assets/`, `docs/`, `playbooks/`, and `workspace/`). Any other `.os/` folder stops it with exit code `10` and a plain message.
@@ -48,7 +48,7 @@ The dry run shows what adoption would write and writes nothing. BuildOS adopts a
 Then run it for real:
 
 ```sh
-npx -y build-os@0.2.0 init
+npx -y build-os@0.2.1 init
 ```
 
 When no one can answer in the terminal, it first stops with exit code `10` and asks whether to set up Make Docs; run the one command it prints for the answer. Adoption writes only these paths:
@@ -91,12 +91,12 @@ The old names still work and print a notice. The project scripts `.os/scripts/bu
 ```json
 {
   "schema_version": 1,
-  "buildos_version": "0.2.0",
+  "buildos_version": "0.2.1",
   "initialized_at": "2026-11-24T22:15:17.018Z"
 }
 ```
 
-- To update, set `buildos_version` to the new exact version and run `.os/scripts/buildos version`. Read the release notes first: when a version changes skills, change the skills too. From `0.1.0` to `0.2.0`, four skills and the skills router change; the BuildOS guide, chapter 4, section "From 0.1.0 to 0.2.0", gives the steps and the rollback.
+- To update, set `buildos_version` to the new exact version and run `.os/scripts/buildos version`. Read the release notes first: when a version changes skills, change the skills too. From `0.1.0` to `0.2.0`, four skills and the skills router change; the BuildOS guide, chapter 4, section "From 0.1.0 to 0.2.0", gives the steps and the rollback. From `0.2.0` to `0.2.1`, no skill changes, but a project on Windows needs the fixed wrapper `.os/scripts/buildos.cmd`; the same chapter, section "From 0.2.0 to 0.2.1", gives the steps and the rollback.
 - To roll back, set it to the earlier exact version. A range or a tag such as `latest` is refused (exit code `3`).
 - You do not need to change or remove a global install (`npm install -g`). The pin always decides: a global install is used only when it is an npm install of exactly the pinned version; otherwise the wrapper fetches the pinned version through `npx`.
 
