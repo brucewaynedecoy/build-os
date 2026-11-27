@@ -40,7 +40,7 @@ Three skill scripts become commands: `buildos extract bulk` from `buildos-bulk-e
 | Testing type | Current decision | Decision record or `not-needed-now` reason |
 | --- | --- | --- |
 | Automated Implementation Testing | Active | Script parity tests on three operating systems, a no-Python check, and a run in a CI image without Python. |
-| Performance Testing | `not-needed-now` | `PERF-001` and `PERF-002` cover startup and fetch; no decision depends on these commands' speed. |
+| Performance Testing | Active (one `PERF-002` pass) | Changed on 2026-11-27 by the orchestrator decision of that date ([Orchestrator Decisions (2026-11-27)](./evidence.md#orchestrator-decisions-2026-11-27)): the `0.2.0` package grew, so the `PERF-002` version 1 profile expired, and one pass on the published `0.2.0` runs under [`PERF-002` version 2](08-release-0-1-0.md#perf-002-profile). No decision depends on the speed of the four new commands, so `PERF-001` is not rechecked. |
 | Guided Progress Review | `not-needed-now` | Parity with existing skill output is proven by fixtures. |
 | Unassisted Goal Testing | `not-needed-now` | No accepted authority activates it. |
 

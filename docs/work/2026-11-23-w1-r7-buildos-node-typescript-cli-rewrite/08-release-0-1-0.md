@@ -225,7 +225,7 @@ Still open: the sole-maintainer or two-maintainer route (owner checklist step 5)
 
 ## PERF-002 Profile
 
-This is the one canonical `PERF-002` profile (t22). Version 1 was written and committed before any `PERF-002` measurement, so the order is visible in git history. It measures the published package `build-os@0.1.0`, not a staged-only package: the stage was approved before t22 (see the release-order departure in the Closeout Notes), and under the owner decision of 2026-11-26 ("Option 1: run them now on the published package") the outstanding checks run on the published package, whose bytes equal the staged and reviewed tarball. That decision is a dated exception for `0.1.0` only. The execution packet, the raw samples, and the result are in the [PERF-002 section of the evidence report](./evidence.md#first-run-npx-perf-002-p8).
+This is `PERF-002` version 2, the one canonical `PERF-002` profile (it replaces version 1 in this section). Version 1 expired at the release that changed the package size (1,070,295 bytes and 173 files for `0.1.0`, 1,144,483 bytes and 168 files for `0.2.0`). The protected outcome and the workload are the same, so the ID stays `PERF-002`. Version 1 (digest `sha256:1637ae8a2d143b7e431ace19873c7982c41ffa108d28b6423af9a59495857990`) is kept in git history: `git show e2bbbc1:docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/08-release-0-1-0.md` holds it, and the awk command of its execution packet gives that digest from it. Its packet, raw samples, fingerprint, and result are in [First-Run npx (PERF-002, P8)](./evidence.md#first-run-npx-perf-002-p8). Version 2 was written and committed before any `PERF-002` measurement of `0.2.0`, so the order is visible in git history. It measures the published `build-os@0.2.0`, whose registry tarball has the SHA-256 of the reviewed entry: the instrument can only measure a published package, and the orchestrator decided on 2026-11-27 on one pass after publication ([Orchestrator Decisions (2026-11-27)](./evidence.md#orchestrator-decisions-2026-11-27); runbook step k). The execution packet, the raw samples, and the result are in [First-Run npx for 0.2.0 (PERF-002, P9)](./evidence.md#first-run-npx-for-020-perf-002-p9).
 
 ### Performance Applicability
 
@@ -234,22 +234,22 @@ This is the one canonical `PERF-002` profile (t22). Version 1 was written and co
 | Candidate ID | `PERF-002` |
 | Title | First-run `npx -y` fetch and start of the published package |
 | Testing Type | Performance Testing |
-| Base Maintenance Action | `create` |
+| Base Maintenance Action | `update-existing` |
 | Protected Outcome | The first command in a new chat session completes without the user thinking it failed. |
-| Decision Informed | Whether the package size needs reduction. |
+| Decision Informed | Whether the package size needs reduction after the growth of `0.2.0`. |
 | Failure Cost | Moderate. A long first run can look like a hang in a chat app, and the user may stop it; no data is lost, later runs use the npm cache, and a smaller package can ship in a later release. |
 | Risk And Reversibility | Low blast radius and reversible: a size change touches the build and the package content only. A false pass could hide a first-run delay on slow networks; a false fail could cause needless size work. |
-| Supported Scope | `npx -y build-os@0.1.0 version` with an empty npm cache on the one measured machine and network, at the time of the passes. |
-| Product Maturity | First public release, `0.1.0`, published on npm on 2026-11-26. |
-| Source Authority | [PRD 20 Runtime and Package](../../prd/20-buildos-cli-and-distribution.md#runtime-and-package); [plan performance table](../../plans/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/00-overview.md#performance-evidence-plan); [Current Testing Decisions](#current-testing-decisions) |
-| Source Evidence | [`PERF-001` recheck](./evidence.md#startup-recheck-perf-001-p8) for the start cost of the bundle, context only |
-| Baseline Availability | No comparable baseline. `PERF-001` measures the bundle with no npm and no network. |
+| Supported Scope | `npx -y build-os@0.2.0 version` with an empty npm cache on the one measured machine and network, at the time of the pass. |
+| Product Maturity | Second public release, `0.2.0`, published on npm on 2026-11-27. |
+| Source Authority | [PRD 20 Runtime and Package](../../prd/20-buildos-cli-and-distribution.md#runtime-and-package); [plan performance table](../../plans/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/00-overview.md#performance-evidence-plan); [P9 Current Testing Decisions](09-skill-script-commands-0-2-0.md#current-testing-decisions); [Orchestrator Decisions (2026-11-27)](./evidence.md#orchestrator-decisions-2026-11-27) |
+| Source Evidence | [`PERF-002` version 1 result](./evidence.md#first-run-npx-perf-002-p8) for `0.1.0`, context only (another version, date, and network) |
+| Baseline Availability | No comparable baseline. The version 1 result has another fingerprint (package, date, network, instrument). |
 | Applicability | `characterize-now` |
 | Target Class | `characterization-baseline` |
 | Owner | BuildOS maintainer |
-| Lifecycle Coordinate | W1 R7 P8 Stage 5 (t22, t23) |
-| Gate Effect | Informational. It informs the package-size decision and blocks nothing. |
-| Reason | The first command an adopter's agent runs is `npx -y build-os@<version>`, so the fetch of the package is part of the first impression in every new chat session. |
+| Lifecycle Coordinate | W1 R7 P9 Stage 3 (t13, runbook step k) |
+| Gate Effect | Informational. It informs the package-size decision and blocks nothing. `0.2.0` is already published. |
+| Reason | The first command an adopter's agent runs is `npx -y build-os@<version>`, so the fetch of the package is part of the first impression in every new chat session, and the package grew in `0.2.0`. |
 | Next Record | None |
 
 ### PERF-002 First-Run npx Baseline
@@ -259,13 +259,13 @@ This is the one canonical `PERF-002` profile (t22). Version 1 was written and co
 | Field | Value |
 | --- | --- |
 | Profile ID | `PERF-002` |
-| Profile Version | `1` |
-| Source Digest | SHA-256 of this `## PERF-002 Profile` section from its heading to the end of the Lineage And Traceability table, recorded in the execution packet in the evidence report before pass 1 |
+| Profile Version | `2` |
+| Source Digest | SHA-256 of this `## PERF-002 Profile` section from its heading to the end of the Lineage And Traceability table, recorded in the execution packet in the evidence report before the pass |
 | Title | First-run `npx -y` fetch and start of the published package |
 | Protected Outcome | The first command in a new chat session completes without the user thinking it failed. |
 | Source Requirements | [PRD 20 Runtime and Package](../../prd/20-buildos-cli-and-distribution.md#runtime-and-package) |
 | Canonical Owner | docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/08-release-0-1-0.md |
-| Product Maturity | First public release |
+| Product Maturity | Second public release |
 | Applicability | `characterize-now` |
 | Target Class | `characterization-baseline` |
 | Risk And Failure Cost | Moderate user impact, low severity, reversible. A false pass hides a slow first run; a false fail causes needless size work. |
@@ -276,13 +276,13 @@ This is the one canonical `PERF-002` profile (t22). Version 1 was written and co
 
 | Field | Value |
 | --- | --- |
-| Surface | `npx -y build-os@0.1.0 version`, as an agent or a user starts it in a folder with no BuildOS install |
+| Surface | `npx -y build-os@0.2.0 version`, as an agent or a user starts it in a folder with no BuildOS install |
 | Platform Or Runtime | Node 24.22.3 with its bundled npm 11.19.1 (the release workflow's reference versions) |
-| Deployment Or Device Class | One maintainer machine: Apple M2 Pro, 10 cores, 16 GiB, macOS 27.2 on arm64, AC power |
+| Deployment Or Device Class | One maintainer machine: Apple M2 Pro, 10 cores, 16 GiB, macOS 27.2.1 on arm64, AC power |
 | Scale | One process per run; no project data |
-| Account And Network State | No npm login. The machine's normal network connection at the time of the passes, not shaped or throttled, with the default registry `https://registry.npmjs.org/` and no proxy (the commands run outside the agent's network sandbox). The network is described, not controlled. |
+| Account And Network State | No npm login. The machine's normal network connection at the time of the pass, not shaped or throttled, with the default registry `https://registry.npmjs.org/` and no proxy (the commands run outside the agent's network sandbox). The network is described, not controlled. |
 | Resource Envelope | Local machine with normal desktop load |
-| Exclusions | Linux and Windows; x64; other networks (a slow, metered, or restricted network is the `R-012` trial in t17); a corporate registry mirror or proxy; commands other than `version`; `buildos init` |
+| Exclusions | Linux and Windows; x64; other networks (a slow, metered, or restricted network is the `R-012` trial); a corporate registry mirror or proxy; commands other than `version`; `buildos init` |
 
 #### Baseline And Target
 
@@ -300,12 +300,12 @@ This is the one canonical `PERF-002` profile (t22). Version 1 was written and co
 
 | Field | Value |
 | --- | --- |
-| Product Build | The published `build-os@0.1.0`: registry tarball SHA-256 `54a8cd01f0165226927a74e5108dd37327323bd3db1905fdb6323c7373b21e8e`, equal to the `reviewed` entry in `toolkits/buildos/release-candidates.json` and to the staged tarball; source commit `20f941a` |
+| Product Build | The published `build-os@0.2.0`: registry tarball SHA-256 `baf54ebf0717a56bf1bb8ac0391adc7559b16375b90f59f4e4b79865a3f20da0`, equal to the `v0.2.0` `reviewed` entry in `toolkits/buildos/release-candidates.json`; source commit `6f395c1` |
 | Dependency State | No runtime dependencies; npm 11.19.1 does the fetch |
-| Configuration | `npm_config_cache` set to a new empty folder for each repetition; `npm_config_ignore_scripts=true`; npm update notice, fund, and audit messages off; no `BUILDOS_` variable; no `prefer-offline`, `offline`, or `prefer-online` setting |
+| Configuration | `npm_config_cache` set to a new empty folder for each repetition; `npm_config_ignore_scripts=true`; npm update notice, fund, and audit messages off; no `BUILDOS_` variable; no `prefer-offline`, `offline`, or `prefer-online` setting; the folder of the Node.js that runs the instrument first on every child's `PATH` (F-P8-12) |
 | Qualified Environment | The machine class and network under Supported Scope |
 | Dataset Or Fixture | None; `version` reads no project files |
-| Workload | Each repetition runs, in this order: (1) `cold`: `npx -y build-os@0.1.0 version` in a new empty folder with a new empty npm cache; (2) `warm`: the same command in another new empty folder with the cache that `cold` just filled; (3) `tarball`: a new Node process that fetches `https://registry.npmjs.org/build-os/-/build-os-0.1.0.tgz` into memory and checks its SHA-256. `cold` is the measured workload; `warm` and `tarball` are references that split the cold time into the part the cache removes and the part that package size drives. |
+| Workload | Each repetition runs, in this order: (1) `cold`: `npx -y build-os@0.2.0 version` in a new empty folder with a new empty npm cache; (2) `warm`: the same command in another new empty folder with the cache that `cold` just filled; (3) `tarball`: a new Node process that fetches `https://registry.npmjs.org/build-os/-/build-os-0.2.0.tgz` into memory and checks its SHA-256. `cold` is the measured workload; `warm` and `tarball` are reference measurements. |
 | Scale | One process per run |
 | Concurrency | One process at a time |
 | Operation Mix | `cold`, `warm`, `tarball` in each repetition, so network drift affects each one alike |
@@ -316,23 +316,23 @@ This is the one canonical `PERF-002` profile (t22). Version 1 was written and co
 | Field | Value |
 | --- | --- |
 | Measurement Boundary | From the parent's `spawnSync` call to child exit: for `cold` and `warm`, npx start, registry metadata, tarball fetch (cold only), unpack, BuildOS start, `version` output, and exit; for `tarball`, Node start, DNS, TLS, the transfer, and the digest |
-| Instrument And Version | `toolkits/buildos/scripts/measure-npx-first-run.ts`, run by Node 24.22.3; npx is started as `node <npm>/bin/npx-cli.js`, the file the `npx` command runs; its SHA-256 goes in the fingerprint |
+| Instrument And Version | `toolkits/buildos/scripts/measure-npx-first-run.ts` (with `scripts/node-first-path.ts`), run by Node 24.22.3; npx is started as `node <npm>/bin/npx-cli.js`, the file the `npx` command runs; its SHA-256 goes in the execution packet and the fingerprint |
 | Cold Or Warm State | `cold`: empty npm cache and no install. The operating system's DNS cache and file cache are not cleared (clearing them needs root access). `warm`: the npm cache filled by the `cold` run of the same repetition. |
 | Warmup Rule | None. Each `cold` run is cold by construction, and the first repetition is kept. |
 | Repetitions Or Observation Window | 10 repetitions per pass |
 | Statistic | Median wall-clock time of `cold`; the `warm` and `tarball` medians as references |
 | Variance Reporting | Minimum, p25, p75, maximum, and interquartile range |
-| Uncertainty Reporting | Distribution-free 95% confidence interval for the median from order statistics, computed as in `scripts/measure-startup.ts` (with 10 runs it is the minimum to the maximum) |
-| Outlier Treatment | No statistical trimming. A run is excluded only when it exits non-zero, its stdout lacks `version: 0.1.0`, or (for `tarball`) the digest differs; excluded runs are counted. |
-| Comparison Method | Within-pass only. The decision compares the `tarball` median with the `cold` median, and the `cold` median with the `warm` median: the `tarball` share of the cold time is the part a smaller package could shorten. |
-| Raw Evidence Retention | Raw samples, rounded to 0.1 ms, and the instrument's summary in the `PERF-002` section of the evidence report, kept with the backlog. No path or user name is recorded. |
+| Uncertainty Reporting | Distribution-free 95% confidence interval for the median from order statistics, computed by the instrument (with 10 runs it is the minimum to the maximum) |
+| Outlier Treatment | No statistical trimming. A run is excluded only when it exits non-zero, its stdout lacks `version: 0.2.0`, or (for `tarball`) the digest differs; excluded runs are counted. |
+| Comparison Method | Within-pass only. The `tarball` median and the `cold` median minus the `warm` median are reference measurements: each includes work that does not depend on package size (a Node start, DNS, TLS, hashing, registry metadata), and the size also changes work that `tarball` does not do (unpacking and writing the files). They do not split the cold time into a size-dependent part. The version 1 result for `0.1.0` is named as context only: its fingerprint differs, so it is not compared. |
+| Raw Evidence Retention | Raw samples, rounded to 0.1 ms, and the instrument's summary in the evidence report, kept with the backlog. No path or user name is recorded. |
 | Observer Effects | The parent's spawn cost is in every sample. The `tarball` reference opens its own connection, as npx does. Desktop load and network drift add noise; the order in each repetition spreads it. |
 
 #### Non-Sacrificable Constraints
 
 | Constraint | Required Condition And Evidence |
 | --- | --- |
-| Correctness | Every counted run exits 0 with `version: 0.1.0`, and every `tarball` digest equals the reviewed digest. |
+| Correctness | Every counted run exits 0 with `version: 0.2.0`, and every `tarball` digest equals the reviewed digest. |
 | Durability | Not affected; the workloads write only to temporary folders, which the instrument removes. |
 | Safety | Not affected; no project data is read or written. |
 | Security | npm install scripts are off; the package declares none. Only the public registry is contacted. |
@@ -341,18 +341,18 @@ This is the one canonical `PERF-002` profile (t22). Version 1 was written and co
 | Portability | Any later size change keeps one ESM bundle that runs on Node 24 on macOS, Linux, and Windows. |
 | Cost | No external spend. |
 | Maintainability | Any later size change keeps the golden harness and the package tests passing. |
-| Fixture And Measurement Seam | The instrument checks the exit code, the stdout, and the digest of each run before it counts the sample. |
+| Fixture And Measurement Seam | The instrument checks the exit code, the stdout, and the digest of each run before it counts the sample, and checks before it measures that the `node` on the children's `PATH` is the Node.js that runs it. |
 
 #### Evidence Budget And Stop Rules
 
 | Field | Value |
 | --- | --- |
-| Authorizing Plan Or Work Scope | [W1 R7 P8 Stage 5](#stage-5---performance-evidence-and-publication-review); [plan performance table](../../plans/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/00-overview.md#performance-evidence-plan) |
-| Budget Event ID | `PERF-002-P8-B1` |
-| Characterization Pass Limit | 2 |
-| Materially Distinct Correction Attempt Limit | 0 (none declared in the plan) |
+| Authorizing Plan Or Work Scope | [W1 R7 P9 Stage 3](09-skill-script-commands-0-2-0.md#stage-3---skills-docs-and-release) (t13) and runbook step k, under the orchestrator decision of 2026-11-27 (one pass after publication); version 1 names "the work phase of that release" as its requalification authority, and that phase is P9 |
+| Budget Event ID | `PERF-002-P9-B1` |
+| Characterization Pass Limit | 2 (one planned; the second only if the first is excluded or blocked) |
+| Materially Distinct Correction Attempt Limit | 0 |
 | Review Cycle Limit | 1 |
-| Elapsed Investigation Time Limit | 4 hours (half a working day) |
+| Elapsed Investigation Time Limit | 2 hours |
 | Compute Limit | 1 maintainer machine |
 | External Resource Spend Limit | 0 USD |
 | Unchanged Fingerprint Action | Reuse the prior pass. Do not rerun for a different outcome. |
@@ -366,8 +366,8 @@ This is the one canonical `PERF-002` profile (t22). Version 1 was written and co
 | --- | --- |
 | `pass` | The pass recorded the distribution and uncertainty for `cold`, `warm`, and `tarball` under this protocol, with no more than 2 excluded runs per workload, and every non-sacrificable constraint held. A pass means the baseline exists; it sets no target. |
 | `fail` | Not used for a characterization baseline: this profile has no target to miss. A broken constraint is recorded as a finding instead. |
-| `revise` | The spread is so wide that the `tarball` share of the cold time cannot be told within the pass, or the protocol proves unfit for the decision. |
-| `blocked` | Node 24, npm, the registry, or the instrument is unavailable, or the budget is exhausted. |
+| `revise` | The spread is so wide that the decision below cannot be made within the pass, or the protocol proves unfit for the decision. |
+| `blocked` | Node 24.22.3, npm, the registry, or the instrument is unavailable, or the budget is exhausted. |
 | `waived` | The owner accepts a missing baseline for a bounded scope and time. |
 
 | Field | Value |
@@ -375,9 +375,9 @@ This is the one canonical `PERF-002` profile (t22). Version 1 was written and co
 | Severity Treatment | `minor` unless a constraint breaks; a broken constraint is `major` |
 | Reproducibility Treatment | `not-attempted` for a single pass; `reproduced` only when a second pass shows the same decision |
 | Finding Route | This work file and the evidence report; a size change routes to the next release |
-| Escalation Route | BuildOS owner through the phase closeout |
+| Escalation Route | BuildOS owner |
 
-The size decision is a judgement with its reasons, not a target: when the `tarball` median is the smaller part of the `cold` median, the record says that a smaller package would shorten only that part and that no reduction is needed now; when it is the larger part, the record recommends a size reduction to the owner.
+The size decision is a judgement with its reasons, not a target. When the slowest `cold` run is under 2 seconds, the record says that the first run does not put the protected outcome at risk on the measured machine and network, and recommends no size reduction now. When it is 2 seconds or more, the record recommends to the owner that the package size be looked at for the next release. Either way the decision is the owner's; the record states it as a recommendation.
 
 #### Expiry And Reevaluation
 
@@ -386,7 +386,7 @@ The size decision is a judgement with its reasons, not a target: when the `tarba
 | Material Change Triggers | Another package version or tarball size; another npm or Node version; another machine class or network; a registry change; a change in the instrument or analysis |
 | Time Or Release Boundary | Expires at the next release that changes the package size |
 | Current-Use Invalidation Rule | Evidence with a different fingerprint is not current for the decision |
-| Next Review Condition | A release whose tarball grows, or the `R-012` restricted-network trial (t17) |
+| Next Review Condition | A release whose tarball grows, or the `R-012` restricted-network trial |
 | Requalification Authority | The work phase of that release |
 | Requalification Budget | Set by that phase; this budget does not renew |
 | Unchanged-Fingerprint Qualification Limit | One bounded execution |
@@ -395,39 +395,31 @@ The size decision is a judgement with its reasons, not a target: when the `tarba
 
 | Field | Value |
 | --- | --- |
-| Predecessor | None |
+| Predecessor | `PERF-002` version 1, this section at commit `e2bbbc1`, digest `sha256:1637ae8a2d143b7e431ace19873c7982c41ffa108d28b6423af9a59495857990` |
 | Successor | None |
 | Promotion Source | None |
 | Promotion Approval | None |
-| Supersession Reason | None |
-| Plan And Work Links | [Plan performance table](../../plans/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/00-overview.md#performance-evidence-plan); [P8 Current Testing Decisions](#current-testing-decisions) |
-| Result Links | [Evidence report PERF-002](./evidence.md#first-run-npx-perf-002-p8) |
+| Supersession Reason | Version 1 expired at the `0.2.0` release, which changed the package size; version 2 also replaces version 1's comparison wording ("the part a smaller package could shorten") with "reference measurement", as the version 1 review asked |
+| Plan And Work Links | [Plan performance table](../../plans/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/00-overview.md#performance-evidence-plan); [P9 Current Testing Decisions](09-skill-script-commands-0-2-0.md#current-testing-decisions) |
+| Result Links | [First-Run npx for 0.2.0 (PERF-002, P9)](./evidence.md#first-run-npx-for-020-perf-002-p9) |
 | Finding Links | None |
 | Obligation Links | None |
 | History Links | None |
-| Support Links | [`PERF-001` recheck](./evidence.md#startup-recheck-perf-001-p8), context only |
+| Support Links | [`PERF-002` version 1 result](./evidence.md#first-run-npx-perf-002-p8), context only |
 
 #### Evidence Fingerprint
 
-Added after pass 1, outside the digested part of this section (the digest covers the heading to the end of the Lineage And Traceability table, as the packet states), as the `PERF-001` profile does. Version 1: `sha256:1637ae8a2d143b7e431ace19873c7982c41ffa108d28b6423af9a59495857990`, recorded in the evidence packet and committed in `e2bbbc1` before pass 1.
+Written before the pass, outside the digested part of this section (the digest covers the heading to the end of the Lineage And Traceability table, as the execution packet states).
 
-- Profile ID, version, and digest: `PERF-002` version 1, `sha256:1637ae8a2d143b7e431ace19873c7982c41ffa108d28b6423af9a59495857990`, for pass 1
-- Product build and relevant code state: the published `build-os@0.1.0`, registry tarball 1,070,295 bytes, SHA-256 `54a8cd01f0165226927a74e5108dd37327323bd3db1905fdb6323c7373b21e8e`, 173 files; source commit `20f941a`
+- Profile ID, version, and digest: `PERF-002` version 2, the digest in the execution packet of [First-Run npx for 0.2.0 (PERF-002, P9)](./evidence.md#first-run-npx-for-020-perf-002-p9)
+- Product build and relevant code state: the published `build-os@0.2.0`, registry tarball 1,144,483 bytes, SHA-256 `baf54ebf0717a56bf1bb8ac0391adc7559b16375b90f59f4e4b79865a3f20da0`, 168 files, unpacked size 4,615,040 bytes; source commit `6f395c1`
 - Dependency and configuration state: no runtime dependencies; npm 11.19.1; a new empty npm cache per repetition, install scripts off, npm update notice off
 - Qualified environment: Apple M2 Pro, 10 cores, 16 GiB, macOS 27.2.1 arm64, AC power; Node 24.22.3; the machine's normal network, no proxy, default registry
 - Workload and fixture or dataset: `cold`, `warm`, and `tarball` as in the Environment And Workload table; no fixture
-- Instrument version: `toolkits/buildos/scripts/measure-npx-first-run.ts` `sha256:bce3485752f505def8887706c036c35bbd3230d06d7cdeffa76faca4965a92c6`
+- Instrument version: `toolkits/buildos/scripts/measure-npx-first-run.ts` `sha256:881347c4c7e00aa0e15426065d2db05538d3b1047da054872494a28dc8eb4e05`, with `scripts/node-first-path.ts` `sha256:6010c8e4aba23e96e52936dcc8495995bb8da8200a93616d8cfb9cc718e36522`
 - Analysis method: median, p25, p75, IQR, and the order-statistic 95% median interval computed by the instrument
-- Comparability result and reasons: not comparable with `PERF-001` (no npm and no network there); within-pass comparison only
+- Comparability result and reasons: not comparable with the version 1 result (another package, instrument, date, and network); not comparable with `PERF-001` (no npm and no network there); within-pass comparison only
 
 #### Result Record
 
-- Result ID: `PERF-002-P8-R1`
-- Exact profile binding: `PERF-002` version 1, `sha256:1637ae8a2d143b7e431ace19873c7982c41ffa108d28b6423af9a59495857990`
-- Raw and analyzed evidence, budget ledger, and agent review: [PERF-002 in the evidence report](./evidence.md#first-run-npx-perf-002-p8)
-- Observed distribution: `cold` median 725.6 ms (708.0 to 987.7), `warm` median 397.1 ms, `tarball` median 261.8 ms; 10 repetitions; no run excluded
-- Outcome: `pass`
-- Findings: none
-- Decision: no package-size reduction needed now; no target
-- Supported-scope limit: `npx -y build-os@0.1.0 version` with an empty npm cache, Node 24.22.3 and npm 11.19.1, on the one measured machine and its network on 2026-11-26
-- Expiry: at the next release that changes the package size, or sooner at any material change trigger
+Not measured yet when this profile was committed. The result is in [First-Run npx for 0.2.0 (PERF-002, P9)](./evidence.md#first-run-npx-for-020-perf-002-p9).

@@ -7825,7 +7825,7 @@ All times are UTC on 2026-11-27, from the GitHub and npm records named in each r
 | k (registry smoke) | Orchestrator started it | [`buildos-smoke` run 46045192196](https://github.com/brucewaynedecoy/build-os/actions/runs/46045192196), `source=registry`, `version=0.2.0`, 17:52:32 to 17:53:42, success on Linux, macOS, and Windows | [Registry Smoke on Three Systems](#registry-smoke-on-three-systems-step-k) |
 | k (h1 log lookup, after publication) | Implementer | Done on the registry tarball | [Transparency Log Lookup](#transparency-log-lookup-runbook-h1-done-after-publication) |
 | k (F-P8-09) | Implementer | macOS only, by hand | [Rollback From 0.2.0 to 0.1.0 Through npx (F-P8-09)](#rollback-from-020-to-010-through-npx-f-p8-09) |
-| k (`PERF-002`) | Not done | A separate task | [PERF-002 for 0.2.0](#perf-002-for-020) |
+| k (`PERF-002`) | Not done | A separate task | [First-Run npx for 0.2.0 (PERF-002, P9)](#first-run-npx-for-020-perf-002-p9) |
 | k (documentation) | Implementer | This pull request | [Documentation Changes (Step k)](#documentation-changes-step-k) |
 
 ### The Missed Order (Steps h1 to i)
@@ -7952,7 +7952,7 @@ Result: passed on macOS. With only the pin changed back (and the four skills and
 
 What is still open: Linux and Windows. F-P8-09 asks for three systems, so it is not closed, and t16 and A72 stay open. The Command Prompt form of the guide's steps (backslashes, `rmdir /s /q`, `xcopy /e /i /q`, `copy`, `.os\scripts\buildos.cmd`) has never run; the `0.2.0` release notes already list it under "Not tested yet". The smallest way to close it: run the same steps once on Linux (`sh`) and once on Windows (Command Prompt) with Node 24 and a new npm cache, through `npx` only, and record each step's exit code and output as above. No machine here runs Linux or Windows. A repeatable route is a new follow-up, F-P9-16: a rollback step in the smoke (for example a `--rollback-from <version>` input of `scripts/published-smoke.ts` and a `rollback` source of `buildos-smoke.yml`) that runs the guide's upgrade and rollback steps on the three runners in registry mode, with tests; then one hand-started run. Either route needs no secret and changes nothing on the registry.
 
-### PERF-002 for 0.2.0
+### First-Run npx for 0.2.0 (PERF-002, P9)
 
 Not measured. The `PERF-002` pass for `0.2.0` is open (orchestrator decision of 2026-11-27, [Orchestrator Decisions (2026-11-27)](#orchestrator-decisions-2026-11-27); the owner may overrule). It is a separate task, in this order:
 
