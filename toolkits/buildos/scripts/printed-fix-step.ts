@@ -22,6 +22,14 @@
 //   true (state `current`) and no `index_` diagnostic, so an index that is
 //   there but not reproducible (`index_non_reproducible`, a warning with
 //   exit 0) fails the step.
+//
+// Tarball mode (F-P9-15, `source: "tarball"`): the same exact checks of the
+// printed text, and the same run of that text through the system shell. The
+// smoke has installed the tarball into the project and blocked the
+// registry, so npm resolves `build-os@<version>` to that local install: the
+// printed program, arguments, and quoting run as printed, on the tarball's
+// bytes. The step's name says so. What this cannot prove before publication
+// is the registry fetch of the literal command (runbook step k).
 
 /** The parts of a smoke step that this step reads. */
 export interface RanStep {
@@ -32,6 +40,8 @@ export interface RanStep {
 
 export interface PrintedFixInput<S extends RanStep> {
   version: string;
+  /** Where the package comes from (scripts/smoke-source.ts); "registry" when not given. */
+  source?: "registry" | "tarball";
   windows: boolean;
   /** The project folder of step 3. */
   project: string;
@@ -109,7 +119,9 @@ export function printedFixStep<S extends RanStep>(input: PrintedFixInput<S>): vo
     check(json, "the printed command did not match in the JSON field and the human action: line, so the step stopped and ran nothing", false);
     return;
   }
-  const step = input.shellRun(windows ? "the printed fix command, as printed, in Command Prompt (delayed expansion off)" : "the printed fix command, as printed, in sh", printed);
+  const shellName = windows ? "the printed fix command, as printed, in Command Prompt (delayed expansion off)" : "the printed fix command, as printed, in sh";
+  const tarballNote = ` (tarball mode: npm resolves build-os@${version} to the project's local install of the tarball, with the registry blocked; the registry fetch of this literal command is proven only after publication, runbook step k)`;
+  const step = input.shellRun(input.source === "tarball" ? `${shellName}${tarballNote}` : shellName, printed);
   check(step, "stdout says entities.rebuild-index: ok and the write was applied", step.stdout.startsWith("entities.rebuild-index: ok\n") && step.stdout.includes("write status: applied\n"));
   const after = input.npxRun("entities validate --json after the printed fix command", ["entities", "validate", "--root", project, "--mode", "compat", "--json"], 0);
   const parsed = parse(after.stdout);

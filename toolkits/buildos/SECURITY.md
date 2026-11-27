@@ -396,6 +396,22 @@ The scanner exit code is the only proof that the scan completed. When the scanne
 
 `test/osv-gate.test.ts` checks each row with real, trimmed `osv-scanner` 2.7.1 outputs in `test/fixtures/osv/`: findings above the threshold fail, findings below it pass, an unreachable API (exit 127, empty results) fails, and a clean scan passes. The OSV job runs this test as a self-check before the real scan. The release workflow uses the same gate.
 
+### Smoke Workflow
+
+The workflow `.github/workflows/buildos-smoke.yml` runs `scripts/published-smoke.ts` on macOS, Linux, and Windows with Node 24, in clean folders with a new npm cache and npm install scripts off. It is not a release workflow: it holds no secret, uses no environment and no OIDC token, has `contents: read`, and checkout keeps no credentials. Its actions are pinned to full commit SHAs, and it has no `pull_request_target` trigger. A maintainer starts it by hand with one of three sources (W1 R7 P9, F-P9-15):
+
+| Source | Inputs | Where the package comes from | Extra permission |
+| --- | --- | --- | --- |
+| `registry` | `version` | `npx -y build-os@<version>` from the public npm registry | None |
+| `release-run` | `release_run`, `release_run_attempt`, `tarball_sha256` | The tarball in the artifact `buildos-release-<run id>-<run attempt>` of a `buildos-release` run of this repository (a dry run keeps it 3 days) | `actions: read`, in the one job that reads the run and downloads the artifact; that job runs no repository code |
+| `release-tag` | `release_tag`, `tarball_sha256` | The tarball asset of a published GitHub Release of this repository, which is public and immutable (over `https` only, no token) | None |
+
+The first job checks every input before any other job uses it, and later jobs get only the checked values: a version is a plain semver version, a run ID and a run attempt are digits only, a tag is `v` and a plain version (at most 128 characters), and a SHA-256 is 64 lowercase hex characters. A tarball source needs the SHA-256 from the person who starts the run. The fetch job compares the file's SHA-256 with it, and the smoke script compares it again before any step and reads the version from the tarball's `package.json`. Each value reaches a script only through the environment.
+
+In tarball mode the direct steps run `npx -y --package=<tarball> -- buildos <command>`, the project wrapper runs the pinned version from an offline install of the tarball into the project (pin first: the wrapper accepts it because its version equals the pin), and the printed fix command runs as printed, resolved by npm to that local install. Every process gets `npm_config_offline=true` and the registry `http://127.0.0.1:9/` (a closed local port), so no step can fetch `build-os` from a registry: such a fetch fails with `ENOTCACHED`. The run fails unless npm reads both values, the npm cache holds only tarball file entries at the end, and every `build-os` package folder that a step could run has the tarball's version and bin file bytes. Tarball mode does not prove the registry fetch of `npx -y build-os@<version>` or the bytes of the registry copy; those are checked after publication with the `registry` source and `npm pack`.
+
+A pull request that changes the workflow or the smoke scripts runs the `registry` source on `0.1.0` and the tarball mode on a release build packed from the pull request's own tree (`npm ci --ignore-scripts`, then `scripts/release-build.ts`), on the three systems. The captured output, with temporary paths and the user name replaced, is kept as an artifact for 30 days.
+
 ## Client-Name Deny-List Check
 
 BuildOS files must never name a client. `scripts/check-deny-list.mjs` fails when a file names a client on the maintained deny list. The list itself names clients, so it is never committed, shipped, written to a file, or printed. This document names no client and no term on the list.

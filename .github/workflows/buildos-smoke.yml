@@ -1,30 +1,72 @@
-# BuildOS published-package smoke test (W1 R7 P8 t15). It runs
-# toolkits/buildos/scripts/published-smoke.ts on three operating systems with
-# Node 24: `npx -y build-os@<version>` in clean folders with a clean npm cache
-# (version, init with no TTY, init --skip-make-docs, one intake conversion,
-# entities validate, validate, one legacy name, and the project wrapper with
-# Node.js missing and present). It is not a release workflow: it reads the
-# public npm registry only, holds no secret, uses no environment, and has
-# read-only repository access. npm install scripts are off for every install
-# (npm_config_ignore_scripts=true, set by the script). The captured output,
-# with temporary paths and the user name replaced, is kept as an artifact.
+# BuildOS package smoke test (W1 R7 P8 t15; tarball mode W1 R7 P9 F-P9-15).
+# It runs toolkits/buildos/scripts/published-smoke.ts on three operating
+# systems with Node 24, in clean folders with a clean npm cache (version,
+# init with no TTY, init --skip-make-docs, one intake conversion, entities
+# validate, validate, one legacy name, the project wrapper with Node.js
+# missing and present, and the printed fix command). The package comes from
+# one of two places:
+# - registry: `npx -y build-os@<version>` of a published version;
+# - a release tarball, before its version is on the registry (a staged
+#   version cannot be installed before the npm approval): the tarball
+#   artifact of a buildos-release run (source release-run; the dry-run
+#   artifact is kept 3 days), or the tarball asset of a published GitHub
+#   Release (source release-tag; public and immutable). The person who starts
+#   the run gives the tarball's SHA-256; the fetch job and the script each
+#   check it before any step. In tarball mode npm is offline with a blocked
+#   registry, so no step can fetch build-os from a registry
+#   (scripts/smoke-source.ts).
+# It is not a release workflow: it holds no secret, uses no environment, and
+# has read-only repository access; only the job that downloads a run
+# artifact also has actions: read. npm install scripts are off for every
+# install. The captured output, with temporary paths and the user name
+# replaced, is kept as an artifact.
 name: buildos-smoke
 
-# A maintainer runs it for any published version; a pull request runs it
-# (for the default version) only when this file or the script changes.
+# A maintainer runs it by hand. A pull request runs it only when its own
+# files change: the registry mode on 0.1.0, and the tarball mode on a release
+# build packed from the pull request's own tree (source local-pack), so the
+# tarball mode is tested on three systems before a release needs it.
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: "Published build-os version to smoke-test (for example 0.1.0)"
+      source:
+        description: "Package source: registry (a published version), release-run (the tarball artifact of a buildos-release run), or release-tag (the tarball asset of a published GitHub Release)"
         required: true
+        default: "registry"
+        type: choice
+        options: [registry, release-run, release-tag]
+      version:
+        description: "registry only: the published build-os version (for example 0.1.0)"
+        required: false
         default: "0.1.0"
+        type: string
+      release_run:
+        description: "release-run only: the run ID of a buildos-release run (digits)"
+        required: false
+        default: ""
+        type: string
+      release_run_attempt:
+        description: "release-run only: the run attempt (digits); the artifact is buildos-release-<run id>-<run attempt>"
+        required: false
+        default: "1"
+        type: string
+      release_tag:
+        description: "release-tag only: the tag of a published GitHub Release (v and a version, for example v0.2.0)"
+        required: false
+        default: ""
+        type: string
+      tarball_sha256:
+        description: "release-run and release-tag: the tarball's SHA-256 (64 lowercase hex characters)"
+        required: false
+        default: ""
         type: string
   pull_request:
     paths:
       - ".github/workflows/buildos-smoke.yml"
       - "toolkits/buildos/scripts/published-smoke.ts"
       - "toolkits/buildos/scripts/printed-fix-step.ts"
+      - "toolkits/buildos/scripts/smoke-source.ts"
+      - "toolkits/buildos/scripts/tar-reader.mjs"
 
 permissions:
   contents: read
@@ -34,12 +76,159 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Every input is checked here, before any other job uses it. The values
+  # reach this script only through env:, and later jobs get only the checked
+  # values (job outputs).
+  check-inputs:
+    name: check the inputs
+    runs-on: ubuntu-latest
+    outputs:
+      source: ${{ steps.check.outputs.source }}
+      modes: ${{ steps.check.outputs.modes }}
+      version: ${{ steps.check.outputs.version }}
+      release_run: ${{ steps.check.outputs.release_run }}
+      release_run_attempt: ${{ steps.check.outputs.release_run_attempt }}
+      release_tag: ${{ steps.check.outputs.release_tag }}
+      sha256: ${{ steps.check.outputs.sha256 }}
+    steps:
+      - name: Check the inputs
+        id: check
+        env:
+          EVENT: ${{ github.event_name }}
+          SOURCE: ${{ inputs.source }}
+          VERSION: ${{ inputs.version }}
+          RUN: ${{ inputs.release_run }}
+          ATTEMPT: ${{ inputs.release_run_attempt }}
+          TAG: ${{ inputs.release_tag }}
+          SHA256: ${{ inputs.tarball_sha256 }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$1"; exit 1; }
+          semver='^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'
+          if [ "$EVENT" = "pull_request" ]; then
+            { echo "source=local-pack"; echo 'modes=["registry","local-pack"]'; echo "version=0.1.0"; } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          case "$SOURCE" in
+            registry)
+              [[ "$VERSION" =~ $semver ]] || fail "version must be a plain version such as 0.1.0"
+              [ -z "$RUN$TAG$SHA256" ] || fail "source registry: leave release_run, release_tag, and tarball_sha256 empty"
+              { echo "source=registry"; echo 'modes=["registry"]'; echo "version=$VERSION"; } >> "$GITHUB_OUTPUT"
+              ;;
+            release-run)
+              [[ "$RUN" =~ ^[0-9]{1,20}$ ]] || fail "release_run must be digits only"
+              [[ "$ATTEMPT" =~ ^[0-9]{1,4}$ ]] || fail "release_run_attempt must be digits only"
+              [ -z "$TAG" ] || fail "source release-run: leave release_tag empty"
+              [[ "$SHA256" =~ ^[0-9a-f]{64}$ ]] || fail "tarball_sha256 must be 64 lowercase hex characters"
+              { echo "source=release-run"; echo 'modes=["tarball"]'; echo "release_run=$RUN"; echo "release_run_attempt=$ATTEMPT"; echo "sha256=$SHA256"; } >> "$GITHUB_OUTPUT"
+              ;;
+            release-tag)
+              [ "${#TAG}" -le 128 ] || fail "release_tag is too long"
+              [[ "${TAG#v}" =~ $semver ]] && [ "${TAG:0:1}" = "v" ] || fail "release_tag must be v and a plain version, for example v0.2.0"
+              [ -z "$RUN" ] || fail "source release-tag: leave release_run empty"
+              [[ "$SHA256" =~ ^[0-9a-f]{64}$ ]] || fail "tarball_sha256 must be 64 lowercase hex characters"
+              { echo "source=release-tag"; echo 'modes=["tarball"]'; echo "release_tag=$TAG"; echo "sha256=$SHA256"; } >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              fail "source must be registry, release-run, or release-tag"
+              ;;
+          esac
+
+  # source release-run: the only job with actions: read (to read the run and
+  # download its artifact). It runs no repository code.
+  fetch-run:
+    name: fetch the tarball of a buildos-release run
+    needs: check-inputs
+    if: needs.check-inputs.outputs.source == 'release-run'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      tarball_name: ${{ steps.fetch.outputs.tarball_name }}
+    steps:
+      - name: Download the run artifact and check the tarball's SHA-256
+        id: fetch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN: ${{ needs.check-inputs.outputs.release_run }}
+          ATTEMPT: ${{ needs.check-inputs.outputs.release_run_attempt }}
+          SHA256: ${{ needs.check-inputs.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$1"; exit 1; }
+          workflow=$(gh api "repos/$REPO/actions/runs/$RUN" --jq .path)
+          [ "$workflow" = ".github/workflows/buildos-release.yml" ] || fail "run $RUN is not a buildos-release run"
+          gh api "repos/$REPO/actions/runs/$RUN" --jq '"run \(.id), attempt \(.run_attempt), event \(.event), head \(.head_sha), status \(.status), conclusion \(.conclusion)"'
+          gh run download "$RUN" --repo "$REPO" --name "buildos-release-$RUN-$ATTEMPT" --dir "$RUNNER_TEMP/artifact"
+          cd "$RUNNER_TEMP/artifact"
+          shopt -s nullglob
+          files=(build-os-*.tgz)
+          [ "${#files[@]}" -eq 1 ] || fail "the artifact must hold exactly one build-os-<version>.tgz"
+          name=${files[0]}
+          [[ "$name" =~ ^build-os-[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?\.tgz$ ]] || fail "unexpected tarball name"
+          [ -f "$name" ] && [ ! -L "$name" ] || fail "the tarball is not a regular file"
+          actual=$(sha256sum "$name" | cut -d' ' -f1)
+          [ "$actual" = "$SHA256" ] || fail "the tarball's SHA-256 is $actual, not the given $SHA256"
+          echo "$name: SHA-256 $actual (equal to the given value)"
+          mkdir "$RUNNER_TEMP/tarball"
+          mv "$name" "$RUNNER_TEMP/tarball/$name"
+          echo "tarball_name=$name" >> "$GITHUB_OUTPUT"
+
+      - name: Keep the checked tarball for the smoke jobs
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: buildos-smoke-input-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/tarball/
+          if-no-files-found: error
+          retention-days: 3
+
+  # source release-tag: the asset of a published GitHub Release of this
+  # repository, which is public and immutable; no token and no extra
+  # permission. A draft release has no public download URL.
+  fetch-tag:
+    name: fetch the tarball asset of a published release
+    needs: check-inputs
+    if: needs.check-inputs.outputs.source == 'release-tag'
+    runs-on: ubuntu-latest
+    outputs:
+      tarball_name: ${{ steps.fetch.outputs.tarball_name }}
+    steps:
+      - name: Download the release asset and check the tarball's SHA-256
+        id: fetch
+        env:
+          REPO: ${{ github.repository }}
+          TAG: ${{ needs.check-inputs.outputs.release_tag }}
+          SHA256: ${{ needs.check-inputs.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$1"; exit 1; }
+          name="build-os-${TAG#v}.tgz"
+          mkdir "$RUNNER_TEMP/tarball"
+          curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --max-filesize 67108864 --output "$RUNNER_TEMP/tarball/$name" "https://github.com/$REPO/releases/download/$TAG/$name"
+          actual=$(sha256sum "$RUNNER_TEMP/tarball/$name" | cut -d' ' -f1)
+          [ "$actual" = "$SHA256" ] || fail "the tarball's SHA-256 is $actual, not the given $SHA256"
+          echo "$name: SHA-256 $actual (equal to the given value)"
+          echo "tarball_name=$name" >> "$GITHUB_OUTPUT"
+
+      - name: Keep the checked tarball for the smoke jobs
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: buildos-smoke-input-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/tarball/
+          if-no-files-found: error
+          retention-days: 3
+
   smoke:
-    name: smoke (${{ matrix.os }}, Node 24)
+    name: smoke (${{ matrix.mode }}, ${{ matrix.os }}, Node 24)
+    needs: [check-inputs, fetch-run, fetch-tag]
+    if: ${{ !cancelled() && needs.check-inputs.result == 'success' && needs.fetch-run.result != 'failure' && needs.fetch-tag.result != 'failure' }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+        mode: ${{ fromJSON(needs.check-inputs.outputs.modes) }}
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -56,18 +245,48 @@ jobs:
         with:
           node-version: "24"
 
-      # The version reaches the script through the environment, never as
-      # workflow text in the script; the script accepts only a plain version.
-      - name: Smoke test of the published package
+      # local-pack (pull request): a release build of this tree, as the
+      # release workflow builds it (install scripts off), packed to a tarball.
+      - name: Pack a release build of this tree (local-pack)
+        if: matrix.mode == 'local-pack'
+        run: |
+          node scripts/check-dependencies.ts
+          npm ci --ignore-scripts
+          node scripts/check-dependencies.ts --installed
+          node scripts/release-build.ts --out "$RUNNER_TEMP/local-pack"
+          node -e 'const b = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")); console.log(`LOCAL_TARBALL=${b.tarball}\nLOCAL_SHA256=${b.tarball_sha256}`);' "$RUNNER_TEMP/local-pack/release-build.json" >> "$GITHUB_ENV"
+
+      # release-run and release-tag: the tarball that the fetch job checked
+      # (same run; the script checks the SHA-256 again before any step).
+      - name: Download the checked tarball (tarball)
+        if: matrix.mode == 'tarball'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: buildos-smoke-input-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/tarball
+
+      # Every value reaches the script through the environment, never as
+      # workflow text in the script; the script checks each one again.
+      - name: Smoke test
         env:
-          SMOKE_VERSION: ${{ inputs.version || '0.1.0' }}
-        run: node scripts/published-smoke.ts --version "$SMOKE_VERSION" --out "$RUNNER_TEMP/smoke"
+          MODE: ${{ matrix.mode }}
+          SMOKE_VERSION: ${{ needs.check-inputs.outputs.version }}
+          TARBALL_NAME: ${{ needs.fetch-run.outputs.tarball_name || needs.fetch-tag.outputs.tarball_name }}
+          TARBALL_SHA256: ${{ needs.check-inputs.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          case "$MODE" in
+            registry) node scripts/published-smoke.ts --version "$SMOKE_VERSION" --out "$RUNNER_TEMP/smoke" ;;
+            tarball) node scripts/published-smoke.ts --tarball "$RUNNER_TEMP/tarball/$TARBALL_NAME" --sha256 "$TARBALL_SHA256" --out "$RUNNER_TEMP/smoke" ;;
+            local-pack) node scripts/published-smoke.ts --tarball "$LOCAL_TARBALL" --sha256 "$LOCAL_SHA256" --out "$RUNNER_TEMP/smoke" ;;
+            *) echo "::error::unknown mode $MODE"; exit 1 ;;
+          esac
 
       - name: Keep the captured output
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: buildos-smoke-${{ runner.os }}
+          name: buildos-smoke-${{ matrix.mode }}-${{ runner.os }}
           path: ${{ runner.temp }}/smoke/
           if-no-files-found: error
           retention-days: 30

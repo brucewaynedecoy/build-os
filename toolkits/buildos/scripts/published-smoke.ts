@@ -1,10 +1,20 @@
-// W1 R7 P8 t15: smoke test of a published (or staged) build-os version,
-// through `npx -y build-os@<version>`, in clean folders, with a clean npm
-// cache. The `buildos-smoke` workflow runs it on ubuntu-latest,
-// windows-latest, and macos-latest with Node 24; a maintainer can run it on
-// any machine. Node built-ins only; it installs nothing from this repository.
+// W1 R7 P8 t15: smoke test of a published build-os version, through
+// `npx -y build-os@<version>`, in clean folders, with a clean npm cache. The
+// `buildos-smoke` workflow runs it on ubuntu-latest, windows-latest, and
+// macos-latest with Node 24; a maintainer can run it on any machine. Node
+// built-ins only; it installs nothing from this repository.
 //
 // Usage: node scripts/published-smoke.ts --version <version> --out <folder>
+//        node scripts/published-smoke.ts --tarball <file> --sha256 <hex> --out <folder>
+//
+// Tarball mode (W1 R7 P9, F-P9-15): the same steps on one release tarball,
+// before its version is on the registry (a staged version cannot be
+// installed before the npm approval). The file's SHA-256 must equal
+// --sha256 before any step runs, and the version is read from the tarball.
+// How each step gets the package, the registry guard, and what the mode
+// proves and does not prove are in scripts/smoke-source.ts. The report
+// records the mode, the tarball's file name, SHA-256, and version, and
+// those limits.
 //
 // Each step runs in a new empty folder below one temporary root. The npm
 // cache is a new empty folder in that root, npm install scripts are off
@@ -35,12 +45,16 @@
 // step for Node.js missing) for 0.1.0, and 15 (14) for a later version:
 // version 2, init 2, intake 1, entities validate 1, validate 1, legacy name
 // 2, wrapper 3 (2), and step 10 with 1 for 0.1.0 or 3 for a later version.
+// Tarball mode adds 3: the registry guard before step 1, the install of the
+// tarball into the project before step 9, and the registry guard check
+// after step 10 (18 on Linux and macOS, 17 on Windows, for 0.2.0).
 
 import { spawnSync, type SpawnSyncOptions } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir, userInfo } from "node:os";
-import { dirname, join } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { commandPromptArgs, printedFixStep } from "./printed-fix-step.ts";
+import { BLOCKED_REGISTRY, cacheIndexKeys, guardedEnv, legacyNpxArgs, npxArgs, parseSmokeArgs, readTarballIdentity, registryGuardProblems, sha256Hex, TARBALL_MODE_LIMITS, USAGE, UsageError, type FoundPackage, type SmokeSource, type TarballIdentity } from "./smoke-source.ts";
 
 const NODE_REQUIRED = "BuildOS needs Node.js 24 or newer on this computer. Install it from https://nodejs.org, then try again.";
 const LEGACY_NOTICE = 'Note: the command name "buildos-intake" goes away in BuildOS 0.3.0. Use "buildos intake" instead.';
@@ -50,7 +64,8 @@ interface Step {
   name: string;
   command: string;
   exit: number | null;
-  expected_exit: number;
+  /** null for a check that starts no process (the last registry guard check). */
+  expected_exit: number | null;
   stdout: string;
   stderr: string;
   files?: Record<string, string>;
@@ -59,40 +74,61 @@ interface Step {
 }
 
 function usage(message: string): never {
-  process.stderr.write(`${message}\nUsage: node scripts/published-smoke.ts --version <version> --out <folder>\n`);
+  process.stderr.write(`${message}\n${USAGE}\n`);
   process.exit(2);
 }
 
-function parseArgs(argv: string[]): { version: string; out: string } {
-  let version = "";
-  let out = "";
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    if (a === "--version") version = argv[++i] ?? "";
-    else if (a === "--out") out = argv[++i] ?? "";
-    else usage(`unknown argument: ${a}`);
+function parseArgs(argv: string[]): { source: SmokeSource; out: string } {
+  try {
+    return parseSmokeArgs(argv);
+  } catch (e) {
+    if (e instanceof UsageError) usage(e.message);
+    throw e;
   }
-  // A plain semver version only: npm reads an empty spec as "any version".
-  if (!/^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$/.test(version)) usage("--version must be a plain version such as 0.1.0");
-  if (out === "") usage("--out is required");
-  return { version, out };
 }
 
-/** npx as `node <npx-cli.js>`, so no shell is needed on Windows; else npx on PATH. */
-function npxCommand(): { file: string; prefix: string[]; shell: boolean } {
+/** npx or npm as `node <npx-cli.js>` (or `npm-cli.js`), so no shell is needed on Windows; else the program on PATH. */
+function npmTool(name: "npx" | "npm"): { file: string; prefix: string[]; shell: boolean } {
   const nodeDir = dirname(process.execPath);
-  for (const cli of [join(nodeDir, "node_modules", "npm", "bin", "npx-cli.js"), join(nodeDir, "..", "lib", "node_modules", "npm", "bin", "npx-cli.js")]) {
+  for (const cli of [join(nodeDir, "node_modules", "npm", "bin", `${name}-cli.js`), join(nodeDir, "..", "lib", "node_modules", "npm", "bin", `${name}-cli.js`)]) {
     if (existsSync(cli)) return { file: process.execPath, prefix: [cli], shell: false };
   }
-  return { file: "npx", prefix: [], shell: WINDOWS };
+  return { file: name, prefix: [], shell: WINDOWS };
 }
 
-const { version, out } = parseArgs(process.argv.slice(2));
+const parsed = parseArgs(process.argv.slice(2));
+const out = parsed.out;
+// Tarball mode (F-P9-15): the file as an absolute path, its SHA-256 checked
+// against --sha256 before any step, and the version read from the tarball.
+const source: SmokeSource = parsed.source.kind === "tarball" ? { ...parsed.source, file: resolve(parsed.source.file) } : parsed.source;
+let identity: TarballIdentity | undefined;
+if (source.kind === "tarball") {
+  let bytes: Uint8Array = new Uint8Array();
+  try {
+    bytes = readFileSync(source.file);
+  } catch {
+    process.stderr.write(`cannot read the tarball ${source.file}; no step ran\n`);
+    process.exit(1);
+  }
+  const actual = sha256Hex(bytes);
+  if (actual !== source.sha256) {
+    process.stderr.write(`the tarball's SHA-256 is ${actual}, not the expected ${source.sha256}; no step ran\n`);
+    process.exit(1);
+  }
+  try {
+    identity = readTarballIdentity(bytes);
+  } catch (e) {
+    process.stderr.write(`${(e as Error).message}; no step ran\n`);
+    process.exit(1);
+  }
+}
+const version = identity !== undefined ? identity.version : source.kind === "registry" ? source.version : "";
 const root = mkdtempSync(join(tmpdir(), "buildos-smoke-"));
 const cache = join(root, "npm-cache");
 mkdirSync(cache);
-const npx = npxCommand();
-const baseEnv: NodeJS.ProcessEnv = {
+const npx = npmTool("npx");
+const npm = npmTool("npm");
+const callerEnv: NodeJS.ProcessEnv = {
   ...process.env,
   npm_config_cache: cache,
   npm_config_ignore_scripts: "true",
@@ -101,7 +137,10 @@ const baseEnv: NodeJS.ProcessEnv = {
   npm_config_audit: "false",
 };
 // A BuildOS variable from the caller never counts.
-for (const key of Object.keys(baseEnv)) if (key.startsWith("BUILDOS_")) delete baseEnv[key];
+for (const key of Object.keys(callerEnv)) if (key.startsWith("BUILDOS_")) delete callerEnv[key];
+// Tarball mode: npm offline, with a blocked registry, for every process that
+// the smoke starts (the registry guard, scripts/smoke-source.ts).
+const baseEnv: NodeJS.ProcessEnv = source.kind === "tarball" ? guardedEnv(callerEnv) : callerEnv;
 
 /** Every spelling of a path that output can hold: as given, real path, short and long forms, and JSON-escaped. */
 function spellings(path: string): string[] {
@@ -130,6 +169,7 @@ function spellings(path: string): string[] {
 function clean(text: string, project?: string): string {
   let t = text.replace(/\r\n/g, "\n");
   const pairs: [string, string][] = [];
+  if (source.kind === "tarball") for (const s of spellings(source.file)) pairs.push([s, "{TARBALL}"]);
   if (project !== undefined) for (const s of spellings(project)) pairs.push([s, "{PROJECT}"]);
   for (const s of spellings(root)) pairs.push([s, "{TMP}"]);
   for (const s of spellings(tmpdir())) pairs.push([s, "{TMP}"]);
@@ -185,8 +225,14 @@ function check(step: Step, what: string, ok: boolean): void {
 }
 
 function npxRun(name: string, args: string[], expected: number, cwd: string): Step {
-  const full = ["-y", `build-os@${version}`, ...args];
+  const full = npxArgs(source, version, args);
   return run(name, `npx ${full.join(" ")}`, npx.file, [...npx.prefix, ...full], expected, cwd, { shell: npx.shell });
+}
+
+// 0. Tarball mode only: the registry guard is on (npm reads offline and the blocked registry).
+if (source.kind === "tarball") {
+  const step = run("registry guard (tarball mode): npm config get offline registry", "npm config get offline registry", npm.file, [...npm.prefix, "config", "get", "offline", "registry"], 0, root, { shell: npm.shell });
+  check(step, `npm reads offline=true and registry=${BLOCKED_REGISTRY}`, step.stdout === `offline=true\nregistry=${BLOCKED_REGISTRY}\n`);
 }
 
 // 1. version, human and JSON.
@@ -259,7 +305,7 @@ const project = newFolder("project");
 
 // 7. One legacy name, from the package: the notice, then the same output as `buildos intake --help`.
 {
-  const legacyArgs = ["-y", `--package=build-os@${version}`, "buildos-intake", "--help"];
+  const legacyArgs = legacyNpxArgs(source, version);
   const legacy = run("legacy name buildos-intake --help", `npx ${legacyArgs.join(" ")}`, npx.file, [...npx.prefix, ...legacyArgs], 0, project, { shell: npx.shell });
   const plain = npxRun("intake --help (for the legacy comparison)", ["intake", "--help"], 0, project);
   const lines = legacy.stderr.split("\n");
@@ -295,7 +341,22 @@ const project = newFolder("project");
   }
 }
 
-// 9. The project wrapper with Node.js present: it runs the pinned version (through npx).
+// Tarball mode only, before step 9: the offline install of the tarball into
+// the project (the user guide, chapter 4), so the wrapper runs the pinned
+// version from that local install. Registry mode has none: the wrapper uses npx.
+if (source.kind === "tarball") {
+  const step = run("install the tarball into the project (tarball mode)", "npm install --offline --ignore-scripts --no-save --no-package-lock --prefix . <tarball>", npm.file, [...npm.prefix, "install", "--offline", "--ignore-scripts", "--no-save", "--no-package-lock", "--prefix", project, source.file], 0, project, { shell: npm.shell });
+  let installed = "";
+  try {
+    installed = (JSON.parse(readFileSync(join(project, "node_modules", "build-os", "package.json"), "utf8")) as { version?: string }).version ?? "";
+  } catch {
+    // Reported by the check below.
+  }
+  check(step, `node_modules/build-os in the project is ${version}, the pinned version`, installed === version);
+}
+
+// 9. The project wrapper with Node.js present: it runs the pinned version
+// (registry mode: through npx; tarball mode: from the local install).
 {
   const scripts = join(project, ".os", "scripts");
   const step = WINDOWS
@@ -313,6 +374,7 @@ const project = newFolder("project");
 // 10. A printed fix command (F-P8-11, PE-023), run as printed (scripts/printed-fix-step.ts). Last, because it writes the project's entity index.
 printedFixStep({
   version,
+  source: source.kind,
   windows: WINDOWS,
   project,
   humanStdout: steps.find((s) => s.name === "entities validate")?.stdout,
@@ -322,34 +384,117 @@ printedFixStep({
   check,
 });
 
+// Tarball mode only, last: nothing came from a registry. The new npm cache
+// holds only tarball file entries, and every build-os package folder below
+// the temporary root (each npx cache install and the project's local
+// install) has the tarball's version and bin file bytes.
+if (source.kind === "tarball" && identity !== undefined) {
+  const id = identity;
+  const buckets: string[] = [];
+  const packages: FoundPackage[] = [];
+  const walk = (dir: string, depth: number, inIndex: boolean): void => {
+    if (depth > 16) return;
+    let names: string[] = [];
+    try {
+      names = readdirSync(dir);
+    } catch {
+      return;
+    }
+    for (const name of names) {
+      const path = join(dir, name);
+      let isDir = false;
+      try {
+        isDir = statSync(path).isDirectory();
+      } catch {
+        continue;
+      }
+      if (!isDir) {
+        if (inIndex) buckets.push(readFileSync(path, "utf8"));
+        continue;
+      }
+      if (name === "build-os" && basename(dir) === "node_modules") {
+        let found: string | undefined;
+        try {
+          found = (JSON.parse(readFileSync(join(path, "package.json"), "utf8")) as { version?: string }).version;
+        } catch {
+          found = undefined;
+        }
+        const bins: Record<string, string | undefined> = {};
+        for (const bin of Object.keys(id.bins)) {
+          try {
+            bins[bin] = sha256Hex(readFileSync(join(path, bin)));
+          } catch {
+            bins[bin] = undefined;
+          }
+        }
+        packages.push({ where: clean(path), version: found, bins });
+      }
+      walk(path, depth + 1, inIndex || (name === "index-v5" && basename(dir) === "_cacache"));
+    }
+  };
+  walk(root, 0, false);
+  const problems = registryGuardProblems({ cacheKeys: cacheIndexKeys(buckets), packages, identity: id });
+  steps.push({
+    name: "registry guard (tarball mode): nothing came from a registry",
+    command: "no process; it reads the npm cache index and every node_modules/build-os folder below {TMP}",
+    exit: null,
+    expected_exit: null,
+    stdout: packages.map((p) => `${p.where}: build-os ${p.version ?? "(no version)"}\n`).join(""),
+    stderr: problems.map((p) => `${p}\n`).join(""),
+    checks: [
+      { check: "the npm cache holds only pacote:tarball:file: entries (no registry response)", ok: !problems.some((p) => p.startsWith("the npm cache")) },
+      { check: `every build-os package folder that a step could run has version ${id.version} and the tarball's bin files (${packages.length} found)`, ok: packages.length > 0 && problems.every((p) => p.startsWith("the npm cache")) },
+    ],
+    ok: false,
+  });
+}
+
 for (const s of steps) s.ok = s.checks.every((c) => c.ok);
 const passed = steps.every((s) => s.ok);
 // The checks are done: only now is the output cleaned, for the report.
 const reported = steps.map((s) => ({ ...s, stdout: clean(s.stdout, stepFolder.get(s)), stderr: clean(s.stderr, stepFolder.get(s)) }));
 const os = process.platform === "darwin" ? "macos" : process.platform === "win32" ? "windows" : process.platform;
 const npmVersion = spawnSync(npx.file, [...npx.prefix, "--version"], { env: baseEnv, encoding: "utf8", shell: npx.shell, cwd: root }).stdout?.toString().trim() ?? "";
+const tarballRecord = source.kind === "tarball" && identity !== undefined ? { file: basename(source.file), sha256: identity.sha256, name: identity.name, version: identity.version, bin_sha256: identity.bins } : null;
+const packageSource =
+  source.kind === "registry"
+    ? `the public npm registry: npx -y build-os@${version}`
+    : `the tarball (tarball mode): npx -y --package=<tarball> -- buildos for the direct steps, and an offline install of the tarball into the project for the wrapper (step 9) and the printed fix command (step 10); npm offline with the registry ${BLOCKED_REGISTRY} (blocked) for every process`;
 const report = {
   package: `build-os@${version}`,
+  mode: source.kind,
+  package_source: packageSource,
+  tarball: tarballRecord,
+  ...(source.kind === "tarball" ? { tarball_mode: TARBALL_MODE_LIMITS } : {}),
   os,
   platform: `${process.platform} ${process.arch}`,
   node: process.version,
   npm: npmVersion,
   npm_cache: "a new empty folder below {TMP}",
-  paths_replaced: "{TMP} temporary root, {PROJECT} step folder, {HOME} home folder, {USER} user name, {TIMESTAMP} times",
+  paths_replaced: `{TMP} temporary root, {PROJECT} step folder, {HOME} home folder, {USER} user name, {TIMESTAMP} times${source.kind === "tarball" ? ", {TARBALL} tarball path" : ""}`,
   passed,
   steps: reported,
 };
 mkdirSync(out, { recursive: true });
 writeFileSync(join(out, `smoke-${os}.json`), `${JSON.stringify(report, null, 2)}\n`);
 const md: string[] = [`# build-os@${version} smoke on ${os}`, "", `Node ${process.version}, npm ${npmVersion}, ${process.platform} ${process.arch}. Result: ${passed ? "passed" : "FAILED"}. Paths are replaced as stated in the JSON report.`, ""];
+if (tarballRecord !== null) {
+  md.push(`Mode: tarball. File \`${tarballRecord.file}\`, SHA-256 \`${tarballRecord.sha256}\`, version ${tarballRecord.version} (read from the tarball). Package source: ${packageSource}.`, "", "Tarball mode proves:", "");
+  for (const line of TARBALL_MODE_LIMITS.proves) md.push(`- ${line}`);
+  md.push("", "Tarball mode does not prove:", "");
+  for (const line of TARBALL_MODE_LIMITS.does_not_prove) md.push(`- ${line}`);
+  md.push("");
+} else {
+  md.push(`Mode: registry. Package source: ${packageSource}.`, "");
+}
 for (const s of reported) {
-  md.push(`## ${s.ok ? "pass" : "FAIL"}: ${s.name}`, "", `Command: \`${s.command}\` (exit ${s.exit}, expected ${s.expected_exit})`, "");
+  md.push(`## ${s.ok ? "pass" : "FAIL"}: ${s.name}`, "", s.expected_exit === null ? `Check: ${s.command}.` : `Command: \`${s.command}\` (exit ${s.exit}, expected ${s.expected_exit})`, "");
   for (const c of s.checks) md.push(`- ${c.ok ? "ok" : "FAILED"}: ${c.check}`);
   md.push("", "stdout:", "", "```text", s.stdout.replace(/\n$/, ""), "```", "", "stderr:", "", "```text", s.stderr.replace(/\n$/, ""), "```", "");
   for (const [path, text] of Object.entries(s.files ?? {})) md.push(`File \`${path}\`:`, "", "```text", text.replace(/\n$/, ""), "```", "");
 }
 writeFileSync(join(out, `smoke-${os}.md`), md.join("\n"));
-process.stdout.write(`build-os@${version} smoke on ${os}: ${passed ? "passed" : "FAILED"} (${steps.filter((s) => s.ok).length} of ${steps.length} steps)\n`);
+process.stdout.write(`build-os@${version}${tarballRecord !== null ? ` (tarball, SHA-256 ${tarballRecord.sha256})` : ""} smoke on ${os}: ${passed ? "passed" : "FAILED"} (${steps.filter((s) => s.ok).length} of ${steps.length} steps)\n`);
 for (const s of steps) if (!s.ok) process.stdout.write(`  FAILED: ${s.name}: ${s.checks.filter((c) => !c.ok).map((c) => c.check).join("; ")}\n`);
 rmSync(root, { recursive: true, force: true, maxRetries: 5 });
 process.exit(passed ? 0 : 1);
