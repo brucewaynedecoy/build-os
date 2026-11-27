@@ -42,7 +42,7 @@ Then read the provenance statement:
 npm view build-os@0.2.0 dist.attestations.provenance.predicateType
 ```
 
-It prints `https://slsa.dev/provenance/v1`. The npm package page shows the same provenance: the source repository `github.com/brucewaynedecoy/build-os`, the workflow `.github/workflows/buildos-release.yml`, and the commit of the release tag `v0.2.0`. npm makes provenance only for a public repository; the release workflow stops before staging when the repository is not public.
+For a published version it prints `https://slsa.dev/provenance/v1`, and the npm package page shows the same provenance: the source repository `github.com/brucewaynedecoy/build-os`, the workflow `.github/workflows/buildos-release.yml`, and the commit of the release tag. Today the published version is `0.1.0` (`npm view build-os@0.1.0 dist.attestations.provenance.predicateType` prints that value, and its page names the tag `v0.1.0`). `0.2.0` is not published yet: until it is, npm has no `build-os@0.2.0` and these commands for `0.2.0` fail. After its publication they must give the same result, with the tag `v0.2.0`. npm makes provenance only for a public repository; the release workflow stops before staging when the repository is not public.
 
 ### 2. Check the tarball digest
 
@@ -110,9 +110,15 @@ A prepare or release run refuses a planted failure.
 GitHub's procedure for an immutable release is: create the release as a draft, attach every asset to the draft, then publish it. After that, the release's tag and assets cannot change. The BuildOS procedure follows it:
 
 1. The maintainer sets the version, makes a dry run on the reference runner, inspects its tarball, and commits the `reviewed` entry to `toolkits/buildos/release-candidates.json` (header of `scripts/release-candidate.ts`).
-2. The maintainer creates the tag `v<version>` on that commit (on the default branch) and a draft GitHub Release for it, for example `gh release create v0.2.0 --draft --verify-tag --title "BuildOS 0.2.0" --notes-file toolkits/buildos/RELEASE_NOTES.md`.
+2. The maintainer creates the tag `v<version>` on that commit (on the default branch) and a draft GitHub Release for it. The release body is the section of that version only, taken from the notes file at the tag, without the draft status line. For example, from the repository root:
+
+   ```sh
+   git show v0.2.0:toolkits/buildos/RELEASE_NOTES.md | awk '/^## 0\.2\.0$/{p=1;next} /^## /{p=0} p' | grep -v '^Status: draft' > notes-0.2.0.md
+   gh release create v0.2.0 --draft --verify-tag --title "BuildOS 0.2.0" --notes-file notes-0.2.0.md
+   ```
+
 3. The maintainer runs the workflow from the default branch: Actions > buildos-release > Run workflow, purpose `prepare`, tag `v0.2.0`, candidates `committed`, plant `none` (or `gh workflow run buildos-release.yml --ref main -f purpose=prepare -f tag=v0.2.0 -f candidates=committed -f plant=none`). Every gate runs, then the real deny list, then `attach`.
-4. The maintainer reviews the draft: downloads `build-os-<version>.tgz` and `buildos-<version>.cdx.json` from it, checks that the tarball SHA-256 equals the reviewed entry, and reads the job summary. Then the maintainer publishes the draft. With release immutability on, its tag and assets are now fixed.
+4. The maintainer reviews the draft: downloads `build-os-<version>.tgz` and `buildos-<version>.cdx.json` from it, checks that the tarball SHA-256 equals the reviewed entry, and reads the job summary. No job can read two settings (see [Release Trust Boundary](#release-trust-boundary)), so the maintainer checks them now: release immutability is on (`gh api repos/brucewaynedecoy/build-os/immutable-releases` prints `"enabled": true`), and the rulesets `main` and `release tags` are Active with only the bypass actors of [Sole Maintainer or Two Maintainers](#sole-maintainer-or-two-maintainers) (Settings > Rules > Rulesets, each ruleset's Bypass list). Then the maintainer publishes the draft. With release immutability on, its tag and assets are now fixed.
 5. The release run starts. Its `verify` job rebuilds the tagged commit on the reference runner and must get the reviewed digest again. When it reaches `stage`, GitHub waits: a required reviewer of the environment `buildos-npm-stage` approves the job (Actions > the run > Review deployments > Approve and deploy). Only then does the job start and get its OIDC token.
 6. The `stage` job checks the rulesets, downloads the tarball and the SBOM from the published release, checks both, and stages the tarball on npm. The maintainer approves the stage on npm with two-factor authentication, only after the recorded publication approval.
 
