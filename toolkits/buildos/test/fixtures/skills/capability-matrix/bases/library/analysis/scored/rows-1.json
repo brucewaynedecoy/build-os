@@ -1,0 +1,35 @@
+[
+  {
+    "baseline_capability_id": "CIRC-CORE-02a",
+    "target_capability_ids": [
+      "LIB-LEND-02"
+    ],
+    "verdict": "configurable",
+    "confidence": "medium",
+    "effort": "low",
+    "evidence": "The pickup window is a reservation setting. The platform notes and the desk manual were read side by side for this capability, and the steps match.",
+    "migration_note": "Set the window to 5 days."
+  },
+  {
+    "baseline_capability_id": "CIRC-CORE-01",
+    "target_capability_ids": [
+      "LIB-LEND-01"
+    ],
+    "verdict": "native",
+    "confidence": "high",
+    "effort": "none",
+    "evidence": "Loans cover checkout, with the fine limit as a loan rule. The platform notes and the desk manual were read side by side for this capability, and the steps match."
+  },
+  {
+    "baseline_capability_id": "CIRC-CORE-02",
+    "target_capability_ids": [
+      "LIB-LEND-02",
+      "LIB-LEND-01"
+    ],
+    "verdict": "partial",
+    "confidence": "medium",
+    "effort": "medium",
+    "evidence": "Reservations queue holds, but cannot skip a patron who is away. The platform notes and the desk manual were read side by side for this capability, and the steps match.",
+    "gap_detail": "No skip, so the desk keeps a paper list."
+  }
+]

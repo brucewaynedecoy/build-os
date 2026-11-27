@@ -1,0 +1,29 @@
+{
+  "case": "skeleton-problems",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "skeleton",
+        "--skeleton",
+        "cm/bad/skeleton-problems.json"
+      ],
+      "exit": 1,
+      "stdout": "  L1   CORE     4  Circulation\n  L2   PAT      1  Patrons\nskeleton[CIRC]: 6 capabilities, status={'live': 3, 'gone': 1, 'draft': 1, 'pilot': 1}\n  FAIL  duplicate ids\n  FAIL  CIRC-core-1: id format\n  FAIL  CIRC-core-1: prefix does not match layer L1\n  FAIL  CIRC-PAT-02: prefix does not match layer L1\n  FAIL  CIRC-PAT-02: type 'person'\n  FAIL  CIRC-PAT-02: status 'gone' has no maturity_map entry\n  FAIL  CIRC-PAT-02: scope brief too thin for an extractor\n  FAIL  CIRC-CORE-03: prefix does not match layer L2\n  FAIL  CIRC-CORE-03: status 'draft'\n  FAIL  CIRC-CORE-03: status 'draft' has no maturity_map entry\n  FAIL  CIRC-CORE-03: scope brief too thin for an extractor\n  FAIL  LIB-CORE-04: id format\n  FAIL  LIB-CORE-04: prefix does not match layer L3\n  FAIL  design principle DP-1: needs id, name, statement\n  FAIL  design principle None: needs id, name, statement\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 1,
+      "args": [
+        "skeleton",
+        "--skeleton",
+        "cm/bad/skeleton-formats.json"
+      ],
+      "exit": 1,
+      "stdout": "     1 AB       2  Numbered layer\n  L2   XYZW     1  None\n     1 Q        2  2.5\nskeleton[C2]: 3 capabilities, status={'on': 3}\n  FAIL  C2-AB-01: prefix does not match layer 1\n  FAIL  C2-AB-02: prefix does not match layer 1\n",
+      "stderr": "",
+      "files": {}
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+[
+  {
+    "id": "CIRC-CORE-01",
+    "status": "live",
+    "requirements": [
+      {
+        "kind": "rule",
+        "status": "live",
+        "text": "Fine."
+      },
+      {
+        "kind": "rule",
+        "status": "someday",
+        "text": "Not in the vocabulary."
+      }
+    ]
+  },
+  {
+    "id": "CIRC-CORE-02",
+    "status": "pilot",
+    "requirements": []
+  },
+  {
+    "id": "CIRC-CORE-02a",
+    "status": "live",
+    "requirements": []
+  },
+  {
+    "id": "CIRC-PAT-01",
+    "status": "live",
+    "requirements": []
+  },
+  {
+    "id": "CIRC-RPT-01",
+    "status": "planned",
+    "requirements": []
+  }
+]

@@ -1,0 +1,9 @@
+[
+  {
+    "target_capability_id": "LIB-MEM-02",
+    "confidence": "medium",
+    "effort": "unknown",
+    "evidence": "A self-service kiosk is new: the branches have no such thing today and would gain it. The platform notes and the desk manual were read side by side for this capability, and the steps match.",
+    "opportunity": "Pilot one kiosk at the main branch."
+  }
+]

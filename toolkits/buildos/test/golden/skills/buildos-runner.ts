@@ -13,6 +13,7 @@ export const COMMAND_PREFIX: Record<ScriptName, string[]> = {
   "bulk-extract": ["extract", "bulk"],
   fitgap: ["fitgap"],
   "azure-boards": ["export", "azure-boards"],
+  "capability-matrix": ["capability-matrix"],
 };
 
 /** The BuildOS arguments for a script's arguments. */

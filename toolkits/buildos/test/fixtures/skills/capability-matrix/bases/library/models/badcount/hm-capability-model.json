@@ -1,0 +1,61 @@
+{
+  "schema_version": "4",
+  "meta": {
+    "code": "HM",
+    "vocabularies": {
+      "status": [
+        "on",
+        "off"
+      ]
+    }
+  },
+  "layers": [
+    {
+      "id": "L1",
+      "code": "ONE",
+      "name": "One"
+    }
+  ],
+  "design_principles": [],
+  "capabilities": [
+    {
+      "id": "HM-ONE-01",
+      "parent_id": null,
+      "name": "Capability HM-ONE-01",
+      "layer_id": "L1",
+      "doc_ref": "01",
+      "type": "process",
+      "status": "on",
+      "maturity": "available",
+      "origin": "derived",
+      "source_refs": [],
+      "summary": "A capability of the hand-made model, long enough to pass the check.",
+      "personas": [],
+      "triggers": [],
+      "outcomes": [],
+      "entities": [],
+      "dependencies": [],
+      "provenance": [],
+      "source": [],
+      "tags": [],
+      "requirements": [
+        {
+          "id": "HM-ONE-01-R01",
+          "kind": "rule",
+          "status": "on",
+          "maturity": "available",
+          "text": "A requirement with text.",
+          "option_values": null,
+          "option_default": null,
+          "option_scope": null,
+          "source_refs": []
+        }
+      ]
+    }
+  ],
+  "capability_tree": [
+    {
+      "id": "HM-ONE-01"
+    }
+  ]
+}

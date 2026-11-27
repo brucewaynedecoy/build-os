@@ -1,0 +1,77 @@
+{
+  "case": "skeleton-crashes",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "skeleton",
+        "--skeleton",
+        "cm/bad/missing.json"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "FileNotFoundError: [Errno 2] No such file or directory: 'cm/bad/missing.json'\n",
+      "files": {}
+    },
+    {
+      "step": 1,
+      "args": [
+        "skeleton",
+        "--skeleton",
+        "cm/bad/skeleton-not-json.json"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "json.decoder.JSONDecodeError: Expecting ',' delimiter: line 2 column 1 (char 27)\n",
+      "files": {}
+    },
+    {
+      "step": 2,
+      "args": [
+        "skeleton",
+        "--skeleton",
+        "cm/bad/skeleton-bom.json"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "json.decoder.JSONDecodeError: Unexpected UTF-8 BOM (decode using utf-8-sig): line 1 column 1 (char 0)\n",
+      "files": {}
+    },
+    {
+      "step": 3,
+      "args": [
+        "skeleton",
+        "--skeleton",
+        "cm/bad/skeleton-no-layers.json"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "KeyError: 'layers'\n",
+      "files": {}
+    },
+    {
+      "step": 4,
+      "args": [
+        "skeleton",
+        "--skeleton",
+        "cm/bad/skeleton-no-dash.json"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "IndexError: list index out of range\n",
+      "files": {}
+    },
+    {
+      "step": 5,
+      "args": [
+        "skeleton",
+        "--skeleton",
+        "cm/bad/skeleton-null-layer.json"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "TypeError: unsupported format string passed to NoneType.__format__\n",
+      "files": {}
+    }
+  ]
+}

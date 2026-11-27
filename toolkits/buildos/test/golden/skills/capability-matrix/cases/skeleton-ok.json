@@ -1,0 +1,29 @@
+{
+  "case": "skeleton-ok",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "skeleton",
+        "--skeleton",
+        "cm/CIRC/skeleton.json"
+      ],
+      "exit": 0,
+      "stdout": "  L1   CORE     3  Circulation\n  L2   PAT      1  Patrons\n  L3   RPT      1  Reports\nskeleton[CIRC]: 5 capabilities, status={'live': 3, 'pilot': 1, 'planned': 1}\n  skeleton OK\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 1,
+      "args": [
+        "skeleton",
+        "--skeleton",
+        "cm/LIB/skeleton.json"
+      ],
+      "exit": 0,
+      "stdout": "  L1   LEND     2  Lending\n  L2   MEM      2  Members\nskeleton[LIB]: 4 capabilities, status={'ga': 2, 'beta': 1, 'roadmap': 1}\n  skeleton OK\n",
+      "stderr": "",
+      "files": {}
+    }
+  ]
+}

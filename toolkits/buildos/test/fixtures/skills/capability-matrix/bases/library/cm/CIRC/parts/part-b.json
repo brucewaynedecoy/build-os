@@ -1,0 +1,59 @@
+[
+  {
+    "id": "CIRC-PAT-01",
+    "layer_id": "L2",
+    "doc_ref": "2.1",
+    "type": "data_entity",
+    "name": "Patron record",
+    "status": "live",
+    "origin": "merged",
+    "summary": "The record of each patron: name, address, card number, and a guardian for a child, as the desk staff described it in the branch notes.",
+    "personas": [
+      "Desk clerk"
+    ],
+    "entities": [
+      "Patron"
+    ],
+    "requirements": [
+      {
+        "kind": "data",
+        "status": "live",
+        "text": "Record a guardian for a child, with a phone number.",
+        "source_refs": [
+          "Desk manual 2"
+        ],
+        "option_scope": "account"
+      },
+      {
+        "kind": "rule",
+        "status": "live",
+        "text": "A card number is never given twice.",
+        "source_refs": [
+          "Desk manual 2"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "CIRC-RPT-01",
+    "layer_id": "L3",
+    "doc_ref": "3.1",
+    "type": "report",
+    "name": "Overdue report",
+    "status": "planned",
+    "summary": "The weekly list of overdue loans that the branch prints on Monday, as the desk staff described it in the branch notes.",
+    "dependencies": [
+      "CIRC-CORE-01"
+    ],
+    "requirements": [
+      {
+        "kind": "behavior",
+        "status": "planned",
+        "text": "List loans more than seven days overdue, by branch.",
+        "source_refs": [
+          "Desk manual 2"
+        ]
+      }
+    ]
+  }
+]

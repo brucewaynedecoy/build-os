@@ -1,0 +1,50 @@
+[
+  {
+    "id": "LIB-LEND-01",
+    "layer_id": "L1",
+    "doc_ref": "4.1",
+    "type": "capability",
+    "name": "Loans",
+    "status": "ga",
+    "summary": "Loans of any item to a member, as the platform's public product notes describe it.",
+    "requirements": [
+      {
+        "kind": "behavior",
+        "status": "ga",
+        "text": "Lend an item with a barcode scan.",
+        "source_refs": [
+          "Desk manual 2"
+        ]
+      },
+      {
+        "kind": "setting",
+        "status": "ga",
+        "text": "Loan rules by item type.",
+        "source_refs": [
+          "Desk manual 2"
+        ],
+        "option_values": "book | dvd",
+        "option_scope": "category"
+      }
+    ]
+  },
+  {
+    "id": "LIB-LEND-02",
+    "layer_id": "L1",
+    "doc_ref": "4.2",
+    "type": "workflow",
+    "name": "Reservations",
+    "status": "beta",
+    "summary": "Reservations on items that are out, in a queue, as the platform's public product notes describe it.",
+    "requirements": [
+      {
+        "kind": "behavior",
+        "status": "beta",
+        "text": "Queue reservations in order.",
+        "source_refs": [
+          "Desk manual 2"
+        ]
+      }
+    ]
+  }
+]

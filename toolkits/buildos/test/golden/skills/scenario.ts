@@ -23,7 +23,7 @@ export const PACKAGE_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", 
 export const FIXTURES = join(PACKAGE_ROOT, "test", "fixtures", "skills");
 export const GOLDENS = join(PACKAGE_ROOT, "test", "golden", "skills");
 
-export const SCRIPTS = ["bulk-extract", "fitgap", "azure-boards"] as const;
+export const SCRIPTS = ["bulk-extract", "fitgap", "azure-boards", "capability-matrix"] as const;
 export type ScriptName = (typeof SCRIPTS)[number];
 
 export interface Step {

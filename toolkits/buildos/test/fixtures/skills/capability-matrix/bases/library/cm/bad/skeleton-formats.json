@@ -1,0 +1,50 @@
+{
+  "system": {
+    "code": "C2",
+    "converted": true,
+    "status_vocabulary": [
+      "on",
+      1
+    ],
+    "maturity_map": {
+      "on": "proven"
+    }
+  },
+  "layers": [
+    {
+      "id": 1,
+      "code": "AB",
+      "name": "Numbered layer"
+    },
+    {
+      "id": "L2",
+      "code": "XYZW",
+      "name": null
+    },
+    {
+      "id": true,
+      "code": "Q",
+      "name": 2.5
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "C2-AB-01",
+      "layer_id": 1,
+      "type": "process",
+      "status": "on"
+    },
+    {
+      "id": "C2-AB-02",
+      "layer_id": 1,
+      "type": "process",
+      "status": "on"
+    },
+    {
+      "id": "C2-XYZW-100",
+      "layer_id": "L2",
+      "type": "document",
+      "status": "on"
+    }
+  ]
+}

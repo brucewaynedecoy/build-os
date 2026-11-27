@@ -1,0 +1,49 @@
+[
+  {
+    "capability_key": "lending",
+    "name": "Lending",
+    "layer_id": "L1",
+    "overlap_type": "duplicate",
+    "proposed_owner": "LIB",
+    "integration_need": "Move open loans",
+    "data_flow": "CIRC -> LIB",
+    "effort": "medium",
+    "confidence": "high",
+    "systems": {
+      "CIRC": [
+        "CIRC-CORE-01"
+      ],
+      "LIB": [
+        "LIB-LEND-01"
+      ]
+    },
+    "evidence": "Both systems lend books; the platform takes over lending at cut-over.",
+    "notes": "One weekend."
+  },
+  {
+    "capability_key": "patrons",
+    "name": "Patrons",
+    "layer_id": "L2",
+    "overlap_type": "handoff",
+    "confidence": "medium",
+    "systems": {
+      "CIRC": [
+        "CIRC-PAT-01"
+      ]
+    },
+    "evidence": "Patron records start in the old system and are copied to members nightly."
+  },
+  {
+    "capability_key": "kiosk",
+    "name": "Kiosk",
+    "layer_id": "L2",
+    "overlap_type": "sideways",
+    "confidence": "sure",
+    "systems": {
+      "LIB": [
+        "LIB-MEM-02"
+      ]
+    },
+    "evidence": "Too short."
+  }
+]

@@ -1,18 +1,21 @@
 {
-  "$comment": "Written by test/golden/skills/capture.ts (W1 R7 P9 t2; review round 1, P9-R1-17). What the three skill scripts did on each fixture case, captured on a maintainer machine. CI never runs Python. capture.ts --check compares every field except provenance.",
+  "$comment": "Written by test/golden/skills/capture.ts (W1 R7 P9 t2; review round 1, P9-R1-17; F-P9-04). What the four skill scripts did on each fixture case, captured on a maintainer machine. CI never runs Python. capture.ts --check compares every field except provenance.",
   "script_revision": "085927e3c1324fc73fe57af9493ca0b01fcaed18",
   "scripts": {
     "system/.os/skills/buildos-bulk-extract/scripts/work.py": "1ab581af75c87ea2bfb020e6e8ffd7f8a823e2ee7a74891b024a95753bc9e1b5",
     "system/.os/skills/fit-gap-analysis/scripts/fitgap.py": "796aca12e995b272655d3591e3fa6a38a79f652b412a1154b6b0f281150888e6",
     "system/.os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs": "e5f3b6160b8c4eaef54cfbe9587771834384425fee80685989a51499cc890318",
-    "system/.os/skills/buildos-export-azure-boards/scripts/adapters/dynamics-365-ce.mjs": "5f20eea06d5c3938cb52407aa9010a597d544ebb42935a6de1899245bf17f5d4"
+    "system/.os/skills/buildos-export-azure-boards/scripts/adapters/dynamics-365-ce.mjs": "5f20eea06d5c3938cb52407aa9010a597d544ebb42935a6de1899245bf17f5d4",
+    "system/.os/skills/capability-matrix/SKILL.md": "688b93048d50097644f72827f79a0e842bfcebca978e0c271c7b5b4a3b128a30",
+    "system/.os/skills/capability-matrix/SKILL.md#cm_build.py": "559ccc27826acbb1dea53ebc829de0242922366672964beea218edd5f56d38a8"
   },
   "python_flags": "-P -s (PYTHONHASHSEED=0, TZ=UTC, LC_ALL=C.UTF-8, PYTHONIOENCODING=utf-8)",
   "clock": "2026-01-15T12:00:00Z",
   "cases": {
     "bulk-extract": 35,
     "fitgap": 15,
-    "azure-boards": 11
+    "azure-boards": 11,
+    "capability-matrix": 15
   },
   "provenance": {
     "$comment": "What made the goldens. Not compared by --check: it differs between machines and fresh installs.",
@@ -25,12 +28,20 @@
     },
     "wheels_note": "The SHA-256 of each wheel file installed into that environment, as PyPI publishes it (given with --wheel).",
     "node": "v26.13.1",
-    "capture_os": "darwin arm64"
+    "capture_os": "darwin arm64",
+    "captures": {
+      "capability-matrix": {
+        "date": "2026-11-27",
+        "python": "Python 3.14.10",
+        "node": "v26.13.1",
+        "capture_os": "darwin arm64"
+      }
+    }
   },
   "normalizations": {
     "N1": "The project folder path (as given and as resolved) becomes <root>; in BuildOS output on Windows, \\ after <root> becomes /.",
     "N2": "A Python traceback keeps its last line only, so no machine path or line number is kept.",
     "N3": "A written .xlsx is recorded by its SHA-256 and kept in <script>/xlsx/; the parity test compares workbook content, not bytes (parity exception PE-021).",
-    "N4": "The clock is fixed at 2026-01-15T12:00:00Z for the script (a runner that replaces datetime.datetime.now for work.py and datetime.date.today for fitgap.py) and for BuildOS (RunOptions.now)."
+    "N4": "The clock is fixed at 2026-01-15T12:00:00Z for the script (a runner that replaces datetime.datetime.now for work.py and datetime.date.today for fitgap.py) and for BuildOS (RunOptions.now). cm_build.py reads no clock."
   }
 }

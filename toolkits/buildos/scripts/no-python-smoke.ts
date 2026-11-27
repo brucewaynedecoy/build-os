@@ -54,7 +54,7 @@ import { GOLDENS, SCRIPTS, loadCases, loadGolden, runCase, type Runner, type Scr
 const windows = process.platform === "win32";
 const PACKAGE_ROOT = resolve(import.meta.dirname, "..");
 const SKILL = join(PACKAGE_ROOT, "..", "..", "system", ".os", "skills", "buildos-export-azure-boards");
-const PREFIX: Record<ScriptName, string[]> = { "bulk-extract": ["extract", "bulk"], fitgap: ["fitgap"], "azure-boards": ["export", "azure-boards"] };
+const PREFIX: Record<ScriptName, string[]> = { "bulk-extract": ["extract", "bulk"], fitgap: ["fitgap"], "azure-boards": ["export", "azure-boards"], "capability-matrix": ["capability-matrix"] };
 
 function usage(message: string): never {
   process.stderr.write(`no-python-smoke: ${message}\nUsage: node scripts/no-python-smoke.ts --project <folder> --work <folder> [--filesystem <folder> [--skip <folder>]...]\n`);

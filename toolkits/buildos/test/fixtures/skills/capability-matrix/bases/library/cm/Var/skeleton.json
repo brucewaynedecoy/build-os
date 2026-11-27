@@ -1,0 +1,43 @@
+{
+  "system": {
+    "code": "Var",
+    "generated": "kept in place",
+    "status_vocabulary": [
+      "on",
+      "off"
+    ],
+    "maturity_map": {
+      "on": "available",
+      "off": "deferred"
+    },
+    "note": "Bücher 📚"
+  },
+  "layers": [
+    {
+      "id": "L1",
+      "code": "ODD",
+      "name": "Odd values"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "Var-ODD-01",
+      "layer_id": "L1",
+      "doc_ref": "1",
+      "type": "process",
+      "name": "Strings for lists",
+      "status": "on"
+    },
+    {
+      "id": "Var-ODD-02",
+      "layer_id": "L1",
+      "doc_ref": "2",
+      "type": "document",
+      "name": "Scope aliases",
+      "status": "off",
+      "source_refs": [
+        "Skeleton ref"
+      ]
+    }
+  ]
+}
