@@ -6666,3 +6666,18 @@ From `toolkits/buildos/` unless noted. macOS arm64, Node 26.13.1.
 | Added lines: absolute home paths, the machine user name, new `~/` paths, `file://` | 0 of each (the guide app keeps its 2 `~/` from before) |
 
 Not run here: the `no-python-image` job (Docker is not on this machine), Node 24, Linux, and Windows; the CI run of the pull request covers them.
+
+## P9 Stage 3 Review Round 3 (2026-11-26)
+
+Review round 3 of pull request 7 was the last round under the project stop rule (three rounds, then one fix pass). The reviewer followed the upgrade and rollback steps of the guide on a project made with the published `build-os@0.1.0` and a locally packed `0.2.0`. A fresh upgrade and rollback kept the adopter-added skill and both edits byte for byte. The reviewer found four gaps in the steps. This section is the fix pass. The orchestrator made the changes; no further review round follows.
+
+| Finding | Disposition |
+| --- | --- |
+| 1 (blocker) a work folder used a second time (a second project, or a second try) nested the new backup inside the old one, and the rollback then restored the first backup while the check passed | Fixed in the guide: each project and each try uses a new work folder. The first command of step 1 is a plain `mkdir` of the work folder, which stops with an error when the folder is there already, and the text says to stop and use another name. |
+| 2 (high) step 5 had no new file to open for a file that the adopter added to one of the three skill folders, or for an edit in a script that `0.2.0` removes, and the step 7 check passed without them | Fixed in the guide: step 3 says to stop before the refresh when a listed file is one of the five removed scripts. Step 5 says to copy an added file back from the backup. Step 7 says that each file on the list from step 3 must be in place. |
+| 3 (high) a skills folder in the home folder serves every project, so a refreshed copy breaks a project that is still on `0.1.0` (`unknown command "extract"`, exit 2) | Fixed in the guide: step 1 says not to refresh a home-folder copy while a project still uses `0.1.0`, and gives the two safe choices (upgrade every project and refresh that copy last, or give each project its own copy). |
+| 4 (medium) the checks did not compare the router `.os/skills/AGENTS.md`, so an old router passed | Fixed in the guide: the forward check and the rollback check each compare the router. |
+
+Not tested again: the fix pass changed text and three commands (`mkdir` without `-p`, one `cp` example, and the two router comparisons). The orchestrator did not run the full upgrade and rollback again after these changes. The Windows Command Prompt forms are still not tested. The steps are long because BuildOS has no update command; follow-up F-P9-08 (a W2 `buildos update`) stays open in `R-003`.
+
+Reviewer's verification of the rest of round 2 (its own run): typecheck and build passed; `npm test` 2,759 tests, 2,746 passed, 13 skipped, 0 failed; the static guard caught the three spellings of round 2 and the real tree had only the 19 findings of the named exception; the read-only checkout and scratch copy keep the image proof; the real deny-list scan found 0 matches with 168 of 168 package files read.

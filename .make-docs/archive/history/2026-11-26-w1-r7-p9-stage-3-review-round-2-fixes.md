@@ -33,6 +33,8 @@ Framing: [W1 R7 backlog](../../../docs/work/2026-11-23-w1-r7-buildos-node-typesc
 
 Deferred obligations and Unassisted Goal Testing: `not-needed-now`; no `O-###` or `NUAT-###` applies. Guide coverage: `update-existing`; chapters 4 and 14.
 
+Review round 3 fix pass (same day): the upgrade steps in the guide now require a new work folder for each project and each try, stop before the refresh when an adopter edited a script that `0.2.0` removes, copy adopter-added files back, do not refresh a home-folder skill copy while a project still uses `0.1.0`, and compare the skills router in the forward and rollback checks. The evidence has the section P9 Stage 3 Review Round 3.
+
 ## Documentation
 
 ### Project

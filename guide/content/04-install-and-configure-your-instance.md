@@ -480,17 +480,25 @@ These are the files that change in `.os/skills/`:
 
 Refresh only these. Do not delete the `.os/skills/` folder, and do not touch any other skill: a skill that you added stays as it is.
 
-Run the commands in the project folder. They use a work folder, `../buildos-upgrade`, next to the project. They are for macOS and Linux. In Command Prompt on Windows, use backslashes in the paths, `rmdir /s /q` in place of `rm -rf`, `xcopy /e /i /q` in place of `cp -R`, `copy` in place of `cp`, `mkdir` without `-p`, and `.os\scripts\buildos.cmd` in place of `.os/scripts/buildos`. The `git` and `npx` commands are the same.
+Run the commands in the project folder. They use a work folder, `../buildos-upgrade`, next to the project. Use a new work folder for each project and for each try. The first command of step 1 stops with an error if the folder is there already. If it does, do not continue: an old work folder holds the backup of another project or of an earlier try, and a rollback from it puts back the wrong files. Use another name (for example `../buildos-upgrade-2`) in every command of these steps, or delete the old folder when you are sure that you do not need it. They are for macOS and Linux. In Command Prompt on Windows, use backslashes in the paths, `rmdir /s /q` in place of `rm -rf`, `xcopy /e /i /q` in place of `cp -R`, `copy` in place of `cp`, `mkdir` without `-p`, and `.os\scripts\buildos.cmd` in place of `.os/scripts/buildos`. The `git` and `npx` commands are the same.
 
 1. **Make a backup.** Commit your work first (`git add -A`, then `git commit -m "Before BuildOS 0.2.0"`; if git says that there is nothing to commit, that is fine). Then copy the version file and the skills to the work folder:
 
    ```sh
-   mkdir -p ../buildos-upgrade/backup ../buildos-upgrade/old ../buildos-upgrade/new
+   mkdir ../buildos-upgrade
+   ```
+
+   If this command prints an error, stop: the work folder is there already (see above). If it prints nothing, continue:
+
+   ```sh
+   mkdir ../buildos-upgrade/backup ../buildos-upgrade/old ../buildos-upgrade/new
    cp .os/manifest.json ../buildos-upgrade/backup/manifest.json
    cp -R .os/skills ../buildos-upgrade/backup/os-skills
    ```
 
-   An agent app can have its own copy of a skill, in a skills folder of its own (for example `.claude/skills/`, `.agents/skills/`, or `.github/skills/` in the project, or a skills folder in your home folder). Copy each of those folders too, with its own name. For example: `cp -R .claude/skills ../buildos-upgrade/backup/claude-skills`. The steps call this folder the app folder.
+   An agent app can have its own copy of a skill, in a skills folder of its own (for example `.claude/skills/`, `.agents/skills/`, or `.github/skills/` in the project). Copy each of those folders too, with its own name. For example: `cp -R .claude/skills ../buildos-upgrade/backup/claude-skills`. The steps call this folder the app folder.
+
+   A skills folder in your home folder is different: the agent uses it in every project. If it holds one of the three skills, do not refresh that copy while one of your projects still uses `0.1.0`. In such a project, the refreshed skill runs a command that `0.1.0` does not have, and the command stops with `unknown command` (exit code `2`). Do one of these two things. Upgrade every project that uses the home-folder copy, and refresh that copy last, as one more app folder. Or move the three skills out of the home folder and give each project its own copy in its app folder, so that each project has the skills of its own version. For a rollback, the same rule applies the other way.
 
 2. **Get clean copies of both versions:**
 
@@ -508,7 +516,9 @@ Run the commands in the project folder. They use a work folder, `../buildos-upgr
    git --no-pager diff --no-index --stat ../buildos-upgrade/old/.os/skills/AGENTS.md .os/skills/AGENTS.md
    ```
 
-   Do the same for each of the three skills that an app folder has, with the app folder in place of `.os/skills` in the last path. For example: `git --no-pager diff --no-index --stat ../buildos-upgrade/old/.os/skills/buildos-bulk-extract .claude/skills/buildos-bulk-extract`. No output means no change. A listed file is a file that you or an agent changed. Write it down. To see the change, run the same command without `--stat`.
+   Do the same for each of the three skills that an app folder has, with the app folder in place of `.os/skills` in the last path. For example: `git --no-pager diff --no-index --stat ../buildos-upgrade/old/.os/skills/buildos-bulk-extract .claude/skills/buildos-bulk-extract`. No output means no change. A listed file is a file that you or an agent changed or added. Write down each one. To see the change, run the same command without `--stat`.
+
+   If a listed file is one of the five files in the "Removed in `0.2.0`" column, stop here. `0.2.0` removes that script, and the BuildOS command that replaces it does not have your change. Do not refresh that skill until you decide what to do with your change: for example, keep the project on `0.1.0`, or ask the BuildOS maintainer for the behavior in the command.
 
 4. **Refresh the three skills.** In the project:
 
@@ -522,7 +532,12 @@ Run the commands in the project folder. They use a work folder, `../buildos-upgr
 
    Then, in each app folder, do the same for each of the three skills that it has, one skill at a time. For example: `rm -rf .claude/skills/buildos-bulk-extract`, then `cp -R ../buildos-upgrade/new/.os/skills/buildos-bulk-extract .claude/skills/buildos-bulk-extract`. Do not replace the whole app folder, and do not add a skill that the app did not have. An old copy tells the agent to run a script that `0.2.0` removed.
 
-5. **Put your changes back.** For each file that step 3 listed, open the new file and make your change again by hand. Your old file is in the backup (`../buildos-upgrade/backup/`). Do not copy the old file over the new one: the old file tells the agent to run the old script.
+5. **Put your changes back.** Go through the list from step 3, one file at a time. Your old files are in the backup (`../buildos-upgrade/backup/`).
+
+   - A file that you changed, and that `0.2.0` still has: open the new file and make your change again by hand. Do not copy the old file over the new one: the old file tells the agent to run the old script.
+   - A file that you added to one of the three skill folders (a file that the clean `0.1.0` copy does not have): the refresh removed it. Copy it back from the backup to the same place. For example: `cp ../buildos-upgrade/backup/os-skills/fit-gap-analysis/my-notes.md .os/skills/fit-gap-analysis/my-notes.md`.
+
+   Do the same for the app folders. Do not continue until each file on your list is done.
 
 6. **Change the version.** In `.os/manifest.json`, change `"buildos_version"` from `"0.1.0"` to `"0.2.0"`. Change no other field. If you use an npm install of `build-os` (in the project's `node_modules` folder, or a global install), install `0.2.0` there too. The wrapper uses an install only when it has the pinned version.
 
@@ -532,6 +547,8 @@ Run the commands in the project folder. They use a work folder, `../buildos-upgr
    - `.os/scripts/buildos help` lists `extract`, `fitgap`, and `export`.
    - `.os/scripts/buildos export azure-boards adapters` lists `dynamics-365-ce`, with exit code `0`. This command comes from a refreshed skill.
    - For each of the three skills, in the project and in each app folder that has it, the step 3 command with `new` in place of `old` prints nothing, or only your own changes. For example: `git --no-pager diff --no-index --stat ../buildos-upgrade/new/.os/skills/fit-gap-analysis .os/skills/fit-gap-analysis`.
+   - The same is true for the router: `git --no-pager diff --no-index --stat ../buildos-upgrade/new/.os/skills/AGENTS.md .os/skills/AGENTS.md`.
+   - Each file on your list from step 3 is in place: your change is in the new file, or your added file is back.
 
    Then commit. Keep the work folder until you are sure that the new version works for you, then delete it.
 
@@ -563,6 +580,7 @@ The rollback puts back the version file and the three skills from the backup of 
    ```sh
    git --no-pager diff --no-index --stat ../buildos-upgrade/backup/os-skills/fit-gap-analysis .os/skills/fit-gap-analysis
    git --no-pager diff --no-index --stat ../buildos-upgrade/backup/claude-skills/buildos-bulk-extract .claude/skills/buildos-bulk-extract
+   git --no-pager diff --no-index --stat ../buildos-upgrade/backup/os-skills/AGENTS.md .os/skills/AGENTS.md
    ```
 
    Each command must print nothing. If one lists files and exits with code `1`, a `0.2.0` skill is still in place there: do step 2 or 3 again for that skill.
