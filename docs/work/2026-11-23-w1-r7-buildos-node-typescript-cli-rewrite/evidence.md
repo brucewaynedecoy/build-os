@@ -8832,3 +8832,34 @@ The rollback smoke runs only the published `0.1.0` and `0.2.0`, whose wrappers k
 - An interactive Command Prompt (a person who types the wrapper, then `echo %ERRORLEVEL%`): not measured; the driver measures a batch file.
 - Windows PowerShell 5.1 (`powershell.exe`): only `pwsh` ran.
 - Exit codes outside `0` to `127`, and codes from a real BuildOS failure other than a usage error: the fake program covers the five codes above.
+
+### The Run of the Fix
+
+The `buildos-ci` run of the fix commit (`de7e8b6`), [46068381377](https://github.com/brucewaynedecoy/build-os/actions/runs/46068381377), passed on all jobs. On `windows-latest` the unit tests had 2,531 tests: 2,402 passed, 0 failed, 129 skipped; the golden harness had 299 tests: 294 passed, 0 failed, 5 skipped. The existing Windows wrapper tests of `test/wrappers.test.ts` (arguments with `%`, `^`, double quotes, `&`, and `!`, the loop guard, the Node.js messages, and the `PATH` rules) passed with the fixed wrapper. The new cases, on Windows:
+
+| Wrapper | Route | `cmd /c` | `cmd /c call` | PowerShell `&` |
+| --- | --- | --- | --- | --- |
+| `buildos.cmd` | local install, global install, `npx` (npm's own `npx.cmd`) | `0`, `1`, `2`, `7`, `127` kept (passed) | kept (passed) | kept (passed) |
+| `buildos-intake.cmd`, `buildos-discovery.cmd`, `buildos-design.cmd` | local install | kept (passed) | kept (passed) | kept (passed) |
+| The same three | `npx` (npm's own `npx.cmd`) | `2` kept (passed) | not run | not run |
+| `buildos.cmd`, a caller variable `ERRORLEVEL=0` | local install | `2` kept (passed) | not run | not run |
+
+Under one `cmd.exe`, on the three routes, `%ERRORLEVEL%` was the program's code after the helper started directly, after `call` of the wrapper, and after a nested `cmd /c` of the wrapper, for each of the five codes. The seven probes gave the same codes as in the first run, now asserted. On Linux and macOS the `sh` cases passed.
+
+### Check Results (Pull Request 16)
+
+On 2026-11-27, macOS, from `toolkits/buildos/` and the repository root, the sandbox off for the tests.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck`; `node scripts/check-dependencies.ts`, `--installed`; `node scripts/check-no-python.ts` | passed each |
+| `npm test` (unit, golden, and conversion-eval tests) | 2,974 tests: 2,961 passed, 0 failed, 13 skipped (the Windows-only cases skip on macOS) |
+| `npm run build`; `npm pack --dry-run --json` | passed; 168 files (unchanged); `dist/system/.os/scripts/buildos.cmd` is byte for byte `system/.os/scripts/buildos.cmd` |
+| `node tools/build-guide.mjs` (from `guide/`) | `Wrote BuildOS-Guide.html (692 KB) from 22 documents.`, no warning |
+| The real-list deny-list scan, `node scripts/check-deny-list.mjs --root ../.. --pack .`, with the list in the environment, outside the repository | exit 0: 2,837 files, 0 matches |
+| `make-docs project paths validate` | valid, 0 failing findings |
+| `make-docs project markdown validate` | 184 findings, the same count as on `main`; none new |
+| `buildos-ci` run 46066863403 (`d702c32`, the tests only) | failed on `windows-latest` only: 19 new tests (above); passed on Linux and macOS; `test/rollback-smoke.test.ts` "finds both guide sections" passed on Windows |
+| `buildos-ci` run 46068381377 (`de7e8b6`, the fix) | passed on all jobs |
+
+No golden capture ran. No workflow was started by hand.
