@@ -9,8 +9,11 @@
 // Each step runs in a new empty folder below one temporary root. The npm
 // cache is a new empty folder in that root, npm install scripts are off
 // (npm_config_ignore_scripts=true), and npm's update notice is off, so stderr
-// holds only what BuildOS (or the wrapper) prints. The captured output is
-// cleaned before it is written: the temporary root, the home folder, and the
+// holds only what BuildOS (or the wrapper) prints. Every check reads the raw
+// output (only CRLF line ends made LF), so a user or folder name that the
+// cleaning replaces cannot change a result (follow-up F-P8-13: an account
+// named buildos made a correct legacy notice fail). The captured output is
+// cleaned before it is written to the report: the temporary root, the home folder, and the
 // user name are replaced by {TMP}, {HOME}, and {USER}, and each step's
 // project folder by {PROJECT}; the converter timestamp and the init time are
 // replaced by {TIMESTAMP}. It writes <out>/smoke-<os>.json and
@@ -133,6 +136,8 @@ function newFolder(name: string): string {
 }
 
 const steps: Step[] = [];
+/** The project folder of each step, for the cleaning of its report. */
+const stepFolder = new WeakMap<Step, string>();
 
 function run(name: string, shown: string, file: string, args: string[], expected: number, cwd: string, opts: { env?: NodeJS.ProcessEnv; shell?: boolean; verbatim?: boolean } = {}): Step {
   const options: SpawnSyncOptions = {
@@ -152,12 +157,14 @@ function run(name: string, shown: string, file: string, args: string[], expected
     command: clean(shown, cwd),
     exit: r.status,
     expected_exit: expected,
-    stdout: clean(String(r.stdout ?? ""), cwd),
-    stderr: clean(String(r.stderr ?? "") + (r.error ? `\n[spawn error] ${r.error.message}` : ""), cwd),
+    // Raw output for the checks; cleaned only for the report (F-P8-13).
+    stdout: String(r.stdout ?? "").replace(/\r\n/g, "\n"),
+    stderr: (String(r.stderr ?? "") + (r.error ? `\n[spawn error] ${r.error.message}` : "")).replace(/\r\n/g, "\n"),
     checks: [{ check: `exit code ${expected}`, ok: r.status === expected }],
     ok: false,
   };
   steps.push(step);
+  stepFolder.set(step, cwd);
   return step;
 }
 
@@ -293,6 +300,8 @@ const project = newFolder("project");
 
 for (const s of steps) s.ok = s.checks.every((c) => c.ok);
 const passed = steps.every((s) => s.ok);
+// The checks are done: only now is the output cleaned, for the report.
+const reported = steps.map((s) => ({ ...s, stdout: clean(s.stdout, stepFolder.get(s)), stderr: clean(s.stderr, stepFolder.get(s)) }));
 const os = process.platform === "darwin" ? "macos" : process.platform === "win32" ? "windows" : process.platform;
 const npmVersion = spawnSync(npx.file, [...npx.prefix, "--version"], { env: baseEnv, encoding: "utf8", shell: npx.shell, cwd: root }).stdout?.toString().trim() ?? "";
 const report = {
@@ -304,12 +313,12 @@ const report = {
   npm_cache: "a new empty folder below {TMP}",
   paths_replaced: "{TMP} temporary root, {PROJECT} step folder, {HOME} home folder, {USER} user name, {TIMESTAMP} times",
   passed,
-  steps,
+  steps: reported,
 };
 mkdirSync(out, { recursive: true });
 writeFileSync(join(out, `smoke-${os}.json`), `${JSON.stringify(report, null, 2)}\n`);
 const md: string[] = [`# build-os@${version} smoke on ${os}`, "", `Node ${process.version}, npm ${npmVersion}, ${process.platform} ${process.arch}. Result: ${passed ? "passed" : "FAILED"}. Paths are replaced as stated in the JSON report.`, ""];
-for (const s of steps) {
+for (const s of reported) {
   md.push(`## ${s.ok ? "pass" : "FAIL"}: ${s.name}`, "", `Command: \`${s.command}\` (exit ${s.exit}, expected ${s.expected_exit})`, "");
   for (const c of s.checks) md.push(`- ${c.ok ? "ok" : "FAILED"}: ${c.check}`);
   md.push("", "stdout:", "", "```text", s.stdout.replace(/\n$/, ""), "```", "", "stderr:", "", "```text", s.stderr.replace(/\n$/, ""), "```", "");

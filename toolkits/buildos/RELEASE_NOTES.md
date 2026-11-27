@@ -1,5 +1,34 @@
 # BuildOS Release Notes
 
+## 0.2.0 (draft, not released)
+
+This section is a draft (W1 R7 P9 t12). The version is not set and nothing is published. The final notes come with the release.
+
+### What is new
+
+- Three new commands for skills: `buildos extract bulk` (the `buildos-bulk-extract` skill), `buildos fitgap` (the `fit-gap-analysis` skill; it writes the Excel workbook itself), and `buildos export azure-boards` (the `buildos-export-azure-boards` skill). Each gives the result of the skill script it replaces on every test fixture, except where a script result was wrong or lost data; those differences are approved and listed in the BuildOS repository.
+- The skills run these commands through the project wrapper `.os/scripts/buildos` and ship no script of their own. `buildos-bulk-extract` and `fit-gap-analysis` no longer need Python or `openpyxl`.
+- The three commands read only files inside the project folder. `fitgap` and `export azure-boards` write outside it only with `--allow-outside-root`.
+- `buildos intake` takes `--json` and prints the same envelope as the other domains.
+
+### Not in this draft yet
+
+- `capability-matrix` still needs Python 3 for its own tool. This is a temporary exception, not a `0.2.0` feature: the owner decided on 2026-11-26 to build a BuildOS command for that tool in `0.2.0`, and the exception goes away when the command is in. Until then, the skill tells the agent to write and run its own Python tool.
+
+### Upgrade a project from 0.1.0
+
+`0.2.0` changes three skills (`buildos-bulk-extract`, `buildos-export-azure-boards`, and `fit-gap-analysis`) and the skills router `.os/skills/AGENTS.md`. Every other file that `buildos init` copied is the same as in `0.1.0`. The new skills call commands that `0.1.0` does not have, so change the version and these skills together, in the project and in each copy that an agent app installed. `buildos init` does not do this, and BuildOS has no update command yet.
+
+The steps, with a backup first and the rollback, are in the BuildOS guide: chapter 4, "Install and configure your instance", section "From 0.1.0 to 0.2.0", with its part "Roll back from 0.2.0 to 0.1.0" (`guide/content/04-install-and-configure-your-instance.md` in the BuildOS repository). They refresh only those three skills, by name. They do not touch a skill that you added, and they show how to find and keep a change that you made to one of the three.
+
+### Export and spreadsheets
+
+- A CSV field that starts with `=`, `+`, `-`, or `@` is kept as it is, so the file imports into Azure Boards unchanged. To inspect such a CSV, read it as plain text or with a CSV reader that treats every cell as text. Open it in a spreadsheet program only when you trust its manifest.
+
+### Legacy command names end in 0.3.0
+
+`buildos-intake`, `buildos-discovery`, and `buildos-design` still work in `0.2.0`, with the same one-line notice. **They stop working in `0.3.0`.** Use `buildos intake`, `buildos discovery`, and `buildos design` (in a project: `.os/scripts/buildos intake` and the others).
+
 ## 0.1.0
 
 `0.1.0` is the first npm release of BuildOS. It replaces the earlier Go tools with one `buildos` command for Node.js 24 or newer, a one-command project setup, and the BuildOS skills in the package.
@@ -56,7 +85,7 @@ Note: the command name "buildos-intake" goes away in BuildOS 0.3.0. Use "buildos
 ### Known limits
 
 - Make Docs 2.0.9 cannot set up a folder that already has an `AGENTS.md` or `CLAUDE.md` that it did not write. A new project where you answer No to Make Docs gets those files from BuildOS, so Make Docs 2.0.9 cannot be set up there later. `buildos init` says this before you answer, and every output says it where it matters. A newer Make Docs may lift this limit.
-- Three skills still need Python 3 for their own tools until `0.2.0`: `buildos-bulk-extract`, `fit-gap-analysis` (its workbook step also needs `openpyxl`), and `capability-matrix`. No BuildOS command needs Python. `0.2.0` plans `buildos extract bulk`, `buildos fitgap`, and `buildos export azure-boards`.
+- Three skills still need Python 3 for their own tools in `0.1.0`: `buildos-bulk-extract`, `fit-gap-analysis` (its workbook step also needs `openpyxl`), and `capability-matrix`. No BuildOS command needs Python. The unpublished `0.2.0` draft implements `buildos extract bulk`, `buildos fitgap`, and `buildos export azure-boards`, so that the first two skills need only Node.js there. `capability-matrix` keeps its own Python tool until BuildOS has a command for it; that command is planned for `0.2.0`.
 - When `buildos init` replaces a file (`AGENTS.md`, `CLAUDE.md`, `.gitignore`, or a Go-era wrapper), the new file keeps its permission bits but not extended access control lists (ACLs) or extended attributes. Set an ACL again after `buildos init` if you rely on one.
 - Windows: Command Prompt is the supported shell for the commands BuildOS shows; there is no PowerShell form. A `!` in a folder name breaks a shown command when delayed expansion is on (`cmd /v:on`). `buildos init` cannot check a folder's access rules before it writes on Windows; a denied write is found during the run and undone. A file system without hard links reports one link, so the hard link check cannot see a link there.
 - A global install is used only when it is an npm install of exactly the pinned version; otherwise the wrapper fetches the pinned version. Acceptance goes by layout, not by tool: a package folder `node_modules/build-os` with a matching `package.json` counts whatever tool made it (for example a local pnpm or Yarn link to such a folder). A shim script that only starts the package (as pnpm, Yarn, and Volta make for a global install) does not count, and the wrapper fetches the pinned version through `npx` instead. Every start sets `BUILDOS_REQUIRE_VERSION` to the pin, and BuildOS stops itself with a plain message (exit code 3) when another version starts. The project scripts `.os/scripts/buildos-intake`, `buildos-discovery`, and `buildos-design` print the legacy-name notice once, first on stderr, and go away in `0.3.0`.

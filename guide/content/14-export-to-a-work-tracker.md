@@ -4,13 +4,13 @@ This page turns your finished work backlog into a file your team's project-track
 
 ## What you need first
 
-Read [Build the work backlog](13-build-the-work-backlog.md) first. This page assumes it. You need one finished work backlog under `docs/work/`, an agent tool you can install a skill into, and Node.js on the machine that runs the export.
+Read [Build the work backlog](13-build-the-work-backlog.md) first. This page assumes it. You need one finished work backlog under `docs/work/`, an agent tool you can install a skill into, and Node.js 24 or newer on the machine that runs the export, which every BuildOS command needs.
 
 ## Where the exporter lives
 
 A **skill** is a packaged instruction set your agent tool can use. The exporter is a skill named `buildos-export-azure-boards`. It ships in the BuildOS package, and `buildos init` copies it into your project at `.os/skills/buildos-export-azure-boards/`, with every other BuildOS skill.
 
-The exporter is a companion piece. The BuildOS flow ends at the work backlog directory, and no BuildOS command writes an export file. Your agent runs the skill's export script, and the skill ships with a validation script you can run yourself.
+The exporter is a companion piece. The BuildOS flow ends at the work backlog directory, and the export is a separate step. From BuildOS `0.2.0`, the skill runs the command `buildos export azure-boards` through the project wrapper, and you can run the same command yourself to check a file. In a project that pins BuildOS `0.1.0`, the skill runs its own Node.js script instead, with the same subcommands; its `SKILL.md` names it.
 
 Run every command in this article from your project root.
 
@@ -37,7 +37,7 @@ A single backlog directory can produce well over a hundred work items, arriving 
 
 - One work backlog directory under `docs/work/`, containing `00-index.md` and every phase file its index lists.
 - The skill installed into your agent tool.
-- Node.js, to run the export script. **Node.js** is a runtime that runs JavaScript programs outside a browser, and the export script is one. Install it from `nodejs.org`, then confirm it with `node --version`.
+- Node.js 24 or newer. **Node.js** is a runtime that runs JavaScript programs outside a browser, and BuildOS is one. Install it from `nodejs.org`, then confirm it with `node --version`. Nothing else is needed: no Python.
 - The column list your tracker expects. See step 3 below for the fastest way to get it.
 - A tracker project you are allowed to import into, and a decision about which tracker that is.
 
@@ -47,22 +47,24 @@ A single backlog directory can produce well over a hundred work items, arriving 
 
 1. **Let your agent find the skill.** Ask your agent to use the `buildos-export-azure-boards` skill. The router `.os/skills/AGENTS.md` tells it how to install one skill into the place its own app keeps skills, so you do not need to know where that is.
 
-2. **Check the script runs.** Open a terminal in your project root, and run:
+2. **Check the command runs.** Open a terminal in your project root, and run:
 
    ```sh
-   node .os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs adapters
+   .os/scripts/buildos export azure-boards adapters
    ```
 
-   It prints a short JSON block listing the registered adapters and the parameters each one requires. One adapter is registered today.
+   It prints a short JSON block listing the registered adapters and the parameters each one requires. One adapter is registered today. On Windows, run `.os\scripts\buildos.cmd` with the same arguments, and write each command below on one line: Command Prompt does not read the `\` line breaks.
+
+   In a project that pins BuildOS `0.1.0`, the command does not exist yet. In each command on this page, write `node .os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs` in place of `.os/scripts/buildos export azure-boards`. The subcommands (`adapters`, `emit`, `validate`) and their options are the same.
 
 3. **Get the column list from the destination, not from documentation.** Open your tracker, run a saved query that returns some work items, export it, delete the columns you do not want, and save the result as a CSV. Hand that file to your agent as the format it must produce. The column template shipped with the skill was produced exactly this way, because a file from the destination reflects what the tracker will actually accept.
 
 4. **Smoke-test the exporter before you trust it with your own backlog.** The skill ships a synthetic example. From that same directory:
 
    ```sh
-   node .os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs emit \
+   .os/scripts/buildos export azure-boards emit \
      --input .os/skills/buildos-export-azure-boards/assets/synthetic-manifest.json \
-     --output /tmp/azure-boards.csv \
+     --output workspace/azure-boards.csv \
      --profile target17-new
    ```
 
@@ -71,7 +73,7 @@ A single backlog directory can produce well over a hundred work items, arriving 
    ```json
    {
      "operation": "emit",
-     "output": "/tmp/azure-boards.csv",
+     "output": "<project>/workspace/azure-boards.csv",
      "valid": true,
      "profile": "target17-new",
      "rowCount": 6,
@@ -87,25 +89,27 @@ A single backlog directory can produce well over a hundred work items, arriving 
    }
    ```
 
-   The file it writes is byte-for-byte identical to `.os/skills/buildos-export-azure-boards/assets/synthetic-golden-example.csv`. If it is not, stop and fix your install before going further.
+   `<project>` stands for your project folder. The command writes only inside the project; an `--output` outside it needs `--allow-outside-root`. The file it writes is byte-for-byte identical to `.os/skills/buildos-export-azure-boards/assets/synthetic-golden-example.csv`. If it is not, stop and fix your install before going further.
 
 5. **Ask your agent to run the export**, naming the backlog directory you want. The skill reads the routing files in the tree, the backlog's `00-index.md`, and every phase file listed in its phase map.
 
 6. **Answer its questions.** It will stop and ask you several things before it writes anything. The next section explains each one. Answer them yourself rather than letting the agent guess, because a guessed answer produces work items that look correct and cannot be built.
 
-7. **Let it write the manifest and emit the file.** The agent turns the backlog into a JSON **manifest**, meaning a plain description of every row with no formatting in it, and then runs the emit command against that manifest. The script builds the CSV from the manifest, so the formatting is produced by a script rather than written by the agent.
+7. **Let it write the manifest and emit the file.** The agent turns the backlog into a JSON **manifest**, meaning a plain description of every row with no formatting in it, and then runs the emit command against that manifest. BuildOS builds the CSV from the manifest, so the formatting is produced by the command rather than written by the agent.
 
 8. **Validate the file.** From that same directory again:
 
    ```sh
-   node .os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs validate \
+   .os/scripts/buildos export azure-boards validate \
      --input <your-export.csv> \
      --profile target17-new
    ```
 
-   A passing run prints `"valid": true` with an empty `errors` list and your row counts by type. A failing run prints the reason on the error stream and exits with status 1.
+   A passing run prints `"valid": true` with an empty `errors` list and your row counts by type. A failing run prints the reason and exits with status 4.
 
-9. **Open the CSV and read it.** Check the headers, the row count, the title columns, and two or three descriptions in full. The script cannot do this part for you. See "What the script can and cannot verify" below.
+9. **Open the CSV and read it.** Check the headers, the row count, the title columns, and two or three descriptions in full. The command cannot do this part for you. See "What the command can and cannot verify" below.
+
+   > **Watch out.** The CSV keeps a field that starts with `=`, `+`, `-`, or `@` as it is, so the file imports into Azure Boards unchanged. A spreadsheet program may read such a field as a formula and run it. Import the file with Azure Boards' CSV import. To look inside it, read it as plain text or with a CSV reader that treats every cell as text. Open it in a spreadsheet program only when you trust every text in the manifest.
 
 10. **Review the writing before you import.** Generated titles and descriptions need a human read. See [Build the work backlog](13-build-the-work-backlog.md) and the section below.
 
@@ -129,17 +133,17 @@ New items carry no identifier, no state and no assigned user on purpose, because
 
 The base skill decides which part of your backlog becomes which kind of row. An **adapter** decides how the text inside those rows has to be written for one particular target platform: how deep each section must go, what properties each item must carry, and what its title has to look like.
 
-An adapter is running code, not a note to the agent. Each one is a JavaScript file under `.os/skills/buildos-export-azure-boards/scripts/adapters/`, registered with the exporter, alongside a Markdown file under `.os/skills/buildos-export-azure-boards/adapters/` that states its authoring rules for you and your agent to read.
+An adapter is running code, not a note to the agent. Its checks are part of the `buildos export azure-boards` command, alongside a Markdown file under `.os/skills/buildos-export-azure-boards/adapters/` that states its authoring rules for you and your agent to read.
 
 One adapter is registered today. It targets one business platform and the low-code components built on it. It sets a fixed title pattern, a fixed set of work-type codes, naming and quoting conventions, and a depth requirement for the technical section. Its code runs during `emit`, and its errors stop the file being written. Run the `adapters` command from step 2 to see its id and the one parameter it requires.
 
 You do not have to use an adapter. If your backlog describes ordinary software work, or work across more than one platform, choose none. The base contract still gives you the full hierarchy, the three description sections, acceptance criteria, and the source trace. What you give up is the platform-specific title grammar and the platform-specific depth checks. The skill documents that fallback as a supported route.
 
-## What the script can and cannot verify
+## What the command can and cannot verify
 
 This split matters, so read it before you trust a green result.
 
-**Structure is what the script checks.**
+**Structure is what the command checks.**
 
 - The header row matches the profile exactly.
 - The file is UTF-8 with a byte-order mark. A **byte-order mark** is a few invisible bytes at the start of a file that tell a spreadsheet program which text encoding it is reading.

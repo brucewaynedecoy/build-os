@@ -57,7 +57,7 @@ METHOD, for each capability:
    - migration_note: what the organisation would actually do: configure X, accept the process change,
      wait for GA, build, buy, descope.
 
-The verdict, fit score and priority are computed from your marks by a script. Do not write them. For
+The verdict, fit score and priority are computed from your marks by BuildOS. Do not write them. For
 your awareness: all met is native; all met or configured is configurable; all unreleased is unreleased;
 only not_met and unreleased is gap; anything else is partial.
 

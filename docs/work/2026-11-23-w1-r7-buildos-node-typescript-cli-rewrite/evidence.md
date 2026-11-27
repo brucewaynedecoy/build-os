@@ -5417,7 +5417,7 @@ Other printed commands of the same kind (a bare `buildos ...` that BuildOS shows
 
 The no-TTY `init` question is not in this list: it shows `npx -y build-os@0.1.0 init ...`, which runs. The guide's [chapter 18](../../../guide/content/18-what-is-not-built-yet.md) also names a bare `buildos entities rebuild-index --mode strict --apply` as a workaround; that is guide text, not printed output, and is left for F-P8-11.
 
-Follow-up F-P8-11 (candidate for `0.1.1` or `0.2.0`; owner decision open): the commands that BuildOS prints as a fix use a bare `buildos`, which does not run without a global install. The owner decides whether to fix it, in which release, and in which form (for example the project wrapper form, or the `npx -y build-os@<version>` form), and approves a parity exception for the Go-golden cases (rows 1 and 2 of the table above; row 3 is partly under PE-001). This record does not decide it.
+Follow-up F-P8-11 (candidate for `0.1.1` or `0.2.0`; owner decision open): the commands that BuildOS prints as a fix use a bare `buildos`, which does not run without a global install. The owner decides whether to fix it, in which release, and in which form (for example the project wrapper form, or the `npx -y build-os@<version>` form), and approves a parity exception for the Go-golden cases (rows 1 and 2 of the table above; row 3 is partly under PE-001). This record does not decide it. Status (owner decision 2026-11-26): fixed in `0.2.0`, with no `0.1.1`; BuildOS prints the fix command as `npx -y build-os@<running version> …`. A separate pull request does it; see [P9 Stage 3 Review Round 1](#p9-stage-3-review-round-1-2026-11-26).
 
 Disposition for A71: the smoke tests pass on three operating systems as the steps define them (first part met, verified); the steps do not run the printed fix commands, and one of them is the defect F-P8-11 above. That defect is not a difference from the P6 reviewed output (`entities validate` has no P6 capture, and its output equals the Go goldens), so it does not change the output-match count. The second part ("the captured output matches the P6 reviewed output except for version strings") is not met as written: the 5 differences in rows 2, 3, 6a, 8, and 9 are not version strings. Each traces to a later recorded owner decision, phase scope, or review fix, but the criterion is not re-worded. A71 needs the owner to accept these 5 differences, or it stays not met.
 
@@ -5534,8 +5534,8 @@ Tasks: no checkbox changes. Under the rule in [00-index.md](00-index.md), a task
 - F-P8-09: prove rollback by version pin through npx to an earlier published version (`0.2.0` back to `0.1.0`) on a copied project, on three systems, when `0.2.0` exists. Owner: the `0.2.0` release phase.
 - F-P8-10: on Windows, the shown `entities` remediation command doubles each backslash (Go `%q` parity). Check that Command Prompt runs it as shown, and decide whether a parity exception is wanted.
 - F-P8-11: the commands that BuildOS prints as a fix use a bare `buildos` (first `entities rebuild-index`; also `buildos help`, `buildos validate`, `buildos init`, and the three legacy-name notices in their messages), which exits 127 for an adopter with no global install. Candidate for `0.1.1` or `0.2.0`; owner decision open, with a parity exception for the Go-golden cases. See [Defect: the Printed Rebuild Command Needs a Global Install (F-P8-11)](#defect-the-printed-rebuild-command-needs-a-global-install-f-p8-11).
-- F-P8-12: `toolkits/buildos/scripts/measure-npx-first-run.ts` does not pin the child `PATH` to the Node that runs the script, so the BuildOS CLI that `npx` starts could run under another Node (the script starts `npx` itself with the Node that runs the script). For the `PERF-002` pass of 2026-11-26 the raw JSON records Node 24.22.3 and the launch command put that Node first on `PATH`, so the result stands. Pin the child `PATH` in the next revision of the instrument.
-- F-P8-13: `toolkits/buildos/scripts/published-smoke.ts` cleans paths before it checks the legacy notice, so an account named `buildos` on the machine could make a correct notice fail the check. The three CI smoke jobs passed. Compare the raw stderr first, then clean the saved report.
+- F-P8-12: `toolkits/buildos/scripts/measure-npx-first-run.ts` does not pin the child `PATH` to the Node that runs the script, so the BuildOS CLI that `npx` starts could run under another Node (the script starts `npx` itself with the Node that runs the script). For the `PERF-002` pass of 2026-11-26 the raw JSON records Node 24.22.3 and the launch command put that Node first on `PATH`, so the result stands. Pin the child `PATH` in the next revision of the instrument. Status (2026-11-26): fixed in W1 R7 P9 Stage 3; see [P9 Stage 3](#p9-stage-3-skills-no-python-check-and-docs-2026-11-26).
+- F-P8-13: `toolkits/buildos/scripts/published-smoke.ts` cleans paths before it checks the legacy notice, so an account named `buildos` on the machine could make a correct notice fail the check. The three CI smoke jobs passed. Compare the raw stderr first, then clean the saved report. Status (2026-11-26): fixed in W1 R7 P9 Stage 3; see [P9 Stage 3](#p9-stage-3-skills-no-python-check-and-docs-2026-11-26).
 
 ### Check Results (Post-Publication Checks)
 
@@ -6367,3 +6367,317 @@ From `toolkits/buildos/` unless noted. macOS arm64, Node 26.13.1, Python 3.14.10
 
 - A77: met (P9-O2 closed for `b49a06d`).
 - The commit that records this run changes only docs, and its push starts new runs. This record cites the run of `b49a06d`, the commit that holds the code.
+
+## P9 Stage 3: Skills, No-Python Check, and Docs (2026-11-26)
+
+Stage 3 t9 to t12, and the P8 follow-ups F-P8-12 and F-P8-13, on the branch `rewrite/p9-stage-3`, from `90c20bc` (the head of pull request 6, which holds pull request 5). Neither pull request was merged, so this branch is stacked on both and must merge after them. The orchestrator started this work before the P8 exit gate (departure recorded in the P9 entry gate). t13 (version, `release-candidates.json`, dry run, tag, release, publication) is not started. macOS arm64, Node 26.13.1, unless a row says otherwise.
+
+### What Changed (Stage 3)
+
+| Task | Change | Files |
+| --- | --- | --- |
+| t9 | The three skills call the commands through the project wrapper: `buildos-bulk-extract` runs `.os/scripts/buildos extract bulk --root . <subcommand>` (13 command lines); `fit-gap-analysis` runs `<buildos> fitgap <subcommand> --root <project>`, with `<buildos>` the wrapper (`.cmd` on Windows) and the owner palette at `<project>/.os/skills/fit-gap-analysis/config/owner-colors.json`; `buildos-export-azure-boards` runs `.os/scripts/buildos export azure-boards <subcommand>`, with example outputs under `workspace/` (the command writes only inside the project). Each skill names the Windows form. The skills router says that only `capability-matrix` still needs Python. The five script files are deleted. The Azure Boards skill, its CSV contract, and its delivery step carry the CSV formula-prefix note (F-P9-02). The adapter registry says that a new adapter needs a BuildOS release, since the checks are in the command. | `system/.os/skills/AGENTS.md`, the three `SKILL.md` files, `fit-gap-analysis/references/formats.md` and `scoring-brief.md`, `buildos-export-azure-boards/references/azure-boards-csv-contract.md`, `adapters/00-adapter-registry.md`, `adapters/dynamics-365-ce/ADAPTER.md` |
+| t9 tests | The owner-color test reads the `buildos fitgap` code (`src/core/fitgap/`) in place of `fitgap.py`; the Azure Boards golden-CSV test runs `buildos export azure-boards emit` in a new project, as the skill does; the package test now expects no Python file and no skill script file; the output-safety test plants its owner key in the fit-gap workbook code; two example outputs are classified for the skill path test. | `toolkits/buildos/test/skills.test.ts`, `package.test.ts`, `test-output-safety.test.ts` |
+| t10 | `scripts/check-no-python.ts` fails on a Python file or a line that runs Python in `system/.os/skills/`, with one named exception, `capability-matrix/`, status "owner decision open (F-P9-04)". An exception that matches nothing fails too. It prints a tag of each file and a line number, never the line. It runs in the CI `test` job and in the new `no-python` job. | `toolkits/buildos/scripts/check-no-python.ts`, `test/check-no-python.test.ts`, `.github/workflows/buildos-ci.yml` |
+| t11 | The CI job `no-python` (Ubuntu, macOS, Windows; Node 24) builds and packs the package, makes a project with `buildos init --skip-make-docs`, and installs the tarball into it (`--offline --ignore-scripts`). Then, with a `PATH` that holds only a copy of `node` (and `sh`; on Windows, `System32`), `scripts/no-python-smoke.ts` stops with exit 1 when a `python`, `python3`, or `py` program is on `PATH`, runs the skills' commands through the project wrapper (`help` must list the three domains, so an `npx` fallback to `0.1.0` cannot pass; both skill CSVs byte for byte), and runs every fixture case of the three commands through the installed bin, each step with the exit code the goldens give and writing each file the golden step wrote; `test/skill-script-parity.test.ts` runs with the same `PATH`. The job has the workflow's read-only token, no secret, pinned actions, and installs with `--ignore-scripts`; `test/check-no-python.test.ts` checks this. | `toolkits/buildos/scripts/no-python-smoke.ts`, `.github/workflows/buildos-ci.yml`, `test/check-no-python.test.ts` |
+| t12 | The guide chapters 1, 3, 4, 7, 10, 14, 16, 17, and 18 describe the three commands from `0.2.0` and the `0.1.0` state beside them; chapter 14 shows the `buildos export azure-boards` commands, their real output, exit code 4 on a failed check, and the formula-prefix warning. The guide app is rebuilt. The package README lists the three commands. `RELEASE_NOTES.md` has a `0.2.0` section marked draft that repeats the `0.3.0` legacy-name notice, and the `0.1.0` Python sentence is corrected (below). `SECURITY.md` covers the removed scripts, the no-Python check, and the new job. The maintainer guide layout names the new domains and scripts, and its Future Coverage item for `0.2.0` is resolved. | `guide/content/*.md`, `guide/BuildOS-Guide.html`, `toolkits/buildos/README.md`, `RELEASE_NOTES.md`, `SECURITY.md`, `docs/assets/maintainer/buildos-toolkit-cli-development.md` |
+| F-P8-12 | Every child of `scripts/measure-npx-first-run.ts` starts with the folder of the Node.js that runs the script first on `PATH` (`scripts/node-first-path.ts`, one PATH key on Windows). Before it measures, the script checks that `node` on that `PATH` is the same Node.js (version and real path) and records it as `child_node`. The instrument SHA-256 changes, so the next `PERF-002` pass records the new one; the 2026-11-26 result stands with its recorded instrument hash. | `toolkits/buildos/scripts/measure-npx-first-run.ts`, `scripts/node-first-path.ts`, `test/post-publication-scripts.test.ts` |
+| F-P8-13 | `scripts/published-smoke.ts` keeps the raw output (CRLF made LF) for every check, and cleans it only for the saved JSON and Markdown report, after the last check. | `toolkits/buildos/scripts/published-smoke.ts`, `test/post-publication-scripts.test.ts` |
+
+Deleted: `system/.os/skills/buildos-bulk-extract/scripts/work.py`, `system/.os/skills/buildos-bulk-extract/tests/test_work.py`, `system/.os/skills/fit-gap-analysis/scripts/fitgap.py`, `system/.os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs`, and `system/.os/skills/buildos-export-azure-boards/scripts/adapters/dynamics-365-ce.mjs`. These are the five script files in the tree; the phase file names them (t9). The golden capture still reads them from the first public commit `085927e3c1324fc73fe57af9493ca0b01fcaed18`, by design.
+
+Counts: the package tarball has 168 files (173 in `0.1.0`; the five scripts are gone, nothing is added). `system/` has 158 files (163), `system/.os/skills/` has 59 (64). The `buildos init --skip-make-docs` plan lists 224 paths (234: the five files and their five folders). The guide, `SECURITY.md`, and the skills paragraph state the new file counts; no document stated the 234.
+
+### Departures and Notes (Stage 3)
+
+- Order: Stage 3 ran before the P8 exit gate (orchestrator decision, recorded in the entry gate).
+- Superseded by review round 1 (the next item was weaker proof than A80 asks for): the `no-python-image` job now runs the same smoke in the official `node:24-slim` image, pinned by digest, which has no Python at all; see [P9 Stage 3 Review Round 1](#p9-stage-3-review-round-1-2026-11-26).
+- t11 "a CI image without Python": the GitHub runner images have Python installed. The job does not remove it; it runs every check with a `PATH` that finds no Python, and proves that on each of the three systems. A Linux container image without Python was not used, so no Docker image digest had to be pinned. A program that names an absolute path could still reach Python; the three commands start no program at all (in `src/`, only `init` loads the process adapter).
+- t12 "draft `0.2.0` release notes": the brief said not to write the final notes or set the version. The phase file asks for a draft, so `RELEASE_NOTES.md` has a section marked draft; the version and the final text are t13.
+- `test/skill-script-parity.test.ts` counts a file the golden step removed (state `null`) as equal to a file BuildOS did not touch (`stateEqual`, `a ?? null`). So in `fitgap/packages` step 1 the golden's removal of the stale `pkg-09.json` and BuildOS keeping it (SD-20) compare equal. SD-20 approves that difference, so no result is wrong, but the parity test would not see an unapproved removal difference either. The smoke script follows the same rule. New follow-up F-P9-07; the parity test was not changed.
+- The smoke script compares exit codes and written files, not text, because it runs with the real clock: in `bulk-extract/replace-and-decide` step 17 (`decide`), BuildOS rewrites the review file in some runs and not in others, because the time it writes can equal the one the step before wrote (5 of 8 local runs). The parity test, with its fixed clock, compares the text and the files byte for byte.
+- F-P8-11 (bare `buildos` in printed fix commands) is not changed: it changes golden output and needs an owner decision. The skill text itself uses the wrapper form.
+
+### Owner Decisions Needed (Stage 3)
+
+- F-P9-04, `capability-matrix`: decided by the owner on 2026-11-26: option B, build the command in `0.2.0` (see [P9 Stage 3 Review Round 1](#p9-stage-3-review-round-1-2026-11-26)). The question as asked: (A) ship `0.2.0` with the named exception, or (B) build a command for its tool first. The orchestrator recommended A. Under A: A79 needs re-wording to allow the named exception, PRD 20 Command Surface ("After `0.2.0`, an adopter needs Node and nothing else. No user-facing command needs Python.") and PRD 20 Packaged Skills ("Until `0.2.0`, three skills still need Python 3 ...") need a change through PRD change management to name `capability-matrix`, and the `RELEASE_NOTES.md` sentence below stands. Under B: remove the exception from `scripts/check-no-python.ts` (the check then fails until the skill calls a command) and change the sentence below. This record changes neither PRD 20 sentence.
+- `RELEASE_NOTES.md`, `0.1.0` Known limits, corrected sentence (marked for this decision): "`capability-matrix` keeps its own Python tool until BuildOS has a command for it; that command is not planned yet." It replaces "Three skills still need Python 3 for their own tools until `0.2.0`", which is not true under option A.
+
+### Acceptance Criteria (Stage 3)
+
+| Criterion | Status | Proof |
+| --- | --- | --- |
+| A79 | Not met as written. The check passes; a search of `system/.os/skills/` finds no `.py` file, and finds Python calls only in `capability-matrix/SKILL.md` (19 findings: 10 `.py` file names, 7 `python3` commands, 1 code fence, 1 shebang), the named exception. On the old tree (`HEAD` before t9) the check fails with 42 findings in the two other skills. | `node scripts/check-no-python.ts`: exit 0, 59 files read; `test/check-no-python.test.ts` |
+| A80 | Reopened by review round 1 (finding 1): this row was weaker proof than A80 asks for, because the hosted runners have Python and the job only hid it from `PATH`. The new proof is in [P9 Stage 3 Review Round 1](#p9-stage-3-review-round-1-2026-11-26). As first recorded: the `no-python` job of CI run 45916436564 of `980ef40` passed on Ubuntu, macOS, and Windows (see [CI Run of `980ef40`](#ci-run-of-980ef40-stage-3)). Locally on macOS too: | Local run with a `PATH` of only `node` and `sh`: no Python found; wrapper checks passed; 35 bulk-extract cases (142 steps), 15 fit-gap cases (64 steps), 11 Azure Boards cases (96 steps) passed; the parity test 65 of 65 with that `PATH`. With `python3` on that `PATH` the smoke stops with exit 1. |
+| A81 | Open: t13 is not started. | None |
+
+### Check Results (Stage 3)
+
+From `toolkits/buildos/` unless noted. macOS arm64, Node 26.13.1, Python 3.14.10.
+
+| Check | Result |
+| --- | --- |
+| `npm ci --ignore-scripts`, `npm run typecheck`, `npm run build` | exit 0 |
+| `npm test` | exit 0; 2,749 tests, 2,736 pass, 0 fail, 13 skipped |
+| `node scripts/check-no-python.ts` | exit 0; 59 files; exception `capability-matrix/`: 19 findings |
+| `node scripts/no-python-smoke.ts` with a `PATH` of only `node` and `sh` | exit 0, three runs |
+| `node --test test/skill-script-parity.test.ts` with that `PATH` | 65 tests, 65 pass |
+| `node test/golden/skills/capture.ts --check --script azure-boards` | exit 0, 11 cases |
+| `node test/golden/skills/capture.ts --check --script bulk-extract` | exit 0, 35 cases |
+| `node test/golden/skills/capture.ts --check --script fitgap --python <venv>/bin/python` | exit 0, 15 cases; openpyxl 3.1.5 and et_xmlfile 2.0.0 from the pinned wheel hashes, in a throwaway virtual environment under the temporary folder |
+| `node test/golden/skills/capture.ts --check --python <venv>/bin/python` (every script) | exit 0; no golden changed |
+| `node dist/buildos.js init --root <temp> --skip-make-docs --dry-run` | "new BuildOS project, 224 paths" |
+| `npm pack --dry-run` | 168 files |
+| `node tools/build-guide.mjs` (in `guide/`), run twice | the second run gives the same file |
+| `make-docs project paths validate`, `make-docs check prd` (repository root) | valid, 0 failing findings; passed, 0 diagnostics |
+| `make-docs project markdown validate` (repository root) | 178 findings, the same as the base `90c20bc` |
+| `node scripts/check-deny-list.mjs --root ../.. --pack .` with the real list | 0 matches, 0 home folder paths, 168 of 168 package files read |
+| Added lines: absolute home paths, the machine user name, new `~/` paths, `file://` | 0 of each |
+
+A note on the capture tool: run without `--check` (once here, by mistake, with `--help`, which it does not read), it captures again and rewrites goldens; on this machine without openpyxl in the default Python it rewrote the fit-gap workbook goldens. They were restored from Git before any other step, and the `--check` runs above passed on the committed goldens.
+
+Not run here: Node 24, Linux, and Windows (the CI run of the pull request covers them), and the `buildos-smoke` and `PERF-002` scripts against the registry (they need the network and the published package; the tests check their changed parts).
+
+### Follow-Up Status (Stage 3)
+
+- F-P9-01 (open a workbook in Excel and LibreOffice by hand): open.
+- F-P9-02 (CSV formula-prefix note in the skill): done.
+- F-P9-03 (`extract bulk withdraw`): open, only if adopters need it.
+- F-P9-04 (`capability-matrix` Python tool): owner decision 2026-11-26: build the command in `0.2.0` (a separate pull request); the named exception of the no-Python check stays until that command exists.
+- F-P9-05 and F-P9-06: open, unchanged.
+- F-P9-07 (new): the parity test counts a removed file as equal to an untouched one.
+- F-P8-11: owner decision 2026-11-26: fixed in `0.2.0` (no `0.1.1`), printed as `npx -y build-os@<running version> …` (a separate pull request).
+- F-P8-12 and F-P8-13: fixed (above).
+
+### CI Run of `980ef40` (Stage 3)
+
+`980ef40` holds the Stage 3 code. Its buildos-ci [run 45916436564](https://github.com/brucewaynedecoy/build-os/actions/runs/45916436564) (push) and [run 45916467857](https://github.com/brucewaynedecoy/build-os/actions/runs/45916467857) (pull request 7) ran on GitHub. In run 45916436564, each `no-python` job (Ubuntu, macOS, and Windows, Node 24) passed: the no-Python check (59 files), then, with `NO_PYTHON_PATH` (Ubuntu and macOS: one folder with `node` and `sh`; Windows: that folder and `System32`), `no-python-smoke.ts` printed "no python, python3, or py program on it", "wrapper: every skill command passed", and 35 bulk-extract cases (142 steps), 15 fit-gap cases (64 steps), and 11 Azure Boards cases (96 steps) passed, and `test/skill-script-parity.test.ts` passed 65 of 65. The three `test` jobs (Ubuntu, macOS, and Windows) passed and ran the no-Python check too; on Ubuntu the test step had 2,449 tests (0 fail), the golden harness 287 (0 fail), and the installed-tarball step 167 (0 fail). The `buildos-smoke` run 45916467963 (its script changed for F-P8-13) passed on the three systems against the published `0.1.0`. The OSV gate, the Make Docs contract job, the cross-OS pack report, and the invented-list deny-list job passed; the real-list deny-list job runs on the default branch only and was skipped.
+
+- A80: recorded as met here; reopened by review round 1, finding 1 (see [P9 Stage 3 Review Round 1](#p9-stage-3-review-round-1-2026-11-26)). Each of the three commands runs on Ubuntu, macOS, and Windows with Node 24 and no Python on `PATH`.
+- A79 stays not met as written (the `capability-matrix` exception, F-P9-04); A81 stays open (t13).
+- After the run, one sentence was added to the `buildos-bulk-extract` skill: Command Prompt needs double quotes, not single quotes, around a name with a space (the skill's examples quote `--author` and `--reviewer` names with single quotes, as the earlier script lines did). `npm test` passed again locally (2,749 tests, 0 fail).
+
+## P9 Stage 3 Review Round 1 (2026-11-26)
+
+Review round 1 of pull request 7 (an independent reviewer) gave FAIL on `910be13`: one blocker, four should-fix findings, and two notes. The fixes are new commits on `rewrite/p9-stage-3`, from `2072475` (the orchestrator's merge of `main` after pull request 5 was squash-merged as `617e43a`; it changed no file). Pull request 6 is still open, so `main` was not merged again. macOS arm64, Node 26.13.1, unless a row says otherwise. The owner decisions of 2026-11-26 that came after the first Stage 3 pass are recorded below; this round builds neither of them.
+
+### Findings and Dispositions (Stage 3 Review Round 1)
+
+| Finding | Disposition | Proof |
+| --- | --- | --- |
+| 1 (blocker): A80 was signed off on weaker proof than it asks for | Fixed. The `no-python` job stays as it was. A new job, `no-python-image`, runs the same smoke inside a Linux container image that has Node 24 and no Python at all, and proves that by a search of the whole container filesystem. See [A80: a Linux Image Without Python](#a80-a-linux-image-without-python). | `test/check-no-python.test.ts` (the job, the digest, the script, the search); the CI run below |
+| 2 (should-fix): the upgrade steps do not work for a `0.1.0` project | Reproduced, and the steps are rewritten and tested: `toolkits/buildos/RELEASE_NOTES.md` (`0.2.0` draft, "Upgrade a project from 0.1.0") and the guide, chapter 4 ("From 0.1.0 to 0.2.0"), with pointers in chapters 17 and 18. See [Upgrade Test](#upgrade-test-finding-2). | The upgrade test below |
+| 3 (should-fix): the static guard misses `/usr/bin/python3 -V` and `spawnSync("python3", args)` | Fixed in `toolkits/buildos/scripts/check-no-python.ts`: a name may follow a slash or a backslash (a folder), and a quote, a bracket, a comma, or a semicolon may follow it; a quoted `"py"` or `'py'` (also after a folder, for example `C:\Windows\py.exe`) counts as the launcher; `pip` and `uv` take a folder too. A new test plants 15 lines: the two missed spellings, more path-qualified and quoted forms, and the spellings it caught before (`python3.12`, `py -3`, a shebang, a `~~~py` code fence, `pip install`, `uv run`); each line must give a finding. A second new test checks that a URL or a path that only contains the word (`docs.python.org`, `github.com/python/cpython`, `python-helpers/`) is not a finding. | With the old guard, the new test fails (its first missing finding is line 1, `/usr/bin/python3 -V`); with the fix, `node --test test/check-no-python.test.ts` passes. On this repository the check still passes, with the same 19 findings under the exception. |
+| 4 (should-fix): the Azure Boards examples | Reproduced: on a new project, the two adapter `validate` examples of the CSV contract exited 4 (`Adapter 'dynamics-365-ce' requires adapter_params.publisher_prefix`), because they validated the CSV emitted from `synthetic-manifest.json`, which has no adapter. The contract now first emits the bundled Dynamics 365 CE manifest to `workspace/dynamics-365-ce.csv` and validates that CSV, and says that `ex_` is the synthetic value. `SKILL.md` step 11 now reads the CSV as plain text or with a CSV reader that treats every cell as text, and opens it in a spreadsheet program only when every text in the manifest is trusted; the formula-prefix notes of the skill, the contract, the guide chapter 14, `SECURITY.md`, and the release notes say the same. A new test, `test/azure-boards-skill-examples.test.ts`, runs every command example of the contract, in order, in a new project, and needs exit 0 for each. | [Azure Boards Examples](#azure-boards-examples-finding-4); the new test fails on the old contract (both tests) and passes on the new one |
+| 5 (should-fix): `SECURITY.md` is out of date | Fixed: Package Contents says 168 files (`0.1.0` had 173), and the pack check fails on any Python file (`test/package.test.ts`, t14), in place of the old three-script allowance. A search for "173" finds no other text that describes the current package: every other match is a dated `0.1.0` record (P7, P8, the move to the public repository, the release ledger) or a byte size. | `npm pack --dry-run --json`: 168 entries, no Python file, 158 under `dist/system/`, 59 skill files |
+| Note: the phase status said "Stage 3 not started" | Fixed in the phase file's closeout status. | The phase file |
+| Note: the pull request body called the scoped change "the last commit" | Fixed: the body names the commit range. | Pull request 7 |
+
+### A80: a Linux Image Without Python
+
+A80 reads "Each command runs successfully in the CI image without Python." The job `no-python-image` gives it that image for Linux:
+
+- Image: the official `node:24-slim` image (Debian bookworm, Node.js 24.22.3, npm 11), image index digest `sha256:873f586f3794f52281bd039bf02c048a0be08fde619338f9941bad1eb6b34530`, built 2026-11-24 (its linux/amd64 manifest is `sha256:e0e989b967dacc279681ed81774b2ce9eeebbb0efb8e0c427573235bebf1eda1`). The workflow pulls it by that digest, as it pins actions by commit SHA, and `SECURITY.md` (CI Checks) records the image and the digest; `test/check-no-python.test.ts` fails when the two differ or when the image is not pinned by digest. A new digest is a reviewed change to both.
+- How it runs: `docker run --rm` on `ubuntu-latest`, with only the checkout mounted, running `toolkits/buildos/scripts/no-python-image.sh` with `sh -eu`. It is not a job container, because GitHub mounts the runner's tool cache, which holds Python, into a job container, and the search would find it there.
+- What it runs, with the image's own `PATH`: the dependency guards before and after `npm ci --ignore-scripts`, the no-Python check, the build, the pack, a new project (`buildos init --skip-make-docs`) with the tarball installed (`--offline --ignore-scripts`), `scripts/no-python-smoke.ts`, and `test/skill-script-parity.test.ts`. The smoke is the same one as in the `no-python` job: the `PATH` proof, the skills' commands through the project wrapper (both skill CSVs byte for byte), and the 61 fixture cases.
+- The filesystem proof: with `--filesystem / --skip <checkout>`, the smoke first searches every entry of the container filesystem, without following links, except the checkout, `/proc`, `/sys`, and `/dev`. A Python that can run stops the run with exit 1: a file with an execute bit, or a link, named `py` or starting with `python` or `pypy` (an interpreter or its launcher); a `libpython*` file or link (the interpreter library); a folder named `python` or `pypy` followed by a digit (a standard library folder such as `python3.11`). So does a folder it cannot read. Any other entry with such a name, and every `.py` source file, is listed, not failed on: a source file or a data folder is not a Python that can run. The first CI run of the job (run 45920836350) used a stricter rule, any entry with such a name, and failed on `/usr/share/gcc/python`: a folder of GDB helper sources (`.py` files for the debugger) that Debian's C++ library package `libstdc++6` installs. It holds no interpreter, so the rule now lists it. The search runs after the installs, so it covers the image and everything installed into it.
+- What the slim image lacks: git. Nothing in the script needs it: the checkout is made on the runner, the smoke and the parity test read no git history, and `test/capture-sources.test.ts`, which needs git and the full history, runs in the `test` job (on all three systems). Nothing installs Python or any other package.
+- Checked before CI: the Node.js 24.22.3 linux-x64 release tarball (the files the image adds to Debian) lists 5,888 entries with no Python name and 59 `.py` files (58 in npm's node-gyp, 1 in `share/doc/node`). The image's build steps install no Python package. Docker is not on this machine, so the job itself ran only in CI.
+
+The `no-python` job is unchanged: on macOS and Windows (and Ubuntu) the hosted runner images have Python installed, and that job proves only that the commands find none on the `PATH` it gives them.
+
+Wording for A80 (the criterion's text is unchanged): A80 is met for Linux by the image: each command runs in the `node:24-slim` image, which holds no Python at all. For macOS and Windows it is met by the restricted `PATH`: the commands run with no Python on `PATH`, on runner images that do have Python. The words of A80 ask for "the CI image without Python" and do not name the three systems, so this round claims it on that reading. If the owner reads A80 as an image without Python on all three systems, it is not met for macOS and Windows, and no hosted image without Python exists for them. Status: met, by [CI run 45921131235](#ci-run-of-bf6db38-stage-3-review-round-1) of `bf6db38`.
+
+### Upgrade Test (Finding 2)
+
+Reproduction (macOS, the published `build-os@0.1.0` from the registry): `npx -y build-os@0.1.0 init --root . --skip-make-docs` in a new folder; then `.os/skills/` replaced by this branch's `system/.os/skills/`; then `.os/scripts/buildos extract bulk status --root .` printed `ERROR [usage_error]: unknown command "extract"` with `version: 0.1.0`, exit 2. The pin in `.os/manifest.json` was still `0.1.0`, and the wrapper always runs the pinned version.
+
+`buildos init` on an existing project: `0.2.0` (the local build below) run in that `0.1.0` project with `--skip-make-docs` exited 0 with "BuildOS is already set up in this folder, and its sections are up to date. Nothing was changed." The pin stayed `0.1.0` and the `0.1.0` skill scripts stayed in `.os/skills/`. This is the designed rerun (`src/core/init/plan.ts`: a rerun writes no file of its own and only refreshes a BuildOS section of a shared file; W2 owns update). So `init` is not the refresh tool, and the product has no update command. The steps use `init` only in a new, empty folder, where it is the supported way to get the `0.2.0` skills.
+
+What changes between `0.1.0` and `0.2.0` in a project: `git diff v0.1.0 HEAD -- system/` changes only files under `system/.os/skills/` (14 files: 5 deleted, 9 changed). The wrappers, contracts, templates, config, and data files are the same, so the steps refresh only the pin and the skills. This is to check again at t13, against the final `0.2.0` tree.
+
+How `0.2.0` was simulated (it is not published): a copy of this working tree (no `.git`, no `node_modules`) with `version` set to `0.2.0` in the copy's `toolkits/buildos/package.json`, built with `BUILDOS_RELEASE_VERSION=0.2.0` and packed: `build-os-0.2.0.tgz`, 168 files, `buildos version` prints `version: 0.2.0`. This repository's version is unchanged. Where the steps run `npx -y build-os@0.2.0`, the test ran `npx -y --package=<build-os-0.2.0.tgz> -- buildos`, which runs the same bin from the file. The wrapper's `npx` fallback cannot be simulated without a registry: with the pin at `0.2.0` and no install, it stops with `npm error notarget No matching version found for build-os@0.2.0` (exit 1), as expected before publication. So the test installed the tarball into the project's `node_modules` (`npm install --offline --ignore-scripts --no-save`), which the wrapper uses as an npm install of exactly the pinned version.
+
+The steps, on a new `0.1.0` project in git, with a copy of `buildos-bulk-extract` in `.claude/skills/` as an app install:
+
+| Step | Result |
+| --- | --- |
+| 1. Set `buildos_version` to `0.2.0` in `.os/manifest.json` | One line changed |
+| 2. `init --root . --skip-make-docs` with `0.2.0` in a new, empty folder outside the project | exit 0 |
+| 3. Delete `.os/skills/`, copy the new one in its place | `git status`: the five script files deleted, 9 skill files changed; `diff -r` with this branch's `system/.os/skills/` shows no difference |
+| 4. Replace the app copy `.claude/skills/buildos-bulk-extract/` with the new folder | It holds `SKILL.md` only |
+| 5. An npm install of `0.1.0` in the project (a second project): pin `0.2.0` | The wrapper skips the `0.1.0` install and asks `npx` for `0.2.0` (`notarget` before publication), so the step says to install `0.2.0` there too |
+| 6. `.os/scripts/buildos version`, `help`, and the skill commands | `version: 0.2.0`; `help` lists `extract`, `fitgap`, and `export`; `export azure-boards adapters` exit 0; `extract bulk status` runs the command (exit 3 in this empty project, because it has no `.os/indexes/references.json` until intake builds it, as the skill says) |
+
+### Azure Boards Examples (Finding 4)
+
+On a new project (`buildos init --skip-make-docs`, the local build installed, the wrapper as the skill calls it), in the order of the file:
+
+| File | Example | Exit (before) | Exit (after) |
+| --- | --- | --- | --- |
+| `references/azure-boards-csv-contract.md` | `emit` of `assets/synthetic-manifest.json` | 0 | 0 |
+| | `validate` of that CSV | 0 | 0 |
+| | `emit` of `assets/adapters/dynamics-365-ce-manifest.json` to `workspace/dynamics-365-ce.csv` (new) | none | 0; the CSV equals `assets/adapters/dynamics-365-ce-golden-example.csv` byte for byte |
+| | `validate --adapter dynamics-365-ce` | 4 | 0 |
+| | `validate --adapter dynamics-365-ce --adapter-params '{"publisher_prefix":"ex_"}'` | 4 | 0 (it now also names `--profile target17-new`) |
+| | `adapters` | 0 | 0 |
+| | `template` | 0 | 0 |
+| `SKILL.md` (placeholders filled: the Dynamics manifest, `workspace/azure-boards-import.csv`) | `emit` | 0 | 0 |
+| | `validate` | 0 | 0 |
+| | `validate --adapter dynamics-365-ce` | 0 | 0 |
+| | `adapters` | 0 | 0 |
+
+### Owner Decisions 2026-11-26 (Recorded in Review Round 1)
+
+These came after the first Stage 3 pass. This round records them and builds neither.
+
+1. F-P8-11 is fixed in `0.2.0`, with no `0.1.1`, and BuildOS prints the fix command as `npx -y build-os@<running version> …`. A separate pull request does it. Status of F-P8-11: owner decision 2026-11-26, fix in `0.2.0` (the P8 follow-up record and the Stage 3 follow-up status say so).
+2. The `capability-matrix` skill gets its own command in `0.2.0`, so that no skill needs Python and the exception in `check-no-python.ts` goes away. A separate pull request builds it. F-P9-04 status: "owner decision 2026-11-26: build the command in `0.2.0`". The exception's status text in `scripts/check-no-python.ts` changed from "owner decision open (F-P9-04)" to "owner decision 2026-11-26: build the command in 0.2.0 (F-P9-04)"; the exception stays until the command exists. A79 stays open until then.
+
+The docs no longer say that `0.2.0` ships with a Python exception. Each sentence below is true today and is marked "to finish with the capability-matrix command": when the command is in, it says that no skill needs Python.
+
+| File | Sentence now |
+| --- | --- |
+| `toolkits/buildos/RELEASE_NOTES.md`, `0.2.0` draft | The "Still needs Python" section is gone. What is new: "`capability-matrix`: a BuildOS command for the skill's own tool is planned for `0.2.0`, so that no skill needs Python. Until that command is in, the skill still tells the agent to write and run its own Python tool." To finish with the capability-matrix command. |
+| `toolkits/buildos/RELEASE_NOTES.md`, `0.1.0` Known limits (the corrected sentence) | "`capability-matrix` keeps its own Python tool until BuildOS has a command for it; that command is planned for `0.2.0`." To finish with the capability-matrix command. |
+| `guide/content/04-install-and-configure-your-instance.md`, Skills | "One skill still needs Python 3 for its own tool: `capability-matrix`. No BuildOS command needs Python. A BuildOS command for that tool is planned for `0.2.0`." To finish with the capability-matrix command. |
+| `guide/content/03-before-you-start.md`, the table of what you need | "one skill's own tool: the capability matrix, until its BuildOS command, planned for `0.2.0`." To finish with the capability-matrix command. |
+| `guide/content/16-harness-independence-and-trust.md` | "One skill, `capability-matrix`, still needs Python 3 for its own tool; a BuildOS command for that tool is planned for `0.2.0`." To finish with the capability-matrix command. |
+| `guide/content/17-when-things-go-wrong.md` | "Python 3 for the `capability-matrix` skill's own tool until its BuildOS command, planned for `0.2.0`." To finish with the capability-matrix command. |
+| `guide/content/18-what-is-not-built-yet.md`, the gap register | "One skill still needs Python 3 for its own tool; a BuildOS command for it is planned for `0.2.0`." To finish with the capability-matrix command. |
+| `toolkits/buildos/SECURITY.md`, Skills and the no-Python check row | The exception stays "until the command that the owner decided on 2026-11-26 exists". To finish with the capability-matrix command. |
+
+`system/.os/skills/AGENTS.md` ("BuildOS has no command for that tool yet") and the `capability-matrix` skill are unchanged: they are true today, and the command's pull request changes them. The PRD 20 sentences that the Stage 3 record named are unchanged; under the decision they stand as written. The register `docs/prd/03-open-questions-and-risk-register.md` (R-003) records both decisions.
+
+### Left for Later Pull Requests
+
+- F-P8-11: the printed fix commands as `npx -y build-os@<running version> …`, with the parity exception for the Go-golden cases.
+- F-P9-04: the `capability-matrix` command, the skill on it, the removal of the exception from `scripts/check-no-python.ts`, and the sentences marked "to finish with the capability-matrix command" above. A79 is met only then.
+- t13: the version, the release notes in final form (and a check that only the skills change between `0.1.0` and `0.2.0`), and the release.
+
+### Check Results (Stage 3 Review Round 1)
+
+From `toolkits/buildos/` unless noted. macOS arm64, Node 26.13.1.
+
+| Check | Result |
+| --- | --- |
+| `npm ci --ignore-scripts`, `npm run typecheck`, `npm run build` | exit 0 |
+| `npm test` | exit 0; 2,757 tests, 2,744 pass, 0 fail, 13 skipped |
+| `node --test test/check-no-python.test.ts` | 14 tests, 14 pass (4 new for the image job and the search, 2 new for finding 3) |
+| `node --test test/azure-boards-skill-examples.test.ts` | 2 pass; on the old contract file, 2 fail |
+| `node scripts/check-no-python.ts` | exit 0; 59 files; exception `capability-matrix/`: 19 findings |
+| `node scripts/no-python-smoke.ts` with a `PATH` of only `node` and `sh` | exit 0; 35, 15, and 11 cases passed |
+| The same with `--filesystem` on a planted folder that holds `usr/lib/python3.11/` | exit 1, "Python name: …/usr/lib/python3.11"; without it, exit 0 |
+| `node test/golden/skills/capture.ts --check --script azure-boards` and `--script bulk-extract` | exit 0, 11 and 35 cases |
+| `npm pack --dry-run --json` | 168 files, no Python file |
+| `node tools/build-guide.mjs` (in `guide/`) | rebuilt; only the `built` date differs on a second run |
+| `make-docs project paths validate` (repository root) | 0 failing findings |
+| `node scripts/check-deny-list.mjs --root ../.. --pack .` with the real list | 0 matches, 0 home folder paths, 168 of 168 package files read |
+| Added lines: absolute home paths, the machine user name, new `~/` paths, `file://` | 0 of each |
+
+Not run here: the `no-python-image` job (Docker is not on this machine), Node 24, Linux, and Windows; the CI run of the pull request covers them.
+
+### CI Run of `bf6db38` (Stage 3 Review Round 1)
+
+`bf6db38` holds the review round 1 fixes. Its buildos-ci [run 45921131235](https://github.com/brucewaynedecoy/build-os/actions/runs/45921131235) (push) passed every job; the buildos-deny-list run 45921131057 (invented list) passed, and the real-list job runs on the default branch only and was skipped. The first run of the fixes, run 45920836350 of `1620f79`, failed in the `no-python-image` job on `/usr/share/gcc/python` (see the filesystem proof above); `bf6db38` changed the search rule.
+
+- `no-python-image` (`ubuntu-latest`): `docker pull` got `sha256:873f586f3794f52281bd039bf02c048a0be08fde619338f9941bad1eb6b34530`. In the image: Node `v24.22.3`, npm `11.19.1`; the no-Python check passed (59 files); "PATH: 6 folder(s); no python, python3, or py program on it."; "filesystem: 8321 entries under / searched (not searched: /proc, /sys, /dev, /build-os); no Python that can run"; one other entry with a Python name, `/usr/share/gcc/python` (folder); 64 `.py` source files in 8 folders (58 in npm's node-gyp, 1 in `/usr/local/share/doc/node`, 4 under `/usr/share/gcc/python/libstdcxx`, 1 under `/usr/share/gdb/auto-load`), with no Python to run them; "wrapper: every skill command passed"; 35 bulk-extract cases (142 steps), 15 fit-gap cases (64 steps), and 11 Azure Boards cases (96 steps) passed; `test/skill-script-parity.test.ts` 65 of 65.
+- `no-python` on Ubuntu, macOS, and Windows: passed, as before.
+- `test` on Ubuntu, macOS, and Windows: passed; on Ubuntu the test step had 2,457 tests (0 fail), the golden harness 287 (0 fail), and the installed-tarball step 167 (0 fail).
+- The OSV gate, the Make Docs contract job, and the cross-OS pack report passed.
+
+A80: met. For Linux by the image: each command runs in the `node:24-slim` image, which holds no Python at all. For macOS and Windows by the restricted `PATH`: the commands run with no Python on `PATH`, on runner images that do have Python. A79 stays open until the `capability-matrix` command exists (owner decision 2026-11-26); A81 stays open (t13). No Stage 3 task is ticked.
+
+## P9 Stage 3 Review Round 2 (2026-11-26)
+
+Review round 2 of pull request 7 (an independent reviewer) gave FAIL on `54d849b`: one blocker, two should-fix findings, and one hardening note. The fixes are new commits on `rewrite/p9-stage-3`, from `54d849b`. macOS arm64, Node 26.13.1, unless a row says otherwise.
+
+### Findings and Dispositions (Stage 3 Review Round 2)
+
+| Finding | Disposition | Proof |
+| --- | --- | --- |
+| 1 (blocker): the written upgrade from `0.1.0` to `0.2.0`, and its rollback, can lose adopter work | Fixed. The steps are written once, in the guide, chapter 4, "From 0.1.0 to 0.2.0" with its part "Roll back from 0.2.0 to 0.1.0". The release-notes draft says what changes and points to that section. A backup is step 1. Only the three changed skills and the router are refreshed, by name; `.os/skills/` is never deleted. A `git diff --no-index` against a clean `0.1.0` copy finds an adopter's change, and the change is made again by hand. App copies are refreshed one skill at a time. The rollback restores the pin, the router, and the three skills in the project and in each app folder from the backup, and a diff against the backup fails while a `0.2.0` skill is still in place. The "Update and roll back" bullets of the guide and `SECURITY.md` ("Rollback by Version Pin") now say that the skills go back too when they changed. | [Upgrade and Rollback Test](#upgrade-and-rollback-test-finding-1) |
+| 2 (should-fix): the static guard misses `PYTHON.EXE -V`, `/usr/bin/python3>/dev/null`, and `spawnSync("pip3", ["install", ...])` | Fixed in `toolkits/buildos/scripts/check-no-python.ts`: a name may end at a shell operator or a redirection (`>`, `<`, `|`, `;`, `&`, `)`); a lower-case name may have `.exe` in any case; a name in capitals (`PYTHON`, `PYTHON3`) counts; a name in any other case counts with `.exe` or before a flag (`Python3 -V`), so prose such as "needs Python 3" stays prose; the `py`, `pip`, and `uv` rules ignore case; a quoted `pip`, `pip3`, `pipx`, `uv`, or `uvx`, also after a folder and with `.exe`, counts as a program to start. A new test plants 20 lines (the three spellings of the finding and 17 more) and needs a finding on each with the right rule; a second new test checks that prose in other cases and words that only contain the names give no finding. | With the old script, the new test fails: it finds only lines 9, 11, and 16 of the 20. With the fix, `node --test test/check-no-python.test.ts` passes 16 of 16. On this repository the check still passes: 59 files, 19 findings under the `capability-matrix/` exception, as before. |
+| 3 (should-fix): release status wording | Fixed in `toolkits/buildos/RELEASE_NOTES.md`: the `0.1.0` Known limits sentence says that the unpublished `0.2.0` draft implements `extract bulk`, `fitgap`, and `export azure-boards`; "planned" stays only for the `capability-matrix` command. In the `0.2.0` draft, the `capability-matrix` line moved from "What is new" to a new "Not in this draft yet" part, as a temporary exception that goes away when the command is built (owner decision of 2026-11-26). The pull request body says the same. A search of the guide, the package docs, the skills router, the maintainer docs, and PRD 20 for "planned", "plans to", and "is planned" finds no other text that calls the three commands planned. | `grep` over those files |
+| Hardening note: the `no-python-image` job ran Docker as root with the checkout mounted writable | Done in part. `docker run --rm --volume "$GITHUB_WORKSPACE:/build-os:ro"`: the checkout is mounted read-only. The container still runs as root: the first CI run of the fixes (run 45925280014 of `8e36fd2`) ran it as the image's user `node`, and the filesystem search failed, as designed for a folder it cannot read, on `/root`, `/var/cache/apt/archives/partial`, and `/var/cache/ldconfig`, which only root can read. A search that skips them would be weaker proof, so the user change is withdrawn. `scripts/no-python-image.sh` first copies the checkout to a scratch folder (`mktemp -d`) and works only there, and the filesystem search skips the mount and the copy (it skipped the mount before). The proof is the same: the guards, the install, the no-Python check, the build, the pack, the smoke with the filesystem search and the fixture cases, and the parity test; the digest pin is unchanged. `test/check-no-python.test.ts` checks the read-only mount and that the copy comes before the first `node` and `npm` command; `SECURITY.md` (CI Checks) says the same. | The CI run below (Docker is not on this machine) |
+
+### Upgrade and Rollback Test (Finding 1)
+
+What changes between `0.1.0` and `0.2.0`: the published `build-os@0.1.0` package (`npm pack build-os@0.1.0`, `dist/system/.os/skills/`) equals `system/.os/skills/` at the tag `v0.1.0` (`diff -r`: no difference). `git diff --stat v0.1.0 HEAD -- system/.os/skills/` lists 14 files in one router file and three skill folders:
+
+| In `.os/skills/` | Changed | Removed |
+| --- | --- | --- |
+| `AGENTS.md` | The list "What a skill needs" (4 lines) | None |
+| `buildos-bulk-extract/` | `SKILL.md` | `scripts/work.py`, `tests/test_work.py` |
+| `buildos-export-azure-boards/` | `SKILL.md`, `adapters/00-adapter-registry.md`, `adapters/dynamics-365-ce/ADAPTER.md`, `references/azure-boards-csv-contract.md` | `scripts/azure_boards_csv.mjs`, `scripts/adapters/dynamics-365-ce.mjs` |
+| `fit-gap-analysis/` | `SKILL.md`, `references/formats.md`, `references/scoring-brief.md` | `scripts/fitgap.py` |
+
+The other 18 skills and `.os/skills/CLAUDE.md` are the same. This is to check again at t13, against the final `0.2.0` tree.
+
+How `0.2.0` was simulated: a copy of `HEAD` (`git archive`) in a scratch folder, with `version` set to `0.2.0` in the copy's `toolkits/buildos/package.json`, built with `BUILDOS_RELEASE_VERSION=0.2.0` and packed (`build-os-0.2.0.tgz`). This repository's version is unchanged. Two commands of the text could not run as written before publication: `npx -y build-os@0.2.0 init …` ran as `npx -y --package=<build-os-0.2.0.tgz> -- buildos init …`, and in step 6 the npm install of `0.2.0` was the tarball (`npm install --offline --ignore-scripts --no-save <tarball>` in the project), which the wrapper uses as an npm install of exactly the pinned version. The step 6 edit of `.os/manifest.json` was made with `sed`, and step 5 ("make your change again by hand") appended the two noted lines to the new files. Every other command ran exactly as the guide writes it, from the project folder, with the work folder `../buildos-upgrade`.
+
+The project: a new git project, `npx -y build-os@0.1.0 init --root . --skip-make-docs` from the registry, then (a) an adopter-added skill `.os/skills/team-notes/SKILL.md`; (b) one adopter line added to `.os/skills/fit-gap-analysis/SKILL.md`; (c) the app folder `.claude/skills/` with copies of `buildos-bulk-extract` and `buildos-intake`, one adopter line added to the app copy of `buildos-bulk-extract/SKILL.md`, and an app-only skill `team-app-skill`; all committed.
+
+| Step | Result |
+| --- | --- |
+| 1. Backup (`git add -A`, `git commit`, `mkdir -p`, `cp` of the manifest, `cp -R` of `.os/skills` and `.claude/skills`) | exit 0 each; `git commit` said "nothing to commit" (exit 1), because the project was already committed, which the text says is fine |
+| 2. Clean `0.1.0` and `0.2.0` copies with `init --root ../buildos-upgrade/old` and `…/new` | exit 0 each |
+| 3. `git --no-pager diff --no-index --stat` against the `0.1.0` copy | `buildos-bulk-extract`, `buildos-export-azure-boards`, `AGENTS.md`: no output, exit 0. `fit-gap-analysis`: lists `SKILL.md`, 1 insertion, exit 1 (case b). The app copy `.claude/skills/buildos-bulk-extract`: lists `SKILL.md`, 1 insertion, exit 1 (case c) |
+| 4. `rm -rf` of the three skills, `cp -R` of each from `new`, `cp` of `AGENTS.md`; in the app folder `rm -rf` and `cp -R` of `buildos-bulk-extract` only | exit 0 each |
+| 5. The two noted changes made again in the new files | Done |
+| 6. Pin `0.2.0`; the tarball installed | One line of `.os/manifest.json` changed |
+| 7. Checks | `version: 0.2.0`; `help` lists `extract`, `fitgap`, and `export`; `export azure-boards adapters` lists `dynamics-365-ce`, exit 0; the diff against `new` prints nothing for `buildos-bulk-extract` and `buildos-export-azure-boards`, and only the adopter's line for `fit-gap-analysis` (b) and the app copy (c) |
+| After the upgrade | (a) `team-notes` the same (`diff -r` with the copy taken before the upgrade); `team-app-skill` and the app copy of `buildos-intake` the same; 24 entries in `.os/skills/`, 3 in `.claude/skills/`; the adopter lines of (b) and (c) are in the new files; no `.py`, `azure_boards_csv.mjs`, or `dynamics-365-ce.mjs` file is left in `.os/skills/` or `.claude/skills/`; the app copy names `buildos extract bulk`. `git status`: the 7 script files deleted (5 in the project, 2 in the app copy), 9 skill files, the router, the manifest, and the app `SKILL.md` changed, nothing else |
+| Rollback 1 and 2 (the manifest, the router, the three skills from the backup) | exit 0 each |
+| Rollback 5 run early, before step 3 | `git --no-pager diff --no-index --stat ../buildos-upgrade/backup/claude-skills/buildos-bulk-extract .claude/skills/buildos-bulk-extract` lists `SKILL.md` and the two scripts, exit 1: the check fails while a `0.2.0` skill is in the app folder |
+| Rollback 3 (the app copy from its backup) and 4 (an npm install of `0.1.0` from the registry) | exit 0 each |
+| Rollback 5 | `version: 0.1.0`; the diff against the backup prints nothing, exit 0, for the three skills in the project and for the app copy |
+| After the rollback | `diff -r` of `.os/` and `.claude/` with the copies taken before the upgrade: no difference, so (a), (b), and (c) are as before. `git status --short`: no change against the commit made before the upgrade. `.os/scripts/buildos fitgap frame …` prints `unknown command "fitgap"`, as `0.1.0` does, and no skill in the project or the app folder calls it: the `0.1.0` skills run their own scripts again |
+
+Not tested: the Command Prompt forms on Windows (no Windows machine here), a skills folder in the home folder, and the `npx` fallback of the wrapper for `0.2.0` (it needs the published version).
+
+Finding 1 asked whether the product can make this safe without a new command. The steps above are safe when followed, and the test shows it, but they are by hand and long. New follow-up F-P9-08 (W2, R-003): `buildos update` should refresh only the first-party skills that changed between two versions, by name, in the project and in the app copies, keep skills that the adopter added, find and report adopter changes before it writes, and undo the refresh. This pull request does not build it.
+
+### Bot Review Threads (Pull Request 7)
+
+| Thread | What it says | Done |
+| --- | --- | --- |
+| `guide/content/04-install-and-configure-your-instance.md` line 479 | The rollback does not restore the app copies | Fixed with finding 1: rollback step 3 and the check in rollback step 5 |
+| `guide/content/14-export-to-a-work-tracker.md` line 53 | Readers on `0.1.0` have no script form of the commands | Fixed: step 2 says to write `node .os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs` in place of `.os/scripts/buildos export azure-boards`, with the same subcommands and options. Tested on the `0.1.0` project above: `adapters`, `emit` of the synthetic manifest (the CSV equals the golden example byte for byte), and `validate`, exit 0 each |
+| `toolkits/buildos/scripts/check-no-python.ts` line 61 | A quoted installer (`spawnSync("pip3", …)`, `spawnSync("uv", …)`) gives no finding | Fixed with finding 2 |
+
+The threads are not marked resolved here; the reviewer resolves them.
+
+### Check Results (Stage 3 Review Round 2)
+
+From `toolkits/buildos/` unless noted. macOS arm64, Node 26.13.1.
+
+| Check | Result |
+| --- | --- |
+| `npm ci --ignore-scripts`, `npm run typecheck`, `npm run build` | exit 0 |
+| `npm test` | exit 0; 2,759 tests, 2,746 pass, 0 fail, 13 skipped |
+| `node --test test/check-no-python.test.ts` | 16 tests, 16 pass (2 new for finding 2; the image job test checks the read-only mount and the copy) |
+| The new finding 2 test with the old `scripts/check-no-python.ts` | fails: findings on lines 9, 11, and 16 only |
+| `node scripts/check-no-python.ts` | exit 0; 59 files; exception `capability-matrix/`: 19 findings |
+| `sh -n scripts/no-python-image.sh` | exit 0 |
+| `node tools/build-guide.mjs` (in `guide/`) | rebuilt; a second run changes nothing |
+| `make-docs project paths validate` (repository root) | valid, 0 failing findings |
+| `node scripts/check-deny-list.mjs --root ../.. --pack .` with the real list | 0 matches, 0 home folder paths, 168 of 168 package files read |
+| Added lines: absolute home paths, the machine user name, new `~/` paths, `file://` | 0 of each (the guide app keeps its 2 `~/` from before) |
+
+Not run here: the `no-python-image` job (Docker is not on this machine), Node 24, Linux, and Windows; the CI run of the pull request covers them.
+
+## P9 Stage 3 Review Round 3 (2026-11-26)
+
+Review round 3 of pull request 7 was the last round under the project stop rule (three rounds, then one fix pass). The reviewer followed the upgrade and rollback steps of the guide on a project made with the published `build-os@0.1.0` and a locally packed `0.2.0`. A fresh upgrade and rollback kept the adopter-added skill and both edits byte for byte. The reviewer found four gaps in the steps. This section is the fix pass. The orchestrator made the changes; no further review round follows.
+
+| Finding | Disposition |
+| --- | --- |
+| 1 (blocker) a work folder used a second time (a second project, or a second try) nested the new backup inside the old one, and the rollback then restored the first backup while the check passed | Fixed in the guide: each project and each try uses a new work folder. The first command of step 1 is a plain `mkdir` of the work folder, which stops with an error when the folder is there already, and the text says to stop and use another name. |
+| 2 (high) step 5 had no new file to open for a file that the adopter added to one of the three skill folders, or for an edit in a script that `0.2.0` removes, and the step 7 check passed without them | Fixed in the guide: step 3 says to stop before the refresh when a listed file is one of the five removed scripts. Step 5 says to copy an added file back from the backup. Step 7 says that each file on the list from step 3 must be in place. |
+| 3 (high) a skills folder in the home folder serves every project, so a refreshed copy breaks a project that is still on `0.1.0` (`unknown command "extract"`, exit 2) | Fixed in the guide: step 1 says not to refresh a home-folder copy while a project still uses `0.1.0`, and gives the two safe choices (upgrade every project and refresh that copy last, or give each project its own copy). |
+| 4 (medium) the checks did not compare the router `.os/skills/AGENTS.md`, so an old router passed | Fixed in the guide: the forward check and the rollback check each compare the router. |
+
+Not tested again: the fix pass changed text and three commands (`mkdir` without `-p`, one `cp` example, and the two router comparisons). The orchestrator did not run the full upgrade and rollback again after these changes. The Windows Command Prompt forms are still not tested. The steps are long because BuildOS has no update command; follow-up F-P9-08 (a W2 `buildos update`) stays open in `R-003`.
+
+Reviewer's verification of the rest of round 2 (its own run): typecheck and build passed; `npm test` 2,759 tests, 2,746 passed, 13 skipped, 0 failed; the static guard caught the three spellings of round 2 and the real tree had only the 19 findings of the named exception; the read-only checkout and scratch copy keep the image proof; the real deny-list scan found 0 matches with 168 of 168 package files read.

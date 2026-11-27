@@ -13,24 +13,24 @@ There are two separate agent tasks. An ordinary extraction request starts **Stag
 
 ## Work units and helper
 
-Treat a requested count as the total set. Check source size and format before dividing work. When working alone, finish one source at a time. Agents may review different sources in parallel. A coordinator assigns disjoint sources and keeps the total count. This skill needs Python 3: identify the intended project Python and use its full path. The helper uses only Python's standard library and never runs Git. BuildOS plans to replace the helper with the `buildos extract bulk` command in BuildOS 0.2.0. Run the commands below from the project root; `buildos init` puts this skill in `.os/skills/`, so that path works even when an app installed a copy elsewhere.
+Treat a requested count as the total set. Check source size and format before dividing work. When working alone, finish one source at a time. Agents may review different sources in parallel. A coordinator assigns disjoint sources and keeps the total count. The helper is the `buildos extract bulk` command. Run it through the project wrapper `.os/scripts/buildos` from the project root (`.os\scripts\buildos.cmd` on Windows, with the same arguments; Command Prompt needs double quotes, not single quotes, around a name with a space). It needs Node.js 24 or newer and nothing else, and it never runs Git.
 
 Use the harness assigned by the user. Do not choose or switch harnesses. Delegate Stage 1 with a short task message: "Use the current buildos-bulk-extract skill for Stage 1 on [sources]. Follow its Stage 1 write limits. Stop after staging." Do not add source, row-type, or domain exclusions unless the user requests them.
 
 ```text
-<PYTHON> .os/skills/buildos-bulk-extract/scripts/work.py --repo-root . status
-<PYTHON> .os/skills/buildos-bulk-extract/scripts/work.py --repo-root . next --stage extract --count 5
-<PYTHON> .os/skills/buildos-bulk-extract/scripts/work.py --repo-root . next --stage review --count 5
-<PYTHON> .os/skills/buildos-bulk-extract/scripts/work.py --repo-root . show REF-001
-<PYTHON> .os/skills/buildos-bulk-extract/scripts/work.py --repo-root . start REF-001
-<PYTHON> .os/skills/buildos-bulk-extract/scripts/work.py --repo-root . template requirement
-<PYTHON> .os/skills/buildos-bulk-extract/scripts/work.py --repo-root . stage-update REF-001 REQ-001 --key corrected-need
-<PYTHON> .os/skills/buildos-bulk-extract/scripts/work.py --repo-root . check REF-001
-<PYTHON> .os/skills/buildos-bulk-extract/scripts/work.py --repo-root . stage REF-001
-<PYTHON> .os/skills/buildos-bulk-extract/scripts/work.py --repo-root . stage REF-001 --author 'Author name'
-<PYTHON> .os/skills/buildos-bulk-extract/scripts/work.py --repo-root . replace-row REF-001 corrected-need < ROW-JSON-ON-STANDARD-INPUT
-<PYTHON> .os/skills/buildos-bulk-extract/scripts/work.py --repo-root . decide REF-001 --reviewer 'Reviewer name' < DECISIONS-JSON-ON-STANDARD-INPUT
-<PYTHON> .os/skills/buildos-bulk-extract/scripts/work.py --repo-root . publish REF-001
+.os/scripts/buildos extract bulk --root . status
+.os/scripts/buildos extract bulk --root . next --stage extract --count 5
+.os/scripts/buildos extract bulk --root . next --stage review --count 5
+.os/scripts/buildos extract bulk --root . show REF-001
+.os/scripts/buildos extract bulk --root . start REF-001
+.os/scripts/buildos extract bulk --root . template requirement
+.os/scripts/buildos extract bulk --root . stage-update REF-001 REQ-001 --key corrected-need
+.os/scripts/buildos extract bulk --root . check REF-001
+.os/scripts/buildos extract bulk --root . stage REF-001
+.os/scripts/buildos extract bulk --root . stage REF-001 --author 'Author name'
+.os/scripts/buildos extract bulk --root . replace-row REF-001 corrected-need < ROW-JSON-ON-STANDARD-INPUT
+.os/scripts/buildos extract bulk --root . decide REF-001 --reviewer 'Reviewer name' < DECISIONS-JSON-ON-STANDARD-INPUT
+.os/scripts/buildos extract bulk --root . publish REF-001
 ```
 
 The two standard-input commands accept JSON sent directly by the agent through its shell input. Do not create a file for that input. `replace-row` accepts one complete BuildOS row without `_stage`. `decide` accepts a JSON list such as `[ {"key":"need-a","review_state":"approved"}, {"key":"need-b","review_state":"held","review_note":"Source does not support the claim."} ]`. The helper keeps `_stage` metadata when it replaces a row. It is the only writer of shared staged JSONL files.

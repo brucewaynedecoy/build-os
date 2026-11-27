@@ -108,7 +108,7 @@ Summary of the contract:
 
 ## Deterministic checks
 
-`scripts/adapters/dynamics-365-ce.mjs` enforces these. They run in addition to the base structural checks.
+`buildos export azure-boards` enforces these when the manifest or `--adapter` names this adapter. They run in addition to the base structural checks.
 
 Errors:
 
@@ -152,7 +152,7 @@ Preserve source meaning when converting its formatting.
 Emit with an adapter. The adapter and its parameters come from the manifest:
 
 ```sh
-node .os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs emit \
+.os/scripts/buildos export azure-boards emit \
   --input <manifest.json> \
   --output <azure-boards-import.csv> \
   --profile target17-new
@@ -161,12 +161,12 @@ node .os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs emit \
 Validate with an adapter. The prefix is read from the file unless it is supplied:
 
 ```sh
-node .os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs validate \
+.os/scripts/buildos export azure-boards validate \
   --input <azure-boards-import.csv> \
   --profile target17-new \
   --adapter dynamics-365-ce
 
-node .os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs validate \
+.os/scripts/buildos export azure-boards validate \
   --input <azure-boards-import.csv> \
   --adapter dynamics-365-ce \
   --adapter-params '{"publisher_prefix":"ex_"}'

@@ -64,10 +64,13 @@ The package has no dependencies, so nothing else is fetched.
 | `buildos discovery run discovery` and `qualify finding` | Record a discovery run and qualify a finding |
 | `buildos design promote finding` | Promote a qualified finding into a design file |
 | `buildos entities validate`, `resolve`, `consolidate`, `rebuild-index` | Work with entity records; `consolidate` and `rebuild-index` write only with `--apply` |
+| `buildos extract bulk <subcommand>` (from `0.2.0`) | Track a bulk extraction for the `buildos-bulk-extract` skill: source reviews, staged rows, review decisions, and the publication of approved rows to `.os/data/` |
+| `buildos fitgap frame`, `packages`, `uncited`, `merge`, `workbook` (from `0.2.0`) | Score a requirement-level fit-gap for the `fit-gap-analysis` skill and write its Excel workbook |
+| `buildos export azure-boards emit`, `validate`, `template`, `adapters` (from `0.2.0`) | Write and check an Azure Boards import CSV for the `buildos-export-azure-boards` skill. A field that starts with `=`, `+`, `-`, or `@` is kept as it is, so open the CSV in a spreadsheet program only from a trusted manifest |
 | `buildos version` | Print the package version and source revision |
 | `buildos help [<domain>]` | Print help |
 
-Add `--json` to `version`, `validate`, `init`, or an `entities`, `intake`, `discovery`, or `design` command for the stable automation envelope. The `intake` commands print it from `0.2.0`; `0.1.0` refuses the flag there. `buildos help <domain>` and `buildos <domain> --help` print text, also with `--json`. For an `intake`, `discovery`, or `design` command, `--help` after the subcommand lists its flags as a usage error (exit `1`). With `--json` before `--help` (`intake convert --json --help`), that is a `usage_error` envelope; with `--json` after it (`intake convert --help --json`), the text form prints, because the flags stop at `--help`. Most writing commands take `--dry-run`. Exit code `0` means success.
+Add `--json` to `version`, `validate`, `init`, or an `entities`, `intake`, `discovery`, `design`, `extract`, `fitgap`, or `export` command for the stable automation envelope. The `intake` commands print it from `0.2.0`; `0.1.0` refuses the flag there. `buildos help <domain>` and `buildos <domain> --help` print text, also with `--json`. For an `intake`, `discovery`, or `design` command, `--help` after the subcommand lists its flags as a usage error (exit `1`). With `--json` before `--help` (`intake convert --json --help`), that is a `usage_error` envelope; with `--json` after it (`intake convert --help --json`), the text form prints, because the flags stop at `--help`. Most writing commands take `--dry-run`. `extract bulk`, `fitgap`, and `export azure-boards` read only files inside the project folder (`--root`, default the current folder), and `fitgap` and `export azure-boards` write outside it only with `--allow-outside-root`. Exit code `0` means success.
 
 ## Legacy command names
 
