@@ -7710,6 +7710,29 @@ An independent review of pull request 12 gave FAIL on `873b319`: the clean tarba
 
 The direct-steps claim of `tarball_mode.proves` says, in part: "in each of these runs, the entry scripts of the Node.js processes that the launch probe observed were only the selected npm's own programs and that package's bin file, with that bin file at least once (A process that is not Node.js, or a Node.js process started with a cleared environment (without the probe in NODE_OPTIONS), is not observed.)". The wrapper and step 10 claims say the same for their steps, with the project's `.os/scripts/pinned-version.cjs` in step 9. `tarball_mode.does_not_prove` adds: "Every executable that a step ran. The launch probe (a --require preload in NODE_OPTIONS and npm's node-options) shows only the entry scripts of the Node.js processes that it observed in each step. A process that is not Node.js, or a Node.js process started with a cleared environment (without the probe in NODE_OPTIONS), is not observed. Such a process leaves no record, so the report cannot name it or show that it did not run." No report field, check label, or doc sentence says that the smoke proves which executable ran.
 
+### Check Results (Final Fix Pass, Pull Request 12)
+
+From `toolkits/buildos/` unless noted, macOS arm64, Node 26.13.1, npm 11.20.0, on `49e4706`.
+
+| Check | Result |
+| --- | --- |
+| `npm ci --ignore-scripts`; `npm run typecheck`; `npm run build` | exit 0 each |
+| `npm test` (sandbox off, for the tests that open a local port) | exit 0; 2,939 tests, 2,926 passed, 0 failed, 13 skipped |
+| `node --test test/smoke-tarball.test.ts` (the whole smoke test file, after each change) | 41 tests, 41 passed |
+| `npm pack --dry-run --json` | 168 files (unchanged) |
+| `node scripts/check-deny-list.mjs --root ../.. --pack .` with the real list, after the build | 0 matches, 0 home folder paths, 168 of 168 package files read |
+| From the repository root: `make-docs project paths validate`; `make-docs check prd` | exit 0 (valid, 0 failing findings); exit 0 (no diagnostics) |
+| The tarball smoke on a clean release build of `49e4706` (`node scripts/release-build.ts --out <folder>`: source revision `49e4706b5d8bf3c0d20b58abaf650b79b914e271`, not dirty; `build-os-0.2.0.tgz`, 1,144,482 bytes, SHA-256 `c5cdbb1bb6a0f86061843cd03b9e70d102e01394c163511e6b938eeb4296f9d4`) | exit 0, passed, 20 of 20 steps; four claims in `tarball_mode.proves`, `not_proven` and `not_run` empty; `absolute_paths_removed` `0`; the preflight read `node-options=--require "<probe>"` and observed `{NPM}/bin/npm-cli.js`; `launchers.observed` lists only `{NPM}/bin/npx-cli.js`, the expected bin files, and the project's `.os/scripts/pinned-version.cjs` (step 9); the JSON and Markdown reports match no POSIX absolute path and no Windows drive path |
+| The same, with `npm_config_bin_links=false` and `NPM_CONFIG_BIN-LINKS=false` in the caller's environment | exit 0, passed, 20 of 20 steps, the same records |
+| The same, with `node-options=--no-warnings` in a caller npmrc (`npm_config_userconfig`, finding 3) | exit 0, passed, 20 of 20 steps (before the fix: 18 of 20); the probe observed the bin file in every step |
+| The registry smoke: `node scripts/published-smoke.ts --version 0.1.0 --out <folder>` (sandbox off, public registry) | exit 0, passed, 13 of 13 steps |
+
+No `release-dry-run.ts` ran: no release gate reads the smoke scripts or the smoke workflow, and the package file list is unchanged. No guide source changed, so the guide was not rebuilt.
+
+### CI Run (Final Fix Pass, Pull Request 12)
+
+Pull request 12, head `49e4706`. The `buildos-smoke` run [46001500681](https://github.com/brucewaynedecoy/build-os/actions/runs/46001500681) (event `pull_request`) passed every job: `check the inputs`; the registry mode on `0.1.0` on the three systems; and the tarball mode on a release build of the tree (source `local-pack`, Node 24.22.3, npm 11.19.1), 20 of 20 steps on Linux and macOS and 19 of 19 on Windows. In the downloaded Linux and Windows reports: `passed` is `true` and `absolute_paths_removed` is `0`; neither report holds a tool-cache path or matches a POSIX absolute path or a Windows drive path (finding 5); `launchers.npm_programs` is `{NPM}/bin/npm-cli.js` and `{NPM}/bin/npx-cli.js` (Windows: `{NPM}\bin\...`, plus `npm-prefix.js`); `launchers.observed` lists only those programs, the expected bin files of the two copies, and `{TMP}/project/.os/scripts/pinned-version.cjs` (finding 1); the preflight read the probe's `node-options` and observed `{NPM}/bin/npm-cli.js` (finding 3); and on Windows each of the 12 shim files of both routes (`buildos`, `buildos-intake`, `build-os`, and `buildos`, each with no extension, `.cmd`, and `.ps1`) is "byte-equal to the canonical shim of the selected npm's cmd-shim" (finding 2). `buildos-ci` runs [46001492517](https://github.com/brucewaynedecoy/build-os/actions/runs/46001492517) (push) and [46001500598](https://github.com/brucewaynedecoy/build-os/actions/runs/46001500598) (pull request) passed, with the tests on Linux, macOS, and Windows (on Windows the real-npm tests compare the real shims of both routes with the canonical ones), and `buildos-deny-list` runs 46001492563 (push) and 46001500763 (pull request) passed: 29 checks passed, 5 skipped (the two real-list deny-list jobs, the two fetch jobs, and CodeRabbit).
+
 ### Follow-ups (Final Fix Pass, Pull Request 12)
 
 None new: each finding is fixed or its claim narrowed. The observation limit of the launch probe stays a stated limit, not a follow-up.
