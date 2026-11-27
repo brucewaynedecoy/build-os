@@ -43,6 +43,11 @@ Deferred obligations and Unassisted Goal Testing: `not-needed-now`; no `O-###` o
 | [docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md](../../../docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md) | New section Review Round 3 and the Final Fix Pass (Pull Request 10): each finding with its reproduction, fix, and test; the root safety record; the adapter note; the confirmed-cases table; F-P9-13 and F-P9-14; the checks. |
 | [docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/09-skill-script-commands-0-2-0.md](../../../docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/09-skill-script-commands-0-2-0.md) | F-P9-04 status: 20 cases, 93 steps. |
 | [docs/prd/03-open-questions-and-risk-register.md](../../../docs/prd/03-open-questions-and-risk-register.md) | R-003: the case count and round 3. |
+
+### Maintainer
+
+| Path | Description |
+| --- | --- |
 | [toolkits/buildos/SECURITY.md](../../../toolkits/buildos/SECURITY.md) | Paths Outside the Project: what the identity check looks at. |
 
 ### User

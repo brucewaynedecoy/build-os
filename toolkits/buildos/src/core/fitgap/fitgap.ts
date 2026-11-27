@@ -191,8 +191,8 @@ export function pyGlob(ctx: FitgapContext, pattern: string, options: { spelled?:
     if (ctx.files.inside(path === "" ? "." : path) === undefined) throw ctx.files.refusal(pattern, false);
   };
   contained(prefix);
-  // F-P9-04 review round 3 (finding 4): for capability-matrix (`spelled`), `\\` is a separator only on Windows, as
-  // `os.path.join` reads it; on POSIX it is part of a name (a folder `fold71\\`). `buildos fitgap` keeps its join (F-P9-12).
+  // F-P9-04 review round 3 (finding 4): for capability-matrix (`spelled`), `\` is a separator only on Windows, as
+  // `os.path.join` reads it; on POSIX it is part of a name (a folder `fold71\`). `buildos fitgap` keeps its join (F-P9-12).
   const separatorAtEnd = (base: string): boolean => base.endsWith("/") || (base.endsWith("\\") && (!spelled || sep === "\\"));
   const join = (base: string, name: string): string => (base === "" ? name : separatorAtEnd(base) ? `${base}${name}` : `${base}/${name}`);
   /** What `os.lstat` (a name) or `os.path.isdir` (a folder) finds at `path`. */
