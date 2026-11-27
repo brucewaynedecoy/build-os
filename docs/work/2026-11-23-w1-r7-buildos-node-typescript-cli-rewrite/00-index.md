@@ -47,7 +47,7 @@ Governing contract: `make-docs://system/contract/performance-evidence-governance
 | Candidate | Base action | Applicability | Target class | Canonical profile owner | Budget | Phase |
 | --- | --- | --- | --- | --- | --- | --- |
 | CLI startup and per-command latency under Node 24 | `create` | `characterize-now` | `characterization-baseline` | `PERF-001`, owned by [P1](./01-typescript-package-foundation.md) | Two passes, one correction attempt, one review cycle, one working day, no external spend | Baseline in P1; recheck in [P8](./08-release-0-1-0.md) |
-| First-run `npx` fetch time for the published package | `create` | `characterize-now` | `characterization-baseline` | `PERF-002`, owned by [P8](./08-release-0-1-0.md) | Two passes on the staged package, one review cycle, half a working day, no external spend | P8 |
+| First-run `npx` fetch time for the published package | `create` | `characterize-now` | `characterization-baseline` | `PERF-002`, owned by [P8](./08-release-0-1-0.md) | Two passes on the staged package, one review cycle, half a working day, no external spend; version 2 for `0.2.0`: two passes, one review cycle, two hours, no external spend | P8; version 2 in P9 |
 | Conversion time for large eval files | `none` | `not-needed` | none | None; accuracy is the gate | Not applicable | None |
 
 ## Phase Map

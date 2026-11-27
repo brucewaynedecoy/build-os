@@ -7430,6 +7430,8 @@ Corrected in review round 1 of pull request 11 (2026-11-27): step 0 now holds th
 
     Status on 2026-11-27, after publication. Steps 0 and b to g ran in order, with two departures at step f: the orchestrator, not the owner, read the two settings through the API, and `npm trust list build-os` was not done (the owner's CLI was not signed in). Step j came out of order: the owner approved the npm stage right after the stage job, before h1, the second run of h2, the h4 record, the h5 review, and the step i approval; `build-os@0.2.0` was published at 2026-11-27T17:49:05.907Z. Step k: the registry checks, the transparency-log lookup of h1 (on the registry tarball), and the registry smoke on three systems passed; F-P8-09 passed on macOS only (Linux and Windows open, so t16 and A72 stay open); `PERF-002` is not measured yet (a separate task); the documentation pull request is the publication record pull request; no checkbox is ticked, because A81 is not met. The publication approval of `0.2.0` is an open owner question. See [Publication Record for 0.2.0](#publication-record-for-020-2026-11-27).
 
+    Status on 2026-11-27, close-out: the owner gave the publication approval of `0.2.0` after the fact, as a dated exception (A81's order stays missed); `PERF-002` ran in the order of this step (profile, packet, measurement, review, size recommendation); the three-system rollback route (F-P9-16) is built. See [Close-Out of 0.2.0](#close-out-of-020-2026-11-27).
+
 ### Facts That Depend on the 0.2.0 Release (F-P8-05)
 
 | Place | Fact | Today |
@@ -7824,8 +7826,8 @@ All times are UTC on 2026-11-27, from the GitHub and npm records named in each r
 | k (registry checks) | Orchestrator, then the implementer again | Below, all verified | [Registry Checks After Publication](#registry-checks-after-publication-step-k) |
 | k (registry smoke) | Orchestrator started it | [`buildos-smoke` run 46045192196](https://github.com/brucewaynedecoy/build-os/actions/runs/46045192196), `source=registry`, `version=0.2.0`, 17:52:32 to 17:53:42, success on Linux, macOS, and Windows | [Registry Smoke on Three Systems](#registry-smoke-on-three-systems-step-k) |
 | k (h1 log lookup, after publication) | Implementer | Done on the registry tarball | [Transparency Log Lookup](#transparency-log-lookup-runbook-h1-done-after-publication) |
-| k (F-P8-09) | Implementer | macOS only, by hand | [Rollback From 0.2.0 to 0.1.0 Through npx (F-P8-09)](#rollback-from-020-to-010-through-npx-f-p8-09) |
-| k (`PERF-002`) | Not done | A separate task | [First-Run npx for 0.2.0 (PERF-002, P9)](#first-run-npx-for-020-perf-002-p9) |
+| k (F-P8-09) | Implementer | macOS only, by hand; the three-system route is in [Close-Out of 0.2.0](#close-out-of-020-2026-11-27) | [Rollback From 0.2.0 to 0.1.0 Through npx (F-P8-09)](#rollback-from-020-to-010-through-npx-f-p8-09) |
+| k (`PERF-002`) | Implementer, in the close-out pull request | Done after this record: profile version 2, packet, pass 1, review, and the size recommendation | [First-Run npx for 0.2.0 (PERF-002, P9)](#first-run-npx-for-020-perf-002-p9) |
 | k (documentation) | Implementer | This pull request | [Documentation Changes (Step k)](#documentation-changes-step-k) |
 
 ### The Missed Order (Steps h1 to i)
@@ -7967,7 +7969,67 @@ The `PERF-002` pass for `0.2.0` (orchestrator decision of 2026-11-27, [Orchestra
 - Budget event: `PERF-002-P9-B1` (2 passes, 0 correction attempts, 1 review cycle, 2 hours, 1 machine, 0 USD).
 - Target: none.
 
-Result: not measured yet when this packet was committed.
+The packet was committed before the pass. Results follow.
+
+#### Pass 1 Result (PERF-002 Version 2)
+
+Pass 1 ran on 2026-11-27 from 19:02:02.128Z to 19:02:16.830Z (verified: the command of the packet, on the packet commit `e16bb4f`, with the official Node.js 24.22.3 and its npm 11.19.1 first on `PATH`). The instrument reported its SHA-256 `881347c4c7e00aa0e15426065d2db05538d3b1047da054872494a28dc8eb4e05` (the packet's), `child_node` v24.22.3, `tarball_bytes` 1,144,483, and machine `Apple M2 Pro`, 10 CPUs, 16 GiB, `darwin 27.2.0 arm64`. 10 repetitions, 0 runs excluded in any workload.
+
+| Workload | n | Min | p25 | Median | p75 | Max | IQR | Median 95% interval |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `cold` (empty npm cache) | 10 | 702.6 | 728.4 | 765.8 | 798.4 | 1,298.4 | 70.1 | 702.6 to 1,298.4 |
+| `warm` (cache filled) | 10 | 389.4 | 396.8 | 406.2 | 415.0 | 429.0 | 18.1 | 389.4 to 429.0 |
+| `tarball` (fetch alone) | 10 | 228.4 | 237.5 | 253.2 | 261.4 | 277.6 | 23.9 | 228.4 to 277.6 |
+
+All values are milliseconds of wall-clock time. The `tarball` median is 33% of the `cold` median (253.2 of 765.8 ms), and the cold median minus the warm median is 359.6 ms; both are reference measurements, as the profile says, not the size-dependent part of the cold run.
+
+#### Raw Samples (PERF-002 Version 2)
+
+In repetition order, milliseconds:
+
+- `cold`: 1,298.4, 737.6, 713.9, 725.3, 806.1, 702.6, 799.6, 772.3, 759.4, 795.1
+- `warm`: 399.0, 405.5, 393.2, 415.1, 396.1, 406.9, 414.7, 389.4, 415.4, 429.0
+- `tarball`: 253.1, 238.0, 228.4, 253.4, 258.7, 236.4, 262.3, 277.6, 273.5, 237.4
+
+#### Agent Review (PERF-002 Version 2, the one review cycle)
+
+- Every counted run exited 0 with `version: 0.2.0`, and every `tarball` digest equalled the reviewed digest `baf54ebf…f20da0`. No path or user name is in the record. Install scripts were off. The children ran Node.js 24.22.3 (`child_node`). Every non-sacrificable constraint held.
+- The first `cold` run (1,298.4 ms) is the slowest; it is kept, as the profile says. It is the first contact of the pass with the registry, and it is what a first chat session meets; the median is the decision statistic. The other nine `cold` runs are 702.6 to 806.1 ms.
+- The decision rule needs only the slowest `cold` run against 2 seconds: 1,298.4 ms is under it, so the spread does not stop the decision.
+- Context only, not a comparison (the profile names the version 1 result this way, because its fingerprint differs: another package, instrument, date, and network): the version 1 pass of `0.1.0` on 2026-11-26 had a `cold` median of 725.6 ms and a slowest `cold` run of 987.7 ms.
+- Outcome: `pass` (the baseline exists, within the protocol). No finding. Reproducibility: `not-attempted` (one pass).
+
+#### Package-Size Decision (PERF-002 Version 2)
+
+Recommendation to the owner, under the profile's decision rule: no package-size reduction now. The slowest first run on the measured machine and network was 1,298.4 ms, under 2 seconds, and the median was 765.8 ms, so the first run does not put the protected outcome at risk there. The decision is the owner's; no owner decision on it is recorded here. This sets no target. A slow, metered, or restricted network, Linux, Windows, and x64 are outside this scope. F-P8-06 (a lazy load of the PDF reader) stays a later-release item with its own `PERF-001` recheck.
+
+#### Budget Ledger (PERF-002 Version 2)
+
+- Authorizing scope and budget event: W1 R7 P9 Stage 3 (t13) and runbook step k, under the orchestrator decision of 2026-11-27; `PERF-002-P9-B1`
+- Requalification authorization: none (a new profile version, not a requalification of an unchanged fingerprint)
+- Declared limits: 2 passes, 0 correction attempts, 1 review cycle, 2 hours, 1 machine, 0 USD
+- Materially distinct attempts: pass 1 on 2026-11-27; no correction attempt
+- Affected checks: all three workloads in pass 1
+- Time, compute, and external spend: under 1 hour (the pass took 15 seconds); 1 machine; 0 USD
+- Review cycles used: 1
+- Remaining budget: 1 pass, 0 review cycles
+- Unchanged evidence reused: none
+- Stop reason and escalation: diminishing return. Pass 2 was not run: on the same fingerprint it could not change the decision. No escalation; the size decision goes to the owner as a recommendation.
+
+#### Result Record (PERF-002 Version 2)
+
+- Result ID: `PERF-002-P9-R1`
+- Exact profile binding: `PERF-002` version 2, `sha256:da6352c87566e1b8921309dc65eabeb70de5a587573b616318256ef6f788e680` (profile commit `28e9f14`)
+- Build and evidence fingerprint: [Evidence Fingerprint](08-release-0-1-0.md#evidence-fingerprint) of the profile
+- Environment and workload: as in the fingerprint
+- Raw and analyzed evidence: the raw samples and the pass 1 result above
+- Observed distribution: `cold` median 765.8 ms (702.6 to 1,298.4), `warm` median 406.2 ms, `tarball` median 253.2 ms
+- Uncertainty and exclusions: the median intervals are the full ranges (10 runs); no run excluded
+- Outcome: `pass`
+- Findings: none
+- Owner or reviewer disposition: agent review above; the package-size decision is open for the owner, with the recommendation above
+- Supported-scope limit: `npx -y build-os@0.2.0 version` with an empty npm cache, Node 24.22.3 and npm 11.19.1, on the one measured machine and its network on 2026-11-27
+- Expiry: at the next release that changes the package size, or sooner at any material change trigger
 
 ### Retrospective Publication Review (0.2.0)
 
@@ -7999,6 +8061,8 @@ The approval of step i is open for the owner, and no agent records it. The quest
 
 > Do you accept the retrospective publication review of 2026-11-27 for `build-os@0.2.0` (stage `6b67a1e5-e85b-49d7-a7b5-046bcb7288ca`, SHA-256 `baf54ebf0717a56bf1bb8ac0391adc7559b16375b90f59f4e4b79865a3f20da0`; the section above) as the publication approval of `0.2.0`, knowing that h1, the h2 smoke on the release asset, the h4 record, the h5 review, and your step i approval did not come before your npm approval, and that the `PERF-002` pass, F-P8-09 on Linux and Windows, and t16 and A72 are still open: yes or no?
 
+Answered 2026-11-27 (owner decision): "Yes, the public file is the reviewed file." See [Owner Decisions of 2026-11-27 (0.2.0 Close-Out)](#owner-decisions-of-2026-11-27-020-close-out). So the publication approval of `0.2.0` is recorded by the explicit dated exception, and A81's order stays recorded as missed for `0.2.0`.
+
 What stays missed whatever the answer: A81's order ("publication happens only after a recorded maintainer approval") for `0.2.0`. A "yes" records the publication approval of `0.2.0` by an explicit dated exception, and the record must say so; it does not make A81 met. A "no" asks for an owner decision on `0.2.0` (for example a `0.2.1`, or deprecating `0.2.0`; no agent runs `npm deprecate`).
 
 ### Acceptance and Task Status After the Publication
@@ -8017,13 +8081,13 @@ So no checkbox changes in this record. t13's work is done: the `0.2.0` version, 
 
 | ID | Status | Who |
 | --- | --- | --- |
-| The `0.2.0` publication approval | Open: the [question above](#question-for-the-020-publication-approval) | Owner |
-| F-P8-09, and t16 and A72 | Passed on macOS; open for Linux and Windows | Agent (or a person on those systems); see F-P9-16 |
-| `PERF-002` for `0.2.0` | Open; a separate task, in the order above | Agent |
+| The `0.2.0` publication approval | Open: the [question above](#question-for-the-020-publication-approval); decided later on 2026-11-27, see [Open Items After the Close-Out](#open-items-after-the-close-out) | Owner |
+| F-P8-09, and t16 and A72 | Passed on macOS; open for Linux and Windows; see [Open Items After the Close-Out](#open-items-after-the-close-out) | Agent (or a person on those systems); see F-P9-16 |
+| `PERF-002` for `0.2.0` | Open; a separate task, in the order above; done later on 2026-11-27 ([Open Items After the Close-Out](#open-items-after-the-close-out)) | Agent |
 | `npm trust list build-os` | Not done for `0.2.0` (owner skipped); not a gate after publication | Owner, if wanted |
 | F-P8-10, F-P8-11 | Closed by the registry smoke run 46045192196 (step 10 on three systems) | None |
 | F-P8-05 | Done: the facts table is checked ([Facts That Depend on the 0.2.0 Release](#facts-that-depend-on-the-020-release-f-p8-05)) | None |
-| F-P9-16 (new) | A rollback step in the smoke workflow, for F-P8-09 on three systems | Agent, if the owner or orchestrator wants that route |
+| F-P9-16 (new) | A rollback step in the smoke workflow, for F-P8-09 on three systems; built in the close-out pull request | Agent, if the owner or orchestrator wants that route |
 | `Q-012` | Its gate, "the first planning gate after `0.2.0`", is now due | Owner |
 | The other "after" rows of [Open Items Before and After the Release](#open-items-before-and-after-the-release) | Unchanged | As listed there |
 
@@ -8333,3 +8397,95 @@ On 2026-11-27, macOS, from `toolkits/buildos/` after `npm ci --ignore-scripts`, 
 | `make-docs project markdown validate` | No finding in a changed line; this file keeps its six `block-spacing` findings (five in the runbook, one in "P4 Open Items") |
 
 No golden capture ran: no golden or fixture changed. No release, smoke, or other workflow ran.
+
+## Close-Out of 0.2.0 (2026-11-27)
+
+The last pull request of `0.2.0`, on the branch `release/0.2.0-closeout` from `main` at `b89ad03` (the merge of pull request 14). It records the two owner decisions below, adds the rollback proof to the smoke route (F-P9-16, for F-P8-09), and runs `PERF-002` for `0.2.0`. Nothing is published, staged, tagged, or deprecated, no setting changed, and no workflow was started by hand.
+
+### Owner Decisions of 2026-11-27 (0.2.0 Close-Out)
+
+The owner answered in the orchestrator's chat on 2026-11-27. Each answer is recorded as an owner decision with that date, in the owner's words. No other owner decision is recorded here.
+
+| Item | Owner decision (2026-11-27) | What it changes |
+| --- | --- | --- |
+| The `0.2.0` publication approval | The [question](#question-for-the-020-publication-approval) asked whether the owner accepts the retrospective publication review of 2026-11-27 for `build-os@0.2.0` (stage `6b67a1e5-e85b-49d7-a7b5-046bcb7288ca`, SHA-256 `baf54ebf0717a56bf1bb8ac0391adc7559b16375b90f59f4e4b79865a3f20da0`) as the publication approval of `0.2.0`, knowing that h1, the h2 smoke on the release asset, the h4 record, the h5 review, and the step i approval did not come before the npm approval, and that the `PERF-002` pass, F-P8-09 on Linux and Windows, and t16 and A72 were still open. The owner: "Yes, the public file is the reviewed file." | This records the publication approval of `build-os@0.2.0` by an explicit dated exception, as t25 did for `0.1.0`. A81's order ("publication happens only after a recorded maintainer approval") stays recorded as missed for `0.2.0`: the approval came after the publication. So A81 is not met, and it cannot be met for `0.2.0`; t9 to t13 stay unticked. |
+| How to finish `0.2.0` | To the orchestrator's options, the owner answered "Yes to 1." Option 1 was "Finish it in one last pull request": the rollback step in the smoke test on 3 systems, the speed measurement, and the record of the yes. | This pull request. |
+
+### Rollback Proof on Three Systems (F-P9-16, for F-P8-09)
+
+What it is. `toolkits/buildos/scripts/rollback-smoke.ts` runs the guide's upgrade and rollback steps from the public registry, and `.github/workflows/buildos-smoke.yml` runs it on `ubuntu-latest`, `macos-latest`, and `windows-latest` with Node 24: by hand as the new source `rollback` (no inputs; `release_run`, `release_tag`, and `tarball_sha256` must be empty), and in every pull-request run beside the `registry` and `local-pack` modes. It needs two published versions, `0.1.0` and `0.2.0`, which the guide's commands name. The existing modes, their guards, and `scripts/published-smoke.ts` are unchanged.
+
+What it runs. A project is made in a temporary folder (`git init`, `npx -y build-os@0.1.0 init --skip-make-docs`, a commit) and copied; the copy is the test project. In the copy, each command of the guide, chapter 4 ("From 0.1.0 to 0.2.0" and "Roll back from 0.2.0 to 0.1.0"), runs as the guide writes it: through `sh -c` on Linux and macOS, and on Windows in its Command Prompt form, made with only the changes that the guide names (backslashes, `rmdir /s /q`, `xcopy /e /i /q`, `copy`, `.os\scripts\buildos.cmd`), through `cmd /d /v:off /s /c`. `scripts/rollback-steps.ts` holds the commands. Command Prompt asks before `copy` replaces a file, so the Windows run sets `COPYCMD=/Y`, which answers yes, as a person at the prompt would. Upgrade step 6 (the pin) is an edit of one field. The steps for an app folder and for an npm install (rollback steps 3 and 4) do not apply: the test project has neither, and the run checks that.
+
+What it checks, the assertions of the macOS hand proof ([Rollback From 0.2.0 to 0.1.0 Through npx (F-P8-09)](#rollback-from-020-to-010-through-npx-f-p8-09)):
+
+- No `buildos` program in any `PATH` folder; npm's global prefix and cache are new empty folders; no npm install of `build-os` is made.
+- Upgrade: the commit of step 1 exits 0, or 1 with git's "nothing to commit"; `mkdir ../buildos-upgrade` prints nothing; both clean copies say "Done." and pin their versions; the five compare commands of step 3 print nothing; exactly one line of `.os/manifest.json` changes; the wrapper prints `version: 0.2.0` with the source revision of `npx -y build-os@0.2.0 version --json`, `help` lists `extract`, `fitgap`, `export`, and `capability-matrix`, `export azure-boards adapters` lists `dynamics-365-ce`, and `capability-matrix --help` prints its usage; the five compare commands against `new` print nothing; the commit exits 0.
+- Rollback: `.os/manifest.json` pins `0.1.0`; the wrapper prints `version: 0.1.0`, and `version --json` names `0.1.0` with the source revision of `npx -y build-os@0.1.0 version --json`; `help` lists none of the four `0.2.0` domains; `capability-matrix --help` stops with exit `2` and "unknown command"; `.os/scripts/buildos-intake version` exits `1` with the legacy notice and `unknown command "version"`; the five compare commands against the backup print nothing; with everything staged, the tree equals the "Before BuildOS 0.2.0" commit.
+- The original project is untouched: `git status --porcelain` prints nothing, the pin is `0.1.0`, and the wrapper prints `version: 0.1.0`.
+- Where each version came from: every `build-os` entry of the npm cache index is the registry document or the registry tarball of `0.1.0` or `0.2.0`, each tarball with the integrity that `npm view build-os@<version> dist.integrity` gives; the npx cache holds `build-os` `0.1.0` and `0.2.0` and no other.
+- Every command of `scripts/rollback-steps.ts` ran.
+
+It writes `rollback-<os>.json` and `rollback-<os>.md`, cleaned as the smoke reports are, to the artifact `buildos-smoke-rollback-<os>`, and exits 1 when a check fails.
+
+Tests. `test/rollback-smoke.test.ts`: every command marked literal is in the guide section word for word; every command of the guide's sh blocks in those sections runs, except the examples for an app folder; the derived compare commands are the step 3 command with `new` or the backup; the Command Prompt form makes only the guide's changes; the help, pin, and cache checks; the usage guard (exit 2 before any npm call); and the cache, prefix, and `PATH` settings of the script. `test/release-workflow.test.ts`: the `rollback` option, the new pull-request paths, the pull-request modes `["registry","local-pack","rollback"]`, the `rollback` input checks (a run, tag, or SHA-256 value fails), and the `rollback` case of the smoke step.
+
+Local runs on this macOS machine, 2026-11-27, every `build-os` from the registry:
+
+| Node.js and `PATH` | Result |
+| --- | --- |
+| 24.22.3 (the official build, checksum checked), `PATH` with that Node.js and the system folders only | passed, 67 of 67 steps, `absolute_paths_removed` 0 |
+| 26.13.1, `PATH` with links to that `node`, `npm`, and `npx` and the system folders only | passed, 67 of 67 steps |
+| 26.13.1, the machine's own `PATH` | 66 of 67: only "no buildos on PATH" failed, as it must: this machine has a global `build-os@0.2.0` on its `PATH` (see [Check Results (Publication Record)](#check-results-publication-record)). Every other step passed, also the rollback checks, because the wrapper uses a global install only when its version is the pin |
+
+### Three-System Run (F-P8-09)
+
+Not run yet. The pull-request run of `buildos-smoke` for this pull request runs the `rollback` mode on the three systems (its files changed); its run ID and results go here when it has run. Nothing is ticked on it before then.
+
+### First-Run Measurement for 0.2.0 (Close-Out)
+
+Done in the order of runbook step k: the profile, `PERF-002` version 2, committed in `28e9f14` before any measurement; the execution packet, committed in `e16bb4f` before the pass; pass 1 on the published `0.2.0`; the one review; and the package-size recommendation. Outcome `pass`; `cold` median 765.8 ms, slowest 1,298.4 ms. Recommendation to the owner: no package-size reduction now; the decision is the owner's. See [First-Run npx for 0.2.0 (PERF-002, P9)](#first-run-npx-for-020-perf-002-p9).
+
+### Acceptance and Task Status (Close-Out)
+
+The rule in [00-index.md](00-index.md): "Mark a task done only when its stage acceptance criteria pass."
+
+| Stage | Criteria | Status | Checkboxes |
+| --- | --- | --- | --- |
+| P9 Stage 3 (t9 to t13) | A79, A80, A81 | A79 and A80 met. A81: the review lists the same items as the P8 review (met, retrospectively); the owner approved the publication on 2026-11-27 after the fact, so "publication happens only after a recorded maintainer approval" is not met for `0.2.0`, and it cannot be met | t9 to t13 stay unticked |
+| P8 Stage 4 (t15 to t18) | A71, A72, A73 | A71 met through the owner's acceptance of 2026-11-27; A73 met by its words; A72 waits for the three-system run above (not run yet) | t15 to t18 stay unticked until A72 is met |
+| P8 Stage 5 (t19 to t25) | A74, A75 | A74 met; A75 not met for `0.1.0`, and it cannot be met | t19 to t25 stay unticked |
+
+### Open Items After the Close-Out
+
+| ID | Status | Who |
+| --- | --- | --- |
+| The `0.2.0` publication approval | Decided 2026-11-27 by the owner ("Yes, the public file is the reviewed file."), as a dated exception; A81's order stays missed | None |
+| F-P8-09, and t16 and A72 | Passed on macOS by hand; the three-system route is built; its run is not run yet ([Three-System Run (F-P8-09)](#three-system-run-f-p8-09)) | Orchestrator reads the pull-request run |
+| `PERF-002` for `0.2.0` | Done: `pass` (`PERF-002-P9-R1`) | None |
+| The package-size decision | Recommendation: no reduction now | Owner |
+| F-P9-16 | Built in this pull request | None |
+| `npm trust list build-os` | Not done for `0.2.0` (owner skipped); not a gate after publication | Owner, if wanted |
+| `Q-012` | Its gate, "the first planning gate after `0.2.0`", is due | Owner |
+| The other "after" rows of [Open Items Before and After the Release](#open-items-before-and-after-the-release) | Unchanged | As listed there |
+
+### Check Results (Close-Out)
+
+On 2026-11-27, macOS, from `toolkits/buildos/`, with the official Node.js 24.22.3 and npm 11.19.1 and `PATH` with that Node.js and the system folders only, the sandbox off for the tests (the real-npm tests open a local port).
+
+| Check | Result |
+| --- | --- |
+| `node scripts/check-dependencies.ts`, `--installed`; `node scripts/check-no-python.ts` | passed each |
+| `npm run typecheck` | passed |
+| `node --test "test/*.test.ts"` | 2,636 tests: 2,624 passed, 0 failed, 12 skipped |
+| `node --test "test/golden/*.test.ts"` | 299 tests: 298 passed, 0 failed, 1 skipped |
+| `node --test "test/conversion-eval/*.test.ts"` | 13 passed, 0 failed |
+| `npm run build`, then `node dist/buildos.js version`; `npm pack --dry-run --json` | passed; 168 files (unchanged: the new scripts are not in the package) |
+| The real-list deny-list scan, `node scripts/check-deny-list.mjs --root ../.. --pack .`, with the list in the environment, outside the repository | exit 0: 2,831 files, 0 matches, 0 home folder paths, 168 of 168 package files read |
+| `make-docs project paths validate`; `make-docs check prd --target-root .` | valid, 0 findings; 0 diagnostics |
+| `make-docs project markdown validate` | 184 findings, the same count as `main` at `b89ad03`; none in a changed file but the six old `block-spacing` findings of this file |
+| `make-docs check performance-evidence --target-root .` | `failed` with the 12 old findings (11 `PERF-VAL-014` warnings and the expired `PERF-001` of P1); `main` at `b89ad03` has 29, because the heading "PERF-002 for 0.2.0" of the publication record read as a second `PERF-002` profile (17 errors). The heading is renamed, and `PERF-002` version 2 has no finding |
+| `node scripts/rollback-smoke.ts --out <folder>` | passed, 67 of 67 steps (the local runs above) |
+| `node scripts/measure-npx-first-run.ts` | the `PERF-002` pass above |
+
+No golden capture ran: no golden or fixture changed. No workflow was started by hand.
