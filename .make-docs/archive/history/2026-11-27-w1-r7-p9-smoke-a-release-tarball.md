@@ -32,6 +32,8 @@ Stacked on pull request 11 (`release/0.2.0-version`), pull request 10 (`feat/cap
 
 Deferred obligations and Unassisted Goal Testing: `not-needed-now`; no `O-###` or `NUAT-###` applies. Guide coverage: `no-change`; no guide source changed.
 
+Checks and CI (same day): a tarball smoke on a clean pack of `dbe771a` passed 18 of 18 steps on macOS. In pull request 12, `buildos-smoke` run 45980072112 passed the registry mode on `0.1.0` and the tarball mode on a release build of the tree on Linux, macOS, and Windows. Two runs by hand on the published `0.1.0` passed both fetch routes on the three systems: release-tag `v0.1.0` (run 45980577022) and release-run 45894295344 (run 45980854201). See [CI Run (F-P9-15)](../../../docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#ci-run-f-p9-15).
+
 ## Documentation
 
 ### Project
