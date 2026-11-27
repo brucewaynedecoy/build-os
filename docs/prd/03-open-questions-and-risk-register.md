@@ -805,6 +805,8 @@ Code anchors:
 
 **W1 R7 P9 capability-matrix command, F-P9-04 (2026-11-26)**: Built for `0.2.0` under the owner decision of 2026-11-26 (not released). `buildos capability-matrix skeleton|assemble|fitgap|validate` replaces the Python tool `cm_build.py` that the skill embedded; it matches the pinned tool on 20 invented fixture cases (93 steps) byte for byte, with divergences SD-23 to SD-27 (review round 1 of pull request 10 added three cases and SD-27; review round 2 added one case and the path rules of SD-24; review round 3, the last under the stop rule, added one case, the `--out` rules of SD-24, and its corrected record of what is looked at outside the root). The skill calls it through the project wrapper, no skill needs Python, and the no-Python check has no exception, so A79 is met. The upgrade from `0.1.0` now refreshes four skills. One owner question is open: Q1, a system code with a pattern character (SD-26), built as option A while the decision is open. See the [evidence report](../work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#f-p9-04-capability-matrix-command-2026-11-26).
 
+**W1 R7 P9 owner decisions (2026-11-27)**: For the `0.2.0` release gate, the owner accepted the five smoke output differences of A71 ("Yes"; rows 2, 3, 6a, 8, and 9 of the comparison) and recorded the dated owner exception for t16 and A72 ("I accept that order"): the public rollback proof through `npx` (F-P8-09) comes after the `0.2.0` publication, and t16 and A72 stay open until it. This entry stays open. See [Owner Decisions of 2026-11-27](../work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#owner-decisions-of-2026-11-27-020-release).
+
 **Disposition**: Existing R-003 reconciles DI-013. W1 R7 narrowed it from an archive, Homebrew, and signing matrix to npm packaging and rollback by version pin.
 
 Code anchors:
@@ -1016,6 +1018,8 @@ Code anchors:
 **Phase/gate**: W1 R7 work P6 and P8.
 
 **W1 R7 P8 post-publication checks (2026-11-26)**: The guide documents the offline install (chapter 04, "Install without access to the npm registry"). Its steps ran on macOS with Node 24.22.3 in npm's offline mode with an empty cache: a global install from the registry tarball, `buildos init --skip-make-docs`, and the project wrapper ran the installed `0.1.0` with no npx. That is not a restricted-network trial. The chat-app and restricted-network trials (t17) are not done; the exact owner checklist and where its result goes are in [Owner Checklist for t17 (R-012)](../work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#owner-checklist-for-t17-r-012). `PERF-002` measured the first `npx -y build-os@0.1.0 version` on one machine and network (median 725.6 ms); slow or restricted networks are outside its scope.
+
+**W1 R7 P9 owner decision (2026-11-27)**: The owner does the chat-app and restricted-network trial (t17, A73) personally before `0.2.0`. It is not done yet, so this entry stays open until its results are recorded. See [Owner Decisions of 2026-11-27](../work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#owner-decisions-of-2026-11-27-020-release).
 
 ## Source Anchors
 

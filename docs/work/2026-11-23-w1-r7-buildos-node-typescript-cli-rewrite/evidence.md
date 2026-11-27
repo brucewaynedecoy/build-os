@@ -5521,9 +5521,9 @@ What stays missed whatever the answer: A75's order. The review was not approved 
 
 | Case | Status |
 | --- | --- |
-| A71 | Smoke tests pass on three operating systems as the steps define them (met); the steps do not run printed fix commands, and one of them is the defect F-P8-11. The output-match part is not met as written: the 5 differences in rows 2, 3, 6a, 8, and 9 of the [comparison](#comparison-with-the-p6-reviewed-output) are not version strings. Needs the owner's acceptance of these 5 differences. |
-| A72 | Not met. The wrapper's pin behaviour is shown on a copied project with a local, never-published earlier candidate; a pinned earlier published version cannot run before a second runnable release exists (F-P8-09). |
-| A73 | Not met. The guide documents the offline install (met for that part); the chat-app and restricted-network results are not recorded (t17, owner). |
+| A71 | Smoke tests pass on three operating systems as the steps define them (met); the steps do not run printed fix commands, and one of them is the defect F-P8-11. The output-match part is not met as written: the 5 differences in rows 2, 3, 6a, 8, and 9 of the [comparison](#comparison-with-the-p6-reviewed-output) are not version strings. Needs the owner's acceptance of these 5 differences. Owner decision 2026-11-27: "Yes", the five differences are accepted ([Owner Decisions of 2026-11-27](#owner-decisions-of-2026-11-27-020-release)). |
+| A72 | Not met. The wrapper's pin behaviour is shown on a copied project with a local, never-published earlier candidate; a pinned earlier published version cannot run before a second runnable release exists (F-P8-09). Owner decision 2026-11-27: the public proof (F-P8-09) comes after the `0.2.0` publication (dated owner exception); A72 stays open until it. |
+| A73 | Not met. The guide documents the offline install (met for that part); the chat-app and restricted-network results are not recorded (t17, owner). Owner decision 2026-11-27: the owner does the trial (t17) personally before `0.2.0`; not done yet. |
 | A74 | Both performance results are in this report within their budgets, each with a stated decision and no target. Its text is met. |
 | A75 | The publication review lists every item in t24 (met for that part, retrospectively). The order is missed for `0.1.0`: publication came before a recorded approval of the review. Not met, and it cannot be met for `0.1.0`. |
 
@@ -7298,11 +7298,11 @@ Corrected in review round 1 of pull request 11 (2026-11-27): step 0 now holds th
 
      | Item | The owner decision and its question | Status on 2026-11-27 |
      | --- | --- | --- |
-     | P8 t25 | Do you accept the retrospective publication review of 2026-11-26 ([Retrospective Publication Review (t24)](#retrospective-publication-review-t24)) as the publication approval of `build-os@0.1.0`: yes or no? A75's order stays missed either way ([Question for t25](#question-for-t25)). | owner decision open |
-     | P8 A71 | Do you accept the five output differences, rows 2, 3, 6a, 8, and 9 of the [comparison](#comparison-with-the-p6-reviewed-output): yes or no? | owner decision open |
-     | P8 t17 and A73 | The chat-app and restricted-network trial ([Owner Checklist for t17 (R-012)](#owner-checklist-for-t17-r-012)): do you do it before `0.2.0`, or do you record an owner exception to release `0.2.0` without it? | owner decision open |
-     | P8 t16 and A72 | The public rollback proof (F-P8-09) needs `0.2.0` on the registry, so it depends on the `0.2.0` publication itself and cannot close before it. Do you record an owner exception to release `0.2.0` with t16 and A72 open until step k? The exception says that the proof depends on this publication. | owner decision open |
-     | F-P9-01 and the Human Experience Review | A person opens one `buildos fitgap` workbook in Microsoft Excel and in LibreOffice, and compares a `buildos fitgap` workbook with the workbook of `fitgap.py` (sheets, headings, owner names, and colors). Is it done before `0.2.0`, or do you waive it? If it is done, the F-P9-01 limit in `RELEASE_NOTES.md` is updated in a pull request that merges before step a, so the reviewed commit and the GitHub Release body (extracted at step e) hold the new text. If it is waived, the limit stays as written. | owner decision open |
+     | P8 t25 | Do you accept the retrospective publication review of 2026-11-26 ([Retrospective Publication Review (t24)](#retrospective-publication-review-t24)) as the publication approval of `build-os@0.1.0`: yes or no? A75's order stays missed either way ([Question for t25](#question-for-t25)). | Owner decision open. On 2026-11-27 the owner asked to see the retrospective publication review first; the orchestrator pointed to [Retrospective Publication Review (t24)](#retrospective-publication-review-t24). No answer yet. |
+     | P8 A71 | Do you accept the five output differences, rows 2, 3, 6a, 8, and 9 of the [comparison](#comparison-with-the-p6-reviewed-output): yes or no? | Decided 2026-11-27 (owner decision): "Yes", the owner accepts the five differences ([Owner Decisions of 2026-11-27](#owner-decisions-of-2026-11-27-020-release)). |
+     | P8 t17 and A73 | The chat-app and restricted-network trial ([Owner Checklist for t17 (R-012)](#owner-checklist-for-t17-r-012)): do you do it before `0.2.0`, or do you record an owner exception to release `0.2.0` without it? | Decided 2026-11-27 (owner decision): the owner does the trial personally before `0.2.0`. The trial is not done yet; t17 stays open until its results are recorded. |
+     | P8 t16 and A72 | The public rollback proof (F-P8-09) needs `0.2.0` on the registry, so it depends on the `0.2.0` publication itself and cannot close before it. Do you record an owner exception to release `0.2.0` with t16 and A72 open until step k? The exception says that the proof depends on this publication. | Decided 2026-11-27 (owner decision): "I accept that order". This is the dated owner exception: the public rollback proof (F-P8-09) comes after the `0.2.0` publication; t16 and A72 stay open until the proof (step k). |
+     | F-P9-01 and the Human Experience Review | A person opens one `buildos fitgap` workbook in Microsoft Excel and in LibreOffice, and compares a `buildos fitgap` workbook with the workbook of `fitgap.py` (sheets, headings, owner names, and colors). Is it done before `0.2.0`, or do you waive it? If it is done, the F-P9-01 limit in `RELEASE_NOTES.md` is updated in a pull request that merges before step a, so the reviewed commit and the GitHub Release body (extracted at step e) hold the new text. If it is waived, the limit stays as written. | Owner decision open. On 2026-11-27 the owner asked whether a workbook exists to test; a workbook pair for that check was prepared outside the repository (not committed). No answer yet. |
 
    - After the dry run, anything that merges into `main` needs a new dry run and a new review of the new commit, with one exception: the reviewed ledger-only merge of step d (it changes only `toolkits/buildos/release-candidates.json`, and the identity gate allows exactly that difference). The identity gate requires that the reviewed source commit is an ancestor of the tag commit and that their files differ only in the ledger's bytes (`SECURITY.md`, Release Gates, "Tag, version, and reviewed entry"). So the reviewed commit need not be the merge commit of this pull request: a later `main` commit works when it gets its own dry run (step b) and its own review (steps c and d).
 1. Step a, merge this pull request (owner). Squash-merge it. Then, from the repository root, `git fetch origin`, and `git rev-parse origin/main` prints `<M>`; `git show origin/main:toolkits/buildos/package.json` says `"version": "0.2.0"`.
@@ -7419,11 +7419,23 @@ The owner's orchestrator decided these on 2026-11-27, after review round 1 of pu
 
 ### Owner Decisions Needed (0.2.0 Release)
 
-1. The P8 exit gate items of step 0: t25, A71, t17 and A73, t16 and A72, and F-P9-01 with the Human Experience Review. Each one is one owner decision, with its question in the step 0 table. Each reads "owner decision open" on 2026-11-27.
+1. The P8 exit gate items of step 0: t25, A71, t17 and A73, t16 and A72, and F-P9-01 with the Human Experience Review. Each one is one owner decision, with its question in the step 0 table. The owner decided A71, t17 and A73, and t16 and A72 on 2026-11-27 ([below](#owner-decisions-of-2026-11-27-020-release)); t25 and F-P9-01 with the Human Experience Review are still open.
 2. SD-26 (Q1), still open from pull request 10: (A) keep the stop for a system code with a pattern character; (B) read the code as plain text. Recommendation: A (built, and the release notes say so).
 3. Whether to overrule either orchestrator decision above.
 
 The Windows label wording of PE-023 needs no decision unless the owner wants another wording; the recorded wording is `run this in Command Prompt: <command>`.
+
+### Owner Decisions of 2026-11-27 (0.2.0 Release)
+
+The owner (Tyler) answered in the orchestrator's chat on 2026-11-27. Each answer is recorded as an owner decision with that date. No acceptance criterion is re-worded, and no checkbox changes: under the rule in [00-index.md](00-index.md), a task is done only when its stage acceptance criteria pass, and Stage 4 of P8 still has A72 and A73 open.
+
+| Item | Owner decision (2026-11-27) | What it changes |
+| --- | --- | --- |
+| P8 A71 | "Yes": the owner accepts the five output differences, rows 2, 3, 6a, 8, and 9 of the [comparison](#comparison-with-the-p6-reviewed-output). | A71's output-match part is not met as written; the five differences are accepted by this dated owner decision. The smoke part was already met. |
+| P8 t17 and A73 | The owner does the chat-app and restricted-network trial personally before `0.2.0`. | Decided; the trial is not done yet. t17 and A73 stay open until the results are recorded ([Owner Checklist for t17 (R-012)](#owner-checklist-for-t17-r-012)). The release does not pass step 0 before then. |
+| P8 t16 and A72 | "I accept that order": the public rollback proof (F-P8-09) comes after the `0.2.0` publication. | This is the dated owner exception that step 0 asks for. t16 and A72 stay open until the proof (runbook step k). |
+| P8 t25 | Open. The owner asked to see the retrospective publication review first; the orchestrator pointed to [Retrospective Publication Review (t24)](#retrospective-publication-review-t24). | Nothing yet; [Question for t25](#question-for-t25) stands. |
+| F-P9-01 and the Human Experience Review | Open. The owner asked whether a workbook exists to test. | A pair of workbooks for that check (the script's golden workbook and the `buildos fitgap` workbook of the same inputs, for two cases) was prepared outside the repository for the owner; nothing from it is committed. |
 
 ### Check Results (Version 0.2.0)
 
