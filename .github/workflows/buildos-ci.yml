@@ -81,7 +81,7 @@ jobs:
         run: node scripts/check-dependencies.ts --installed
 
       # W1 R7 P9 t10, A79: no Python file and no Python call in the packaged
-      # skills, except the named exception that waits for the owner (F-P9-04).
+      # skills, with no exception since F-P9-04 (buildos capability-matrix).
       - name: No-Python check of the packaged skills
         run: node scripts/check-no-python.ts
 

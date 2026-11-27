@@ -49,7 +49,8 @@ Exit codes:
   2  the command was not written correctly
   3  a file cannot be read, or has the wrong shape
   4  a check failed or the run stopped (each problem is listed)
-  5  a write failed
+  5  a write failed (BuildOS put back every file it had changed)
+  10 a write failed and BuildOS could not put back every file; each one left is named
 `;
 
 export const capabilityMatrixDomain: Domain = {

@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "mode": "integration"
+  },
+  "rows": [
+    {
+      "overlap_type": "handoff",
+      "evidence": "Patron records start in the old system and are copied to members nightly, by a job."
+    },
+    {
+      "overlap_type": [
+        "handoff"
+      ],
+      "evidence": "A list where a word belongs."
+    }
+  ]
+}

@@ -26,10 +26,15 @@ export function shExamples(markdown: string): string[] {
   return commands;
 }
 
-/** Splits a command line the way `sh` does for plain words and single-quoted words. */
+/**
+ * Splits a command line the way `sh` does for plain words, single-quoted
+ * words, and double-quoted words (where `\"` and `\\` stand for `"` and `\`).
+ * F-P9-04 review round 1, finding 4: the examples use double quotes, which
+ * Command Prompt reads too.
+ */
 function words(line: string): string[] {
   const out: string[] = [];
-  for (const m of line.matchAll(/'([^']*)'|(\S+)/g)) out.push(m[1] ?? m[2]!);
+  for (const m of line.matchAll(/'([^']*)'|"((?:[^"\\]|\\.)*)"|(\S+)/g)) out.push(m[1] ?? (m[2] !== undefined ? m[2].replace(/\\(["\\])/g, "$1") : m[3]!));
   return out;
 }
 

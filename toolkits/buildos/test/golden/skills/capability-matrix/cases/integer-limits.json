@@ -1,0 +1,77 @@
+{
+  "case": "integer-limits",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "skeleton",
+        "--skeleton",
+        "cm/NUM/skeleton-4096.json"
+      ],
+      "exit": 0,
+      "stdout": "  L1   CORE     0  Numbers\nskeleton[NUM]: 0 capabilities, status={}\n  skeleton OK\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 1,
+      "args": [
+        "skeleton",
+        "--skeleton",
+        "cm/NUM/skeleton-4301.json"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "ValueError: Exceeds the limit (4300 digits) for integer string conversion: value has 4301 digits; use sys.set_int_max_str_digits() to increase the limit\n",
+      "files": {}
+    },
+    {
+      "step": 2,
+      "args": [
+        "validate",
+        "--model",
+        "models/int-ok/hm-capability-model.json"
+      ],
+      "exit": 0,
+      "stdout": "== model HM ==\n  PASS  capability ids unique\n  PASS  requirement ids unique\n  PASS  capability id format HM-LAYER-NN\n  PASS  id layer segment matches layer code\n  PASS  all dependencies resolve\n  PASS  all parent_ids resolve\n  PASS  capability types in vocabulary\n  PASS  statuses in system vocabulary\n  PASS  maturity in fixed vocabulary\n  PASS  origin in vocabulary\n  PASS  requirement kinds in vocabulary\n  PASS  every setting has a valid option_scope\n  PASS  non-settings carry no option fields\n  PASS  every capability has a substantive summary\n  PASS  every requirement has text\n  PASS  no empty capabilities\n  PASS  doc_refs unique among root capabilities\n  PASS  child capabilities share their parent doc_ref or carry a unique one\n  PASS  capability_tree complete\n  PASS  design principles carry id, name, statement\n  PASS  CSV row counts match JSON\n  PASS  requirement_count column sums to requirement rows\n\nALL CHECKS PASSED\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 3,
+      "args": [
+        "validate",
+        "--model",
+        "models/int-zeros/hm-capability-model.json"
+      ],
+      "exit": 1,
+      "stdout": "== model HM ==\n  PASS  capability ids unique\n  PASS  requirement ids unique\n  PASS  capability id format HM-LAYER-NN\n  PASS  id layer segment matches layer code\n  PASS  all dependencies resolve\n  PASS  all parent_ids resolve\n  PASS  capability types in vocabulary\n  PASS  statuses in system vocabulary\n  PASS  maturity in fixed vocabulary\n  PASS  origin in vocabulary\n  PASS  requirement kinds in vocabulary\n  PASS  every setting has a valid option_scope\n  PASS  non-settings carry no option fields\n  PASS  every capability has a substantive summary\n  PASS  every requirement has text\n  PASS  no empty capabilities\n  PASS  doc_refs unique among root capabilities\n  PASS  child capabilities share their parent doc_ref or carry a unique one\n  PASS  capability_tree complete\n  PASS  design principles carry id, name, statement\n  PASS  CSV row counts match JSON\n",
+      "stderr": "ValueError: Exceeds the limit (4300 digits) for integer string conversion: value has 4301 digits; use sys.set_int_max_str_digits() to increase the limit\n",
+      "files": {}
+    },
+    {
+      "step": 4,
+      "args": [
+        "validate",
+        "--model",
+        "models/int-separator/hm-capability-model.json"
+      ],
+      "exit": 1,
+      "stdout": "== model HM ==\n  PASS  capability ids unique\n  PASS  requirement ids unique\n  PASS  capability id format HM-LAYER-NN\n  PASS  id layer segment matches layer code\n  PASS  all dependencies resolve\n  PASS  all parent_ids resolve\n  PASS  capability types in vocabulary\n  PASS  statuses in system vocabulary\n  PASS  maturity in fixed vocabulary\n  PASS  origin in vocabulary\n  PASS  requirement kinds in vocabulary\n  PASS  every setting has a valid option_scope\n  PASS  non-settings carry no option fields\n  PASS  every capability has a substantive summary\n  PASS  every requirement has text\n  PASS  no empty capabilities\n  PASS  doc_refs unique among root capabilities\n  PASS  child capabilities share their parent doc_ref or carry a unique one\n  PASS  capability_tree complete\n  PASS  design principles carry id, name, statement\n  PASS  CSV row counts match JSON\n",
+      "stderr": "ValueError: invalid literal for int() with base 10: '\\x1c1\\x1c'\n",
+      "files": {}
+    },
+    {
+      "step": 5,
+      "args": [
+        "validate",
+        "--model",
+        "models/int-long-text/hm-capability-model.json"
+      ],
+      "exit": 1,
+      "stdout": "== model HM ==\n  PASS  capability ids unique\n  PASS  requirement ids unique\n  PASS  capability id format HM-LAYER-NN\n  PASS  id layer segment matches layer code\n  PASS  all dependencies resolve\n  PASS  all parent_ids resolve\n  PASS  capability types in vocabulary\n  PASS  statuses in system vocabulary\n  PASS  maturity in fixed vocabulary\n  PASS  origin in vocabulary\n  PASS  requirement kinds in vocabulary\n  PASS  every setting has a valid option_scope\n  PASS  non-settings carry no option fields\n  PASS  every capability has a substantive summary\n  PASS  every requirement has text\n  PASS  no empty capabilities\n  PASS  doc_refs unique among root capabilities\n  PASS  child capabilities share their parent doc_ref or carry a unique one\n  PASS  capability_tree complete\n  PASS  design principles carry id, name, statement\n  PASS  CSV row counts match JSON\n",
+      "stderr": "ValueError: invalid literal for int() with base 10: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n",
+      "files": {}
+    }
+  ]
+}

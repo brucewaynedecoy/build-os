@@ -79,8 +79,10 @@ formatting. It needs Node.js 24 or newer and nothing else.
 | `<project>` | The BuildOS project folder, the one that holds `.os/`; `build/` and `deliver/` are inside it |
 | `<buildos>` | The project wrapper `<project>/.os/scripts/buildos` (`<project>\.os\scripts\buildos.cmd` on Windows, with the same arguments) |
 
-Every command below takes `--root <project>`, and its `build/` and `deliver/` paths are relative to
-`<project>`. It reads only files inside `<project>`, and it writes outside `<project>` only with
+Every command below takes `--root "<project>"`, and its `build/` and `deliver/` paths are relative to
+`<project>`. Write each command on one line, and keep the double quotes around `<buildos>` and
+`<project>`: a folder name can hold a space, and Command Prompt reads neither a `\` line break nor single
+quotes. It reads only files inside `<project>`, and it writes outside `<project>` only with
 `--allow-outside-root`; use that only when the user asks for an output outside the project. Keep the
 quotes around a pattern such as `"build/<code>/out_*.json"`: BuildOS expands it itself (Command Prompt
 needs double quotes). Use an absolute `<project>` in every shell command; the working directory does not
@@ -212,7 +214,7 @@ Conventions that the tooling and the narrative depend on:
   parameters are three or four capabilities, not twenty. Over-splitting doubles the fit/gap without adding
   information.
 
-Check it before dispatching anyone: `<buildos> capability-matrix skeleton --root <project> --skeleton build/<code>/skeleton.json`
+Check it before dispatching anyone: `"<buildos>" capability-matrix skeleton --root "<project>" --skeleton build/<code>/skeleton.json`
 reports counts per layer and fails on duplicate ids, a prefix that does not match the layer, a type or status
 outside the vocabulary, or a scope brief too thin to guide an extractor. A skeleton error found after
 extraction costs an hour.
@@ -251,8 +253,7 @@ yourself against the same brief; the brief is the quality control, not the paral
 ## Phase 4 — Assemble models
 
 ```
-<buildos> capability-matrix assemble --root <project> --skeleton build/<code>/skeleton.json \
-        --parts "build/<code>/out_*.json" --out deliver/<CODE> --date <YYYY-MM-DD>
+"<buildos>" capability-matrix assemble --root "<project>" --skeleton build/<code>/skeleton.json --parts "build/<code>/out_*.json" --out deliver/<CODE> --date <YYYY-MM-DD>
 ```
 
 The command restores skeleton fields the agents may have altered, maps `status` to `maturity`, renumbers
@@ -334,9 +335,7 @@ more into fewer capabilities, its extras sit as requirements inside capabilities
 cite. Read the `partial` and `native` evidence for those and carry them into the readout. Then:
 
 ```
-<buildos> capability-matrix fitgap --root <project> --mode replacement \
-        --baseline deliver/<A>/<a>-capability-model.json --target deliver/<B>/<b>-capability-model.json \
-        --rows "build/fit-gap/fg_*.json" --only build/fit-gap/only.json --out deliver/fit-gap --date <YYYY-MM-DD>
+"<buildos>" capability-matrix fitgap --root "<project>" --mode replacement --baseline deliver/<A>/<a>-capability-model.json --target deliver/<B>/<b>-capability-model.json --rows "build/fit-gap/fg_*.json" --only build/fit-gap/only.json --out deliver/fit-gap --date <YYYY-MM-DD>
 ```
 
 **Integration.** Build the union capability list first: walk both models layer by layer and produce
@@ -369,13 +368,11 @@ Open questions for the vendor / other team — the low-confidence rows and every
 ## Phase 8 — Validate and deliver
 
 ```
-<buildos> capability-matrix validate --root <project> --model deliver/<A>/<a>-capability-model.json \
-        --narrative "deliver/<A>/<A Name> - Capability Model.md"
-<buildos> capability-matrix validate --root <project> --model deliver/<B>/<b>-capability-model.json --narrative "…" \
-        --fitgap deliver/fit-gap/<a>-<b>-fit-gap.json --baseline deliver/<A>/… --target deliver/<B>/…
+"<buildos>" capability-matrix validate --root "<project>" --model deliver/<A>/<a>-capability-model.json --narrative "deliver/<A>/<A Name> - Capability Model.md"
+"<buildos>" capability-matrix validate --root "<project>" --model deliver/<B>/<b>-capability-model.json --narrative "…" --fitgap deliver/fit-gap/<a>-<b>-fit-gap.json --baseline deliver/<A>/… --target deliver/<B>/…
 ```
 
-`validate` exits 0 when every check passes and 4 when one fails; the `FAIL` lines say which.
+`validate` exits 0 when every check passes and 4 when one fails; the `FAIL` lines say which. `assemble` and `fitgap` exit 5 when a write failed and BuildOS put back every file it had changed, and 10 when it could not put back every file: the message names each file left, and you check those files before you run the command again.
 
 Every check must pass. Then spot-read: three narrative sections chosen at random for voice and for
 requirements that were listed rather than synthesised, and five fit/gap rows for evidence that names a
@@ -383,6 +380,12 @@ mechanism rather than asserting support. Deliver every file with the file-delive
 has a connected folder, write them there in the layout at the top of this skill, one sub-folder per system
 code and one for the fit/gap. Tell the user the three findings you would put in front of a decision maker,
 not a recap of the phases.
+
+**CSV formula prefixes.** The CSV files keep a cell that starts with `=`, `+`, `-`, or `@` as it is, with
+no guard character, so the data stays exact. A spreadsheet program that opens such a CSV may read that
+cell as a formula and run it. To inspect a CSV, read it as plain text or with a CSV reader that treats
+every cell as text. Open it in a spreadsheet program only when you trust every text in the sources and the
+sub-agent output. Tell the user this when you deliver the CSV files.
 
 ---
 

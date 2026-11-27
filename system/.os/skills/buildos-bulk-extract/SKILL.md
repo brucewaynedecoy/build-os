@@ -27,9 +27,9 @@ Use the harness assigned by the user. Do not choose or switch harnesses. Delegat
 .os/scripts/buildos extract bulk --root . stage-update REF-001 REQ-001 --key corrected-need
 .os/scripts/buildos extract bulk --root . check REF-001
 .os/scripts/buildos extract bulk --root . stage REF-001
-.os/scripts/buildos extract bulk --root . stage REF-001 --author 'Author name'
+.os/scripts/buildos extract bulk --root . stage REF-001 --author "Author name"
 .os/scripts/buildos extract bulk --root . replace-row REF-001 corrected-need < ROW-JSON-ON-STANDARD-INPUT
-.os/scripts/buildos extract bulk --root . decide REF-001 --reviewer 'Reviewer name' < DECISIONS-JSON-ON-STANDARD-INPUT
+.os/scripts/buildos extract bulk --root . decide REF-001 --reviewer "Reviewer name" < DECISIONS-JSON-ON-STANDARD-INPUT
 .os/scripts/buildos extract bulk --root . publish REF-001
 ```
 

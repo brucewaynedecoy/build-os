@@ -23,7 +23,7 @@ import { basename, dirname, isAbsolute, join, normalize, posix, sep } from "node
 import type { FsPortFactory } from "../shared/fs-port.ts";
 import { ProjectFileError, ProjectFiles, type WritePlan } from "../shared/project-files.ts";
 import type { NotRestored } from "../shared/not-restored.ts";
-import { isDict, isList, isPyNumber, PyFloat, PyJsonDepthError, PyJsonError, pyDumps, pyLoads, pyRepr, pyStrip, pyLen, type PyDict, type PyValue } from "../shared/py-json.ts";
+import { isDict, isList, isPyNumber, PyFloat, PyIntDigitsError, PyJsonDepthError, PyJsonError, pyDumps, pyLoads, pyRepr, pyStrip, pyLen, type PyDict, type PyValue } from "../shared/py-json.ts";
 import { PyException, pyDecodeUtf8 } from "../shared/py-text.ts";
 import { READ_LIMITS } from "../shared/read-limits.ts";
 import { pyCsvRows } from "../extract/py-lines.ts";
@@ -144,6 +144,7 @@ export function load(ctx: FitgapContext, path: string): PyValue {
   } catch (error) {
     if (error instanceof PyJsonError) throw new FitgapInput(`${path} is not valid JSON: ${error.message}`);
     if (error instanceof PyJsonDepthError) throw new FitgapInput(`${path}: ${error.message}`);
+    if (error instanceof PyIntDigitsError) throw new FitgapInput(`${path}: ${error.message}`);
     if (error instanceof PyException) throw new FitgapInput(`${path} is not UTF-8 text: ${error.message}`);
     throw error;
   }
@@ -166,8 +167,14 @@ function dumpTo(plan: WritePlan, value: PyValue, path: string): void {
  * after a wildcard cannot leave it. A pattern outside the project folder is
  * a refusal (exit 3), never an empty match. A pattern inside it that matches
  * nothing gives no files, as the script's `glob.glob` did.
+ *
+ * F-P9-04 review round 1 (finding 3): an empty pattern matches nothing, as
+ * `glob.glob('')` returns `[]` (it named the project folder before).
+ * `buildos fitgap` is unchanged: its `globs` still keeps a pattern that names
+ * an existing path when nothing matches.
  */
 export function pyGlob(ctx: FitgapContext, pattern: string): string[] {
+  if (pattern === "") return [];
   const magic = /[*?[]/;
   const parts = pattern.split(sep === "\\" ? /[/\\]/ : "/");
   const first = parts.findIndex((part) => magic.test(part));

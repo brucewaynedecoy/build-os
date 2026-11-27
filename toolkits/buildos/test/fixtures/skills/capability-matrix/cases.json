@@ -701,6 +701,171 @@
       ]
     },
     {
+      "id": "exact-numbers",
+      "description": "assemble and validate with numbers as Python compares them (review round 1, finding 1): integers above 2^53 restored by every digit, 1.0 equal to 1 and to true, NaN unequal to NaN but equal inside a list, -0.0 equal to 0; missing ids sorted by every digit",
+      "base": "library",
+      "steps": [
+        {
+          "run": [
+            "assemble",
+            "--skeleton",
+            "cm/NUM/skeleton.json",
+            "--parts",
+            "cm/NUM/parts/all.json",
+            "--out",
+            "deliver/NUM"
+          ]
+        },
+        {
+          "run": [
+            "assemble",
+            "--skeleton",
+            "cm/NUM/skeleton-big-ids.json",
+            "--parts",
+            "cm/NUM/parts/none.json",
+            "--out",
+            "deliver/NUM-ids"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "integer-limits",
+      "description": "int() and the JSON reader at Python's edges (review round 1, finding 2): 4,096 and 4,300 digits read, 4,301 refused; int() strips non-ASCII white space but not U+001C; a bad literal's repr is cut to 200 characters",
+      "base": "library",
+      "steps": [
+        {
+          "run": [
+            "skeleton",
+            "--skeleton",
+            "cm/NUM/skeleton-4096.json"
+          ]
+        },
+        {
+          "run": [
+            "skeleton",
+            "--skeleton",
+            "cm/NUM/skeleton-4301.json"
+          ]
+        },
+        {
+          "run": [
+            "validate",
+            "--model",
+            "models/int-ok/hm-capability-model.json"
+          ]
+        },
+        {
+          "run": [
+            "validate",
+            "--model",
+            "models/int-zeros/hm-capability-model.json"
+          ]
+        },
+        {
+          "run": [
+            "validate",
+            "--model",
+            "models/int-separator/hm-capability-model.json"
+          ]
+        },
+        {
+          "run": [
+            "validate",
+            "--model",
+            "models/int-long-text/hm-capability-model.json"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "empty-values",
+      "description": "empty optional values (review round 1, finding 3): --narrative= and --fitgap= skip their checks, --parts= and --only '' match nothing, --baseline= names no file; and Python 3.14's text for a list used as a set element",
+      "base": "library",
+      "steps": [
+        {
+          "run": [
+            "assemble",
+            "--skeleton",
+            "cm/CIRC/skeleton.json",
+            "--parts",
+            "cm/CIRC/parts/part-a.json",
+            "cm/CIRC/parts/part-b.json",
+            "--out",
+            "deliver/CIRC",
+            "--date",
+            "2026-01-15"
+          ]
+        },
+        {
+          "run": [
+            "assemble",
+            "--skeleton",
+            "cm/LIB/skeleton.json",
+            "--parts",
+            "cm/LIB/parts/*.json",
+            "--out",
+            "deliver/LIB"
+          ]
+        },
+        {
+          "run": [
+            "validate",
+            "--model",
+            "deliver/CIRC/circ-capability-model.json",
+            "--narrative=",
+            "--fitgap="
+          ]
+        },
+        {
+          "run": [
+            "assemble",
+            "--skeleton",
+            "cm/NUM/skeleton-empty.json",
+            "--parts=",
+            "--out",
+            "deliver/empty"
+          ]
+        },
+        {
+          "run": [
+            "fitgap",
+            "--baseline",
+            "deliver/CIRC/circ-capability-model.json",
+            "--target",
+            "deliver/LIB/lib-capability-model.json",
+            "--rows",
+            "analysis/scored/*.json",
+            "--only",
+            "",
+            "--out",
+            "deliver/fit-gap-empty-only"
+          ]
+        },
+        {
+          "run": [
+            "fitgap",
+            "--baseline=",
+            "--target",
+            "deliver/LIB/lib-capability-model.json",
+            "--rows",
+            "analysis/scored/rows-1.json",
+            "--out",
+            "deliver/fit-gap"
+          ]
+        },
+        {
+          "run": [
+            "validate",
+            "--model",
+            "deliver/CIRC/circ-capability-model.json",
+            "--fitgap",
+            "analysis/bad/integration-unhashable.json"
+          ]
+        }
+      ]
+    },
+    {
       "id": "arguments",
       "description": "argument errors (argparse in the script) and help",
       "base": "library",

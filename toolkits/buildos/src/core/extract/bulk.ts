@@ -16,7 +16,7 @@
 
 import type { FsPortFactory } from "../shared/fs-port.ts";
 import type { HashPort } from "../shared/hash-port.ts";
-import { pyLoads, PyJsonError, PyJsonDepthError, isDict, isList, pyDeepCopy, pyDumps, pyEquals, pyRepr, pyStr, pyStrip, pySplitlines, type PyDict, type PyValue } from "../shared/py-json.ts";
+import { pyLoads, PyIntDigitsError, PyJsonError, PyJsonDepthError, isDict, isList, pyDeepCopy, pyDumps, pyEquals, pyRepr, pyStr, pyStrip, pySplitlines, type PyDict, type PyValue } from "../shared/py-json.ts";
 import { keyError, PyException, pyDecodeUtf8, typeError, valueError } from "../shared/py-text.ts";
 import { jsonlRowLimit, READ_LIMITS } from "../shared/read-limits.ts";
 import { resolveDefaultRoot } from "../shared/root.ts";
@@ -103,6 +103,8 @@ function loads(text: string): PyValue {
   } catch (error) {
     if (error instanceof PyJsonError) throw new PyException("JSONDecodeError", error.message);
     if (error instanceof PyJsonDepthError) throw new PyException("RecursionError", error.message);
+    // json.loads raised int()'s ValueError (more than 4300 digits), not a JSONDecodeError.
+    if (error instanceof PyIntDigitsError) throw new PyException("ValueError", error.pyText);
     throw error;
   }
 }

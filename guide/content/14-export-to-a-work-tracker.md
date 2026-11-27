@@ -53,7 +53,7 @@ A single backlog directory can produce well over a hundred work items, arriving 
    .os/scripts/buildos export azure-boards adapters
    ```
 
-   It prints a short JSON block listing the registered adapters and the parameters each one requires. One adapter is registered today. On Windows, run `.os\scripts\buildos.cmd` with the same arguments, and write each command below on one line: Command Prompt does not read the `\` line breaks.
+   It prints a short JSON block listing the registered adapters and the parameters each one requires. One adapter is registered today. On Windows, run `.os\scripts\buildos.cmd` with the same arguments. Each command below is one line, and a path with a space goes in double quotes: Command Prompt reads neither a `\` line break nor single quotes.
 
    In a project that pins BuildOS `0.1.0`, the command does not exist yet. In each command on this page, write `node .os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs` in place of `.os/scripts/buildos export azure-boards`. The subcommands (`adapters`, `emit`, `validate`) and their options are the same.
 
@@ -62,10 +62,7 @@ A single backlog directory can produce well over a hundred work items, arriving 
 4. **Smoke-test the exporter before you trust it with your own backlog.** The skill ships a synthetic example. From that same directory:
 
    ```sh
-   .os/scripts/buildos export azure-boards emit \
-     --input .os/skills/buildos-export-azure-boards/assets/synthetic-manifest.json \
-     --output workspace/azure-boards.csv \
-     --profile target17-new
+   .os/scripts/buildos export azure-boards emit --input .os/skills/buildos-export-azure-boards/assets/synthetic-manifest.json --output workspace/azure-boards.csv --profile target17-new
    ```
 
    You should see:
@@ -100,9 +97,7 @@ A single backlog directory can produce well over a hundred work items, arriving 
 8. **Validate the file.** From that same directory again:
 
    ```sh
-   .os/scripts/buildos export azure-boards validate \
-     --input <your-export.csv> \
-     --profile target17-new
+   .os/scripts/buildos export azure-boards validate --input <your-export.csv> --profile target17-new
    ```
 
    A passing run prints `"valid": true` with an empty `errors` list and your row counts by type. A failing run prints the reason and exits with status 4.

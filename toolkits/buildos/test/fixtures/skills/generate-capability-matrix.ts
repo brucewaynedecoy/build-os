@@ -404,6 +404,48 @@ put("analysis/bad/fitgap-problems.json", {
 });
 put("analysis/bad/integration-problems.json", { meta: { mode: "integration" }, rows: [{ overlap_type: "duplicate", evidence: "Both lend books; the platform takes over lending at the cut-over weekend." }, { overlap_type: "sideways" }] });
 
+// ---------------------------------------------------------------- review round 1 of pull request 10 (F-P9-04)
+// Python's exact numbers (finding 1), int() and the JSON digit limit (finding 2), empty optional values
+// (finding 3), and Python 3.14's text for an unhashable value. JSON with tokens JavaScript cannot write
+// (NaN, -0.0, 1.0, integers above 2^53, 4,300 digits) is written as text.
+
+const exactSystem = '{"code": "NUM", "converted": true, "status_vocabulary": ["live"], "maturity_map": {"live": "proven"}}';
+const exactLayers = '[{"id": "L1", "code": "CORE", "name": "Numbers"}]';
+const exactCap = (n: string, docRef: string): string => `{"id": "NUM-CORE-${n}", "layer_id": "L1", "doc_ref": ${docRef}, "type": "process", "name": "Number ${n}", "status": "live"}`;
+const exactPart = (n: string, docRef: string): string => `{"id": "NUM-CORE-${n}", "layer_id": "L1", "doc_ref": ${docRef}, "type": "process", "name": "Number ${n}", "status": "live", "summary": "A capability whose doc_ref is a number, to test Python's equality.", "requirements": [{"kind": "rule", "status": "live", "text": "A rule with text."}]}`;
+const exactPairs: [string, string, string][] = [
+  ["01", "9007199254740992", "9007199254740993"],
+  ["02", "1.0", "1"],
+  ["03", "NaN", "NaN"],
+  ["04", "[NaN]", "[NaN]"],
+  ["05", "-0.0", "0"],
+  ["06", "9007199254740993", "9007199254740992.0"],
+  ["07", "true", "1"],
+  ["08", "12345678901234567890123", "12345678901234567890123"],
+];
+put("cm/NUM/skeleton.json", `{"system": ${exactSystem}, "layers": ${exactLayers}, "capabilities": [\n${exactPairs.map(([n, sk]) => exactCap(n, sk)).join(",\n")}\n]}\n`);
+put("cm/NUM/parts/all.json", `[\n${exactPairs.map(([n, , pt]) => exactPart(n, pt)).join(",\n")}\n]\n`);
+put("cm/NUM/skeleton-big-ids.json", `{"system": ${exactSystem}, "layers": ${exactLayers}, "capabilities": [{"id": 9007199254740993}, {"id": 9007199254740992}, {"id": 9007199254740994}, {"id": 1.5}]}\n`);
+put("cm/NUM/parts/none.json", "[]\n");
+const digits = (n: number): string => "7".repeat(n);
+put("cm/NUM/skeleton-4096.json", `{"system": {"code": "NUM", "converted": true, "status_vocabulary": ["live"], "maturity_map": {"live": "proven"}, "big": ${digits(4096)}, "bigger": -${digits(4300)}, "long_float": 1.${"5".repeat(5000)}}, "layers": ${exactLayers}, "capabilities": []}\n`);
+put("cm/NUM/skeleton-4301.json", `{"system": {"code": "NUM", "big": ${digits(4301)}}, "layers": [], "capabilities": []}\n`);
+put("cm/NUM/skeleton-empty.json", '{"system": {"code": "NUM", "status_vocabulary": [], "maturity_map": {}}, "layers": [], "capabilities": []}\n');
+
+const countCaps = (codes: string[]): J[] => codes.map((_c, i) => vcapNum(`HM-ONE-0${i + 1}`));
+const vcapNum = (id: string): J => ({ id, parent_id: null, name: `Capability ${id}`, layer_id: "L1", doc_ref: id.slice(-2), type: "process", status: "on", maturity: "available", origin: "derived", source_refs: [], summary: "A capability of the hand-made model, long enough to pass the check.", personas: [], triggers: [], outcomes: [], entities: [], dependencies: [], provenance: [], source: [], tags: [], requirements: [{ id: `${id}-R01`, kind: "rule", status: "on", maturity: "available", text: "A requirement with text.", option_values: null, option_default: null, option_scope: null, source_refs: [] }] });
+const countModel = (folder: string, counts: string[]): void => {
+  const caps = countCaps(counts);
+  put(`models/${folder}/hm-capability-model.json`, { schema_version: "4", meta: { code: "HM", vocabularies: { status: ["on"] } }, layers: [{ id: "L1", code: "ONE", name: "One" }], design_principles: [], capabilities: caps, capability_tree: caps.map((c) => ({ id: c["id"] })) });
+  put(`models/${folder}/hm-capabilities.csv`, `system,capability_id,requirement_count\r\n${counts.map((c, i) => `HM,HM-ONE-0${i + 1},${c}`).join("\r\n")}\r\n`);
+  put(`models/${folder}/hm-requirements.csv`, `system,requirement_id\r\n${counts.map((_c, i) => `HM,HM-ONE-0${i + 1}-R01`).join("\r\n")}\r\n`);
+};
+countModel("int-ok", [`${"0".repeat(4299)}1`, " 1 ", "　1", "\u000b1\u000c", "1_0".replace("1_0", "0_1")]);
+countModel("int-zeros", [`${"0".repeat(4300)}1`]);
+countModel("int-separator", ["\u001c1\u001c"]);
+countModel("int-long-text", ["x".repeat(300)]);
+put("analysis/bad/integration-unhashable.json", { meta: { mode: "integration" }, rows: [{ overlap_type: "handoff", evidence: "Patron records start in the old system and are copied to members nightly, by a job." }, { overlap_type: ["handoff"], evidence: "A list where a word belongs." }] });
+
 // ---------------------------------------------------------------- cases
 
 interface Step {
@@ -492,6 +534,27 @@ add("validate-crashes", "validate: an unresolved parent, a missing narrative, a 
   run("validate", "--model", CIRC_MODEL, "--narrative", "deliver/CIRC/missing.md"),
   run("validate", "--model", CIRC_MODEL, "--fitgap", "analysis/bad/fitgap-problems.json"),
   run("validate", "--model", "models/not-json.json"),
+]);
+add("exact-numbers", "assemble and validate with numbers as Python compares them (review round 1, finding 1): integers above 2^53 restored by every digit, 1.0 equal to 1 and to true, NaN unequal to NaN but equal inside a list, -0.0 equal to 0; missing ids sorted by every digit", [
+  run("assemble", "--skeleton", "cm/NUM/skeleton.json", "--parts", "cm/NUM/parts/all.json", "--out", "deliver/NUM"),
+  run("assemble", "--skeleton", "cm/NUM/skeleton-big-ids.json", "--parts", "cm/NUM/parts/none.json", "--out", "deliver/NUM-ids"),
+]);
+add("integer-limits", "int() and the JSON reader at Python's edges (review round 1, finding 2): 4,096 and 4,300 digits read, 4,301 refused; int() strips non-ASCII white space but not U+001C; a bad literal's repr is cut to 200 characters", [
+  run("skeleton", "--skeleton", "cm/NUM/skeleton-4096.json"),
+  run("skeleton", "--skeleton", "cm/NUM/skeleton-4301.json"),
+  run("validate", "--model", "models/int-ok/hm-capability-model.json"),
+  run("validate", "--model", "models/int-zeros/hm-capability-model.json"),
+  run("validate", "--model", "models/int-separator/hm-capability-model.json"),
+  run("validate", "--model", "models/int-long-text/hm-capability-model.json"),
+]);
+add("empty-values", "empty optional values (review round 1, finding 3): --narrative= and --fitgap= skip their checks, --parts= and --only '' match nothing, --baseline= names no file; and Python 3.14's text for a list used as a set element", [
+  ASSEMBLE_CIRC,
+  ASSEMBLE_LIB,
+  run("validate", "--model", CIRC_MODEL, "--narrative=", "--fitgap="),
+  run("assemble", "--skeleton", "cm/NUM/skeleton-empty.json", "--parts=", "--out", "deliver/empty"),
+  run("fitgap", ...PAIR, "--rows", "analysis/scored/*.json", "--only", "", "--out", "deliver/fit-gap-empty-only"),
+  run("fitgap", "--baseline=", "--target", LIB_MODEL, "--rows", "analysis/scored/rows-1.json", "--out", "deliver/fit-gap"),
+  run("validate", "--model", CIRC_MODEL, "--fitgap", "analysis/bad/integration-unhashable.json"),
 ]);
 add("arguments", "argument errors (argparse in the script) and help", [
   run(),

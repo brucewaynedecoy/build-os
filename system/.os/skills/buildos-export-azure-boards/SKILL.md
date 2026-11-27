@@ -112,28 +112,20 @@ Never copy IDs, state values, iteration paths, tags, or identities from an unrel
 Create a manifest as described in [references/azure-boards-csv-contract.md](references/azure-boards-csv-contract.md), then run:
 
 ```sh
-.os/scripts/buildos export azure-boards emit \
-  --input <manifest.json> \
-  --output <azure-boards-import.csv> \
-  --profile target17-new
+.os/scripts/buildos export azure-boards emit --input <manifest.json> --output <azure-boards-import.csv> --profile target17-new
 
-.os/scripts/buildos export azure-boards validate \
-  --input <azure-boards-import.csv> \
-  --profile target17-new
+.os/scripts/buildos export azure-boards validate --input <azure-boards-import.csv> --profile target17-new
 ```
 
 The emitter reads `adapter` and `adapter_params` from the manifest and runs the adapter checks during `emit`. Adapter errors block the write. To re-check a delivered CSV, name the adapter on `validate`:
 
 ```sh
-.os/scripts/buildos export azure-boards validate \
-  --input <azure-boards-import.csv> \
-  --profile target17-new \
-  --adapter dynamics-365-ce
+.os/scripts/buildos export azure-boards validate --input <azure-boards-import.csv> --profile target17-new --adapter dynamics-365-ce
 
 .os/scripts/buildos export azure-boards adapters
 ```
 
-Run these from the project root through the project wrapper (`.os\scripts\buildos.cmd` on Windows, with the same arguments). The command needs Node.js 24 or newer and nothing else. It reads only files inside the project, and it writes `--output` outside the project only with `--allow-outside-root`; use that only when the user asks for it. On Windows, write each command on one line: Command Prompt does not read the `\` line breaks above.
+Run these from the project root through the project wrapper (`.os\scripts\buildos.cmd` on Windows, with the same arguments). The command needs Node.js 24 or newer and nothing else. It reads only files inside the project, and it writes `--output` outside the project only with `--allow-outside-root`; use that only when the user asks for it. Keep each command on one line, and write a path with a space in double quotes: Command Prompt reads neither a `\` line break nor single quotes.
 
 ## Hard validation gates
 

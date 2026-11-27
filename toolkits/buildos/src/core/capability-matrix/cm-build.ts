@@ -13,10 +13,11 @@
  * Python's `json` module does it, CSV as its `csv` module writes it, and
  * every value follows Python's rules (`py-values.ts`, `fitgap/py.ts`), so a
  * value of the wrong type stops where the script crashed. What differs is
- * recorded in test/golden/skills/divergences.json (SD-23 to SD-26): a crash
+ * recorded in test/golden/skills/divergences.json (SD-23 to SD-27): a crash
  * is one plain line; reads, matches, and writes stay inside the project; a
- * failed run writes nothing; the bytes are the same on every system; and a
- * system code with a pattern character stops the id check.
+ * failed run writes nothing; the bytes are the same on every system; a
+ * system code with a pattern character stops the id check; and a set is
+ * sorted from its first-seen order, not Python's hash order.
  */
 
 import { ProjectFileError, type WritePlan } from "../shared/project-files.ts";
@@ -25,7 +26,7 @@ import { PyException, pyDecodeUtf8 } from "../shared/py-text.ts";
 import { READ_LIMITS } from "../shared/read-limits.ts";
 import { pyCsvRows } from "../extract/py-lines.ts";
 import { FitgapInput, load as fitgapLoad, pyGlob, type FitgapContext } from "../fitgap/fitgap.ts";
-import { FitgapShapeError, fmt, get, iter, pyCompare, pyEq, sortedBy, truthy, type V } from "../fitgap/py.ts";
+import { FitgapShapeError, fmt, get, iter, truthy, type V } from "../fitgap/py.ts";
 import {
   PyMap,
   PySet,
@@ -45,9 +46,12 @@ import {
   lower,
   popKey,
   pyDirname,
+  pyEqual,
   pyIn,
   pyIntOf,
   pyLength,
+  pyOrder,
+  pySorted,
   setDefault,
   setItem,
   split,
@@ -76,7 +80,7 @@ const REQ_FIELDS = ["id", "kind", "status", "maturity", "text", "option_values",
 const LISTS = ["source_refs", "personas", "triggers", "outcomes", "entities", "dependencies", "provenance", "source", "tags"];
 
 /** `sorted(...)` of a fixed vocabulary, by code point. */
-const sortedNames = (set: ReadonlySet<string>): string[] => [...set].sort((a, b) => pyCompare(a, b));
+const sortedNames = (set: ReadonlySet<string>): string[] => [...set].sort((a, b) => pyOrder(a, b));
 
 /** `sys.exit(message)`: the message on stderr (PRD 20: exit 4). */
 export class CmStop extends Error {}
@@ -100,6 +104,8 @@ function stop(message: string): never {
 /** `json.load(open(p, encoding='utf-8'))`; a path that is not a string is the `TypeError` of `open`. */
 function load(ctx: CmContext, path: V): PyValue {
   if (typeof path !== "string") throw new FitgapShapeError(`TypeError: expected str, bytes or os.PathLike object, not ${path === null || path === undefined ? "NoneType" : typeof path}`);
+  // `open('')` names no file (an empty --model=, --baseline=, ...); BuildOS would resolve it to the project folder.
+  if (path === "") throw new FitgapInput("[Errno 2] No such file or directory: ''");
   return fitgapLoad(ctx, path);
 }
 
@@ -107,7 +113,7 @@ function load(ctx: CmContext, path: V): PyValue {
 function globs(ctx: CmContext, patterns: readonly string[]): string[] {
   const found: string[] = [];
   for (const p of patterns) found.push(...pyGlob(ctx, p));
-  return [...found].sort((a, b) => pyCompare(a, b));
+  return [...found].sort((a, b) => pyOrder(a, b));
 }
 
 /** The text of a UTF-8 file as Python's text mode reads it (universal newlines; a byte order mark kept). */
@@ -144,18 +150,30 @@ function csvRow(values: readonly V[]): string {
   return `${fields.join(",")}\r\n`;
 }
 
-/** The compiled id pattern `rf'{code}-[A-Z]{{2,4}}-\d{{2,3}}[a-z]?'`, made the first time the script compiled it. */
+/** The fixed part of the id pattern after `<code>-`: `[A-Z]{2,4}-\d{2,3}[a-z]?` with Python's `\d` (any Unicode decimal digit). */
+const ID_SUFFIX = /^[A-Z]{2,4}-\p{Nd}{2,3}[a-z]?$/u;
+
+/** A character that Python's `re` reads specially in the system code (SD-26). */
+const PATTERN_CHARACTER = /[\\.^$*+?{}[\]|()]/;
+
+/**
+ * `re.fullmatch(rf'{code}-[A-Z]{{2,4}}-\d{{2,3}}[a-z]?', id)`, checked from
+ * the first id on, as the script compiled the pattern there. A code with no
+ * pattern character is plain text in Python's pattern, so the id must start
+ * with the code and a dash, as a literal prefix, and the rest must match the
+ * fixed suffix. No pattern is built from the code (review round 1, SD-26).
+ */
 function idPattern(code: V): (id: V) => boolean {
-  let re: RegExp | undefined;
+  let prefix: string | undefined;
   return (id: V): boolean => {
-    if (re === undefined) {
+    if (prefix === undefined) {
       const text = f(code);
       // SD-26: Python reads the code as part of its pattern. A code with a pattern character stops here instead.
-      if (/[\\.^$*+?{}[\]|()]/.test(text)) throw new CmPatternCode(`the system code ${pyRepr(code ?? null)} has a character that the id check reads as a pattern (one of \\ . ^ $ * + ? { } [ ] | ( )). Use a code of letters and digits.`);
-      re = new RegExp(`^${text}-[A-Z]{2,4}-\\p{Nd}{2,3}[a-z]?$`, "u");
+      if (PATTERN_CHARACTER.test(text)) throw new CmPatternCode(`the system code ${pyRepr(code ?? null)} has a character that the id check reads as a pattern (one of \\ . ^ $ * + ? { } [ ] | ( )). Use a code of letters and digits.`);
+      prefix = `${text}-`;
     }
     if (typeof id !== "string") throw new FitgapShapeError(`TypeError: expected string or bytes-like object, got '${id === null || id === undefined ? "NoneType" : isList(id) ? "list" : isDict(id) ? "dict" : typeof id === "boolean" ? "bool" : typeof id === "number" || typeof id === "bigint" ? "int" : "float"}'`);
-    return re.test(id);
+    return id.startsWith(prefix) && ID_SUFFIX.test(id.slice(prefix.length));
   };
 }
 
@@ -201,7 +219,7 @@ export function cmSkeleton(ctx: CmContext, skeletonPath: string): void {
   const system = () => gi(sk, "system");
   for (const c of iter(caps)) {
     if (!matches(gi(c, "id"))) bad.push(`${f(gi(c, "id"))}: id format`);
-    if (!pyEq(gi(split(gi(c, "id"), "-"), 1), LC.get(gi(c, "layer_id")) ?? null)) bad.push(`${f(gi(c, "id"))}: prefix does not match layer ${f(gi(c, "layer_id"))}`);
+    if (!pyEqual(gi(split(gi(c, "id"), "-"), 1), LC.get(gi(c, "layer_id")) ?? null)) bad.push(`${f(gi(c, "id"))}: prefix does not match layer ${f(gi(c, "layer_id"))}`);
     if (!inStrings(gi(c, "type"), TYPES)) bad.push(`${f(gi(c, "id"))}: type '${f(gi(c, "type"))}'`);
     if (!pyIn(gi(c, "status"), gi(system(), "status_vocabulary"))) bad.push(`${f(gi(c, "id"))}: status '${f(gi(c, "status"))}'`);
     if (!pyIn(gi(c, "status"), gi(system(), "maturity_map"))) bad.push(`${f(gi(c, "id"))}: status '${f(gi(c, "status"))}' has no maturity_map entry`);
@@ -246,17 +264,17 @@ export function cmAssemble(ctx: CmContext, a: AssembleArgs): void {
   const miss = want.minus(got);
   const extra = got.minus(want);
   if (miss.size > 0 || extra.size > 0) {
-    const sortedRepr = (s: PySet): string => pyRepr(sortedBy(s.keys(), (x) => x));
+    const sortedRepr = (s: PySet): string => pyRepr(pySorted(s.keys(), (x) => x));
     stop(`assemble: skeleton/parts mismatch  missing=${sortedRepr(miss)} extra=${sortedRepr(extra)}`);
   }
-  const sortedCaps = sortedBy(caps, (c) => indexOf(order, gi(c, "id")));
+  const sortedCaps = pySorted(caps, (c) => indexOf(order, gi(c, "id")));
   const warn = new PyMap<number>();
   const bump = (key: string): void => warn.set(key, (warn.get(key) ?? 0) + 1);
   for (const c of sortedCaps) {
     const s = skel.at(gi(c, "id"));
     for (const field of ["layer_id", "doc_ref", "type", "name"]) {
       const sv = gi(s, field);
-      if (!pyEq(getOr(c, field), sv)) {
+      if (!pyEqual(getOr(c, field), sv)) {
         bump(`restored_${field}`);
         setItem(c, field, gi(s, field));
       }
@@ -274,7 +292,7 @@ export function cmAssemble(ctx: CmContext, a: AssembleArgs): void {
     const reqs: PyValue[] = [];
     iter(getOr(c, "requirements", []) ?? null).forEach((r, index) => {
       const rid = `${f(gi(c, "id"))}-R${String(index + 1).padStart(2, "0")}`;
-      if (truthy(get(r, "id")) && !pyEq(gi(r, "id"), rid)) bump("renumbered_req");
+      if (truthy(get(r, "id")) && !pyEqual(gi(r, "id"), rid)) bump("renumbered_req");
       setItem(r, "id", rid);
       if (!pyIn(gi(r, "status"), svocab)) stop(`assemble: ${rid} status '${f(gi(r, "status"))}' not in vocabulary`);
       setItem(r, "maturity", gi(smap, gi(r, "status")));
@@ -284,7 +302,7 @@ export function cmAssemble(ctx: CmContext, a: AssembleArgs): void {
         bump(`scope_alias_${scope as string}`);
         setItem(r, "option_scope", SCOPE_ALIASES.get(scope as string)!);
       }
-      if (!pyEq(gi(r, "kind"), "setting")) {
+      if (!pyEqual(gi(r, "kind"), "setting")) {
         if (truthy(gi(r, "option_scope")) || truthy(gi(r, "option_values"))) bump("scope_stripped_nonsetting");
         setItem(r, "option_values", null);
         setItem(r, "option_default", null);
@@ -431,9 +449,9 @@ export function cmFitgap(ctx: CmContext, a: FitgapArgs): void {
   }
   for (const r of only) if (!t.caps.has(gi(r, "target_capability_id"))) stop(`fitgap: target-only row cites unknown target id ${f(gi(r, "target_capability_id"))}`);
   const border = iter(gi(b.m, "capabilities")).map((c) => gi(c, "id"));
-  const sortedRows = sortedBy(rows, (r) => indexOf(border, gi(r, "baseline_capability_id")));
+  const sortedRows = pySorted(rows, (r) => indexOf(border, gi(r, "baseline_capability_id")));
   const torder = iter(gi(t.m, "capabilities")).map((c) => gi(c, "id"));
-  const sortedOnly = sortedBy(only, (r) => indexOf(torder, gi(r, "target_capability_id")));
+  const sortedOnly = pySorted(only, (r) => indexOf(torder, gi(r, "target_capability_id")));
   const hdr = ["baseline_system", "target_system", "direction", "baseline_capability_id", "baseline_name", "layer_id", "layer_code", "layer_name", "baseline_status", "baseline_maturity", "baseline_requirement_count", "verdict", "confidence", "effort", "target_capability_ids", "target_capability_names", "target_statuses", "target_maturities", "target_requirement_count", "evidence", "gap_detail", "migration_note"];
   const stem = `${a.out}/${lower(bcode)}-${lower(tcode)}-fit-gap`;
   let csv = `﻿${csvRow(hdr)}`;
@@ -443,7 +461,7 @@ export function cmFitgap(ctx: CmContext, a: FitgapArgs): void {
     const v = get(r, "target_capability_ids");
     const tl = truthy(v) ? v! : [];
     const ts = iter(tl);
-    const uniqueSorted = (field: string): PyValue[] => sortedBy(new PySet(ts.map((i) => gi(t.caps.at(i), field))).keys(), (x) => x);
+    const uniqueSorted = (field: string): PyValue[] => pySorted(new PySet(ts.map((i) => gi(t.caps.at(i), field))).keys(), (x) => x);
     const total = (): number => {
       let n = 0;
       for (const i of ts) n += pyLength(gi(t.caps.at(i), "requirements"));
@@ -649,7 +667,7 @@ export function cmValidate(ctx: CmContext, a: ValidateArgs): void {
     `capability id format ${f(code)}-LAYER-NN`,
   );
   chk(
-    all(caps, (c) => pyEq(gi(split(gi(c, "id"), "-"), 1), LC.get(gi(c, "layer_id")) ?? null)),
+    all(caps, (c) => pyEqual(gi(split(gi(c, "id"), "-"), 1), LC.get(gi(c, "layer_id")) ?? null)),
     "id layer segment matches layer code",
   );
   chk(
@@ -679,14 +697,14 @@ export function cmValidate(ctx: CmContext, a: ValidateArgs): void {
   );
   chk(
     all(
-      where(reqs, (r) => pyEq(gi(r, "kind"), "setting")),
+      where(reqs, (r) => pyEqual(gi(r, "kind"), "setting")),
       (r) => inStrings(gi(r, "option_scope"), SCOPES),
     ),
     "every setting has a valid option_scope",
   );
   chk(
     all(
-      where(reqs, (r) => !pyEq(gi(r, "kind"), "setting")),
+      where(reqs, (r) => !pyEqual(gi(r, "kind"), "setting")),
       (r) => gi(r, "option_scope") === null && gi(r, "option_values") === null,
     ),
     "non-settings carry no option fields",
@@ -709,7 +727,7 @@ export function cmValidate(ctx: CmContext, a: ValidateArgs): void {
   chk(new PySet(roots.map((c) => gi(c, "doc_ref"))).size === roots.length, "doc_refs unique among root capabilities");
   const PM = mapOf(caps, (c) => gi(c, "id"), (c) => c);
   chk(
-    all(kids, (c) => pyEq(gi(c, "doc_ref"), gi(PM.at(gi(c, "parent_id")), "doc_ref")) || !new PySet(roots.map((r) => gi(r, "doc_ref"))).has(gi(c, "doc_ref"))),
+    all(kids, (c) => pyEqual(gi(c, "doc_ref"), gi(PM.at(gi(c, "parent_id")), "doc_ref")) || !new PySet(roots.map((r) => gi(r, "doc_ref"))).has(gi(c, "doc_ref"))),
     "child capabilities share their parent doc_ref or carry a unique one",
   );
   chk(pyLength(gi(m, "capability_tree")) === caps.length, "capability_tree complete");
@@ -728,7 +746,8 @@ export function cmValidate(ctx: CmContext, a: ValidateArgs): void {
     for (const c of cc) total += pyIntOf(gi(c, "requirement_count"));
     chk(total === BigInt(reqs.length), "requirement_count column sums to requirement rows");
   }
-  if (a.narrative !== undefined) {
+  // `if a.narrative:` and `if a.fitgap:`: an empty value (`--narrative=`) skips the checks, as Python's truthiness did.
+  if (a.narrative !== undefined && a.narrative !== "") {
     print(ctx, `== narrative ${f(code)} ==`);
     const doc = readText(ctx, a.narrative);
     const heads = new PyMap<string>();
@@ -737,7 +756,7 @@ export function cmValidate(ctx: CmContext, a: ValidateArgs): void {
       all(roots, (c) => heads.has(gi(c, "doc_ref"))),
       "every root capability has a narrative section (### <doc_ref> <name>)",
     );
-    const bad = roots.filter((c) => !pyEq(pyStrip(heads.has(gi(c, "doc_ref")) ? heads.get(gi(c, "doc_ref"))! : ""), gi(c, "name"))).map((c) => gi(c, "doc_ref"));
+    const bad = roots.filter((c) => !pyEqual(pyStrip(heads.has(gi(c, "doc_ref")) ? heads.get(gi(c, "doc_ref"))! : ""), gi(c, "name"))).map((c) => gi(c, "doc_ref"));
     chk(bad.length === 0, `section headings match root capability names exactly (mismatches: ${pyRepr(bad.slice(0, 5))})`);
     chk(
       all(kids, (c) => pyIn(gi(c, "name"), doc)),
@@ -749,11 +768,11 @@ export function cmValidate(ctx: CmContext, a: ValidateArgs): void {
     );
     chk(doc.includes("## Part I") && doc.includes("Capability Inventory"), "narrative has Part I framing and a capability inventory");
   }
-  if (a.fitgap !== undefined) {
+  if (a.fitgap !== undefined && a.fitgap !== "") {
     const fg = load(ctx, a.fitgap);
     const mode = get(gi(fg, "meta"), "mode");
     print(ctx, `== fit/gap ${f(mode)} ==`);
-    if (pyEq(mode, "integration")) {
+    if (pyEqual(mode, "integration")) {
       const rows = iter(gi(fg, "rows"));
       chk(
         all(rows, (r) => inStrings(gi(r, "overlap_type"), OVERLAPS)),
@@ -792,7 +811,7 @@ export function cmValidate(ctx: CmContext, a: ValidateArgs): void {
       );
       chk(
         all(
-          where(rows, (r) => pyEq(gi(r, "verdict"), "gap")),
+          where(rows, (r) => pyEqual(gi(r, "verdict"), "gap")),
           (r) => !truthy(get(r, "target_capability_ids")),
         ),
         "gap rows cite no target capabilities",
