@@ -19,7 +19,7 @@
 
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { appendFileSync, chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { appendFileSync, chmodSync, copyFileSync, existsSync, linkSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { homedir, tmpdir } from "node:os";
 import { basename, delimiter, dirname, join, resolve } from "node:path";
@@ -270,6 +270,34 @@ const otherTarball = () => tarGz({ "package/package.json": JSON.stringify({ name
 
 /** The PATH key of an environment (Path on Windows). */
 const pathKey = (env: NodeJS.ProcessEnv) => Object.keys(env).find((k) => /^path$/i.test(k)) ?? "PATH";
+
+/**
+ * A caller environment whose PATH holds only this Node.js and the system folders
+ * (review round 1 of pull request 14, finding 5). Node.js is linked into a new
+ * folder, because the folder of the Node.js executable can also hold a global
+ * npm install of build-os (with nvm, npm's global bin folder is that folder).
+ */
+function nodeOnlyEnv(): NodeJS.ProcessEnv {
+  const bin = join(temp(), "node-bin");
+  mkdirSync(bin);
+  const key = pathKey(process.env);
+  const env: NodeJS.ProcessEnv = { ...process.env };
+  delete env[key];
+  if (WINDOWS) {
+    const target = join(bin, "node.exe");
+    try {
+      linkSync(process.execPath, target);
+    } catch {
+      copyFileSync(process.execPath, target);
+    }
+    const root = process.env["SystemRoot"] ?? "C:\\Windows";
+    env[key] = [bin, join(root, "System32"), root, join(root, "System32", "Wbem")].join(delimiter);
+  } else {
+    symlinkSync(process.execPath, join(bin, "node"));
+    env[key] = [bin, "/usr/bin", "/bin", "/usr/sbin", "/sbin"].join(delimiter);
+  }
+  return env;
+}
 
 /** A folder with a `buildos` that prints `fake` (a shell script and a .cmd). */
 function fakeBuildosBin(dir: string): void {
@@ -746,7 +774,10 @@ describe("F-P9-15: the launchers and the entry scripts that the launch probe obs
   });
 
   it("real npm: without the forced value, an npx install with bin links off has no launcher: the run fails (the review's exit 127), and the launcher and probe checks name the cause", async () => {
-    const l = layout();
+    // A child PATH with only Node.js and the system folders, so a global build-os of the host cannot stand in for the missing launcher.
+    const l = layout(fixtureTarball(), nodeOnlyEnv());
+    const onPath = spawnSync("buildos", ["version"], { env: l.env, encoding: "utf8", shell: WINDOWS });
+    assert.ok(onPath.error !== undefined || onPath.status !== 0, "no buildos on the child PATH");
     const r = npx(l, l.work, ["-y", `--package=${l.tarball}`, "--", "buildos"], { ...l.env, npm_config_bin_links: "false" });
     assert.notEqual(r.status, 0, r.stdout);
     const npxDir = readNpxFolders(l.cache, (p) => p)[0]!.dir;
