@@ -233,6 +233,39 @@ jobs:
       - name: Skill-script parity, with no Python on PATH
         run: PATH="$NO_PYTHON_PATH" "$NO_PYTHON_NODE" --test --test-reporter=spec test/skill-script-parity.test.ts
 
+  # W1 R7 P9, A80 (review round 1 of pull request 7, finding 1): the same
+  # smoke inside a Linux container image with Node 24 and no Python at all,
+  # the official node:24-slim image pulled by digest (SECURITY.md records the
+  # image and the digest). It uses docker run, not a job container: GitHub
+  # mounts the runner's tool cache, which holds Python, into a job container.
+  # Only the checkout is mounted here. scripts/no-python-image.sh runs the
+  # guards, the install, the build, the pack, the smoke, and the parity test
+  # with the image's own PATH; the smoke first searches the whole container
+  # filesystem (all but the checkout, /proc, /sys, and /dev) for a py,
+  # python*, pypy*, or libpython* name. The image has no git, and nothing in
+  # the script needs it.
+  no-python-image:
+    name: no Python in the image (node:24-slim, Linux)
+    runs-on: ubuntu-latest
+    env:
+      # node:24-slim (Debian bookworm, Node 24.22.3), image index digest, 2026-11-24.
+      NO_PYTHON_IMAGE: node:24-slim@sha256:873f586f3794f52281bd039bf02c048a0be08fde619338f9941bad1eb6b34530
+    defaults:
+      run:
+        shell: bash
+        working-directory: toolkits/buildos
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Pull the image by digest
+        run: docker pull "$NO_PYTHON_IMAGE"
+
+      - name: The smoke inside the image, with no Python anywhere in it
+        run: docker run --rm --volume "$GITHUB_WORKSPACE:/build-os" --workdir /build-os/toolkits/buildos "$NO_PYTHON_IMAGE" sh -eu scripts/no-python-image.sh
+
   # W1 R7 P8 t2: compares the tarball content lists of the three systems with
   # the Linux one and prints each difference. Report only (a warning, never a
   # failure): the release is built on one reference environment.

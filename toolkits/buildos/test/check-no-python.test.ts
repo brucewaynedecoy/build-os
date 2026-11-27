@@ -5,11 +5,12 @@
 
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { after, describe, it } from "node:test";
 import { EXCEPTIONS, check, findPython, tag } from "../scripts/check-no-python.ts";
+import { PYTHON_NAME, searchDisk } from "../scripts/no-python-smoke.ts";
 
 const SCRIPT = resolve(import.meta.dirname, "..", "scripts", "check-no-python.ts");
 const temps: string[] = [];
@@ -28,12 +29,12 @@ function skills(files: Record<string, string>): string {
 const run = (dir: string) => spawnSync(process.execPath, [SCRIPT, "--dir", dir], { encoding: "utf8" });
 
 describe("no-Python check of the packaged skills (t10, A79)", () => {
-  it("passes on this repository; the only exception is capability-matrix, owner decision open (F-P9-04), and it still matches", () => {
+  it("passes on this repository; the only exception is capability-matrix, waiting for the command the owner decided on 2026-11-26 (F-P9-04), and it still matches", () => {
     const r = spawnSync(process.execPath, [SCRIPT], { encoding: "utf8" });
     assert.equal(r.status, 0, r.stdout);
     assert.match(r.stdout, /no-python check: passed\n$/);
     assert.deepEqual(EXCEPTIONS.map((e) => e.prefix), ["capability-matrix/"]);
-    assert.equal(EXCEPTIONS[0]!.status, "owner decision open (F-P9-04)");
+    assert.equal(EXCEPTIONS[0]!.status, "owner decision 2026-11-26: build the command in 0.2.0 (F-P9-04)");
     const report = check(resolve(import.meta.dirname, "..", "..", "..", "system", ".os", "skills"));
     assert.deepEqual(report.failing, []);
     assert.deepEqual(report.stale, []);
@@ -77,6 +78,55 @@ describe("no-Python check of the packaged skills (t10, A79)", () => {
     assert.equal(r.status, 1);
     assert.ok(r.stdout.includes(`FAIL ${tag("qzvnopy-b/SKILL.md")} line 3: python command`), "a tag and a line");
     assert.doesNotMatch(r.stdout, /qzvnopy/, "the output never names a planted value");
+  });
+
+  // Review round 1 of pull request 7, finding 3: a name after a folder and a quoted name were missed.
+  it("finds a path-qualified or quoted Python name, and still finds each spelling it found before", () => {
+    const lines = [
+      "/usr/bin/python3 -V",
+      'spawnSync("python3", args);',
+      "spawnSync('python', ['-c', 'x']);",
+      'execFile("/usr/local/bin/python3.12", ["qzvnopy"]);',
+      "C:\\Python312\\python.exe -m qzvnopy",
+      'spawnSync("py", ["-3", "qzvnopy"]);',
+      "spawn('C:\\Windows\\py.exe', args)",
+      "/usr/bin/pip3 install qzvnopy",
+      ".venv/bin/uv run qzvnopy",
+      "Run python3.12 -m qzvnopy.",
+      "Run py -3 qzvnopy.",
+      "#!/usr/bin/python3",
+      "~~~py",
+      "Install it: pip install qzvnopy.",
+      "Or: uv run qzvnopy.",
+      "",
+    ];
+    const dir = skills({ "qzvnopy-e/notes.md": lines.join("\n") });
+    const rules = findPython(dir).map((f) => `${f.line} ${f.rule}`);
+    for (const want of [
+      "1 python command",
+      "2 python command",
+      "3 python command",
+      "4 python command",
+      "5 python command",
+      "6 py launcher",
+      "7 py launcher",
+      "8 pip install",
+      "9 uv",
+      "10 python command",
+      "11 py launcher",
+      "12 python shebang",
+      "13 python code fence",
+      "14 pip install",
+      "15 uv",
+    ]) assert.ok(rules.includes(want), `${want} in ${JSON.stringify(rules)}`);
+    const lineHits = new Set(findPython(dir).map((f) => f.line));
+    for (let n = 1; n <= 15; n++) assert.ok(lineHits.has(n), `line ${n} has a finding`);
+    assert.doesNotMatch(run(dir).stdout, /qzvnopy/, "the output never names a planted value");
+  });
+
+  it("does not count a path or a URL that only contains the word python", () => {
+    const dir = skills({ "qzvnopy-f/SKILL.md": "See https://docs.python.org/3/ and github.com/python/cpython and my-python3-notes and python-helpers/ and the spy.py-less copy.\n" });
+    assert.deepEqual(check(dir).failing, []);
   });
 
   it("does not count prose that names Python, or a word that only contains py", () => {
@@ -135,5 +185,71 @@ describe("CI: the no-Python job (t11, A80)", () => {
 
   it("the test job also runs the no-Python check", () => {
     assert.match(jobOf("test"), /run: node scripts\/check-no-python\.ts\n/);
+  });
+});
+
+// W1 R7 P9, A80 (review round 1 of pull request 7, finding 1): the smoke inside
+// a Linux image with Node 24 and no Python at all, and the filesystem search
+// that proves the image has none.
+describe("CI: the no-Python image job (A80)", () => {
+  const workflow = readFileSync(resolve(import.meta.dirname, "..", "..", "..", ".github", "workflows", "buildos-ci.yml"), "utf8").replace(/\r\n/g, "\n");
+  const start = workflow.indexOf("\n  no-python-image:\n");
+  const rest = workflow.slice(start + 1);
+  const next = rest.search(/\n {2}[a-z][\w-]*:\n/);
+  const job = next < 0 ? rest : rest.slice(0, next);
+  const script = readFileSync(resolve(import.meta.dirname, "..", "scripts", "no-python-image.sh"), "utf8").replace(/\r\n/g, "\n");
+  const security = readFileSync(resolve(import.meta.dirname, "..", "SECURITY.md"), "utf8");
+
+  it("runs the official node:24-slim image pulled by digest, the digest SECURITY.md records, with docker run and only the checkout mounted", () => {
+    assert.ok(start >= 0, "the job is there");
+    assert.match(job, /runs-on: ubuntu-latest\n/);
+    const image = /NO_PYTHON_IMAGE: (node:24-slim@sha256:[0-9a-f]{64})\n/.exec(job)?.[1];
+    assert.ok(image !== undefined, "the image is pinned by digest");
+    assert.ok(security.includes(image), "SECURITY.md records the same image and digest");
+    assert.doesNotMatch(job, /\n {4}container:|services:/, "no job container: it would mount the runner's tool cache, which holds Python");
+    assert.match(job, /run: docker pull "\$NO_PYTHON_IMAGE"\n/);
+    assert.match(job, /run: docker run --rm --volume "\$GITHUB_WORKSPACE:\/build-os" --workdir \/build-os\/toolkits\/buildos "\$NO_PYTHON_IMAGE" sh -eu scripts\/no-python-image\.sh\n/);
+    assert.equal(job.match(/--volume|-v /g)?.length, 1, "one mount");
+    assert.doesNotMatch(job, /--privileged|--network|permissions:|secrets\.|environment:|id-token|GITHUB_TOKEN|github\.token|continue-on-error|\$\{\{|^\s+if:/m);
+    assert.match(job, /persist-credentials: false/);
+    for (const use of job.match(/uses: \S+/g) ?? []) assert.match(use, /@[0-9a-f]{40}$/, use);
+  });
+
+  it("the script runs the guards, the install with scripts off, the build, the smoke with the filesystem search, and the parity test, and installs no Python", () => {
+    for (const line of [
+      "node scripts/check-dependencies.ts\n",
+      "npm ci --ignore-scripts --no-audit --no-fund\n",
+      "node scripts/check-dependencies.ts --installed\n",
+      "node scripts/check-no-python.ts\n",
+      "npm run build\n",
+      'npm install --offline --ignore-scripts --no-save --no-audit --no-fund --prefix "$temp/project" "$temp/$tarball"\n',
+      'node scripts/no-python-smoke.ts --project "$temp/project" --work "$temp/no-python-work" --filesystem / --skip "$checkout"\n',
+      "node --test --test-reporter=spec test/skill-script-parity.test.ts\n",
+    ]) assert.ok(script.includes(line), line);
+    const code = script.split("\n").filter((l) => !l.startsWith("#")).join("\n");
+    assert.doesNotMatch(code, /\b(?:apt|apt-get|apk|pip|pip3|uv|git)\b|(?<![\w-])python/, "installs nothing, runs no Python, needs no git");
+  });
+
+  it("the filesystem search finds each Python name, of any kind, outside the skipped folders, and counts .py sources without failing on them", () => {
+    const root = skills({ "usr/bin/node": "", "usr/lib/python3.11/os.py": "", "usr/lib/libpython3.11.so.1.0": "", "opt/qzvnopy/py": "", "opt/pypy3/x": "", "tools/gyp/gyp_main.py": "", "skipme/python3": "" });
+    if (process.platform !== "win32") symlinkSync("node", join(root, "usr", "bin", "python3"));
+    const result = searchDisk(root, [join(root, "skipme")]);
+    const found = result.found.map((p) => p.slice(root.length + 1).split(/[\\/]/).join("/"));
+    const want = ["opt/pypy3", "opt/qzvnopy/py", "usr/lib/libpython3.11.so.1.0", "usr/lib/python3.11", ...(process.platform === "win32" ? [] : ["usr/bin/python3"])].sort();
+    assert.deepEqual(found, want);
+    assert.deepEqual(result.unreadable, []);
+    assert.deepEqual([...result.sources.values()].reduce((a, b) => a + b, 0), 2, "the two .py sources are counted, not failed on");
+    for (const name of ["py", "python", "python3", "python3.12", "python.exe", "pypy3", "libpython3.11.so"]) assert.match(name, PYTHON_NAME, name);
+    for (const name of ["pyc", "spy", "gyp_main.py", "find-python.js", "pylib", "cpython"]) assert.doesNotMatch(name, PYTHON_NAME, name);
+  });
+
+  it("the filesystem search reports a folder it cannot read, so an incomplete search fails", { skip: process.platform === "win32" || process.getuid?.() === 0 ? "needs a non-root POSIX user" : false }, () => {
+    const root = skills({ "locked/x": "" });
+    chmodSync(join(root, "locked"), 0o000);
+    try {
+      assert.deepEqual(searchDisk(root).unreadable, [join(root, "locked")]);
+    } finally {
+      chmodSync(join(root, "locked"), 0o755);
+    }
   });
 });

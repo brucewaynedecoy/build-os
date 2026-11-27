@@ -278,6 +278,7 @@ const SKILL_PATH_KINDS: Record<string, "make-docs" | "conditional" | "output" | 
   // The Azure Boards contract's example outputs (W1 R7 P9 t9): inside the project, as the command requires.
   "workspace/azure-boards.csv": "output",
   "workspace/azure-boards-template.csv": "output",
+  "workspace/dynamics-365-ce.csv": "output",
   // Inside the skill's own folder.
   "assets/new-items-template.csv": "skill",
   "assets/target-17-column-template.csv": "skill",

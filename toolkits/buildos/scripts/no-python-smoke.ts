@@ -5,6 +5,7 @@
 // Usage, from toolkits/buildos/, with PATH set to the folders the run may use:
 //
 //   node scripts/no-python-smoke.ts --project <folder> --work <folder>
+//       [--filesystem <folder> [--skip <folder>]...]
 //
 // <project> is a BuildOS project made by `buildos init`, with the package to
 // test installed in its node_modules/ (`npm install --prefix <project>
@@ -12,6 +13,15 @@
 //
 // 1. PATH proof: no `python`, `python3`, or `py` program is on PATH (each
 //    PATHEXT form on Windows). One found stops the run (exit 1).
+//    With --filesystem (the no-python-image CI job gives `/` inside a
+//    container), the whole tree under that folder is searched too, without
+//    following links: a name `py`, or one that starts with `python`, `pypy`,
+//    or `libpython` (a file, a folder, or a link of any kind), stops the run,
+//    and so does a folder it cannot read. `/proc`, `/sys`, `/dev`, and each
+//    --skip folder (the mounted checkout) are not searched. `.py` source
+//    files are counted and named by folder, but they do not stop the run:
+//    a source file is not a Python that can run (npm ships node-gyp's gyp
+//    sources, for example).
 // 2. The project wrapper `.os/scripts/buildos` (`buildos.cmd` on Windows), as
 //    the skills call it: `help` lists the three domains (the published 0.1.0
 //    has none of them, so an npx fallback cannot pass), and each skill's own
@@ -43,21 +53,71 @@ const SKILL = join(PACKAGE_ROOT, "..", "..", "system", ".os", "skills", "buildos
 const PREFIX: Record<ScriptName, string[]> = { "bulk-extract": ["extract", "bulk"], fitgap: ["fitgap"], "azure-boards": ["export", "azure-boards"] };
 
 function usage(message: string): never {
-  process.stderr.write(`no-python-smoke: ${message}\nUsage: node scripts/no-python-smoke.ts --project <folder> --work <folder>\n`);
+  process.stderr.write(`no-python-smoke: ${message}\nUsage: node scripts/no-python-smoke.ts --project <folder> --work <folder> [--filesystem <folder> [--skip <folder>]...]\n`);
   process.exit(2);
 }
 
-function parse(argv: string[]): { project: string; work: string } {
+function parse(argv: string[]): { project: string; work: string; filesystem?: string; skip: string[] } {
   const out: Record<string, string> = {};
+  const skip: string[] = [];
   for (let i = 0; i < argv.length; i += 2) {
     const name = argv[i];
     const value = argv[i + 1];
-    if ((name !== "--project" && name !== "--work") || value === undefined || value === "") usage(`unexpected argument ${JSON.stringify(name)}`);
-    out[name.slice(2)] = resolve(value);
+    if (!["--project", "--work", "--filesystem", "--skip"].includes(name ?? "") || value === undefined || value === "") usage(`unexpected argument ${JSON.stringify(name)}`);
+    if (name === "--skip") skip.push(resolve(value));
+    else if (out[name!.slice(2)] !== undefined) usage(`${name} given twice`);
+    else out[name!.slice(2)] = resolve(value);
   }
   if (out["project"] === undefined) usage("--project is required");
   if (out["work"] === undefined) usage("--work is required");
-  return { project: out["project"], work: out["work"] };
+  if (skip.length > 0 && out["filesystem"] === undefined) usage("--skip needs --filesystem");
+  return { project: out["project"], work: out["work"], filesystem: out["filesystem"], skip };
+}
+
+/** A name that a Python install has: `py`, `python*`, `pypy*`, `libpython*`. */
+export const PYTHON_NAME = /^(?:py|python.*|pypy.*|libpython.*)$/i;
+
+export interface DiskSearch {
+  /** Every entry whose name is a Python install name (a file, a folder, or a link). */
+  found: string[];
+  /** Folders that could not be read, so the search is not complete. */
+  unreadable: string[];
+  /** Entries looked at. */
+  entries: number;
+  /** `.py` source files, by the folder that holds them. */
+  sources: Map<string, number>;
+}
+
+/**
+ * Searches every entry under `root`, without following links, for a Python
+ * install name. `/proc`, `/sys`, and `/dev` under a root of `/`, and each
+ * `skip` folder, are not searched.
+ */
+export function searchDisk(root: string, skip: readonly string[] = []): DiskSearch {
+  const skipped = new Set([...skip.map((s) => resolve(s)), ...(resolve(root) === resolve("/") ? ["/proc", "/sys", "/dev"].map((s) => resolve(s)) : [])]);
+  const result: DiskSearch = { found: [], unreadable: [], entries: 0, sources: new Map() };
+  const stack = [resolve(root)];
+  while (stack.length > 0) {
+    const dir = stack.pop()!;
+    let entries;
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      result.unreadable.push(dir);
+      continue;
+    }
+    for (const entry of entries) {
+      const full = join(dir, entry.name);
+      if (skipped.has(full)) continue;
+      result.entries++;
+      if (PYTHON_NAME.test(entry.name)) result.found.push(full);
+      else if (entry.isFile() && /\.py$/i.test(entry.name)) result.sources.set(dir, (result.sources.get(dir) ?? 0) + 1);
+      if (entry.isDirectory()) stack.push(full);
+    }
+  }
+  result.found.sort();
+  result.unreadable.sort();
+  return result;
 }
 
 /** Every program named `name` on PATH (with each PATHEXT form on Windows). */
@@ -110,7 +170,7 @@ export function expectedExit(script: ScriptName, golden: StepResult): number {
 }
 
 async function main(): Promise<number> {
-  const { project, work } = parse(process.argv.slice(2));
+  const { project, work, filesystem, skip } = parse(process.argv.slice(2));
   const problems: string[] = [];
   const check = (ok: boolean, what: string) => {
     if (!ok) problems.push(what);
@@ -124,6 +184,16 @@ async function main(): Promise<number> {
     process.exit(1);
   }
   process.stdout.write(`PATH: ${entries} folder(s); no python, python3, or py program on it.\n`);
+  if (filesystem !== undefined) {
+    const disk = searchDisk(filesystem, skip);
+    if (disk.found.length > 0 || disk.unreadable.length > 0) {
+      process.stderr.write(`no-python-smoke: the filesystem search under ${filesystem} failed:\n${disk.found.map((p) => `  Python name: ${p}\n`).join("")}${disk.unreadable.map((p) => `  not readable: ${p}\n`).join("")}`);
+      process.exit(1);
+    }
+    const sources = [...disk.sources].sort(([a], [b]) => a.localeCompare(b));
+    process.stdout.write(`filesystem: ${disk.entries} entries under ${filesystem} searched (not searched: ${[...(resolve(filesystem) === resolve("/") ? ["/proc", "/sys", "/dev"] : []), ...skip].join(", ") || "nothing"}); no py, python*, pypy*, or libpython* name.\n`);
+    process.stdout.write(`filesystem: ${sources.reduce((n, [, c]) => n + c, 0)} .py source file(s) in ${sources.length} folder(s), and no Python to run them${sources.length === 0 ? "" : ":"}\n${sources.map(([d, c]) => `  ${d}: ${c}\n`).join("")}`);
+  }
 
   const bin = join(project, "node_modules", "build-os", "dist", "buildos.js");
   if (!existsSync(bin) || !existsSync(join(project, ".os", "manifest.json"))) usage("--project needs .os/manifest.json and node_modules/build-os (buildos init, then npm install --prefix)");

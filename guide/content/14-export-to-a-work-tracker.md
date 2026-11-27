@@ -107,7 +107,7 @@ A single backlog directory can produce well over a hundred work items, arriving 
 
 9. **Open the CSV and read it.** Check the headers, the row count, the title columns, and two or three descriptions in full. The command cannot do this part for you. See "What the command can and cannot verify" below.
 
-   > **Watch out.** The CSV keeps a field that starts with `=`, `+`, `-`, or `@` as it is, so the file imports into Azure Boards unchanged. A spreadsheet program may read such a field as a formula and run it. Import the file with Azure Boards' CSV import, and open it in a spreadsheet program only when you trust every text in the manifest.
+   > **Watch out.** The CSV keeps a field that starts with `=`, `+`, `-`, or `@` as it is, so the file imports into Azure Boards unchanged. A spreadsheet program may read such a field as a formula and run it. Import the file with Azure Boards' CSV import. To look inside it, read it as plain text or with a CSV reader that treats every cell as text. Open it in a spreadsheet program only when you trust every text in the manifest.
 
 10. **Review the writing before you import.** Generated titles and descriptions need a human read. See [Build the work backlog](13-build-the-work-backlog.md) and the section below.
 

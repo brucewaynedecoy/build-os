@@ -420,7 +420,7 @@ A **skill** is a packaged set of instructions an agent can follow for one kind o
 
 BuildOS never installs a skill into your agent tool by itself. When you want one, ask your agent to install it. The router tells the agent how: copy that one skill folder, unchanged, into the project's skill folder of its own app (it names the folders for Claude Code, Codex, and GitHub Copilot), or, for another app, read the skill from `.os/skills/` and follow it. Some apps find a new skill only after a restart.
 
-> **Not available yet.** One skill still needs Python 3 for its own tool: `capability-matrix`. No BuildOS command needs Python. From BuildOS `0.2.0`, `buildos-bulk-extract`, `fit-gap-analysis`, and `buildos-export-azure-boards` run the `buildos extract bulk`, `buildos fitgap`, and `buildos export azure-boards` commands through the project wrapper and need only Node.js. In a project that pins `0.1.0`, the first two still run their own Python scripts (the spreadsheet step also needs the `openpyxl` package). [What is not built yet](18-what-is-not-built-yet.md) has the full list.
+> **Not available yet.** One skill still needs Python 3 for its own tool: `capability-matrix`. No BuildOS command needs Python. A BuildOS command for that tool is planned for `0.2.0`. From BuildOS `0.2.0`, `buildos-bulk-extract`, `fit-gap-analysis`, and `buildos-export-azure-boards` run the `buildos extract bulk`, `buildos fitgap`, and `buildos export azure-boards` commands through the project wrapper and need only Node.js. In a project that pins `0.1.0`, the first two still run their own Python scripts (the spreadsheet step also needs the `openpyxl` package), and the new skills do not work, because the wrapper still runs `0.1.0`: see "From 0.1.0 to 0.2.0" below. [What is not built yet](18-what-is-not-built-yet.md) has the full list.
 
 ---
 
@@ -464,6 +464,19 @@ The version in `.os/manifest.json` always decides which BuildOS the project wrap
 - **With a global install** (`npm install -g`, as in the offline steps), the wrapper runs that installed `buildos` only when it is an npm install of the version in the manifest. On a machine without registry access, after you change the manifest, install the same version, `npm install -g build-os@<version>` (or the file), so the wrapper can run it without the registry. Until then, the wrapper runs the pinned version through `npx`.
 
 Commit `.os/manifest.json` with the change, so everyone on the project runs the same version.
+
+### From 0.1.0 to 0.2.0
+
+`0.2.0` changes the skills, and the `0.2.0` skills call commands that `0.1.0` does not have. So change the version and the skills together. If you copy only the new skills, the wrapper still runs `0.1.0`, and a skill command such as `.os/scripts/buildos extract bulk status` stops with `unknown command "extract"` (exit code `2`). `buildos init` does not do this for you: in a project that BuildOS already set up, it changes only its own section of `AGENTS.md`, `CLAUDE.md`, and `.gitignore`, and keeps the version and the skills as they are.
+
+1. In `.os/manifest.json`, change `"buildos_version"` from `"0.1.0"` to `"0.2.0"`. Change no other field.
+2. Get the `0.2.0` skills. Make a new, empty folder outside the project, and in it run `npx -y build-os@0.2.0 init --root . --skip-make-docs`. This sets up a throwaway project.
+3. In your project, delete the folder `.os/skills/`, then copy `.os/skills/` from the throwaway project in its place. Deleting first removes the five script files that `0.1.0` shipped and `0.2.0` does not. If you changed a skill file yourself, save your copy first and compare.
+4. If your agent installed a BuildOS skill into its own app's folder (for example `.claude/skills/<skill>/` or `.agents/skills/<skill>/` in the project, or a skills folder in your home folder), replace each of those copies with the new `.os/skills/<skill>/` folder too. An old copy still tells the agent to run the old script.
+5. If you use an npm install of `build-os` (in the project's `node_modules` or a global install), install `0.2.0` there too. The wrapper skips an install of `0.1.0` and runs `0.2.0` through `npx`.
+6. Check: `.os/scripts/buildos version` (`.os\scripts\buildos.cmd version` on Windows) prints `version: 0.2.0`, and `.os/scripts/buildos help` lists `extract`, `fitgap`, and `export`. Then delete the throwaway folder, and commit the manifest and the skills together.
+
+To roll back to `0.1.0`, put back both: the version in the manifest and the `0.1.0` skills (from your last commit, or from a throwaway `npx -y build-os@0.1.0 init`).
 
 > **Not available yet.** There is no `buildos update` command yet. A new version does not refresh the files that `buildos init` already copied (contracts, templates, skills). [What is not built yet](18-what-is-not-built-yet.md) has the full list.
 

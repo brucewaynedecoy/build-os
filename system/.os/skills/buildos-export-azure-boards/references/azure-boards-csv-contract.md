@@ -162,19 +162,27 @@ Validate:
   --profile target17-new
 ```
 
-Validate with an adapter. The adapter reads its parameters from `--adapter-params`, then from the CSV itself:
+Validate with an adapter. The adapter reads its parameters from `--adapter-params`, then from the CSV itself. A CSV emitted without an adapter has no adapter parameters, so validate an adapter CSV: these examples first emit the bundled synthetic Dynamics 365 CE manifest, which names the adapter and its parameters:
 
 ```sh
+.os/scripts/buildos export azure-boards emit \
+  --input .os/skills/buildos-export-azure-boards/assets/adapters/dynamics-365-ce-manifest.json \
+  --output workspace/dynamics-365-ce.csv \
+  --profile target17-new
+
 .os/scripts/buildos export azure-boards validate \
-  --input workspace/azure-boards.csv \
+  --input workspace/dynamics-365-ce.csv \
   --profile target17-new \
   --adapter dynamics-365-ce
 
 .os/scripts/buildos export azure-boards validate \
-  --input workspace/azure-boards.csv \
+  --input workspace/dynamics-365-ce.csv \
+  --profile target17-new \
   --adapter dynamics-365-ce \
   --adapter-params '{"publisher_prefix":"ex_"}'
 ```
+
+The `ex_` prefix is the synthetic manifest's value. For a real export, use the publisher prefix the user gives.
 
 List registered adapters and their required parameters:
 
@@ -203,7 +211,7 @@ The emitter writes:
 
 It quotes fields that contain commas, quotes, carriage returns, or line feeds.
 
-It adds no guard character to a field that starts with `=`, `+`, `-`, or `@`, so the file imports into Azure Boards unchanged. A spreadsheet program that opens the CSV may read such a field as a formula. Import the file with Azure Boards' CSV import, and open it in a spreadsheet program only when you trust every text in the manifest.
+It adds no guard character to a field that starts with `=`, `+`, `-`, or `@`, so the file imports into Azure Boards unchanged. A spreadsheet program that opens the CSV may read such a field as a formula. Import the file with Azure Boards' CSV import. To inspect it, read it as plain text or with a CSV reader that treats every cell as text. Open it in a spreadsheet program only when you trust every text in the manifest.
 
 ## Validation split
 

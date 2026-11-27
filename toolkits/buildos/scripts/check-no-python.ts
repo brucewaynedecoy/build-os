@@ -18,7 +18,8 @@
 //     requirements*.txt, pyproject.toml, setup.py, setup.cfg, Pipfile,
 //     Pipfile.lock, poetry.lock, uv.lock);
 //   - call: a line of a text file that runs Python: the commands `python`,
-//     `python3`, `python3.N`, `py -<flag>` or `py <file>`, `pip install`,
+//     `python3`, `python3.N`, `py -<flag>` or `py <file>`, each also after a
+//     folder or in quotes (`/usr/bin/python3`, `"python3"`, `"py"`), `pip install`,
 //     `pip3 install`, `pipx`, `uv run`, `uv pip`, or `uvx`; a `#!` line that
 //     names python; a `python` or `py` code fence; or a `.py` file name.
 // Prose that names Python ("needs Python 3") is not a call.
@@ -44,17 +45,20 @@ export const DEFAULT_DIR = join(PACKAGE_ROOT, "..", "..", "system", ".os", "skil
 export const EXCEPTIONS: readonly { prefix: string; status: string; reason: string }[] = [
   {
     prefix: "capability-matrix/",
-    status: "owner decision open (F-P9-04)",
-    reason: "The skill tells the agent to write its tool cm_build.py from the skill's appendix and run it with Python 3. BuildOS has no command for that tool. The owner decides whether 0.2.0 ships with this exception or a command comes first.",
+    status: "owner decision 2026-11-26: build the command in 0.2.0 (F-P9-04)",
+    reason: "The skill tells the agent to write its tool cm_build.py from the skill's appendix and run it with Python 3. BuildOS has no command for that tool yet. The owner decided on 2026-11-26 that 0.2.0 gets the command; this exception stays until that command exists, and goes with it.",
   },
 ];
 
 const PYTHON_FILE = /(?:\.(?:py|pyc|pyo|pyw|pyz|pyi|ipynb)$|(?:^|\/)__pycache__\/|(?:^|\/)(?:requirements[^/]*\.txt|pyproject\.toml|setup\.py|setup\.cfg|Pipfile|Pipfile\.lock|poetry\.lock|uv\.lock)$)/i;
 const CALLS: readonly { rule: string; pattern: RegExp }[] = [
-  { rule: "python command", pattern: /(?<![\w./\\-])python(?:[23](?:\.\d+)?)?(?:\.exe)?(?=\s|`|$)/ },
-  { rule: "py launcher", pattern: /(?<![\w./\\-])py(?:\.exe)?\s+(?:-[0-9A-Za-z]|[^\s]+\.pyw?\b)/ },
-  { rule: "pip install", pattern: /(?<![\w./\\-])(?:pip[23]?|pipx)(?:\.exe)?\s+(?:install|run)\b|(?<![\w./\\-])pipx\b/ },
-  { rule: "uv", pattern: /(?<![\w./\\-])(?:uv\s+(?:run|pip|tool)\b|uvx\b)/ },
+  // A name may follow a folder (`/usr/bin/python3`, `C:\Python312\python.exe`) and may be quoted
+  // (`spawnSync("python3", args)`), so a slash, a backslash, or a quote can come before it and a
+  // quote, a bracket, a comma, or a semicolon can come after it (review round 1 of pull request 7, finding 3).
+  { rule: "python command", pattern: /(?<![\w.-])python(?:[23](?:\.\d+)?)?(?:\.exe)?(?=[\s`'"),;\]]|$)/ },
+  { rule: "py launcher", pattern: /(?<![\w.-])py(?:\.exe)?\s+(?:-[0-9A-Za-z]|[^\s]+\.pyw?\b)|(["'])(?:[^"'\s]*[/\\])?py(?:\.exe)?\1/ },
+  { rule: "pip install", pattern: /(?<![\w.-])(?:pip[23]?|pipx)(?:\.exe)?\s+(?:install|run)\b|(?<![\w.-])pipx\b/ },
+  { rule: "uv", pattern: /(?<![\w.-])(?:uv\s+(?:run|pip|tool)\b|uvx\b)/ },
   { rule: "python shebang", pattern: /^#!.*\bpython/ },
   { rule: "python code fence", pattern: /^\s*(?:```|~~~)\s*(?:python[0-9]?|py)\s*$/ },
   { rule: ".py file name", pattern: /[\w-]\.pyw?\b(?![\w-])/ },

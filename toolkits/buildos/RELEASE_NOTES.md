@@ -10,15 +10,24 @@ This section is a draft (W1 R7 P9 t12). The version is not set and nothing is pu
 - The skills run these commands through the project wrapper `.os/scripts/buildos` and ship no script of their own. `buildos-bulk-extract` and `fit-gap-analysis` no longer need Python or `openpyxl`.
 - The three commands read only files inside the project folder. `fitgap` and `export azure-boards` write outside it only with `--allow-outside-root`.
 - `buildos intake` takes `--json` and prints the same envelope as the other domains.
+- `capability-matrix`: a BuildOS command for the skill's own tool is planned for `0.2.0`, so that no skill needs Python. Until that command is in, the skill still tells the agent to write and run its own Python tool.
 
-### Still needs Python
+### Upgrade a project from 0.1.0
 
-- `capability-matrix` still tells the agent to write and run its own Python tool. BuildOS has no command for it yet.
+The `0.2.0` skills call commands that `0.1.0` does not have, so change the version and the skills together. `buildos init` does not upgrade a project: in a project that BuildOS already set up, it changes only its own section of `AGENTS.md`, `CLAUDE.md`, and `.gitignore`, and keeps the version pin and the skills as they are. BuildOS has no update command yet. In the project folder:
 
-### Before you upgrade
+1. In `.os/manifest.json`, change `buildos_version` from `"0.1.0"` to `"0.2.0"`. Change no other field. The project wrapper always runs the pinned version: with only new skills and the old pin, a skill command such as `.os/scripts/buildos extract bulk status` stops with `unknown command "extract"` (exit code `2`).
+2. Get the `0.2.0` skills: in a new, empty folder outside the project, run `npx -y build-os@0.2.0 init --root . --skip-make-docs`. This sets up a throwaway project.
+3. Delete the project's `.os/skills/` folder, then copy `.os/skills/` from the throwaway project in its place. Deleting first removes the five script files that `0.1.0` shipped and `0.2.0` does not. If you changed a skill file, save your copy first and compare.
+4. Replace each BuildOS skill that an agent app installed in its own folder (for example `.claude/skills/<skill>/` or `.agents/skills/<skill>/` in the project, or a skills folder in your home folder) with the new `.os/skills/<skill>/` folder. An old copy still tells the agent to run the old script.
+5. If you use an npm install of `build-os` (in the project's `node_modules` or a global install), install `0.2.0` there too. The wrapper skips an install of `0.1.0` and runs `0.2.0` through `npx`.
+6. Check: `.os/scripts/buildos version` (`.os\scripts\buildos.cmd version` on Windows) prints `version: 0.2.0`, and `.os/scripts/buildos help` lists `extract`, `fitgap`, and `export`. Delete the throwaway folder.
 
-- `buildos init` does not refresh the skills of a project that it already set up. To get the new skills, copy `.os/skills/` from the new version by hand, as for any other copied file.
-- Export: a CSV field that starts with `=`, `+`, `-`, or `@` is kept as it is, so the file imports into Azure Boards unchanged. Open such a CSV in a spreadsheet program only when you trust its manifest.
+The project wrappers in `.os/scripts/` and the other files that `buildos init` copied (contracts, templates, config) are the same as in `0.1.0`; only the skills change. To roll back, put back both the `0.1.0` pin and the `0.1.0` skills.
+
+### Export and spreadsheets
+
+- A CSV field that starts with `=`, `+`, `-`, or `@` is kept as it is, so the file imports into Azure Boards unchanged. To inspect such a CSV, read it as plain text or with a CSV reader that treats every cell as text. Open it in a spreadsheet program only when you trust its manifest.
 
 ### Legacy command names end in 0.3.0
 
@@ -80,7 +89,7 @@ Note: the command name "buildos-intake" goes away in BuildOS 0.3.0. Use "buildos
 ### Known limits
 
 - Make Docs 2.0.9 cannot set up a folder that already has an `AGENTS.md` or `CLAUDE.md` that it did not write. A new project where you answer No to Make Docs gets those files from BuildOS, so Make Docs 2.0.9 cannot be set up there later. `buildos init` says this before you answer, and every output says it where it matters. A newer Make Docs may lift this limit.
-- Three skills still need Python 3 for their own tools in `0.1.0`: `buildos-bulk-extract`, `fit-gap-analysis` (its workbook step also needs `openpyxl`), and `capability-matrix`. No BuildOS command needs Python. `0.2.0` plans `buildos extract bulk`, `buildos fitgap`, and `buildos export azure-boards`, so that the first two skills need only Node.js. `capability-matrix` keeps its own Python tool until BuildOS has a command for it; that command is not planned yet.
+- Three skills still need Python 3 for their own tools in `0.1.0`: `buildos-bulk-extract`, `fit-gap-analysis` (its workbook step also needs `openpyxl`), and `capability-matrix`. No BuildOS command needs Python. `0.2.0` plans `buildos extract bulk`, `buildos fitgap`, and `buildos export azure-boards`, so that the first two skills need only Node.js. `capability-matrix` keeps its own Python tool until BuildOS has a command for it; that command is planned for `0.2.0`.
 - When `buildos init` replaces a file (`AGENTS.md`, `CLAUDE.md`, `.gitignore`, or a Go-era wrapper), the new file keeps its permission bits but not extended access control lists (ACLs) or extended attributes. Set an ACL again after `buildos init` if you rely on one.
 - Windows: Command Prompt is the supported shell for the commands BuildOS shows; there is no PowerShell form. A `!` in a folder name breaks a shown command when delayed expansion is on (`cmd /v:on`). `buildos init` cannot check a folder's access rules before it writes on Windows; a denied write is found during the run and undone. A file system without hard links reports one link, so the hard link check cannot see a link there.
 - A global install is used only when it is an npm install of exactly the pinned version; otherwise the wrapper fetches the pinned version. Acceptance goes by layout, not by tool: a package folder `node_modules/build-os` with a matching `package.json` counts whatever tool made it (for example a local pnpm or Yarn link to such a folder). A shim script that only starts the package (as pnpm, Yarn, and Volta make for a global install) does not count, and the wrapper fetches the pinned version through `npx` instead. Every start sets `BUILDOS_REQUIRE_VERSION` to the pin, and BuildOS stops itself with a plain message (exit code 3) when another version starts. The project scripts `.os/scripts/buildos-intake`, `buildos-discovery`, and `buildos-design` print the legacy-name notice once, first on stderr, and go away in `0.3.0`.

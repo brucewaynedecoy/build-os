@@ -19,7 +19,7 @@ Convert one approved Build OS work backlog into a validated Azure Boards CSV. Pr
 8. Read [references/azure-boards-csv-contract.md](references/azure-boards-csv-contract.md). Choose the correct import profile and create the structured JSON manifest.
 9. Emit the CSV with `.os/scripts/buildos export azure-boards emit`.
 10. Validate the CSV with `.os/scripts/buildos export azure-boards validate`.
-11. Inspect the final CSV with an available spreadsheet reader. Confirm the headers, row count, title hierarchy, and representative rich-text fields.
+11. Inspect the final CSV. Confirm the headers, row count, title hierarchy, and representative rich-text fields. Read the file as plain text, or with a CSV reader that treats every cell as text and never runs a formula. Do not open it in a spreadsheet program unless you trust every text in the manifest (see [CSV formula prefixes](#csv-formula-prefixes)).
 12. Return the CSV, the selected profile, the selected adapter, item counts by type, unresolved adapter warnings, any excluded or blocked source material, and the [CSV formula prefixes](#csv-formula-prefixes) note.
 
 Do not import or save work items in Azure Boards unless the user gives separate approval for that external change.
@@ -164,7 +164,7 @@ The command checks structural rules and the adapter's deterministic rules. Perfo
 
 ## CSV formula prefixes
 
-The command adds no guard character to a field that starts with `=`, `+`, `-`, or `@`, so the file imports into Azure Boards unchanged. A spreadsheet program that opens the CSV may read such a field as a formula and run it. Import the file with Azure Boards' CSV import. Open it in a spreadsheet program only when you trust every text in the manifest. Tell the user this when you deliver the CSV.
+The command adds no guard character to a field that starts with `=`, `+`, `-`, or `@`, so the file imports into Azure Boards unchanged. A spreadsheet program that opens the CSV may read such a field as a formula and run it. Import the file with Azure Boards' CSV import. To inspect it, read it as plain text or with a CSV reader that treats every cell as text. Open it in a spreadsheet program only when you trust every text in the manifest. Tell the user this when you deliver the CSV.
 
 ## Bundled resources
 
