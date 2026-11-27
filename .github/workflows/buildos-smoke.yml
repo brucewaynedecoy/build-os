@@ -15,6 +15,10 @@
 #   check it before any step. In tarball mode npm is offline with a blocked
 #   registry, so no step can fetch build-os from a registry
 #   (scripts/smoke-source.ts).
+# A third source, rollback (W1 R7 P9, F-P9-16), runs
+# toolkits/buildos/scripts/rollback-smoke.ts: a project made with 0.1.0 is
+# upgraded to 0.2.0 and rolled back to 0.1.0 with the user guide's steps
+# (chapter 4), every build-os from the registry through npx (F-P8-09).
 # It is not a release workflow: it holds no secret, uses no environment, and
 # has read-only repository access; only the job that downloads a run
 # artifact also has actions: read. npm install scripts are off for every
@@ -23,18 +27,18 @@
 name: buildos-smoke
 
 # A maintainer runs it by hand. A pull request runs it only when its own
-# files change: the registry mode on 0.2.0, and the tarball mode on a release
+# files change: the registry mode on 0.2.0, the rollback mode, and the tarball mode on a release
 # build packed from the pull request's own tree (source local-pack), so the
 # tarball mode is tested on three systems before a release needs it.
 on:
   workflow_dispatch:
     inputs:
       source:
-        description: "Package source: registry (a published version), release-run (the tarball artifact of a buildos-release run), or release-tag (the tarball asset of a published GitHub Release)"
+        description: "Package source: registry (a published version), release-run (the tarball artifact of a buildos-release run), release-tag (the tarball asset of a published GitHub Release), or rollback (the guide's 0.1.0 to 0.2.0 upgrade and rollback, from the registry)"
         required: true
         default: "registry"
         type: choice
-        options: [registry, release-run, release-tag]
+        options: [registry, release-run, release-tag, rollback]
       version:
         description: "registry only: the published build-os version (for example 0.2.0)"
         required: false
@@ -65,6 +69,8 @@ on:
       - ".github/workflows/buildos-smoke.yml"
       - "toolkits/buildos/scripts/published-smoke.ts"
       - "toolkits/buildos/scripts/printed-fix-step.ts"
+      - "toolkits/buildos/scripts/rollback-smoke.ts"
+      - "toolkits/buildos/scripts/rollback-steps.ts"
       - "toolkits/buildos/scripts/smoke-evidence.ts"
       - "toolkits/buildos/scripts/smoke-source.ts"
       - "toolkits/buildos/scripts/tar-reader.mjs"
@@ -110,7 +116,7 @@ jobs:
           fail() { echo "::error::$1"; exit 1; }
           semver='^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'
           if [ "$EVENT" = "pull_request" ]; then
-            { echo "source=local-pack"; echo 'modes=["registry","local-pack"]'; echo "version=0.2.0"; } >> "$GITHUB_OUTPUT"
+            { echo "source=local-pack"; echo 'modes=["registry","local-pack","rollback"]'; echo "version=0.2.0"; } >> "$GITHUB_OUTPUT"
             exit 0
           fi
           case "$SOURCE" in
@@ -133,8 +139,12 @@ jobs:
               [[ "$SHA256" =~ ^[0-9a-f]{64}$ ]] || fail "tarball_sha256 must be 64 lowercase hex characters"
               { echo "source=release-tag"; echo 'modes=["tarball"]'; echo "release_tag=$TAG"; echo "sha256=$SHA256"; } >> "$GITHUB_OUTPUT"
               ;;
+            rollback)
+              [ -z "$RUN$TAG$SHA256" ] || fail "source rollback: leave release_run, release_tag, and tarball_sha256 empty"
+              { echo "source=rollback"; echo 'modes=["rollback"]'; } >> "$GITHUB_OUTPUT"
+              ;;
             *)
-              fail "source must be registry, release-run, or release-tag"
+              fail "source must be registry, release-run, release-tag, or rollback"
               ;;
           esac
 
@@ -292,6 +302,7 @@ jobs:
             registry) node scripts/published-smoke.ts --version "$SMOKE_VERSION" --out "$RUNNER_TEMP/smoke" ;;
             tarball) node scripts/published-smoke.ts --tarball "$RUNNER_TEMP/tarball/$TARBALL_NAME" --sha256 "$TARBALL_SHA256" --out "$RUNNER_TEMP/smoke" ;;
             local-pack) node scripts/published-smoke.ts --tarball "$LOCAL_TARBALL" --sha256 "$LOCAL_SHA256" --out "$RUNNER_TEMP/smoke" ;;
+            rollback) node scripts/rollback-smoke.ts --out "$RUNNER_TEMP/smoke" ;;
             *) echo "::error::unknown mode $MODE"; exit 1 ;;
           esac
 

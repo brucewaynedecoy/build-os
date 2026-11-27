@@ -524,12 +524,12 @@ describe("smoke workflow: read-only, no secret, pinned, three systems, registry 
   });
 
   it("runs by hand with a source choice (default registry, version default 0.2.0, the latest published version), and on a pull request only for its own files", () => {
-    assert.match(on, /\n {6}source:\n[^]*?default: "registry"\n {8}type: choice\n {8}options: \[registry, release-run, release-tag\]\n/);
+    assert.match(on, /\n {6}source:\n[^]*?default: "registry"\n {8}type: choice\n {8}options: \[registry, release-run, release-tag, rollback\]\n/);
     assert.match(on, /\n {6}version:\n[^]*?default: "0\.2\.0"\n/);
     for (const input of ["release_run", "release_run_attempt", "release_tag", "tarball_sha256"]) assert.match(on, new RegExp(`\\n {6}${input}:\\n {8}description: `), input);
     assert.ok(
       on.includes(
-        '  pull_request:\n    paths:\n      - ".github/workflows/buildos-smoke.yml"\n      - "toolkits/buildos/scripts/published-smoke.ts"\n      - "toolkits/buildos/scripts/printed-fix-step.ts"\n      - "toolkits/buildos/scripts/smoke-evidence.ts"\n      - "toolkits/buildos/scripts/smoke-source.ts"\n      - "toolkits/buildos/scripts/tar-reader.mjs"\n',
+        '  pull_request:\n    paths:\n      - ".github/workflows/buildos-smoke.yml"\n      - "toolkits/buildos/scripts/published-smoke.ts"\n      - "toolkits/buildos/scripts/printed-fix-step.ts"\n      - "toolkits/buildos/scripts/rollback-smoke.ts"\n      - "toolkits/buildos/scripts/rollback-steps.ts"\n      - "toolkits/buildos/scripts/smoke-evidence.ts"\n      - "toolkits/buildos/scripts/smoke-source.ts"\n      - "toolkits/buildos/scripts/tar-reader.mjs"\n',
       ),
       on,
     );
@@ -566,11 +566,12 @@ describe("smoke workflow: read-only, no secret, pinned, three systems, registry 
     assert.match(text, /if: always\(\)\n {8}uses: actions\/upload-artifact@/);
   });
 
-  it("the smoke step runs the script in registry, tarball, or local-pack mode, with the values from the environment", () => {
+  it("the smoke step runs the script in registry, tarball, local-pack, or rollback mode, with the values from the environment", () => {
     const smoke = runScripts(job(text, "smoke")).find((s) => s.includes("published-smoke.ts")) ?? "";
     assert.ok(smoke.includes('registry) node scripts/published-smoke.ts --version "$SMOKE_VERSION" --out "$RUNNER_TEMP/smoke" ;;'), smoke);
     assert.ok(smoke.includes('tarball) node scripts/published-smoke.ts --tarball "$RUNNER_TEMP/tarball/$TARBALL_NAME" --sha256 "$TARBALL_SHA256" --out "$RUNNER_TEMP/smoke" ;;'), smoke);
     assert.ok(smoke.includes('local-pack) node scripts/published-smoke.ts --tarball "$LOCAL_TARBALL" --sha256 "$LOCAL_SHA256" --out "$RUNNER_TEMP/smoke" ;;'), smoke);
+    assert.ok(smoke.includes('rollback) node scripts/rollback-smoke.ts --out "$RUNNER_TEMP/smoke" ;;'), smoke);
     assert.match(job(text, "smoke"), /\n {10}TARBALL_SHA256: \$\{\{ needs\.check-inputs\.outputs\.sha256 \}\}\n/);
     assert.match(job(text, "smoke"), /name: buildos-smoke-\$\{\{ matrix\.mode \}\}-\$\{\{ runner\.os \}\}\n/);
   });
@@ -617,7 +618,9 @@ describe("smoke workflow: read-only, no secret, pinned, three systems, registry 
       return { status: r.status, out: readFileSync(out, "utf8"), stdout: r.stdout };
     };
     assert.deepEqual(runIt({}), { status: 0, out: 'source=registry\nmodes=["registry"]\nversion=0.1.0\n', stdout: "" });
-    assert.equal(runIt({ EVENT: "pull_request", SOURCE: "" }).out, 'source=local-pack\nmodes=["registry","local-pack"]\nversion=0.2.0\n');
+    assert.equal(runIt({ EVENT: "pull_request", SOURCE: "" }).out, 'source=local-pack\nmodes=["registry","local-pack","rollback"]\nversion=0.2.0\n');
+    // F-P9-16: the rollback source takes no run, tag, or SHA-256.
+    assert.equal(runIt({ SOURCE: "rollback", VERSION: "0.2.0" }).out, 'source=rollback\nmodes=["rollback"]\n');
     assert.equal(runIt({ SOURCE: "release-run", RUN: "45894295344", ATTEMPT: "2", SHA256: sha }).out, `source=release-run\nmodes=["tarball"]\nrelease_run=45894295344\nrelease_run_attempt=2\nsha256=${sha}\n`);
     assert.equal(runIt({ SOURCE: "release-tag", TAG: "v0.2.0", SHA256: sha }).out, `source=release-tag\nmodes=["tarball"]\nrelease_tag=v0.2.0\nsha256=${sha}\n`);
     const bad: Record<string, string>[] = [
@@ -638,6 +641,9 @@ describe("smoke workflow: read-only, no secret, pinned, three systems, registry 
       { SOURCE: "release-tag", TAG: "v0.2.0\nx=1", SHA256: sha },
       { SOURCE: "release-tag", TAG: `v0.2.0-${"a".repeat(130)}`, SHA256: sha },
       { SOURCE: "release-tag", TAG: "v0.2.0", RUN: "1", SHA256: sha },
+      { SOURCE: "rollback", RUN: "1" },
+      { SOURCE: "rollback", TAG: "v0.2.0" },
+      { SOURCE: "rollback", SHA256: sha },
       { SOURCE: "other" },
     ];
     for (const env of bad) {
