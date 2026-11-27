@@ -15,13 +15,17 @@
 //    PATHEXT form on Windows). One found stops the run (exit 1).
 //    With --filesystem (the no-python-image CI job gives `/` inside a
 //    container), the whole tree under that folder is searched too, without
-//    following links: a name `py`, or one that starts with `python`, `pypy`,
-//    or `libpython` (a file, a folder, or a link of any kind), stops the run,
-//    and so does a folder it cannot read. `/proc`, `/sys`, `/dev`, and each
-//    --skip folder (the mounted checkout) are not searched. `.py` source
-//    files are counted and named by folder, but they do not stop the run:
-//    a source file is not a Python that can run (npm ships node-gyp's gyp
-//    sources, for example).
+//    following links, for a Python that can run. These stop the run: a file
+//    with an execute bit, or a link, named `py` or starting with `python` or
+//    `pypy` (an interpreter or its launcher); a file or link starting with
+//    `libpython` (the interpreter library); a folder named `python` or
+//    `pypy` followed by a digit (a standard library folder such as
+//    `python3.11`); and a folder it cannot read. `/proc`, `/sys`, `/dev`,
+//    and each --skip folder (the mounted checkout) are not searched. Every
+//    other entry with such a name (for example `/usr/share/gcc/python`, the
+//    GDB helper sources of the C++ library package) and every `.py` source
+//    file (npm ships node-gyp's gyp sources) is listed, but does not stop the
+//    run: a source file or a data folder is not a Python that can run.
 // 2. The project wrapper `.os/scripts/buildos` (`buildos.cmd` on Windows), as
 //    the skills call it: `help` lists the three domains (the published 0.1.0
 //    has none of them, so an npx fallback cannot pass), and each skill's own
@@ -42,7 +46,7 @@
 // fixture's content.
 
 import { spawnSync, type SpawnSyncReturns } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { delimiter, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { GOLDENS, SCRIPTS, loadCases, loadGolden, runCase, type Runner, type ScriptName, type StepResult } from "../test/golden/skills/scenario.ts";
@@ -74,12 +78,25 @@ function parse(argv: string[]): { project: string; work: string; filesystem?: st
   return { project: out["project"], work: out["work"], filesystem: out["filesystem"], skip };
 }
 
-/** A name that a Python install has: `py`, `python*`, `pypy*`, `libpython*`. */
+/** A name that a Python install uses: `py`, `python*`, `pypy*`, `libpython*`. */
 export const PYTHON_NAME = /^(?:py|python.*|pypy.*|libpython.*)$/i;
 
+/** Why an entry with a Python name is a Python that can run, or undefined when it is not. */
+export function runnablePython(name: string, kind: "file" | "link" | "folder" | "other", mode: number): string | undefined {
+  if (!PYTHON_NAME.test(name)) return undefined;
+  const lib = /^libpython/i.test(name);
+  if (lib && (kind === "file" || kind === "link")) return "interpreter library";
+  if (!lib && kind === "link") return "link to a program";
+  if (!lib && kind === "file" && (mode & 0o111) !== 0) return "program";
+  if (kind === "folder" && /^(?:python|pypy)\d/i.test(name)) return "standard library folder";
+  return undefined;
+}
+
 export interface DiskSearch {
-  /** Every entry whose name is a Python install name (a file, a folder, or a link). */
+  /** Every entry that is a Python that can run, with the reason. */
   found: string[];
+  /** Every other entry with a Python name (a data folder, a source file, ...). */
+  other: string[];
   /** Folders that could not be read, so the search is not complete. */
   unreadable: string[];
   /** Entries looked at. */
@@ -95,7 +112,7 @@ export interface DiskSearch {
  */
 export function searchDisk(root: string, skip: readonly string[] = []): DiskSearch {
   const skipped = new Set([...skip.map((s) => resolve(s)), ...(resolve(root) === resolve("/") ? ["/proc", "/sys", "/dev"].map((s) => resolve(s)) : [])]);
-  const result: DiskSearch = { found: [], unreadable: [], entries: 0, sources: new Map() };
+  const result: DiskSearch = { found: [], other: [], unreadable: [], entries: 0, sources: new Map() };
   const stack = [resolve(root)];
   while (stack.length > 0) {
     const dir = stack.pop()!;
@@ -110,12 +127,23 @@ export function searchDisk(root: string, skip: readonly string[] = []): DiskSear
       const full = join(dir, entry.name);
       if (skipped.has(full)) continue;
       result.entries++;
-      if (PYTHON_NAME.test(entry.name)) result.found.push(full);
-      else if (entry.isFile() && /\.py$/i.test(entry.name)) result.sources.set(dir, (result.sources.get(dir) ?? 0) + 1);
+      if (PYTHON_NAME.test(entry.name)) {
+        const kind = entry.isSymbolicLink() ? "link" : entry.isDirectory() ? "folder" : entry.isFile() ? "file" : "other";
+        let mode = 0;
+        try {
+          mode = kind === "file" ? lstatSync(full).mode : 0;
+        } catch {
+          mode = 0o111;
+        }
+        const why = runnablePython(entry.name, kind, mode);
+        if (why === undefined) result.other.push(`${full} (${kind})`);
+        else result.found.push(`${full} (${why})`);
+      } else if (entry.isFile() && /\.py$/i.test(entry.name)) result.sources.set(dir, (result.sources.get(dir) ?? 0) + 1);
       if (entry.isDirectory()) stack.push(full);
     }
   }
   result.found.sort();
+  result.other.sort();
   result.unreadable.sort();
   return result;
 }
@@ -187,11 +215,12 @@ async function main(): Promise<number> {
   if (filesystem !== undefined) {
     const disk = searchDisk(filesystem, skip);
     if (disk.found.length > 0 || disk.unreadable.length > 0) {
-      process.stderr.write(`no-python-smoke: the filesystem search under ${filesystem} failed:\n${disk.found.map((p) => `  Python name: ${p}\n`).join("")}${disk.unreadable.map((p) => `  not readable: ${p}\n`).join("")}`);
+      process.stderr.write(`no-python-smoke: the filesystem search under ${filesystem} failed:\n${disk.found.map((p) => `  Python: ${p}\n`).join("")}${disk.unreadable.map((p) => `  not readable: ${p}\n`).join("")}`);
       process.exit(1);
     }
     const sources = [...disk.sources].sort(([a], [b]) => a.localeCompare(b));
-    process.stdout.write(`filesystem: ${disk.entries} entries under ${filesystem} searched (not searched: ${[...(resolve(filesystem) === resolve("/") ? ["/proc", "/sys", "/dev"] : []), ...skip].join(", ") || "nothing"}); no py, python*, pypy*, or libpython* name.\n`);
+    process.stdout.write(`filesystem: ${disk.entries} entries under ${filesystem} searched (not searched: ${[...(resolve(filesystem) === resolve("/") ? ["/proc", "/sys", "/dev"] : []), ...skip].join(", ") || "nothing"}); no Python that can run (no py, python*, or pypy* program or link, no libpython* library, no python<N> library folder).\n`);
+    process.stdout.write(`filesystem: ${disk.other.length} other entr${disk.other.length === 1 ? "y" : "ies"} with a Python name, none of them a Python that can run${disk.other.length === 0 ? "" : ":"}\n${disk.other.map((p) => `  ${p}\n`).join("")}`);
     process.stdout.write(`filesystem: ${sources.reduce((n, [, c]) => n + c, 0)} .py source file(s) in ${sources.length} folder(s), and no Python to run them${sources.length === 0 ? "" : ":"}\n${sources.map(([d, c]) => `  ${d}: ${c}\n`).join("")}`);
   }
 

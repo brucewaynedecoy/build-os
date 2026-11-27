@@ -9,8 +9,10 @@
 # off, the no-Python check, a build, a pack, a new project with the tarball
 # installed, scripts/no-python-smoke.ts, and the skill-script parity test.
 # The smoke also searches the whole container filesystem (all but the
-# checkout, /proc, /sys, and /dev) for a py, python*, pypy*, or libpython*
-# name, so the run fails if the image has Python anywhere, not only on PATH.
+# checkout, /proc, /sys, and /dev) for a Python that can run (a py, python*,
+# or pypy* program or link, a libpython* library, or a python<N> library
+# folder), so the run fails if the image has Python anywhere, not only on
+# PATH.
 #
 # The image has no git. Nothing here needs it: the checkout is made on the
 # runner, and test/capture-sources.test.ts (which needs git and the full

@@ -10,7 +10,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { after, describe, it } from "node:test";
 import { EXCEPTIONS, check, findPython, tag } from "../scripts/check-no-python.ts";
-import { PYTHON_NAME, searchDisk } from "../scripts/no-python-smoke.ts";
+import { PYTHON_NAME, runnablePython, searchDisk } from "../scripts/no-python-smoke.ts";
 
 const SCRIPT = resolve(import.meta.dirname, "..", "scripts", "check-no-python.ts");
 const temps: string[] = [];
@@ -230,17 +230,44 @@ describe("CI: the no-Python image job (A80)", () => {
     assert.doesNotMatch(code, /\b(?:apt|apt-get|apk|pip|pip3|uv|git)\b|(?<![\w-])python/, "installs nothing, runs no Python, needs no git");
   });
 
-  it("the filesystem search finds each Python name, of any kind, outside the skipped folders, and counts .py sources without failing on them", () => {
-    const root = skills({ "usr/bin/node": "", "usr/lib/python3.11/os.py": "", "usr/lib/libpython3.11.so.1.0": "", "opt/qzvnopy/py": "", "opt/pypy3/x": "", "tools/gyp/gyp_main.py": "", "skipme/python3": "" });
-    if (process.platform !== "win32") symlinkSync("node", join(root, "usr", "bin", "python3"));
+  it("the filesystem search fails on a Python that can run, and lists a data folder or a source file with a Python name without failing", () => {
+    const posix = process.platform !== "win32";
+    const root = skills({
+      "usr/bin/node": "",
+      "usr/bin/python3.12": "",
+      "usr/lib/python3.11/os.py": "",
+      "usr/lib/libpython3.11.so.1.0": "",
+      "opt/qzvnopy/py": "",
+      "opt/pypy3/x": "",
+      "usr/share/gcc/python/libstdcxx/printers.py": "",
+      "usr/share/doc/python.txt": "",
+      "tools/gyp/gyp_main.py": "",
+      "skipme/python3": "",
+    });
+    if (posix) {
+      symlinkSync("node", join(root, "usr", "bin", "python3"));
+      chmodSync(join(root, "usr", "bin", "python3.12"), 0o755);
+      chmodSync(join(root, "opt", "qzvnopy", "py"), 0o755);
+      chmodSync(join(root, "skipme", "python3"), 0o755);
+    }
     const result = searchDisk(root, [join(root, "skipme")]);
-    const found = result.found.map((p) => p.slice(root.length + 1).split(/[\\/]/).join("/"));
-    const want = ["opt/pypy3", "opt/qzvnopy/py", "usr/lib/libpython3.11.so.1.0", "usr/lib/python3.11", ...(process.platform === "win32" ? [] : ["usr/bin/python3"])].sort();
-    assert.deepEqual(found, want);
+    const rel = (list: string[]) => list.map((p) => p.slice(root.length + 1).split(/[\\/]/).join("/")).sort();
+    const want = [
+      "opt/pypy3 (standard library folder)",
+      "usr/lib/libpython3.11.so.1.0 (interpreter library)",
+      "usr/lib/python3.11 (standard library folder)",
+      ...(posix ? ["opt/qzvnopy/py (program)", "usr/bin/python3 (link to a program)", "usr/bin/python3.12 (program)"] : []),
+    ].sort();
+    assert.deepEqual(rel(result.found), want);
+    const other = ["usr/share/doc/python.txt (file)", "usr/share/gcc/python (folder)", ...(posix ? [] : ["opt/qzvnopy/py (file)", "usr/bin/python3.12 (file)"])].sort();
+    assert.deepEqual(rel(result.other), other, "a data folder and a data file are listed, not failed on");
     assert.deepEqual(result.unreadable, []);
-    assert.deepEqual([...result.sources.values()].reduce((a, b) => a + b, 0), 2, "the two .py sources are counted, not failed on");
+    assert.equal([...result.sources.values()].reduce((a, b) => a + b, 0), 3, "the .py sources are counted, not failed on");
     for (const name of ["py", "python", "python3", "python3.12", "python.exe", "pypy3", "libpython3.11.so"]) assert.match(name, PYTHON_NAME, name);
     for (const name of ["pyc", "spy", "gyp_main.py", "find-python.js", "pylib", "cpython"]) assert.doesNotMatch(name, PYTHON_NAME, name);
+    assert.equal(runnablePython("python", "folder", 0), undefined, "/usr/share/gcc/python is not a Python");
+    assert.equal(runnablePython("python3", "file", 0o644), undefined, "a file without an execute bit does not run");
+    assert.equal(runnablePython("python3", "file", 0o755), "program");
   });
 
   it("the filesystem search reports a folder it cannot read, so an incomplete search fails", { skip: process.platform === "win32" || process.getuid?.() === 0 ? "needs a non-root POSIX user" : false }, () => {
