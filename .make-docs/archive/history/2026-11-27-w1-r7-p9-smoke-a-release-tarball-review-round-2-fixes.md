@@ -29,6 +29,8 @@ Framing: [W1 R7 backlog](../../../docs/work/2026-11-23-w1-r7-buildos-node-typesc
 
 Stacked on pull request 11 (`release/0.2.0-version`), pull request 10 (`feat/capability-matrix-command`), and pull request 9 (`fix/f-p8-11-printed-commands`), none merged. No source file under `src/`, version, `release-candidates.json`, `buildos-release.yml`, acceptance criterion, or gate text changed; no checkbox changed. The package file list is unchanged (168 files). Nothing is published, staged, or tagged.
 
+Follow-up (same day): the name of the step 10 shell step in tarball mode says "the launch check after step 10 names the program", so no fixed step name holds the word "ran", and a test checks that name.
+
 Deferred obligations and Unassisted Goal Testing: `not-needed-now`; no `O-###` or `NUAT-###` applies. Guide coverage: `no-change`; no guide source changed.
 
 ## Documentation

@@ -614,8 +614,9 @@ describe("F-P9-15: step 10 in tarball mode", () => {
     assert.deepEqual(r.failed, []);
     assert.equal(r.shellRuns.length, 1);
     assert.equal(r.shellRuns[0]!.command, "npx -y build-os@0.2.0 entities rebuild-index --root '/tmp/smoke/project' --mode compat --apply");
-    assert.match(r.shellRuns[0]!.name, /^the printed fix command, as printed, in sh \(tarball mode, registry blocked: the launch check after step 10 records which program ran; the registry fetch of this literal command is proven only after publication, runbook step k\)$/);
+    assert.match(r.shellRuns[0]!.name, /^the printed fix command, as printed, in sh \(tarball mode, registry blocked: the launch check after step 10 names the program; the registry fetch of this literal command is proven only after publication, runbook step k\)$/);
     assert.equal(stubbed({}).shellRuns[0]!.name, "the printed fix command, as printed, in sh");
+    assert.doesNotMatch(r.shellRuns[0]!.name, /\b(ran|started)\b/, "finding 3: the name states no result");
   });
 
   it("a mismatch in the JSON field or the human line still runs nothing in tarball mode", () => {
