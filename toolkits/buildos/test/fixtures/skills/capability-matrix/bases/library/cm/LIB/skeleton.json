@@ -1,0 +1,65 @@
+{
+  "system": {
+    "code": "LIB",
+    "name": "Candidate Library Platform",
+    "title": "LIB capability model",
+    "converted": true,
+    "status_vocabulary": [
+      "ga",
+      "beta",
+      "roadmap"
+    ],
+    "maturity_map": {
+      "ga": "available",
+      "beta": "partial",
+      "roadmap": "planned"
+    }
+  },
+  "layers": [
+    {
+      "id": "L1",
+      "code": "LEND",
+      "name": "Lending"
+    },
+    {
+      "id": "L2",
+      "code": "MEM",
+      "name": "Members"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "LIB-LEND-01",
+      "layer_id": "L1",
+      "doc_ref": "4.1",
+      "type": "capability",
+      "name": "Loans",
+      "status": "ga"
+    },
+    {
+      "id": "LIB-LEND-02",
+      "layer_id": "L1",
+      "doc_ref": "4.2",
+      "type": "workflow",
+      "name": "Reservations",
+      "status": "beta",
+      "scope": "Thin."
+    },
+    {
+      "id": "LIB-MEM-01",
+      "layer_id": "L2",
+      "doc_ref": "5.1",
+      "type": "data_entity",
+      "name": "Members",
+      "status": "ga"
+    },
+    {
+      "id": "LIB-MEM-02",
+      "layer_id": "L2",
+      "doc_ref": "5.2",
+      "type": "integration",
+      "name": "Self-service kiosk",
+      "status": "roadmap"
+    }
+  ]
+}

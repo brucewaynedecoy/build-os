@@ -1,0 +1,22 @@
+[
+  {
+    "id": "CIRC-CORE-01",
+    "requirements": []
+  },
+  {
+    "id": "CIRC-CORE-02",
+    "status": "pilot"
+  },
+  {
+    "id": "CIRC-CORE-02a",
+    "status": "live"
+  },
+  {
+    "id": "CIRC-PAT-01",
+    "status": "live"
+  },
+  {
+    "id": "CIRC-RPT-01",
+    "status": "planned"
+  }
+]

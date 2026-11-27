@@ -1,0 +1,86 @@
+{
+  "case": "assemble-stops",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "assemble",
+        "--skeleton",
+        "cm/CIRC/skeleton.json",
+        "--parts",
+        "cm/CIRC/parts/part-a.json",
+        "--out",
+        "deliver/CIRC"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "assemble: skeleton/parts mismatch  missing=['CIRC-PAT-01', 'CIRC-RPT-01'] extra=[]\n",
+      "files": {}
+    },
+    {
+      "step": 1,
+      "args": [
+        "assemble",
+        "--skeleton",
+        "cm/CIRC/skeleton.json",
+        "--parts",
+        "cm/CIRC/parts/*.json",
+        "cm/CIRC/parts-extra/unknown.json",
+        "--out",
+        "deliver/CIRC"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "assemble: skeleton/parts mismatch  missing=[] extra=['CIRC-CORE-77']\n",
+      "files": {}
+    },
+    {
+      "step": 2,
+      "args": [
+        "assemble",
+        "--skeleton",
+        "cm/CIRC/skeleton.json",
+        "--parts",
+        "cm/CIRC/nothing-*.json",
+        "--out",
+        "deliver/CIRC"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "assemble: skeleton/parts mismatch  missing=['CIRC-CORE-01', 'CIRC-CORE-02', 'CIRC-CORE-02a', 'CIRC-PAT-01', 'CIRC-RPT-01'] extra=[]\n",
+      "files": {}
+    },
+    {
+      "step": 3,
+      "args": [
+        "assemble",
+        "--skeleton",
+        "cm/CIRC/skeleton.json",
+        "--parts",
+        "cm/CIRC/parts-bad/status.json",
+        "--out",
+        "deliver/CIRC"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "assemble: CIRC-CORE-01 status 'closed' not in system.status_vocabulary\n",
+      "files": {}
+    },
+    {
+      "step": 4,
+      "args": [
+        "assemble",
+        "--skeleton",
+        "cm/CIRC/skeleton.json",
+        "--parts",
+        "cm/CIRC/parts-bad/req-status.json",
+        "--out",
+        "deliver/CIRC"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "assemble: CIRC-CORE-01-R02 status 'someday' not in vocabulary\n",
+      "files": {}
+    }
+  ]
+}

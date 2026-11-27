@@ -1,0 +1,40 @@
+[
+  {
+    "id": "LIB-MEM-01",
+    "layer_id": "L2",
+    "doc_ref": "5.1",
+    "type": "data_entity",
+    "name": "Members",
+    "status": "ga",
+    "summary": "Member records with contact details, as the platform's public product notes describe it.",
+    "requirements": [
+      {
+        "kind": "data",
+        "status": "ga",
+        "text": "Store a member's address.",
+        "source_refs": [
+          "Desk manual 2"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "LIB-MEM-02",
+    "layer_id": "L2",
+    "doc_ref": "5.2",
+    "type": "integration",
+    "name": "Self-service kiosk",
+    "status": "roadmap",
+    "summary": "A kiosk where members lend and return items themselves, as the platform's public product notes describe it.",
+    "requirements": [
+      {
+        "kind": "dependency",
+        "status": "roadmap",
+        "text": "Needs the kiosk hardware kit.",
+        "source_refs": [
+          "Desk manual 2"
+        ]
+      }
+    ]
+  }
+]

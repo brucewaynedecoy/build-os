@@ -1,0 +1,75 @@
+[
+  {
+    "id": "Var-ODD-02",
+    "status": "off",
+    "summary": null,
+    "personas": "abc",
+    "tags": {
+      "first": 1,
+      "second": 2
+    },
+    "requirements": [
+      {
+        "kind": "setting",
+        "status": "on",
+        "text": "Class alias.",
+        "option_scope": "class",
+        "option_values": 7
+      },
+      {
+        "kind": "setting",
+        "status": "on",
+        "text": "Template alias.",
+        "option_scope": "template",
+        "option_values": "a||b"
+      },
+      {
+        "kind": "setting",
+        "status": "off",
+        "text": "Setup alias.",
+        "option_scope": "setup",
+        "option_values": ""
+      },
+      {
+        "kind": "setting",
+        "status": "on",
+        "text": "User alias.",
+        "option_scope": "user",
+        "option_default": 0
+      },
+      {
+        "kind": "setting",
+        "status": "on",
+        "text": "Contract alias.",
+        "option_scope": "contract",
+        "option_values": "x | y"
+      },
+      {
+        "kind": "rule",
+        "status": "on",
+        "option_default": "dropped"
+      },
+      {
+        "kind": "data",
+        "status": "off",
+        "text": "Alias then stripped.",
+        "option_scope": "pricing class"
+      }
+    ]
+  },
+  {
+    "id": "Var-ODD-01",
+    "status": "on",
+    "name": "Strings for lists",
+    "summary": 12,
+    "requirements": [
+      {
+        "id": "Var-ODD-01-R01",
+        "kind": "behavior",
+        "status": "on",
+        "text": "Already numbered.",
+        "source_refs": null
+      }
+    ]
+  }
+]

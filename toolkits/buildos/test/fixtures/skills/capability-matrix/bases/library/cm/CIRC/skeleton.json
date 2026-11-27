@@ -1,0 +1,107 @@
+{
+  "system": {
+    "code": "CIRC",
+    "name": "Current Circulation System",
+    "title": "CIRC capability model",
+    "converted": false,
+    "status_vocabulary": [
+      "live",
+      "pilot",
+      "planned",
+      "retired"
+    ],
+    "maturity_map": {
+      "live": "proven",
+      "pilot": "partial",
+      "planned": "planned",
+      "retired": "deferred"
+    },
+    "sources": [
+      "Desk manual",
+      "Branch notes"
+    ],
+    "revision": 1.0,
+    "catalogue_size": 12345678901234567890,
+    "scale": 1e16
+  },
+  "layers": [
+    {
+      "id": "L1",
+      "code": "CORE",
+      "name": "Circulation"
+    },
+    {
+      "id": "L2",
+      "code": "PAT",
+      "name": "Patrons"
+    },
+    {
+      "id": "L3",
+      "code": "RPT",
+      "name": "Reports"
+    }
+  ],
+  "design_principles": [
+    {
+      "id": "DP-1",
+      "name": "Patron first",
+      "statement": "Every desk step starts from the patron in front of the desk."
+    },
+    {
+      "id": "DP-2",
+      "name": "One record per book",
+      "statement": "A book has one record, whatever branch holds it."
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "CIRC-CORE-01",
+      "layer_id": "L1",
+      "doc_ref": "1.1",
+      "type": "process",
+      "name": "Check out books",
+      "status": "live",
+      "scope": "Lending a book to a patron as the circulation desk does it today, from the desk manual and the branch notes.",
+      "source_refs": [
+        "Desk manual 2"
+      ]
+    },
+    {
+      "id": "CIRC-CORE-02",
+      "layer_id": "L1",
+      "doc_ref": "1.2",
+      "type": "workflow",
+      "name": "Holds queue",
+      "status": "pilot",
+      "scope": "Queueing holds on books that are out as the circulation desk does it today, from the desk manual and the branch notes."
+    },
+    {
+      "id": "CIRC-CORE-02a",
+      "layer_id": "L1",
+      "doc_ref": "1.2",
+      "type": "configuration",
+      "name": "Hold pickup window",
+      "status": "live",
+      "scope": "How long a held book waits at the desk as the circulation desk does it today, from the desk manual and the branch notes.",
+      "origin": "captured"
+    },
+    {
+      "id": "CIRC-PAT-01",
+      "layer_id": "L2",
+      "doc_ref": "2.1",
+      "type": "data_entity",
+      "name": "Patron record",
+      "status": "live",
+      "scope": "The record of each patron as the circulation desk does it today, from the desk manual and the branch notes."
+    },
+    {
+      "id": "CIRC-RPT-01",
+      "layer_id": "L3",
+      "doc_ref": "3.1",
+      "type": "report",
+      "name": "Overdue report",
+      "status": "planned",
+      "scope": "The weekly list of overdue loans as the circulation desk does it today, from the desk manual and the branch notes."
+    }
+  ]
+}

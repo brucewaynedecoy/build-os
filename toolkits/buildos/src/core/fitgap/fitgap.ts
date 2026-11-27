@@ -23,7 +23,7 @@ import { basename, dirname, isAbsolute, join, normalize, posix, sep } from "node
 import type { FsPortFactory } from "../shared/fs-port.ts";
 import { ProjectFileError, ProjectFiles, type WritePlan } from "../shared/project-files.ts";
 import type { NotRestored } from "../shared/not-restored.ts";
-import { isDict, isList, isPyNumber, PyFloat, PyJsonDepthError, PyJsonError, pyDumps, pyLoads, pyRepr, pyStrip, pyLen, type PyDict, type PyValue } from "../shared/py-json.ts";
+import { isDict, isList, isPyNumber, PyFloat, PyIntDigitsError, PyJsonDepthError, PyJsonError, pyDumps, pyLoads, pyRepr, pyStrip, pyLen, type PyDict, type PyValue } from "../shared/py-json.ts";
 import { PyException, pyDecodeUtf8 } from "../shared/py-text.ts";
 import { READ_LIMITS } from "../shared/read-limits.ts";
 import { pyCsvRows } from "../extract/py-lines.ts";
@@ -144,6 +144,7 @@ export function load(ctx: FitgapContext, path: string): PyValue {
   } catch (error) {
     if (error instanceof PyJsonError) throw new FitgapInput(`${path} is not valid JSON: ${error.message}`);
     if (error instanceof PyJsonDepthError) throw new FitgapInput(`${path}: ${error.message}`);
+    if (error instanceof PyIntDigitsError) throw new FitgapInput(`${path}: ${error.message}`);
     if (error instanceof PyException) throw new FitgapInput(`${path} is not UTF-8 text: ${error.message}`);
     throw error;
   }
@@ -166,19 +167,41 @@ function dumpTo(plan: WritePlan, value: PyValue, path: string): void {
  * after a wildcard cannot leave it. A pattern outside the project folder is
  * a refusal (exit 3), never an empty match. A pattern inside it that matches
  * nothing gives no files, as the script's `glob.glob` did.
+ *
+ * F-P9-04 review round 1 (finding 3): an empty pattern matches nothing, as
+ * `glob.glob('')` returns `[]` (it named the project folder before).
+ * `buildos fitgap` is unchanged: its `globs` still keeps a pattern that names
+ * an existing path when nothing matches.
  */
-function pyGlob(ctx: FitgapContext, pattern: string): string[] {
+export function pyGlob(ctx: FitgapContext, pattern: string, options: { spelled?: boolean } = {}): string[] {
+  if (pattern === "") return [];
+  const spelled = options.spelled === true;
   const magic = /[*?[]/;
   const parts = pattern.split(sep === "\\" ? /[/\\]/ : "/");
   const first = parts.findIndex((part) => magic.test(part));
-  if (first === -1) return ctx.files.kindStrict(pattern) === undefined ? [] : [pattern];
+  if (first === -1) {
+    if (!spelled) return ctx.files.kindStrict(pattern) === undefined ? [] : [pattern];
+    // `glob.glob` of a plain path: `os.path.lexists(path)`, or `os.path.isdir` of its folder when it ends with a separator.
+    const found = osLookup(ctx.files, pattern);
+    return found === "file" || found === "directory" || found === "dangling" ? [pattern] : [];
+  }
   let prefix = parts.slice(0, first).join("/");
   if (isAbsolute(pattern) && (prefix === "" || /^[A-Za-z]:$/.test(prefix))) prefix = sep === "\\" ? `${prefix}\\` : "/";
   const contained = (path: string): void => {
     if (ctx.files.inside(path === "" ? "." : path) === undefined) throw ctx.files.refusal(pattern, false);
   };
   contained(prefix);
-  const join = (base: string, name: string): string => (base === "" ? name : base.endsWith("/") || base.endsWith("\\") ? `${base}${name}` : `${base}/${name}`);
+  // F-P9-04 review round 3 (finding 4): for capability-matrix (`spelled`), `\` is a separator only on Windows, as
+  // `os.path.join` reads it; on POSIX it is part of a name (a folder `fold71\`). `buildos fitgap` keeps its join (F-P9-12).
+  const separatorAtEnd = (base: string): boolean => base.endsWith("/") || (base.endsWith("\\") && (!spelled || sep === "\\"));
+  const join = (base: string, name: string): string => (base === "" ? name : separatorAtEnd(base) ? `${base}${name}` : `${base}/${name}`);
+  /** What `os.lstat` (a name) or `os.path.isdir` (a folder) finds at `path`. */
+  const exists = (path: string): boolean => {
+    if (!spelled) return ctx.files.kindStrict(path === "" ? "." : path) !== undefined;
+    const found = osLookup(ctx.files, path);
+    return found === "file" || found === "directory" || found === "dangling";
+  };
+  const isFolder = (path: string): boolean => (spelled ? osLookup(ctx.files, path === "" ? "." : path) === "directory" : ctx.files.kindStrict(path === "" ? "." : path) === "directory");
   let results: string[] = [prefix];
   for (let i = first; i < parts.length; i++) {
     const part = parts[i]!;
@@ -187,16 +210,22 @@ function pyGlob(ctx: FitgapContext, pattern: string): string[] {
     for (const base of results) {
       if (!magic.test(part)) {
         if (part === "" && base !== "") {
+          // F-P9-04 review round 2 (finding 1): a final separator matches only a folder, spelled with the separator
+          // (`os.path.join(folder, '')`); between two names it adds nothing.
+          if (spelled && last) {
+            if (isFolder(base)) next.push(join(base, ""));
+            continue;
+          }
           next.push(base);
           continue;
         }
         const candidate = join(base, part);
         contained(candidate);
-        if (ctx.files.kindStrict(candidate === "" ? "." : candidate) !== undefined) next.push(candidate);
+        if (exists(candidate)) next.push(candidate);
         continue;
       }
       const folder = base === "" ? "." : base;
-      if (ctx.files.kindStrict(folder) !== "directory") continue;
+      if (!isFolder(folder)) continue;
       const re = fnmatchRegex(part);
       for (const name of ctx.files.listStrict(folder)) {
         if (name.startsWith(".") && !part.startsWith(".")) continue;
@@ -209,6 +238,64 @@ function pyGlob(ctx: FitgapContext, pattern: string): string[] {
     results = next;
   }
   return results;
+}
+
+/**
+ * F-P9-04 review round 2 (finding 1): what the operating system finds at
+ * `path` as the user spelled it, one name at a time, as `open` and
+ * `os.lstat` resolve it on macOS and Linux: every name before the last (and
+ * the last one too, when the path ends with a separator) must be a folder,
+ * so `p.json/`, `p.json/.`, and `p.json/../p.json` are `ENOTDIR` when
+ * `p.json` is a file, and `gone/../p.json` is `ENOENT` when `gone` is
+ * missing. `.` and `..` are then folded as text, as every BuildOS path is
+ * (divergence SD-24: a `..` right after a folder link names the link's
+ * parent, where the OS goes to the parent of the link's target). A folder
+ * before the project folder in a relative path (`../<project>/...`) is not
+ * looked at: BuildOS reads nothing outside the project, and the path must
+ * still end inside it (else the refusal, exit 3). For an absolute path,
+ * `files.inside` looks at the metadata of each folder of it (device and
+ * inode, never content or a listing), also outside the project, to
+ * recognize the project folder under another spelling (P9-R2-10; SD-24 as
+ * review round 3 corrected it). Windows folds `.` and `..` as text before it
+ * looks at the disk, so there only the whole path is looked up (and a final
+ * separator after a file is `ENOTDIR`, as `glob` reads it everywhere).
+ */
+export function osLookup(files: ProjectFiles, path: string, options: { forWrite?: boolean } = {}): "file" | "directory" | "dangling" | "ENOENT" | "ENOTDIR" {
+  // F-P9-04 review round 3 (finding 1): `forWrite` looks at a write destination (`--out` and its folders) through the
+  // write-authorized port (`destinationKind`), so an authorized folder link is followed, as the write follows it.
+  const forWrite = options.forWrite === true;
+  const kindOf = (p: string): "file" | "directory" | undefined => (forWrite ? files.destinationKind(p === "" ? "." : p) : files.kindStrict(p === "" ? "." : p));
+  const entryExists = (p: string): boolean => (forWrite ? files.destinationEntryExists(p === "" ? "." : p) : files.entryExists(p === "" ? "." : p));
+  if (path === "") return "ENOENT";
+  /** The last name: what is there, or a link that leads nowhere (`os.lstat` finds it, `open` does not). */
+  const last = (p: string): "file" | "directory" | "dangling" | "ENOENT" => kindOf(p) ?? (entryExists(p) ? "dangling" : "ENOENT");
+  if (sep === "\\") {
+    // `glob` itself honours a final separator on every system (`os.path.isdir` of the folder).
+    if (/[\\/]$/.test(path)) {
+      const kind = kindOf(path);
+      return kind === "directory" ? kind : kind === undefined ? "ENOENT" : "ENOTDIR";
+    }
+    return last(path);
+  }
+  // F-P9-04 review round 3 (finding 2): the installed-path rule first (`userRel`: a leading `system/` names the root
+  // of an initialized project with no `system` entry), then the walk. A mapped path is walked from `./`, so the
+  // rule is not applied a second time to the names it walks. Callers keep the path as typed for their messages.
+  const mapped = files.userRel(path);
+  const walked = mapped === path ? path : `./${mapped}`;
+  const names = walked.split("/").filter((name) => name !== "");
+  const trailing = walked.endsWith("/");
+  let at = walked.startsWith("/") ? "/" : "";
+  for (let k = 0; k < names.length; k++) {
+    // The names as typed, not `path.join` (which would fold `gone/..` before `gone` is looked at).
+    at = at === "" ? names[k]! : at.endsWith("/") ? `${at}${names[k]!}` : `${at}/${names[k]!}`;
+    const needFolder = k < names.length - 1 || trailing;
+    if (needFolder && files.inside(at) === undefined) continue;
+    if (!needFolder) return last(at);
+    const kind = kindOf(at);
+    if (kind === undefined) return "ENOENT";
+    if (kind !== "directory") return "ENOTDIR";
+  }
+  return last(at);
 }
 
 /**

@@ -1,0 +1,10 @@
+{"system": {"code": "NUM", "converted": true, "status_vocabulary": ["live"], "maturity_map": {"live": "proven"}}, "layers": [{"id": "L1", "code": "CORE", "name": "Numbers"}], "capabilities": [
+{"id": "NUM-CORE-01", "layer_id": "L1", "doc_ref": 9007199254740992, "type": "process", "name": "Number 01", "status": "live"},
+{"id": "NUM-CORE-02", "layer_id": "L1", "doc_ref": 1.0, "type": "process", "name": "Number 02", "status": "live"},
+{"id": "NUM-CORE-03", "layer_id": "L1", "doc_ref": NaN, "type": "process", "name": "Number 03", "status": "live"},
+{"id": "NUM-CORE-04", "layer_id": "L1", "doc_ref": [NaN], "type": "process", "name": "Number 04", "status": "live"},
+{"id": "NUM-CORE-05", "layer_id": "L1", "doc_ref": -0.0, "type": "process", "name": "Number 05", "status": "live"},
+{"id": "NUM-CORE-06", "layer_id": "L1", "doc_ref": 9007199254740993, "type": "process", "name": "Number 06", "status": "live"},
+{"id": "NUM-CORE-07", "layer_id": "L1", "doc_ref": true, "type": "process", "name": "Number 07", "status": "live"},
+{"id": "NUM-CORE-08", "layer_id": "L1", "doc_ref": 12345678901234567890123, "type": "process", "name": "Number 08", "status": "live"}
+]}

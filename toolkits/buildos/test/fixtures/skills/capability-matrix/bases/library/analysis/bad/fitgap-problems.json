@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "mode": "replacement"
+  },
+  "baseline_to_target": [
+    {
+      "baseline_capability_id": "CIRC-CORE-01",
+      "target_capability_ids": [
+        "LIB-LEND-01",
+        "LIB-NONE-01"
+      ],
+      "verdict": "great",
+      "confidence": "sure",
+      "effort": "huge",
+      "evidence": "Short."
+    },
+    {
+      "baseline_capability_id": "CIRC-CORE-01",
+      "target_capability_ids": [
+        "LIB-LEND-02"
+      ],
+      "verdict": "gap",
+      "confidence": "high",
+      "effort": "low",
+      "evidence": "Listed twice. The platform notes and the desk manual were read side by side for this capability, and the steps match."
+    },
+    {
+      "baseline_capability_id": "CIRC-PAT-01",
+      "verdict": "native",
+      "confidence": "high",
+      "evidence": "Cites no target. The platform notes and the desk manual were read side by side for this capability, and the steps match."
+    }
+  ],
+  "target_only": [
+    {
+      "target_capability_id": "LIB-MEM-01",
+      "confidence": "low",
+      "evidence": "Short."
+    }
+  ]
+}

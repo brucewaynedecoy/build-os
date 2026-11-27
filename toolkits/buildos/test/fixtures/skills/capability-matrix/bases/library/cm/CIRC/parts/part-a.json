@@ -1,0 +1,150 @@
+[
+  {
+    "id": "CIRC-CORE-01",
+    "name": "Check out books (desk)",
+    "layer_id": "L9",
+    "doc_ref": "1.1",
+    "type": "process",
+    "status": "live",
+    "_status_note": "Seen at two branches.",
+    "summary": "Lending a book to a patron at the desk, with the patron card and the book barcode, as the desk staff described it in the branch notes.",
+    "personas": [
+      "Desk clerk",
+      "Patron"
+    ],
+    "triggers": [
+      "A patron brings a book to the desk"
+    ],
+    "outcomes": [
+      "The loan is recorded"
+    ],
+    "entities": [
+      "Loan",
+      "Patron",
+      "Book"
+    ],
+    "dependencies": [
+      "CIRC-PAT-01"
+    ],
+    "provenance": [
+      "observed"
+    ],
+    "source": [
+      "Desk manual"
+    ],
+    "tags": [
+      "core"
+    ],
+    "requirements": [
+      {
+        "kind": "rule",
+        "status": "live",
+        "text": "Block a checkout when the patron owes more than the fine limit.",
+        "source_refs": [
+          "Desk manual 2"
+        ],
+        "id": "OLD-7"
+      },
+      {
+        "kind": "behavior",
+        "status": "live",
+        "text": "Print a slip that says \"Due back\", the date, and the branch, on one line.",
+        "source_refs": [
+          "Desk manual 2"
+        ],
+        "option_values": "slip|none",
+        "option_scope": "global"
+      },
+      {
+        "kind": "setting",
+        "status": "live",
+        "text": "Loan length in days, by book category.\nShorter for new books.",
+        "source_refs": [
+          "Desk manual 2"
+        ],
+        "option_values": " 7 | 14 |21 ",
+        "option_default": "14",
+        "option_scope": "pricing class"
+      },
+      {
+        "kind": "setting",
+        "status": "pilot",
+        "text": "Receipt channels a patron can choose.",
+        "source_refs": [
+          "Desk manual 2"
+        ],
+        "option_values": [
+          "paper",
+          "e-mail"
+        ],
+        "option_default": "paper",
+        "option_scope": "global"
+      }
+    ]
+  },
+  {
+    "id": "CIRC-CORE-02",
+    "layer_id": "L1",
+    "doc_ref": "1.2",
+    "type": "workflow",
+    "name": "Holds queue",
+    "status": "pilot",
+    "summary": "Queueing holds on a book that is out, first come first served, as the desk staff described it in the branch notes.",
+    "personas": [
+      "Patron"
+    ],
+    "triggers": [],
+    "outcomes": [
+      "The next patron is told the book is in"
+    ],
+    "entities": [
+      "Hold"
+    ],
+    "dependencies": [],
+    "provenance": null,
+    "source": [],
+    "tags": [],
+    "requirements": [
+      {
+        "kind": "data",
+        "status": "retired",
+        "text": "Keep the date a hold was placed — for the café notice board too ☕.",
+        "source_refs": [
+          "Desk manual 2"
+        ]
+      },
+      {
+        "kind": "behavior",
+        "status": "pilot",
+        "text": "Skip a patron who is away, and keep their place.",
+        "source_refs": [
+          "Desk manual 2"
+        ],
+        "id": "CIRC-CORE-02-R02"
+      }
+    ]
+  },
+  {
+    "id": "CIRC-CORE-02a",
+    "parent_id": "CIRC-CORE-02",
+    "layer_id": "L1",
+    "doc_ref": "1.2",
+    "type": "configuration",
+    "name": "Hold pickup window",
+    "status": "live",
+    "summary": "How many days a held book waits at the desk before it goes back on the shelf, as the desk staff described it in the branch notes.",
+    "requirements": [
+      {
+        "kind": "setting",
+        "status": "live",
+        "text": "Pickup window in days.",
+        "source_refs": [
+          "Desk manual 2"
+        ],
+        "option_values": "3|5|7",
+        "option_default": "5",
+        "option_scope": "location"
+      }
+    ]
+  }
+]

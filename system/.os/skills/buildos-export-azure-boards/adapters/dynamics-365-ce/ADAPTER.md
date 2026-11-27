@@ -153,8 +153,8 @@ Emit with an adapter. The adapter and its parameters come from the manifest:
 
 ```sh
 .os/scripts/buildos export azure-boards emit \
-  --input <manifest.json> \
-  --output <azure-boards-import.csv> \
+  --input "<manifest.json>" \
+  --output "<azure-boards-import.csv>" \
   --profile target17-new
 ```
 
@@ -162,14 +162,20 @@ Validate with an adapter. The prefix is read from the file unless it is supplied
 
 ```sh
 .os/scripts/buildos export azure-boards validate \
-  --input <azure-boards-import.csv> \
+  --input "<azure-boards-import.csv>" \
   --profile target17-new \
   --adapter dynamics-365-ce
 
 .os/scripts/buildos export azure-boards validate \
-  --input <azure-boards-import.csv> \
+  --input "<azure-boards-import.csv>" \
   --adapter dynamics-365-ce \
   --adapter-params '{"publisher_prefix":"ex_"}'
+```
+
+These examples are for `sh` (macOS and Linux). In Command Prompt on Windows, write a command on one line, run the wrapper `.os\scripts\buildos.cmd`, and put the JSON in double quotes with `\"` for each quote inside it:
+
+```bat
+.os\scripts\buildos.cmd export azure-boards validate --input "<azure-boards-import.csv>" --adapter dynamics-365-ce --adapter-params "{\"publisher_prefix\":\"ex_\"}"
 ```
 
 ## Bundled files

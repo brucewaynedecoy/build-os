@@ -1,0 +1,22 @@
+[
+  {
+    "baseline_capability_id": "CIRC-PAT-01",
+    "target_capability_ids": [
+      "LIB-MEM-01"
+    ],
+    "verdict": "native",
+    "confidence": "high",
+    "effort": "low",
+    "evidence": "Member records hold the patron fields, guardian, too. The platform notes and the desk manual were read side by side for this capability, and the steps match."
+  },
+  {
+    "baseline_capability_id": "CIRC-RPT-01",
+    "target_capability_ids": [],
+    "verdict": "gap",
+    "confidence": "low",
+    "effort": "high",
+    "evidence": "No overdue report is listed; the platform exports loans as a file instead. The platform notes and the desk manual were read side by side for this capability, and the steps match.",
+    "gap_detail": "Build the report from the export.",
+    "migration_note": "Keep the old report until then."
+  }
+]

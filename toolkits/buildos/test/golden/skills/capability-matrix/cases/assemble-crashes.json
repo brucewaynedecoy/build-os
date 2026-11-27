@@ -1,0 +1,69 @@
+{
+  "case": "assemble-crashes",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "assemble",
+        "--skeleton",
+        "cm/CIRC/skeleton.json",
+        "--parts",
+        "cm/CIRC/parts-bad/not-json.json",
+        "--out",
+        "deliver/CIRC"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "json.decoder.JSONDecodeError: Expecting ',' delimiter: line 1 column 24 (char 23)\n",
+      "files": {}
+    },
+    {
+      "step": 1,
+      "args": [
+        "assemble",
+        "--skeleton",
+        "cm/CIRC/skeleton.json",
+        "--parts",
+        "cm/CIRC/parts-bad/no-kind.json",
+        "--out",
+        "deliver/CIRC"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "KeyError: 'kind'\n",
+      "files": {}
+    },
+    {
+      "step": 2,
+      "args": [
+        "assemble",
+        "--skeleton",
+        "cm/CIRC/missing.json",
+        "--parts",
+        "cm/CIRC/parts/part-a.json",
+        "--out",
+        "deliver/CIRC"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "FileNotFoundError: [Errno 2] No such file or directory: 'cm/CIRC/missing.json'\n",
+      "files": {}
+    },
+    {
+      "step": 3,
+      "args": [
+        "assemble",
+        "--skeleton",
+        "cm/CIRC/skeleton.json",
+        "--parts",
+        "cm/CIRC/parts-bad/no-status.json",
+        "--out",
+        "deliver/CIRC"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "KeyError: 'status'\n",
+      "files": {}
+    }
+  ]
+}

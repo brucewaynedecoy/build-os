@@ -1,9 +1,15 @@
-// Records what the three skill scripts do on each fixture case (W1 R7 P9
-// t2). A maintainer runs it on a machine with Python 3 (and openpyxl for the
-// fit-gap workbook) and Node; CI never runs it, and no test needs Python.
+// Records what the four skill scripts do on each fixture case (W1 R7 P9
+// t2; capability-matrix since F-P9-04). A maintainer runs it on a machine
+// with Python 3 (and openpyxl for the fit-gap workbook) and Node; CI never
+// runs it, and no test needs Python.
 //
-//   node test/golden/skills/capture.ts [--script bulk-extract|fitgap|azure-boards] [--check] [--python <program>]
-//       [--wheel <file>.whl=<sha256>]...
+//   node test/golden/skills/capture.ts [--script bulk-extract|fitgap|azure-boards|capability-matrix] [--check]
+//       [--python <program>] [--wheel <file>.whl=<sha256>]...
+//
+// With --script and no --check, only that script's goldens are written; the
+// record keeps every other script's case count and provenance, and records
+// this capture under provenance.captures. Never run it without --check
+// unless you mean to capture.
 //
 // The scripts leave system/.os/skills/ in W1 R7 P9 Stage 3. This reads each
 // script and the fit-gap palette from git at SCRIPT_REVISION (`git show`;
@@ -19,7 +25,9 @@
 // divergence SD-08), TZ=UTC, LC_ALL=C.UTF-8, and a fixed clock,
 // 2026-01-15T12:00:00Z: a small runner replaces `datetime.datetime.now`
 // (work.py) or `datetime.date.today` (fitgap.py) before it runs the script
-// with `runpy`. BuildOS's
+// with `runpy`. capability-matrix's cm_build.py reads no clock (its --date
+// default is empty), so it runs directly, as the skill ran it; the capture
+// takes it out of SKILL.md (script-source.ts, embeddedScript). BuildOS's
 // parity test passes the same clock (RunOptions.now). The goldens are
 // test/golden/skills/<script>/cases/<case>.json, the kept workbooks are in
 // test/golden/skills/fitgap/xlsx/, and capture-record.json names the
@@ -41,7 +49,7 @@ import { mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { compareWorkbooks, readXlsx, readXlsxFile } from "../../xlsx-compare.ts";
-import { PALETTE_PATH, SCRIPT_FILES, SCRIPT_REVISION } from "./script-source.ts";
+import { PALETTE_PATH, SCRIPT_FILES, SCRIPT_REVISION, embeddedKey, embeddedScript } from "./script-source.ts";
 import { GOLDENS, PACKAGE_ROOT, SCRIPTS, goldenPath, loadCases, runCase, sha256, xlsxGoldenPath, type Runner, type ScriptName } from "./scenario.ts";
 
 export const FIXED_NOW = "2026-01-15T12:00:00Z";
@@ -91,7 +99,7 @@ interface CaptureRecord {
   python_flags: string;
   clock: string;
   cases: Record<string, number>;
-  provenance?: { $comment: string; python: string; openpyxl: string; openpyxl_note: string; wheels: Record<string, string>; wheels_note: string; node: string; capture_os: string };
+  provenance?: { $comment: string; python: string; openpyxl: string; openpyxl_note: string; wheels: Record<string, string>; wheels_note: string; node: string; capture_os: string; captures?: Record<string, { date: string; python: string; node: string; capture_os: string }> };
   normalizations: Record<string, string>;
 }
 const python = arg("--python") ?? "python3";
@@ -112,10 +120,21 @@ try {
       const data = execFileSync("git", ["show", `${SCRIPT_REVISION}:${file.path}`], { cwd: PACKAGE_ROOT, maxBuffer: 1 << 26 });
       const sum = sha256(data);
       if (pinned[file.path] !== sum) throw new Error(`${file.path} at ${SCRIPT_REVISION} has SHA-256 ${sum}, not the pinned ${pinned[file.path] ?? "(none)"}`);
+      scripts[file.path] = sum;
+      if (file.embedded !== undefined) {
+        // F-P9-04: the script is a fenced block of SKILL.md; it is written beside it under its own name, as the skill told the agent to write it.
+        const block = Buffer.from(embeddedScript(data.toString("utf8"), file.embedded), "utf8");
+        const key = embeddedKey(file);
+        if (pinned[key] !== sha256(block)) throw new Error(`${key} at ${SCRIPT_REVISION} has SHA-256 ${sha256(block)}, not the pinned ${pinned[key] ?? "(none)"}`);
+        const target = join(skill, file.path.replace("system/.os/skills/", ""), "..", file.embedded);
+        mkdirSync(join(target, ".."), { recursive: true });
+        writeFileSync(target, block);
+        scripts[key] = sha256(block);
+        continue;
+      }
       const target = join(skill, file.path.replace("system/.os/skills/", ""));
       mkdirSync(join(target, ".."), { recursive: true });
       writeFileSync(target, data);
-      scripts[file.path] = sum;
     }
   }
   const palette = execFileSync("git", ["show", `${SCRIPT_REVISION}:${PALETTE_PATH}`], { cwd: PACKAGE_ROOT });
@@ -141,6 +160,7 @@ try {
       return run(python, ["-P", "-s", runnerPath, "date", join(skill, "fit-gap-analysis/scripts/fitgap.py"), ...args], dir, stdin);
     },
     "azure-boards": () => async (args, dir, stdin) => run(process.execPath, [join(skill, "buildos-export-azure-boards/scripts/azure_boards_csv.mjs"), ...args], dir, stdin),
+    "capability-matrix": () => async (args, dir, stdin) => run(python, ["-P", "-s", join(skill, "capability-matrix/cm_build.py"), ...args], dir, stdin),
   };
 
   const counts: Record<string, number> = {};
@@ -197,13 +217,13 @@ try {
   }
   const wheels = Object.keys(givenWheels).length > 0 ? givenWheels : (previous?.provenance?.wheels ?? {});
   const record: CaptureRecord = {
-    $comment: "Written by test/golden/skills/capture.ts (W1 R7 P9 t2; review round 1, P9-R1-17). What the three skill scripts did on each fixture case, captured on a maintainer machine. CI never runs Python. capture.ts --check compares every field except provenance.",
+    $comment: "Written by test/golden/skills/capture.ts (W1 R7 P9 t2; review round 1, P9-R1-17; F-P9-04). What the four skill scripts did on each fixture case, captured on a maintainer machine. CI never runs Python. capture.ts --check compares every field except provenance.",
     script_revision: SCRIPT_REVISION,
     scripts,
     python_flags: "-P -s (PYTHONHASHSEED=0, TZ=UTC, LC_ALL=C.UTF-8, PYTHONIOENCODING=utf-8)",
     clock: FIXED_NOW,
-    cases: counts,
-    provenance: {
+    cases: Object.fromEntries(SCRIPTS.filter((s) => counts[s] !== undefined || previous?.cases[s] !== undefined).map((s) => [s, counts[s] ?? previous!.cases[s]!])),
+    provenance: only !== undefined && previous?.provenance !== undefined ? { ...previous.provenance } : {
       $comment: "What made the goldens. Not compared by --check: it differs between machines and fresh installs.",
       python: pythonVersion,
       openpyxl: openpyxl.status === 0 ? openpyxl.stdout.trim() : "not available",
@@ -212,24 +232,25 @@ try {
       wheels_note: "The SHA-256 of each wheel file installed into that environment, as PyPI publishes it (given with --wheel).",
       node: nodeVersion,
       capture_os: `${process.platform} ${process.arch}`,
+      ...(previous?.provenance?.captures === undefined ? {} : { captures: previous.provenance.captures }),
     },
     normalizations: {
       N1: "The project folder path (as given and as resolved) becomes <root>; in BuildOS output on Windows, \\ after <root> becomes /.",
       N2: "A Python traceback keeps its last line only, so no machine path or line number is kept.",
       N3: "A written .xlsx is recorded by its SHA-256 and kept in <script>/xlsx/; the parity test compares workbook content, not bytes (parity exception PE-021).",
-      N4: "The clock is fixed at 2026-01-15T12:00:00Z for the script (a runner that replaces datetime.datetime.now for work.py and datetime.date.today for fitgap.py) and for BuildOS (RunOptions.now).",
+      N4: "The clock is fixed at 2026-01-15T12:00:00Z for the script (a runner that replaces datetime.datetime.now for work.py and datetime.date.today for fitgap.py) and for BuildOS (RunOptions.now). cm_build.py reads no clock.",
     },
   };
+  // A capture of one script records itself (date, Python, Node, system) under provenance.captures.
+  if (only !== undefined && !check) record.provenance!.captures = { ...(record.provenance!.captures ?? {}), [only]: { date: new Date().toISOString().slice(0, 10), python: pythonVersion, node: nodeVersion, capture_os: `${process.platform} ${process.arch}` } };
   const recordText = `${JSON.stringify(record, null, 2)}\n`;
   const reproducible = (r: CaptureRecord | undefined): string => JSON.stringify(r === undefined ? null : { ...r, provenance: undefined });
-  if (only === undefined) {
-    if (check) {
-      if (reproducible(previous) !== reproducible(record)) {
-        failures++;
-        process.stderr.write("differs: capture-record.json\n");
-      }
-    } else writeFileSync(recordFile, recordText);
-  }
+  if (check) {
+    if (only === undefined && reproducible(previous) !== reproducible(record)) {
+      failures++;
+      process.stderr.write("differs: capture-record.json\n");
+    }
+  } else writeFileSync(recordFile, recordText);
   process.stdout.write(`${check ? "checked" : "captured"} ${Object.entries(counts).map(([s, n]) => `${s} ${n}`).join(", ")} with ${pythonVersion} and Node ${nodeVersion}\n`);
   void readdirSync;
 } finally {

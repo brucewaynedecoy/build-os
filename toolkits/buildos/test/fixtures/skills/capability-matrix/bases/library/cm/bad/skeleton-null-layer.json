@@ -1,0 +1,20 @@
+{
+  "system": {
+    "code": "CIRC",
+    "converted": true,
+    "status_vocabulary": [
+      "live"
+    ],
+    "maturity_map": {
+      "live": "proven"
+    }
+  },
+  "layers": [
+    {
+      "id": null,
+      "code": "CORE",
+      "name": "Circulation"
+    }
+  ],
+  "capabilities": []
+}

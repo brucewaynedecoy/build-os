@@ -1,0 +1,80 @@
+{
+  "system": {
+    "code": "CIRC",
+    "converted": false,
+    "status_vocabulary": [
+      "live",
+      "pilot",
+      "gone"
+    ],
+    "maturity_map": {
+      "live": "proven",
+      "pilot": "partial"
+    }
+  },
+  "layers": [
+    {
+      "id": "L1",
+      "code": "CORE",
+      "name": "Circulation"
+    },
+    {
+      "id": "L2",
+      "code": "PAT",
+      "name": "Patrons"
+    }
+  ],
+  "design_principles": [
+    {
+      "id": "DP-1",
+      "name": "Patron first"
+    },
+    {
+      "name": "No id",
+      "statement": "x"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "CIRC-CORE-01",
+      "layer_id": "L1",
+      "type": "process",
+      "status": "live",
+      "scope": "Lending as the circulation desk does it today, from the desk manual and the branch notes."
+    },
+    {
+      "id": "CIRC-CORE-01",
+      "layer_id": "L1",
+      "type": "process",
+      "status": "live",
+      "scope": "Lending again as the circulation desk does it today, from the desk manual and the branch notes."
+    },
+    {
+      "id": "CIRC-core-1",
+      "layer_id": "L1",
+      "type": "process",
+      "status": "live",
+      "scope": "Lower case as the circulation desk does it today, from the desk manual and the branch notes."
+    },
+    {
+      "id": "CIRC-PAT-02",
+      "layer_id": "L1",
+      "type": "person",
+      "status": "gone",
+      "scope": "Too thin."
+    },
+    {
+      "id": "CIRC-CORE-03",
+      "layer_id": "L2",
+      "type": "workflow",
+      "status": "draft"
+    },
+    {
+      "id": "LIB-CORE-04",
+      "layer_id": "L3",
+      "type": "report",
+      "status": "pilot",
+      "scope": "Another system's prefix as the circulation desk does it today, from the desk manual and the branch notes."
+    }
+  ]
+}

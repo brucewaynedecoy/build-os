@@ -45,7 +45,7 @@ To rebuild the workbook after a change to the objectives, weights or scores, go 
 
 Use absolute paths in every command and in every sub-agent task message, because the working folder can reset between calls. Never write into the capability-matrix folders.
 
-The tool is the `buildos fitgap` command, run through `<buildos>`. It needs Node.js 24 or newer and nothing else. Every command below takes `--root <project>`. It reads only files inside `<project>`, and it writes outside `<project>` only with `--allow-outside-root`; use that only when the person asks for an output outside the project.
+The tool is the `buildos fitgap` command, run through `<buildos>`. It needs Node.js 24 or newer and nothing else. Every command below takes `--root "<project>"`. Write each command on one line, and keep the double quotes around `<buildos>` and every path: an absolute path can hold a space, and Command Prompt reads neither a `\` line break nor single quotes. It reads only files inside `<project>`, and it writes outside `<project>` only with `--allow-outside-root`; use that only when the person asks for an output outside the project.
 
 ## Outputs
 
@@ -77,7 +77,7 @@ Make a task list with these eight steps before you start. The run is long, and t
 1. Search the project for `*-capability-model.json`. For an older run, search for `*-capabilities.csv`.
 2. Tell the person which system you take as the baseline and which as the target, and the mode (`replacement` or `selection`). The baseline is the system whose capabilities get scored: in a replacement, the system in use today.
 3. Write `<frame>` with no objectives yet.
-4. Run `<buildos> fitgap frame --root <project> --frame <frame>`. Fix every `FAIL`. It warns that there are no objectives; step 2 fixes that. An older CSV run needs a `maturity_map` only when its CSVs have no `maturity` column.
+4. Run `"<buildos>" fitgap frame --root "<project>" --frame "<frame>"`. Fix every `FAIL`. It warns that there are no objectives; step 2 fixes that. An older CSV run needs a `maturity_map` only when its CSVs have no `maturity` column.
 
 ### 2. Get the objectives confirmed
 
@@ -102,7 +102,7 @@ If the person ranks objectives more finely than must, should and could, keep the
 
 ### 3. Make the scoring packages
 
-Run `<buildos> fitgap packages --root <project> --frame <frame> --out <build>`.
+Run `"<buildos>" fitgap packages --root "<project>" --frame "<frame>" --out "<build>"`.
 
 It refuses to run with no objectives. It splits the baseline capabilities, in model order, into packages of about 180 requirements (change it with `--max-requirements`). A package can hold more than one layer. It also writes `target-index.json`, `target-requirements.csv` and `objectives.md`.
 
@@ -119,7 +119,7 @@ It refuses to run with no objectives. It splits the baseline capabilities, in mo
 
 ### 5. Do the target-only pass
 
-1. Run `<buildos> fitgap uncited --root <project> --frame <frame> --rows "<build>/scored/*.json" --out <build>/uncited.json`. Keep the quotes: BuildOS expands the pattern itself.
+1. Run `"<buildos>" fitgap uncited --root "<project>" --frame "<frame>" --rows "<build>/scored/*.json" --out "<build>/uncited.json"`. Keep the quotes: BuildOS expands the pattern itself.
 2. Write `<build>/only.json`: one row for each uncited target capability. These are things the target has that the baseline never asked for. Write them as opportunities, not risks. You write them yourself, because there are few and they need judgment. Read each one in the target narrative first.
 
 If you change any marks later, run this step again: the uncited set can change.
@@ -129,7 +129,7 @@ If you change any marks later, run this step again: the uncited set can change.
 Run:
 
 ```text
-<buildos> fitgap merge --root <project> --frame <frame> --rows "<build>/scored/*.json" --only <build>/only.json --out <deliver> --draft
+"<buildos>" fitgap merge --root "<project>" --frame "<frame>" --rows "<build>/scored/*.json" --only "<build>/only.json" --out "<deliver>" --draft
 ```
 
 Then read the result before you write any findings:
@@ -152,8 +152,8 @@ Take every number from the merged JSON. Compute it. Do not estimate it.
 
 ### 8. Build the final workbook
 
-1. Run the step 6 `merge` again, without `--draft` and with `--findings <build>/findings.json` (and `--todos <build>/todos.json` when the frame has tracks). It refuses until the objectives are confirmed, every uncited target capability has a row, the findings are complete and, with tracks, the to-do list is valid.
-2. Run `<buildos> fitgap workbook --root <project> --frame <frame> --fitgap <deliver>/<a>-<b>-fit-gap-analysis.json`.
+1. Run the step 6 `merge` again, without `--draft` and with `--findings "<build>/findings.json"` (and `--todos "<build>/todos.json"` when the frame has tracks). It refuses until the objectives are confirmed, every uncited target capability has a row, the findings are complete and, with tracks, the to-do list is valid.
+2. Run `"<buildos>" fitgap workbook --root "<project>" --frame "<frame>" --fitgap "<deliver>/<a>-<b>-fit-gap-analysis.json"`.
 3. Every check must print `PASS`.
 
 After any later change to the frame, the scored rows, `only.json`, `todos.json` or `findings.json`, run the steps from 5 again. The workbook is always built from the JSON, never edited by hand.

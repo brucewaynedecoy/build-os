@@ -48,7 +48,7 @@ deliver/
                                                    plus target-only capabilities (replacement / selection)
              <a>-<b>-integration-map.csv / .json ownership and overlap per capability (integration mode)
              fit-gap-readout.md                  the decision document: what the matrix actually says
-build/       working files — skeletons, source dumps, briefs, sub-agent outputs, cm_build.py
+build/       working files — skeletons, source dumps, briefs, sub-agent outputs
 ```
 
 All systems share one layer taxonomy and one field schema, so the CSVs union cleanly and the fit/gap
@@ -62,18 +62,31 @@ joins both. Only two things vary per system: the id prefix and the status vocabu
 | 1 Read and index every source | lead | plain-text dumps + an index note per system |
 | 2 Skeletons | lead | `build/<code>/skeleton.json` per system |
 | 3 Extract and hydrate requirements | parallel sub-agents | `build/<code>/out_*.json` |
-| 4 Assemble models | script | model JSON + two CSVs per system |
+| 4 Assemble models | command | model JSON + two CSVs per system |
 | 5 Narrative documents | parallel sub-agents + lead frame | one `.md` per system |
 | 6 Data dictionaries | lead | one `.md` per system |
 | 7 Fit/gap | parallel sub-agents + lead | matrix CSV/JSON + readout |
-| 8 Validate and deliver | script + lead | validated files in the user's folder |
+| 8 Validate and deliver | command + lead | validated files in the user's folder |
 
 Create a task list with these eight phases before starting (the task-list tool if present, otherwise
-`build/TASKS.md`); the run is long and the user will be checking progress. Write the embedded
-`cm_build.py` (appendix) to `build/cm_build.py` before Phase 2 — it checks skeletons, assembles models,
-merges the fit/gap and validates everything deterministically, so sub-agent output only has to be right in
-content, not in formatting. Use absolute paths in every shell command; the working directory does not
-reliably persist between calls. The embedded tool needs Python 3; BuildOS has no command for it yet.
+`build/TASKS.md`); the run is long and the user will be checking progress. The tool is the
+`buildos capability-matrix` command — it checks skeletons, assembles models, merges the fit/gap and
+validates everything deterministically, so sub-agent output only has to be right in content, not in
+formatting. It needs Node.js 24 or newer and nothing else.
+
+| Name | Means |
+|---|---|
+| `<project>` | The BuildOS project folder, the one that holds `.os/`; `build/` and `deliver/` are inside it |
+| `<buildos>` | The project wrapper `<project>/.os/scripts/buildos` (`<project>\.os\scripts\buildos.cmd` on Windows, with the same arguments) |
+
+Every command below takes `--root "<project>"`, and its `build/` and `deliver/` paths are relative to
+`<project>`. Write each command on one line, and keep the double quotes around `<buildos>` and
+`<project>`: a folder name can hold a space, and Command Prompt reads neither a `\` line break nor single
+quotes. It reads only files inside `<project>`, and it writes outside `<project>` only with
+`--allow-outside-root`; use that only when the user asks for an output outside the project. Keep the
+quotes around a pattern such as `"build/<code>/out_*.json"`: BuildOS expands it itself (Command Prompt
+needs double quotes). Use an absolute `<project>` in every shell command; the working directory does not
+reliably persist between calls.
 
 ---
 
@@ -201,7 +214,7 @@ Conventions that the tooling and the narrative depend on:
   parameters are three or four capabilities, not twenty. Over-splitting doubles the fit/gap without adding
   information.
 
-Check it before dispatching anyone: `python3 build/cm_build.py skeleton --skeleton build/<code>/skeleton.json`
+Check it before dispatching anyone: `"<buildos>" capability-matrix skeleton --root "<project>" --skeleton "build/<code>/skeleton.json"`
 reports counts per layer and fails on duplicate ids, a prefix that does not match the layer, a type or status
 outside the vocabulary, or a scope brief too thin to guide an extractor. A skeleton error found after
 extraction costs an hour.
@@ -240,11 +253,10 @@ yourself against the same brief; the brief is the quality control, not the paral
 ## Phase 4 — Assemble models
 
 ```
-python3 build/cm_build.py assemble --skeleton build/<code>/skeleton.json \
-        --parts build/<code>/out_*.json --out deliver/<CODE> --date <YYYY-MM-DD>
+"<buildos>" capability-matrix assemble --root "<project>" --skeleton "build/<code>/skeleton.json" --parts "build/<code>/out_*.json" --out "deliver/<CODE>" --date <YYYY-MM-DD>
 ```
 
-The script restores skeleton fields the agents may have altered, maps `status` to `maturity`, renumbers
+The command restores skeleton fields the agents may have altered, maps `status` to `maturity`, renumbers
 requirement ids sequentially, strips option fields from non-settings, normalises pipe delimiters, and
 writes the model JSON and both CSVs with a fixed field order. It refuses to run on a status outside the
 system's declared vocabulary, which is the check that catches an agent inventing one.
@@ -323,15 +335,13 @@ more into fewer capabilities, its extras sit as requirements inside capabilities
 cite. Read the `partial` and `native` evidence for those and carry them into the readout. Then:
 
 ```
-python3 build/cm_build.py fitgap --mode replacement --baseline deliver/<A>/<a>-capability-model.json \
-        --target deliver/<B>/<b>-capability-model.json --rows build/fit-gap/fg_*.json \
-        --only build/fit-gap/only.json --out deliver/fit-gap --date <YYYY-MM-DD>
+"<buildos>" capability-matrix fitgap --root "<project>" --mode replacement --baseline "deliver/<A>/<a>-capability-model.json" --target "deliver/<B>/<b>-capability-model.json" --rows "build/fit-gap/fg_*.json" --only build/fit-gap/only.json --out deliver/fit-gap --date <YYYY-MM-DD>
 ```
 
 **Integration.** Build the union capability list first: walk both models layer by layer and produce
 `build/fit-gap/union.json` — one entry per distinct capability across systems, with the ids each system
-contributes. Then dispatch mapping packages with the integration brief; the script writes the map with
-`--mode integration --models <a-model> <b-model> [...]`.
+contributes. Then dispatch mapping packages with the integration brief; the command writes the map with
+`--mode integration --models "<a-model>" "<b-model>" [...]`.
 
 **The readout.** Write `deliver/fit-gap/fit-gap-readout.md` last. It is short and it is the document that
 gets read:
@@ -358,10 +368,11 @@ Open questions for the vendor / other team — the low-confidence rows and every
 ## Phase 8 — Validate and deliver
 
 ```
-python3 build/cm_build.py validate --model deliver/<A>/<a>-capability-model.json --narrative "deliver/<A>/<A Name> - Capability Model.md"
-python3 build/cm_build.py validate --model deliver/<B>/<b>-capability-model.json --narrative "…" \
-        --fitgap deliver/fit-gap/<a>-<b>-fit-gap.json --baseline deliver/<A>/… --target deliver/<B>/…
+"<buildos>" capability-matrix validate --root "<project>" --model "deliver/<A>/<a>-capability-model.json" --narrative "deliver/<A>/<A Name> - Capability Model.md"
+"<buildos>" capability-matrix validate --root "<project>" --model "deliver/<B>/<b>-capability-model.json" --narrative "…" --fitgap "deliver/fit-gap/<a>-<b>-fit-gap.json" --baseline "deliver/<A>/…" --target "deliver/<B>/…"
 ```
+
+`validate` exits 0 when every check passes and 4 when one fails; the `FAIL` lines say which. `assemble` and `fitgap` exit 5 when a write failed and BuildOS put back every file it had changed, and 10 when it could not put back every file: the message names each file left, and you check those files before you run the command again.
 
 Every check must pass. Then spot-read: three narrative sections chosen at random for voice and for
 requirements that were listed rather than synthesised, and five fit/gap rows for evidence that names a
@@ -369,6 +380,12 @@ mechanism rather than asserting support. Deliver every file with the file-delive
 has a connected folder, write them there in the layout at the top of this skill, one sub-folder per system
 code and one for the fit/gap. Tell the user the three findings you would put in front of a decision maker,
 not a recap of the phases.
+
+**CSV formula prefixes.** The CSV files keep a cell that starts with `=`, `+`, `-`, or `@` as it is, with
+no guard character, so the data stays exact. A spreadsheet program that opens such a CSV may read that
+cell as a formula and run it. To inspect a CSV, read it as plain text or with a CSV reader that treats
+every cell as text. Open it in a spreadsheet program only when you trust every text in the sources and the
+sub-agent output. Tell the user this when you deliver the CSV files.
 
 ---
 
@@ -609,283 +626,3 @@ duplicates you would escalate.
   root; the deliverables on the user's device are the durable copy.
 - **The container may be reclaimed between turns.** Deliver and commit to the user's folder as soon as a
   full set exists; re-stage from there if you need to continue.
-
----
-
-## Appendix — `cm_build.py`
-
-Write this verbatim to `build/cm_build.py` before Phase 2. It is tested; do not rewrite it.
-
-```python
-#!/usr/bin/env python3
-"""cm_build.py - deterministic build/validate tooling for capability-matrix runs.
-
-  skeleton  check a skeleton before dispatching extractors (ids, prefixes, types, statuses, scope briefs)
-  assemble  skeleton + extraction parts  ->  <code>-capability-model.json, -capabilities.csv, -requirements.csv
-  fitgap    scored rows + models          ->  <b>-<t>-fit-gap.json / .csv   (replacement|selection|integration)
-  validate  model [+narrative] [+fitgap]  ->  PASS/FAIL lines, exit 1 on any FAIL
-
-Field vocabularies are fixed here on purpose: they are what make models from different systems joinable.
-"""
-import argparse, csv, glob, json, os, re, sys, collections
-
-TYPES = {'process','capability','configuration','data_entity','state_model','workflow','architecture','integration','report','document'}
-KINDS = {'rule','behavior','data','setting','dependency'}
-SCOPES = {'global','location','account','category','agreement','transaction','document','role','rule','multi'}
-SCOPE_ALIASES = {'pricing class': 'category', 'class': 'category', 'template': 'rule', 'setup': 'rule', 'user': 'role', 'contract': 'agreement'}
-MATURITY = {'proven','available','partial','planned','deferred'}
-ORIGINS = {'captured','derived','merged'}
-VERDICTS = {'native','partial','configurable','gap','preview_gap'}
-OVERLAPS = {'exclusive','duplicate','complementary','handoff'}
-CONF = {'high','medium','low'}; EFFORT = {'none','low','medium','high','unknown'}
-CAP_FIELDS = ['id','parent_id','name','layer_id','doc_ref','type','status','maturity','origin','source_refs','summary',
-              'personas','triggers','outcomes','entities','dependencies','provenance','source','tags','requirements']
-REQ_FIELDS = ['id','kind','status','maturity','text','option_values','option_default','option_scope','source_refs']
-LISTS = ['source_refs','personas','triggers','outcomes','entities','dependencies','provenance','source','tags']
-J = lambda v: ' | '.join(v) if v else ''
-def load(p): return json.load(open(p, encoding='utf-8'))
-def dump(o, p): json.dump(o, open(p,'w',encoding='utf-8'), indent=1, ensure_ascii=False)
-def globs(pats): return sorted(f for p in pats for f in glob.glob(p))
-
-# ----------------------------------------------------------------------------------------------- skeleton
-def skeleton(a):
-    sk = load(a.skeleton); code = sk['system']['code']; LC = {l['id']: l['code'] for l in sk['layers']}; caps = sk['capabilities']; bad = []
-    ids = [c['id'] for c in caps]
-    if len(ids) != len(set(ids)): bad.append('duplicate ids')
-    for c in caps:
-        if not re.fullmatch(rf'{code}-[A-Z]{{2,4}}-\d{{2,3}}[a-z]?', c['id']): bad.append(f"{c['id']}: id format")
-        if c['id'].split('-')[1] != LC.get(c['layer_id']): bad.append(f"{c['id']}: prefix does not match layer {c['layer_id']}")
-        if c['type'] not in TYPES: bad.append(f"{c['id']}: type '{c['type']}'")
-        if c['status'] not in sk['system']['status_vocabulary']: bad.append(f"{c['id']}: status '{c['status']}'")
-        if c['status'] not in sk['system']['maturity_map']: bad.append(f"{c['id']}: status '{c['status']}' has no maturity_map entry")
-        if not sk['system'].get('converted') and len(c.get('scope') or '') < 60: bad.append(f"{c['id']}: scope brief too thin for an extractor")
-    for pr in sk.get('design_principles', []):
-        if not all(pr.get(k) for k in ('id','name','statement')): bad.append(f"design principle {pr.get('id')}: needs id, name, statement")
-    by = collections.Counter(c['layer_id'] for c in caps)
-    for l in sk['layers']: print(f"  {l['id']:4} {l['code']:5} {by.get(l['id'],0):4}  {l['name']}")
-    print(f"skeleton[{code}]: {len(caps)} capabilities, status={dict(collections.Counter(c['status'] for c in caps))}")
-    if bad: print('\n'.join('  FAIL  '+b for b in bad)); sys.exit(1)
-    print('  skeleton OK')
-
-# ----------------------------------------------------------------------------------------------- assemble
-def assemble(a):
-    sk = load(a.skeleton); sysb = sk['system']; code = sysb['code']; low = code.lower()
-    smap = sysb['maturity_map']; svocab = sysb['status_vocabulary']
-    order = [c['id'] for c in sk['capabilities']]; skel = {c['id']: c for c in sk['capabilities']}
-    caps = [c for f in globs(a.parts) for c in load(f)]
-    got = {c['id'] for c in caps}
-    miss, extra = set(order)-got, got-set(order)
-    if miss or extra: sys.exit(f'assemble: skeleton/parts mismatch  missing={sorted(miss)} extra={sorted(extra)}')
-    caps.sort(key=lambda c: order.index(c['id']))
-    warn = collections.Counter()
-    for c in caps:
-        s = skel[c['id']]
-        for f in ('layer_id','doc_ref','type','name'):
-            if c.get(f) != s[f]: warn['restored_'+f] += 1; c[f] = s[f]
-        c.pop('_status_note', None); c.setdefault('parent_id', None)
-        c.setdefault('origin', s.get('origin','derived')); c.setdefault('source_refs', s.get('source_refs', []))
-        if c['status'] not in svocab: sys.exit(f"assemble: {c['id']} status '{c['status']}' not in system.status_vocabulary")
-        c['maturity'] = smap[c['status']]
-        for lf in LISTS: c[lf] = c.get(lf) or []
-        reqs = []
-        for i, r in enumerate(c.get('requirements', []), 1):
-            rid = f"{c['id']}-R{i:02d}"
-            if r.get('id') and r['id'] != rid: warn['renumbered_req'] += 1
-            r['id'] = rid
-            if r['status'] not in svocab: sys.exit(f"assemble: {rid} status '{r['status']}' not in vocabulary")
-            r['maturity'] = smap[r['status']]
-            for k in ('option_values','option_default','option_scope'): r.setdefault(k, None)
-            if r['option_scope'] in SCOPE_ALIASES: warn['scope_alias_'+r['option_scope']] += 1; r['option_scope'] = SCOPE_ALIASES[r['option_scope']]
-            if r['kind'] != 'setting':
-                if r['option_scope'] or r['option_values']: warn['scope_stripped_nonsetting'] += 1
-                r['option_values'] = r['option_default'] = r['option_scope'] = None
-            elif r['option_values']:
-                r['option_values'] = '|'.join(p.strip() for p in str(r['option_values']).split('|'))
-            r['source_refs'] = r.get('source_refs') or []
-            reqs.append({k: r.get(k) for k in REQ_FIELDS})
-        c['requirements'] = reqs
-    caps = [{k: c.get(k) for k in CAP_FIELDS} for c in caps]
-    reqs = [r for c in caps for r in c['requirements']]
-    meta = {k: sysb[k] for k in sysb if k not in ('maturity_map','status_vocabulary')}
-    meta.update({'generated': a.date, 'counts': {
-        'layers': len(sk['layers']), 'capabilities': len(caps), 'requirements': len(reqs),
-        'design_principles': len(sk.get('design_principles', [])),
-        'capabilities_by_status': dict(collections.Counter(c['status'] for c in caps)),
-        'requirements_by_status': dict(collections.Counter(r['status'] for r in reqs)),
-        'capabilities_by_maturity': dict(collections.Counter(c['maturity'] for c in caps))},
-        'vocabularies': {'status': svocab, 'maturity_map': smap, 'maturity': sorted(MATURITY),
-                         'capability_type': sorted(TYPES), 'requirement_kind': sorted(KINDS),
-                         'option_scope': sorted(SCOPES), 'origin': sorted(ORIGINS)}})
-    model = {'schema_version': '4', 'meta': meta, 'layers': sk['layers'],
-             'design_principles': sk.get('design_principles', []), 'capabilities': caps,
-             'capability_tree': [{'id': c['id'], 'name': c['name'], 'status': c['status'], 'maturity': c['maturity'],
-                                  'layer_id': c['layer_id'], 'requirement_count': len(c['requirements'])} for c in caps]}
-    os.makedirs(a.out, exist_ok=True)
-    dump(model, f'{a.out}/{low}-capability-model.json')
-    LM = {l['id']: l for l in sk['layers']}
-    with open(f'{a.out}/{low}-capabilities.csv','w',newline='',encoding='utf-8-sig') as f:
-        w = csv.writer(f); w.writerow(['system','capability_id','parent_id','layer_id','layer_code','layer_name','doc_ref',
-            'capability_type','status','maturity','origin','source_refs','name','summary','personas','triggers','outcomes',
-            'entities','dependencies','provenance','source','tags','requirement_count'])
-        for c in caps:
-            L = LM[c['layer_id']]
-            w.writerow([code, c['id'], c['parent_id'] or '', c['layer_id'], L['code'], L['name'], c['doc_ref'], c['type'],
-                        c['status'], c['maturity'], c['origin'], J(c['source_refs']), c['name'], c['summary']] +
-                       [J(c[k]) for k in ('personas','triggers','outcomes','entities','dependencies','provenance','source','tags')] +
-                       [len(c['requirements'])])
-    with open(f'{a.out}/{low}-requirements.csv','w',newline='',encoding='utf-8-sig') as f:
-        w = csv.writer(f); w.writerow(['system','requirement_id','capability_id','capability_name','layer_id','layer_code',
-            'layer_name','doc_ref','requirement_kind','status','maturity','text','option_values','option_default',
-            'option_scope','source_refs'])
-        for c in caps:
-            L = LM[c['layer_id']]
-            for r in c['requirements']:
-                w.writerow([code, r['id'], c['id'], c['name'], c['layer_id'], L['code'], L['name'], c['doc_ref'], r['kind'],
-                            r['status'], r['maturity'], r['text'], r['option_values'] or '', r['option_default'] or '',
-                            r['option_scope'] or '', J(r['source_refs'])])
-    print(f"assemble[{code}]: {len(caps)} capabilities, {len(reqs)} requirements -> {a.out}/{low}-*  warnings={dict(warn)}")
-
-# ----------------------------------------------------------------------------------------------- fitgap
-def _idx(model):
-    m = load(model); LM = {l['id']: l for l in m['layers']}
-    return m, {c['id']: c for c in m['capabilities']}, LM
-def fitgap(a):
-    os.makedirs(a.out, exist_ok=True)
-    if a.mode == 'integration': return fitgap_integration(a)
-    bm, B, BL = _idx(a.baseline); tm, T, TL = _idx(a.target)
-    bcode, tcode = bm['meta']['code'], tm['meta']['code']
-    rows = [r for f in globs(a.rows) for r in load(f)]
-    only = [r for f in globs(a.only) for r in load(f)] if a.only else []
-    for r in rows:
-        if r['baseline_capability_id'] not in B: sys.exit(f"fitgap: unknown baseline id {r['baseline_capability_id']}")
-        for i in r.get('target_capability_ids') or []:
-            if i not in T: sys.exit(f"fitgap: row {r['baseline_capability_id']} cites unknown target id {i}")
-    for r in only:
-        if r['target_capability_id'] not in T: sys.exit(f"fitgap: target-only row cites unknown target id {r['target_capability_id']}")
-    border = [c['id'] for c in bm['capabilities']]; rows.sort(key=lambda r: border.index(r['baseline_capability_id']))
-    torder = [c['id'] for c in tm['capabilities']]; only.sort(key=lambda r: torder.index(r['target_capability_id']))
-    hdr = ['baseline_system','target_system','direction','baseline_capability_id','baseline_name','layer_id','layer_code',
-           'layer_name','baseline_status','baseline_maturity','baseline_requirement_count','verdict','confidence','effort',
-           'target_capability_ids','target_capability_names','target_statuses','target_maturities','target_requirement_count',
-           'evidence','gap_detail','migration_note']
-    stem = f'{a.out}/{bcode.lower()}-{tcode.lower()}-fit-gap'
-    with open(stem+'.csv','w',newline='',encoding='utf-8-sig') as f:
-        w = csv.writer(f); w.writerow(hdr)
-        for r in rows:
-            c = B[r['baseline_capability_id']]; L = BL[c['layer_id']]; t = r.get('target_capability_ids') or []
-            w.writerow([bcode, tcode, 'baseline_to_target', c['id'], c['name'], c['layer_id'], L['code'], L['name'],
-                        c['status'], c['maturity'], len(c['requirements']), r['verdict'], r['confidence'], r.get('effort',''),
-                        J(t), J([T[i]['name'] for i in t]), J(sorted({T[i]['status'] for i in t})),
-                        J(sorted({T[i]['maturity'] for i in t})), sum(len(T[i]['requirements']) for i in t),
-                        r['evidence'], r.get('gap_detail',''), r.get('migration_note','')])
-        for r in only:
-            c = T[r['target_capability_id']]; L = TL[c['layer_id']]
-            w.writerow([bcode, tcode, 'target_only', '', '', c['layer_id'], L['code'], L['name'], '', '', '',
-                        'target_only', r['confidence'], r.get('effort',''), c['id'], c['name'], c['status'], c['maturity'],
-                        len(c['requirements']), r['evidence'], '', r.get('opportunity', r.get('migration_note',''))])
-    dump({'meta': {'mode': a.mode, 'baseline_system': bcode, 'target_system': tcode, 'generated': a.date,
-                   'row_counts': {'baseline_to_target': len(rows), 'target_only': len(only)},
-                   'verdicts': dict(collections.Counter(r['verdict'] for r in rows))},
-          'baseline_to_target': rows, 'target_only': only}, stem+'.json')
-    print(f"fitgap[{bcode}->{tcode}]: {len(rows)} scored + {len(only)} target-only -> {stem}.csv/.json  "
-          f"verdicts={dict(collections.Counter(r['verdict'] for r in rows))}")
-def fitgap_integration(a):
-    models = [_idx(m) for m in a.models]; codes = [m[0]['meta']['code'] for m in models]
-    IDX = {m[0]['meta']['code']: m[1] for m in models}
-    rows = [r for f in globs(a.rows) for r in load(f)]
-    hdr = ['capability_key','name','layer_id','layer_code','overlap_type','proposed_owner','integration_need','data_flow',
-           'effort','confidence'] + [f'{c}_capability_ids' for c in codes] + [f'{c}_capability_names' for c in codes] + ['evidence','notes']
-    stem = f"{a.out}/{'-'.join(c.lower() for c in codes)}-integration-map"
-    LM = {l['id']: l for l in models[0][0]['layers']}
-    with open(stem+'.csv','w',newline='',encoding='utf-8-sig') as f:
-        w = csv.writer(f); w.writerow(hdr)
-        for r in rows:
-            ids = {c: (r.get('systems', {}).get(c) or []) for c in codes}
-            w.writerow([r['capability_key'], r['name'], r['layer_id'], LM[r['layer_id']]['code'], r['overlap_type'],
-                        r.get('proposed_owner',''), r.get('integration_need',''), r.get('data_flow',''), r.get('effort',''),
-                        r['confidence']] + [J(ids[c]) for c in codes] + [J([IDX[c][i]['name'] for i in ids[c]]) for c in codes]
-                       + [r['evidence'], r.get('notes','')])
-    dump({'meta': {'mode': 'integration', 'systems': codes, 'generated': a.date, 'row_count': len(rows),
-                   'overlap_types': dict(collections.Counter(r['overlap_type'] for r in rows))}, 'rows': rows}, stem+'.json')
-    print(f"integration[{'+'.join(codes)}]: {len(rows)} rows -> {stem}.csv/.json")
-
-# ----------------------------------------------------------------------------------------------- validate
-def validate(a):
-    fails = []
-    def chk(ok, msg):
-        print(('  PASS  ' if ok else '  FAIL  ') + msg)
-        if not ok: fails.append(msg)
-    m = load(a.model); code = m['meta']['code']; caps = m['capabilities']; reqs = [r for c in caps for r in c['requirements']]
-    ids = {c['id'] for c in caps}; LC = {l['id']: l['code'] for l in m['layers']}; V = m['meta']['vocabularies']
-    print(f'== model {code} ==')
-    chk(len(ids) == len(caps), 'capability ids unique'); chk(len({r["id"] for r in reqs}) == len(reqs), 'requirement ids unique')
-    chk(all(re.fullmatch(rf'{code}-[A-Z]{{2,4}}-\d{{2,3}}[a-z]?', c['id']) for c in caps), f'capability id format {code}-LAYER-NN')
-    chk(all(c['id'].split('-')[1] == LC.get(c['layer_id']) for c in caps), 'id layer segment matches layer code')
-    chk(all(d in ids for c in caps for d in c['dependencies']), 'all dependencies resolve')
-    chk(all(c['parent_id'] in ids for c in caps if c['parent_id']), 'all parent_ids resolve')
-    chk(all(c['type'] in TYPES for c in caps), 'capability types in vocabulary')
-    chk(all(c['status'] in V['status'] for c in caps) and all(r['status'] in V['status'] for r in reqs), 'statuses in system vocabulary')
-    chk(all(c['maturity'] in MATURITY for c in caps) and all(r['maturity'] in MATURITY for r in reqs), 'maturity in fixed vocabulary')
-    chk(all(c['origin'] in ORIGINS for c in caps), 'origin in vocabulary')
-    chk(all(r['kind'] in KINDS for r in reqs), 'requirement kinds in vocabulary')
-    chk(all(r['option_scope'] in SCOPES for r in reqs if r['kind']=='setting'), 'every setting has a valid option_scope')
-    chk(all(r['option_scope'] is None and r['option_values'] is None for r in reqs if r['kind']!='setting'), 'non-settings carry no option fields')
-    chk(all(len(c['summary'] or '') >= 40 for c in caps), 'every capability has a substantive summary')
-    chk(all(len(r['text'] or '') >= 10 for r in reqs), 'every requirement has text')
-    chk(all(len(c['requirements']) >= 1 for c in caps), 'no empty capabilities')
-    roots = [c for c in caps if not c['parent_id']]; kids = [c for c in caps if c['parent_id']]
-    chk(len({c['doc_ref'] for c in roots}) == len(roots), 'doc_refs unique among root capabilities')
-    PM = {c['id']: c for c in caps}
-    chk(all(c['doc_ref'] == PM[c['parent_id']]['doc_ref'] or c['doc_ref'] not in {r['doc_ref'] for r in roots} for c in kids),
-        'child capabilities share their parent doc_ref or carry a unique one')
-    chk(len(m['capability_tree']) == len(caps), 'capability_tree complete')
-    chk(all(p.get('id') and p.get('name') and p.get('statement') for p in m['design_principles']), 'design principles carry id, name, statement')
-    base = os.path.dirname(a.model); low = code.lower()
-    try:
-        cc = list(csv.DictReader(open(f'{base}/{low}-capabilities.csv', encoding='utf-8-sig')))
-        rr = list(csv.DictReader(open(f'{base}/{low}-requirements.csv', encoding='utf-8-sig')))
-        chk(len(cc) == len(caps) and len(rr) == len(reqs), 'CSV row counts match JSON')
-        chk(sum(int(c['requirement_count']) for c in cc) == len(reqs), 'requirement_count column sums to requirement rows')
-    except FileNotFoundError: chk(False, 'companion CSVs present beside the model')
-    if a.narrative:
-        print(f'== narrative {code} ==')
-        doc = open(a.narrative, encoding='utf-8').read()
-        heads = dict(re.findall(r'^#{3,4} §?([\d.]+[a-z]?) (.+?)(?:\s+\*\*\[|\s*$)', doc, re.M))
-        chk(all(c['doc_ref'] in heads for c in roots), 'every root capability has a narrative section (### <doc_ref> <name>)')
-        bad = [c['doc_ref'] for c in roots if heads.get(c['doc_ref'], '').strip() != c['name']]
-        chk(not bad, f'section headings match root capability names exactly (mismatches: {bad[:5]})')
-        chk(all(c['name'] in doc for c in kids), 'every child capability is named in the narrative')
-        chk(all(p['name'] in doc for p in m['design_principles']), 'every design principle appears in narrative')
-        chk('## Part I' in doc and 'Capability Inventory' in doc, 'narrative has Part I framing and a capability inventory')
-    if a.fitgap:
-        fg = load(a.fitgap); print(f"== fit/gap {fg['meta'].get('mode')} ==")
-        if fg['meta'].get('mode') == 'integration':
-            rows = fg['rows']; chk(all(r['overlap_type'] in OVERLAPS for r in rows), 'overlap types in vocabulary')
-            chk(all(len(r.get('evidence','')) >= 60 for r in rows), 'every row has substantive evidence')
-        else:
-            bm, B, _ = _idx(a.baseline); tm, T, _ = _idx(a.target)
-            rows, only = fg['baseline_to_target'], fg['target_only']
-            chk({r['baseline_capability_id'] for r in rows} == set(B) and len(rows) == len(B), 'every baseline capability scored exactly once')
-            chk(all(i in T for r in rows for i in (r.get('target_capability_ids') or [])), 'all cited target ids resolve')
-            chk(all(r['verdict'] in VERDICTS for r in rows), 'verdicts in vocabulary')
-            chk(all(r['confidence'] in CONF for r in rows+only), 'confidence in vocabulary')
-            chk(all(r.get('effort') in EFFORT for r in rows), 'effort in vocabulary')
-            chk(all(not r.get('target_capability_ids') for r in rows if r['verdict']=='gap'), 'gap rows cite no target capabilities')
-            chk(all(r.get('target_capability_ids') for r in rows if r['verdict'] in ('native','partial','configurable')), 'native/partial/configurable rows cite targets')
-            chk(all(len(r.get('evidence','')) >= 80 for r in rows+only), 'every row has substantive evidence (>=80 chars)')
-            cited = {i for r in rows for i in (r.get('target_capability_ids') or [])}
-            chk(set(T) - cited == {r['target_capability_id'] for r in only}, 'target_only rows == exactly the uncited target capabilities')
-    print('\nALL CHECKS PASSED' if not fails else f'\n*** {len(fails)} FAILURE(S) ***'); sys.exit(1 if fails else 0)
-
-if __name__ == '__main__':
-    p = argparse.ArgumentParser(); sp = p.add_subparsers(dest='cmd', required=True)
-    s = sp.add_parser('skeleton'); s.add_argument('--skeleton', required=True)
-    s = sp.add_parser('assemble'); s.add_argument('--skeleton', required=True); s.add_argument('--parts', nargs='+', required=True)
-    s.add_argument('--out', required=True); s.add_argument('--date', default='')
-    s = sp.add_parser('fitgap'); s.add_argument('--mode', default='replacement', choices=['replacement','selection','integration'])
-    s.add_argument('--baseline'); s.add_argument('--target'); s.add_argument('--models', nargs='*'); s.add_argument('--rows', nargs='+', required=True)
-    s.add_argument('--only', nargs='*'); s.add_argument('--out', required=True); s.add_argument('--date', default='')
-    s = sp.add_parser('validate'); s.add_argument('--model', required=True); s.add_argument('--narrative'); s.add_argument('--fitgap')
-    s.add_argument('--baseline'); s.add_argument('--target')
-    a = p.parse_args(); {'skeleton': skeleton, 'assemble': assemble, 'fitgap': fitgap, 'validate': validate}[a.cmd](a)
-```

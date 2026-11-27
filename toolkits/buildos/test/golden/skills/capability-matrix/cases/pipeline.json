@@ -1,0 +1,267 @@
+{
+  "case": "pipeline",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "assemble",
+        "--skeleton",
+        "cm/CIRC/skeleton.json",
+        "--parts",
+        "cm/CIRC/parts/part-a.json",
+        "cm/CIRC/parts/part-b.json",
+        "--out",
+        "deliver/CIRC",
+        "--date",
+        "2026-01-15"
+      ],
+      "exit": 0,
+      "stdout": "assemble[CIRC]: 5 capabilities, 10 requirements -> deliver/CIRC/circ-*  warnings={'restored_layer_id': 1, 'restored_name': 1, 'renumbered_req': 1, 'scope_stripped_nonsetting': 2, 'scope_alias_pricing class': 1}\n",
+      "stderr": "",
+      "files": {
+        "deliver/CIRC/circ-capabilities.csv": {
+          "text": "﻿system,capability_id,parent_id,layer_id,layer_code,layer_name,doc_ref,capability_type,status,maturity,origin,source_refs,name,summary,personas,triggers,outcomes,entities,dependencies,provenance,source,tags,requirement_count\r\nCIRC,CIRC-CORE-01,,L1,CORE,Circulation,1.1,process,live,proven,derived,Desk manual 2,Check out books,\"Lending a book to a patron at the desk, with the patron card and the book barcode, as the desk staff described it in the branch notes.\",Desk clerk | Patron,A patron brings a book to the desk,The loan is recorded,Loan | Patron | Book,CIRC-PAT-01,observed,Desk manual,core,4\r\nCIRC,CIRC-CORE-02,,L1,CORE,Circulation,1.2,workflow,pilot,partial,derived,,Holds queue,\"Queueing holds on a book that is out, first come first served, as the desk staff described it in the branch notes.\",Patron,,The next patron is told the book is in,Hold,,,,,2\r\nCIRC,CIRC-CORE-02a,CIRC-CORE-02,L1,CORE,Circulation,1.2,configuration,live,proven,captured,,Hold pickup window,\"How many days a held book waits at the desk before it goes back on the shelf, as the desk staff described it in the branch notes.\",,,,,,,,,1\r\nCIRC,CIRC-PAT-01,,L2,PAT,Patrons,2.1,data_entity,live,proven,merged,,Patron record,\"The record of each patron: name, address, card number, and a guardian for a child, as the desk staff described it in the branch notes.\",Desk clerk,,,Patron,,,,,2\r\nCIRC,CIRC-RPT-01,,L3,RPT,Reports,3.1,report,planned,planned,derived,,Overdue report,\"The weekly list of overdue loans that the branch prints on Monday, as the desk staff described it in the branch notes.\",,,,,CIRC-CORE-01,,,,1\r\n"
+        },
+        "deliver/CIRC/circ-capability-model.json": {
+          "text": "{\n \"schema_version\": \"4\",\n \"meta\": {\n  \"code\": \"CIRC\",\n  \"name\": \"Current Circulation System\",\n  \"title\": \"CIRC capability model\",\n  \"converted\": false,\n  \"sources\": [\n   \"Desk manual\",\n   \"Branch notes\"\n  ],\n  \"revision\": 1.0,\n  \"catalogue_size\": 12345678901234567890,\n  \"scale\": 1e+16,\n  \"generated\": \"2026-01-15\",\n  \"counts\": {\n   \"layers\": 3,\n   \"capabilities\": 5,\n   \"requirements\": 10,\n   \"design_principles\": 2,\n   \"capabilities_by_status\": {\n    \"live\": 3,\n    \"pilot\": 1,\n    \"planned\": 1\n   },\n   \"requirements_by_status\": {\n    \"live\": 6,\n    \"pilot\": 2,\n    \"retired\": 1,\n    \"planned\": 1\n   },\n   \"capabilities_by_maturity\": {\n    \"proven\": 3,\n    \"partial\": 1,\n    \"planned\": 1\n   }\n  },\n  \"vocabularies\": {\n   \"status\": [\n    \"live\",\n    \"pilot\",\n    \"planned\",\n    \"retired\"\n   ],\n   \"maturity_map\": {\n    \"live\": \"proven\",\n    \"pilot\": \"partial\",\n    \"planned\": \"planned\",\n    \"retired\": \"deferred\"\n   },\n   \"maturity\": [\n    \"available\",\n    \"deferred\",\n    \"partial\",\n    \"planned\",\n    \"proven\"\n   ],\n   \"capability_type\": [\n    \"architecture\",\n    \"capability\",\n    \"configuration\",\n    \"data_entity\",\n    \"document\",\n    \"integration\",\n    \"process\",\n    \"report\",\n    \"state_model\",\n    \"workflow\"\n   ],\n   \"requirement_kind\": [\n    \"behavior\",\n    \"data\",\n    \"dependency\",\n    \"rule\",\n    \"setting\"\n   ],\n   \"option_scope\": [\n    \"account\",\n    \"agreement\",\n    \"category\",\n    \"document\",\n    \"global\",\n    \"location\",\n    \"multi\",\n    \"role\",\n    \"rule\",\n    \"transaction\"\n   ],\n   \"origin\": [\n    \"captured\",\n    \"derived\",\n    \"merged\"\n   ]\n  }\n },\n \"layers\": [\n  {\n   \"id\": \"L1\",\n   \"code\": \"CORE\",\n   \"name\": \"Circulation\"\n  },\n  {\n   \"id\": \"L2\",\n   \"code\": \"PAT\",\n   \"name\": \"Patrons\"\n  },\n  {\n   \"id\": \"L3\",\n   \"code\": \"RPT\",\n   \"name\": \"Reports\"\n  }\n ],\n \"design_principles\": [\n  {\n   \"id\": \"DP-1\",\n   \"name\": \"Patron first\",\n   \"statement\": \"Every desk step starts from the patron in front of the desk.\"\n  },\n  {\n   \"id\": \"DP-2\",\n   \"name\": \"One record per book\",\n   \"statement\": \"A book has one record, whatever branch holds it.\"\n  }\n ],\n \"capabilities\": [\n  {\n   \"id\": \"CIRC-CORE-01\",\n   \"parent_id\": null,\n   \"name\": \"Check out books\",\n   \"layer_id\": \"L1\",\n   \"doc_ref\": \"1.1\",\n   \"type\": \"process\",\n   \"status\": \"live\",\n   \"maturity\": \"proven\",\n   \"origin\": \"derived\",\n   \"source_refs\": [\n    \"Desk manual 2\"\n   ],\n   \"summary\": \"Lending a book to a patron at the desk, with the patron card and the book barcode, as the desk staff described it in the branch notes.\",\n   \"personas\": [\n    \"Desk clerk\",\n    \"Patron\"\n   ],\n   \"triggers\": [\n    \"A patron brings a book to the desk\"\n   ],\n   \"outcomes\": [\n    \"The loan is recorded\"\n   ],\n   \"entities\": [\n    \"Loan\",\n    \"Patron\",\n    \"Book\"\n   ],\n   \"dependencies\": [\n    \"CIRC-PAT-01\"\n   ],\n   \"provenance\": [\n    \"observed\"\n   ],\n   \"source\": [\n    \"Desk manual\"\n   ],\n   \"tags\": [\n    \"core\"\n   ],\n   \"requirements\": [\n    {\n     \"id\": \"CIRC-CORE-01-R01\",\n     \"kind\": \"rule\",\n     \"status\": \"live\",\n     \"maturity\": \"proven\",\n     \"text\": \"Block a checkout when the patron owes more than the fine limit.\",\n     \"option_values\": null,\n     \"option_default\": null,\n     \"option_scope\": null,\n     \"source_refs\": [\n      \"Desk manual 2\"\n     ]\n    },\n    {\n     \"id\": \"CIRC-CORE-01-R02\",\n     \"kind\": \"behavior\",\n     \"status\": \"live\",\n     \"maturity\": \"proven\",\n     \"text\": \"Print a slip that says \\\"Due back\\\", the date, and the branch, on one line.\",\n     \"option_values\": null,\n     \"option_default\": null,\n     \"option_scope\": null,\n     \"source_refs\": [\n      \"Desk manual 2\"\n     ]\n    },\n    {\n     \"id\": \"CIRC-CORE-01-R03\",\n     \"kind\": \"setting\",\n     \"status\": \"live\",\n     \"maturity\": \"proven\",\n     \"text\": \"Loan length in days, by book category.\\nShorter for new books.\",\n     \"option_values\": \"7|14|21\",\n     \"option_default\": \"14\",\n     \"option_scope\": \"category\",\n     \"source_refs\": [\n      \"Desk manual 2\"\n     ]\n    },\n    {\n     \"id\": \"CIRC-CORE-01-R04\",\n     \"kind\": \"setting\",\n     \"status\": \"pilot\",\n     \"maturity\": \"partial\",\n     \"text\": \"Receipt channels a patron can choose.\",\n     \"option_values\": \"['paper', 'e-mail']\",\n     \"option_default\": \"paper\",\n     \"option_scope\": \"global\",\n     \"source_refs\": [\n      \"Desk manual 2\"\n     ]\n    }\n   ]\n  },\n  {\n   \"id\": \"CIRC-CORE-02\",\n   \"parent_id\": null,\n   \"name\": \"Holds queue\",\n   \"layer_id\": \"L1\",\n   \"doc_ref\": \"1.2\",\n   \"type\": \"workflow\",\n   \"status\": \"pilot\",\n   \"maturity\": \"partial\",\n   \"origin\": \"derived\",\n   \"source_refs\": [],\n   \"summary\": \"Queueing holds on a book that is out, first come first served, as the desk staff described it in the branch notes.\",\n   \"personas\": [\n    \"Patron\"\n   ],\n   \"triggers\": [],\n   \"outcomes\": [\n    \"The next patron is told the book is in\"\n   ],\n   \"entities\": [\n    \"Hold\"\n   ],\n   \"dependencies\": [],\n   \"provenance\": [],\n   \"source\": [],\n   \"tags\": [],\n   \"requirements\": [\n    {\n     \"id\": \"CIRC-CORE-02-R01\",\n     \"kind\": \"data\",\n     \"status\": \"retired\",\n     \"maturity\": \"deferred\",\n     \"text\": \"Keep the date a hold was placed — for the café notice board too ☕.\",\n     \"option_values\": null,\n     \"option_default\": null,\n     \"option_scope\": null,\n     \"source_refs\": [\n      \"Desk manual 2\"\n     ]\n    },\n    {\n     \"id\": \"CIRC-CORE-02-R02\",\n     \"kind\": \"behavior\",\n     \"status\": \"pilot\",\n     \"maturity\": \"partial\",\n     \"text\": \"Skip a patron who is away, and keep their place.\",\n     \"option_values\": null,\n     \"option_default\": null,\n     \"option_scope\": null,\n     \"source_refs\": [\n      \"Desk manual 2\"\n     ]\n    }\n   ]\n  },\n  {\n   \"id\": \"CIRC-CORE-02a\",\n   \"parent_id\": \"CIRC-CORE-02\",\n   \"name\": \"Hold pickup window\",\n   \"layer_id\": \"L1\",\n   \"doc_ref\": \"1.2\",\n   \"type\": \"configuration\",\n   \"status\": \"live\",\n   \"maturity\": \"proven\",\n   \"origin\": \"captured\",\n   \"source_refs\": [],\n   \"summary\": \"How many days a held book waits at the desk before it goes back on the shelf, as the desk staff described it in the branch notes.\",\n   \"personas\": [],\n   \"triggers\": [],\n   \"outcomes\": [],\n   \"entities\": [],\n   \"dependencies\": [],\n   \"provenance\": [],\n   \"source\": [],\n   \"tags\": [],\n   \"requirements\": [\n    {\n     \"id\": \"CIRC-CORE-02a-R01\",\n     \"kind\": \"setting\",\n     \"status\": \"live\",\n     \"maturity\": \"proven\",\n     \"text\": \"Pickup window in days.\",\n     \"option_values\": \"3|5|7\",\n     \"option_default\": \"5\",\n     \"option_scope\": \"location\",\n     \"source_refs\": [\n      \"Desk manual 2\"\n     ]\n    }\n   ]\n  },\n  {\n   \"id\": \"CIRC-PAT-01\",\n   \"parent_id\": null,\n   \"name\": \"Patron record\",\n   \"layer_id\": \"L2\",\n   \"doc_ref\": \"2.1\",\n   \"type\": \"data_entity\",\n   \"status\": \"live\",\n   \"maturity\": \"proven\",\n   \"origin\": \"merged\",\n   \"source_refs\": [],\n   \"summary\": \"The record of each patron: name, address, card number, and a guardian for a child, as the desk staff described it in the branch notes.\",\n   \"personas\": [\n    \"Desk clerk\"\n   ],\n   \"triggers\": [],\n   \"outcomes\": [],\n   \"entities\": [\n    \"Patron\"\n   ],\n   \"dependencies\": [],\n   \"provenance\": [],\n   \"source\": [],\n   \"tags\": [],\n   \"requirements\": [\n    {\n     \"id\": \"CIRC-PAT-01-R01\",\n     \"kind\": \"data\",\n     \"status\": \"live\",\n     \"maturity\": \"proven\",\n     \"text\": \"Record a guardian for a child, with a phone number.\",\n     \"option_values\": null,\n     \"option_default\": null,\n     \"option_scope\": null,\n     \"source_refs\": [\n      \"Desk manual 2\"\n     ]\n    },\n    {\n     \"id\": \"CIRC-PAT-01-R02\",\n     \"kind\": \"rule\",\n     \"status\": \"live\",\n     \"maturity\": \"proven\",\n     \"text\": \"A card number is never given twice.\",\n     \"option_values\": null,\n     \"option_default\": null,\n     \"option_scope\": null,\n     \"source_refs\": [\n      \"Desk manual 2\"\n     ]\n    }\n   ]\n  },\n  {\n   \"id\": \"CIRC-RPT-01\",\n   \"parent_id\": null,\n   \"name\": \"Overdue report\",\n   \"layer_id\": \"L3\",\n   \"doc_ref\": \"3.1\",\n   \"type\": \"report\",\n   \"status\": \"planned\",\n   \"maturity\": \"planned\",\n   \"origin\": \"derived\",\n   \"source_refs\": [],\n   \"summary\": \"The weekly list of overdue loans that the branch prints on Monday, as the desk staff described it in the branch notes.\",\n   \"personas\": [],\n   \"triggers\": [],\n   \"outcomes\": [],\n   \"entities\": [],\n   \"dependencies\": [\n    \"CIRC-CORE-01\"\n   ],\n   \"provenance\": [],\n   \"source\": [],\n   \"tags\": [],\n   \"requirements\": [\n    {\n     \"id\": \"CIRC-RPT-01-R01\",\n     \"kind\": \"behavior\",\n     \"status\": \"planned\",\n     \"maturity\": \"planned\",\n     \"text\": \"List loans more than seven days overdue, by branch.\",\n     \"option_values\": null,\n     \"option_default\": null,\n     \"option_scope\": null,\n     \"source_refs\": [\n      \"Desk manual 2\"\n     ]\n    }\n   ]\n  }\n ],\n \"capability_tree\": [\n  {\n   \"id\": \"CIRC-CORE-01\",\n   \"name\": \"Check out books\",\n   \"status\": \"live\",\n   \"maturity\": \"proven\",\n   \"layer_id\": \"L1\",\n   \"requirement_count\": 4\n  },\n  {\n   \"id\": \"CIRC-CORE-02\",\n   \"name\": \"Holds queue\",\n   \"status\": \"pilot\",\n   \"maturity\": \"partial\",\n   \"layer_id\": \"L1\",\n   \"requirement_count\": 2\n  },\n  {\n   \"id\": \"CIRC-CORE-02a\",\n   \"name\": \"Hold pickup window\",\n   \"status\": \"live\",\n   \"maturity\": \"proven\",\n   \"layer_id\": \"L1\",\n   \"requirement_count\": 1\n  },\n  {\n   \"id\": \"CIRC-PAT-01\",\n   \"name\": \"Patron record\",\n   \"status\": \"live\",\n   \"maturity\": \"proven\",\n   \"layer_id\": \"L2\",\n   \"requirement_count\": 2\n  },\n  {\n   \"id\": \"CIRC-RPT-01\",\n   \"name\": \"Overdue report\",\n   \"status\": \"planned\",\n   \"maturity\": \"planned\",\n   \"layer_id\": \"L3\",\n   \"requirement_count\": 1\n  }\n ]\n}"
+        },
+        "deliver/CIRC/circ-requirements.csv": {
+          "text": "﻿system,requirement_id,capability_id,capability_name,layer_id,layer_code,layer_name,doc_ref,requirement_kind,status,maturity,text,option_values,option_default,option_scope,source_refs\r\nCIRC,CIRC-CORE-01-R01,CIRC-CORE-01,Check out books,L1,CORE,Circulation,1.1,rule,live,proven,Block a checkout when the patron owes more than the fine limit.,,,,Desk manual 2\r\nCIRC,CIRC-CORE-01-R02,CIRC-CORE-01,Check out books,L1,CORE,Circulation,1.1,behavior,live,proven,\"Print a slip that says \"\"Due back\"\", the date, and the branch, on one line.\",,,,Desk manual 2\r\nCIRC,CIRC-CORE-01-R03,CIRC-CORE-01,Check out books,L1,CORE,Circulation,1.1,setting,live,proven,\"Loan length in days, by book category.\nShorter for new books.\",7|14|21,14,category,Desk manual 2\r\nCIRC,CIRC-CORE-01-R04,CIRC-CORE-01,Check out books,L1,CORE,Circulation,1.1,setting,pilot,partial,Receipt channels a patron can choose.,\"['paper', 'e-mail']\",paper,global,Desk manual 2\r\nCIRC,CIRC-CORE-02-R01,CIRC-CORE-02,Holds queue,L1,CORE,Circulation,1.2,data,retired,deferred,Keep the date a hold was placed — for the café notice board too ☕.,,,,Desk manual 2\r\nCIRC,CIRC-CORE-02-R02,CIRC-CORE-02,Holds queue,L1,CORE,Circulation,1.2,behavior,pilot,partial,\"Skip a patron who is away, and keep their place.\",,,,Desk manual 2\r\nCIRC,CIRC-CORE-02a-R01,CIRC-CORE-02a,Hold pickup window,L1,CORE,Circulation,1.2,setting,live,proven,Pickup window in days.,3|5|7,5,location,Desk manual 2\r\nCIRC,CIRC-PAT-01-R01,CIRC-PAT-01,Patron record,L2,PAT,Patrons,2.1,data,live,proven,\"Record a guardian for a child, with a phone number.\",,,,Desk manual 2\r\nCIRC,CIRC-PAT-01-R02,CIRC-PAT-01,Patron record,L2,PAT,Patrons,2.1,rule,live,proven,A card number is never given twice.,,,,Desk manual 2\r\nCIRC,CIRC-RPT-01-R01,CIRC-RPT-01,Overdue report,L3,RPT,Reports,3.1,behavior,planned,planned,\"List loans more than seven days overdue, by branch.\",,,,Desk manual 2\r\n"
+        }
+      }
+    },
+    {
+      "step": 1,
+      "args": [
+        "assemble",
+        "--skeleton",
+        "cm/LIB/skeleton.json",
+        "--parts",
+        "cm/LIB/parts/*.json",
+        "--out",
+        "deliver/LIB"
+      ],
+      "exit": 0,
+      "stdout": "assemble[LIB]: 4 capabilities, 5 requirements -> deliver/LIB/lib-*  warnings={}\n",
+      "stderr": "",
+      "files": {
+        "deliver/LIB/lib-capabilities.csv": {
+          "text": "﻿system,capability_id,parent_id,layer_id,layer_code,layer_name,doc_ref,capability_type,status,maturity,origin,source_refs,name,summary,personas,triggers,outcomes,entities,dependencies,provenance,source,tags,requirement_count\r\nLIB,LIB-LEND-01,,L1,LEND,Lending,4.1,capability,ga,available,derived,,Loans,\"Loans of any item to a member, as the platform's public product notes describe it.\",,,,,,,,,2\r\nLIB,LIB-LEND-02,,L1,LEND,Lending,4.2,workflow,beta,partial,derived,,Reservations,\"Reservations on items that are out, in a queue, as the platform's public product notes describe it.\",,,,,,,,,1\r\nLIB,LIB-MEM-01,,L2,MEM,Members,5.1,data_entity,ga,available,derived,,Members,\"Member records with contact details, as the platform's public product notes describe it.\",,,,,,,,,1\r\nLIB,LIB-MEM-02,,L2,MEM,Members,5.2,integration,roadmap,planned,derived,,Self-service kiosk,\"A kiosk where members lend and return items themselves, as the platform's public product notes describe it.\",,,,,,,,,1\r\n"
+        },
+        "deliver/LIB/lib-capability-model.json": {
+          "text": "{\n \"schema_version\": \"4\",\n \"meta\": {\n  \"code\": \"LIB\",\n  \"name\": \"Candidate Library Platform\",\n  \"title\": \"LIB capability model\",\n  \"converted\": true,\n  \"generated\": \"\",\n  \"counts\": {\n   \"layers\": 2,\n   \"capabilities\": 4,\n   \"requirements\": 5,\n   \"design_principles\": 0,\n   \"capabilities_by_status\": {\n    \"ga\": 2,\n    \"beta\": 1,\n    \"roadmap\": 1\n   },\n   \"requirements_by_status\": {\n    \"ga\": 3,\n    \"beta\": 1,\n    \"roadmap\": 1\n   },\n   \"capabilities_by_maturity\": {\n    \"available\": 2,\n    \"partial\": 1,\n    \"planned\": 1\n   }\n  },\n  \"vocabularies\": {\n   \"status\": [\n    \"ga\",\n    \"beta\",\n    \"roadmap\"\n   ],\n   \"maturity_map\": {\n    \"ga\": \"available\",\n    \"beta\": \"partial\",\n    \"roadmap\": \"planned\"\n   },\n   \"maturity\": [\n    \"available\",\n    \"deferred\",\n    \"partial\",\n    \"planned\",\n    \"proven\"\n   ],\n   \"capability_type\": [\n    \"architecture\",\n    \"capability\",\n    \"configuration\",\n    \"data_entity\",\n    \"document\",\n    \"integration\",\n    \"process\",\n    \"report\",\n    \"state_model\",\n    \"workflow\"\n   ],\n   \"requirement_kind\": [\n    \"behavior\",\n    \"data\",\n    \"dependency\",\n    \"rule\",\n    \"setting\"\n   ],\n   \"option_scope\": [\n    \"account\",\n    \"agreement\",\n    \"category\",\n    \"document\",\n    \"global\",\n    \"location\",\n    \"multi\",\n    \"role\",\n    \"rule\",\n    \"transaction\"\n   ],\n   \"origin\": [\n    \"captured\",\n    \"derived\",\n    \"merged\"\n   ]\n  }\n },\n \"layers\": [\n  {\n   \"id\": \"L1\",\n   \"code\": \"LEND\",\n   \"name\": \"Lending\"\n  },\n  {\n   \"id\": \"L2\",\n   \"code\": \"MEM\",\n   \"name\": \"Members\"\n  }\n ],\n \"design_principles\": [],\n \"capabilities\": [\n  {\n   \"id\": \"LIB-LEND-01\",\n   \"parent_id\": null,\n   \"name\": \"Loans\",\n   \"layer_id\": \"L1\",\n   \"doc_ref\": \"4.1\",\n   \"type\": \"capability\",\n   \"status\": \"ga\",\n   \"maturity\": \"available\",\n   \"origin\": \"derived\",\n   \"source_refs\": [],\n   \"summary\": \"Loans of any item to a member, as the platform's public product notes describe it.\",\n   \"personas\": [],\n   \"triggers\": [],\n   \"outcomes\": [],\n   \"entities\": [],\n   \"dependencies\": [],\n   \"provenance\": [],\n   \"source\": [],\n   \"tags\": [],\n   \"requirements\": [\n    {\n     \"id\": \"LIB-LEND-01-R01\",\n     \"kind\": \"behavior\",\n     \"status\": \"ga\",\n     \"maturity\": \"available\",\n     \"text\": \"Lend an item with a barcode scan.\",\n     \"option_values\": null,\n     \"option_default\": null,\n     \"option_scope\": null,\n     \"source_refs\": [\n      \"Desk manual 2\"\n     ]\n    },\n    {\n     \"id\": \"LIB-LEND-01-R02\",\n     \"kind\": \"setting\",\n     \"status\": \"ga\",\n     \"maturity\": \"available\",\n     \"text\": \"Loan rules by item type.\",\n     \"option_values\": \"book|dvd\",\n     \"option_default\": null,\n     \"option_scope\": \"category\",\n     \"source_refs\": [\n      \"Desk manual 2\"\n     ]\n    }\n   ]\n  },\n  {\n   \"id\": \"LIB-LEND-02\",\n   \"parent_id\": null,\n   \"name\": \"Reservations\",\n   \"layer_id\": \"L1\",\n   \"doc_ref\": \"4.2\",\n   \"type\": \"workflow\",\n   \"status\": \"beta\",\n   \"maturity\": \"partial\",\n   \"origin\": \"derived\",\n   \"source_refs\": [],\n   \"summary\": \"Reservations on items that are out, in a queue, as the platform's public product notes describe it.\",\n   \"personas\": [],\n   \"triggers\": [],\n   \"outcomes\": [],\n   \"entities\": [],\n   \"dependencies\": [],\n   \"provenance\": [],\n   \"source\": [],\n   \"tags\": [],\n   \"requirements\": [\n    {\n     \"id\": \"LIB-LEND-02-R01\",\n     \"kind\": \"behavior\",\n     \"status\": \"beta\",\n     \"maturity\": \"partial\",\n     \"text\": \"Queue reservations in order.\",\n     \"option_values\": null,\n     \"option_default\": null,\n     \"option_scope\": null,\n     \"source_refs\": [\n      \"Desk manual 2\"\n     ]\n    }\n   ]\n  },\n  {\n   \"id\": \"LIB-MEM-01\",\n   \"parent_id\": null,\n   \"name\": \"Members\",\n   \"layer_id\": \"L2\",\n   \"doc_ref\": \"5.1\",\n   \"type\": \"data_entity\",\n   \"status\": \"ga\",\n   \"maturity\": \"available\",\n   \"origin\": \"derived\",\n   \"source_refs\": [],\n   \"summary\": \"Member records with contact details, as the platform's public product notes describe it.\",\n   \"personas\": [],\n   \"triggers\": [],\n   \"outcomes\": [],\n   \"entities\": [],\n   \"dependencies\": [],\n   \"provenance\": [],\n   \"source\": [],\n   \"tags\": [],\n   \"requirements\": [\n    {\n     \"id\": \"LIB-MEM-01-R01\",\n     \"kind\": \"data\",\n     \"status\": \"ga\",\n     \"maturity\": \"available\",\n     \"text\": \"Store a member's address.\",\n     \"option_values\": null,\n     \"option_default\": null,\n     \"option_scope\": null,\n     \"source_refs\": [\n      \"Desk manual 2\"\n     ]\n    }\n   ]\n  },\n  {\n   \"id\": \"LIB-MEM-02\",\n   \"parent_id\": null,\n   \"name\": \"Self-service kiosk\",\n   \"layer_id\": \"L2\",\n   \"doc_ref\": \"5.2\",\n   \"type\": \"integration\",\n   \"status\": \"roadmap\",\n   \"maturity\": \"planned\",\n   \"origin\": \"derived\",\n   \"source_refs\": [],\n   \"summary\": \"A kiosk where members lend and return items themselves, as the platform's public product notes describe it.\",\n   \"personas\": [],\n   \"triggers\": [],\n   \"outcomes\": [],\n   \"entities\": [],\n   \"dependencies\": [],\n   \"provenance\": [],\n   \"source\": [],\n   \"tags\": [],\n   \"requirements\": [\n    {\n     \"id\": \"LIB-MEM-02-R01\",\n     \"kind\": \"dependency\",\n     \"status\": \"roadmap\",\n     \"maturity\": \"planned\",\n     \"text\": \"Needs the kiosk hardware kit.\",\n     \"option_values\": null,\n     \"option_default\": null,\n     \"option_scope\": null,\n     \"source_refs\": [\n      \"Desk manual 2\"\n     ]\n    }\n   ]\n  }\n ],\n \"capability_tree\": [\n  {\n   \"id\": \"LIB-LEND-01\",\n   \"name\": \"Loans\",\n   \"status\": \"ga\",\n   \"maturity\": \"available\",\n   \"layer_id\": \"L1\",\n   \"requirement_count\": 2\n  },\n  {\n   \"id\": \"LIB-LEND-02\",\n   \"name\": \"Reservations\",\n   \"status\": \"beta\",\n   \"maturity\": \"partial\",\n   \"layer_id\": \"L1\",\n   \"requirement_count\": 1\n  },\n  {\n   \"id\": \"LIB-MEM-01\",\n   \"name\": \"Members\",\n   \"status\": \"ga\",\n   \"maturity\": \"available\",\n   \"layer_id\": \"L2\",\n   \"requirement_count\": 1\n  },\n  {\n   \"id\": \"LIB-MEM-02\",\n   \"name\": \"Self-service kiosk\",\n   \"status\": \"roadmap\",\n   \"maturity\": \"planned\",\n   \"layer_id\": \"L2\",\n   \"requirement_count\": 1\n  }\n ]\n}"
+        },
+        "deliver/LIB/lib-requirements.csv": {
+          "text": "﻿system,requirement_id,capability_id,capability_name,layer_id,layer_code,layer_name,doc_ref,requirement_kind,status,maturity,text,option_values,option_default,option_scope,source_refs\r\nLIB,LIB-LEND-01-R01,LIB-LEND-01,Loans,L1,LEND,Lending,4.1,behavior,ga,available,Lend an item with a barcode scan.,,,,Desk manual 2\r\nLIB,LIB-LEND-01-R02,LIB-LEND-01,Loans,L1,LEND,Lending,4.1,setting,ga,available,Loan rules by item type.,book|dvd,,category,Desk manual 2\r\nLIB,LIB-LEND-02-R01,LIB-LEND-02,Reservations,L1,LEND,Lending,4.2,behavior,beta,partial,Queue reservations in order.,,,,Desk manual 2\r\nLIB,LIB-MEM-01-R01,LIB-MEM-01,Members,L2,MEM,Members,5.1,data,ga,available,Store a member's address.,,,,Desk manual 2\r\nLIB,LIB-MEM-02-R01,LIB-MEM-02,Self-service kiosk,L2,MEM,Members,5.2,dependency,roadmap,planned,Needs the kiosk hardware kit.,,,,Desk manual 2\r\n"
+        }
+      }
+    },
+    {
+      "step": 2,
+      "args": [
+        "fitgap",
+        "--mode",
+        "replacement",
+        "--baseline",
+        "deliver/CIRC/circ-capability-model.json",
+        "--target",
+        "deliver/LIB/lib-capability-model.json",
+        "--rows",
+        "analysis/scored/*.json",
+        "--only",
+        "analysis/target-only.json",
+        "--out",
+        "deliver/fit-gap",
+        "--date",
+        "2026-01-15"
+      ],
+      "exit": 0,
+      "stdout": "fitgap[CIRC->LIB]: 5 scored + 1 target-only -> deliver/fit-gap/circ-lib-fit-gap.csv/.json  verdicts={'native': 2, 'partial': 1, 'configurable': 1, 'gap': 1}\n",
+      "stderr": "",
+      "files": {
+        "deliver/fit-gap/circ-lib-fit-gap.csv": {
+          "text": "﻿baseline_system,target_system,direction,baseline_capability_id,baseline_name,layer_id,layer_code,layer_name,baseline_status,baseline_maturity,baseline_requirement_count,verdict,confidence,effort,target_capability_ids,target_capability_names,target_statuses,target_maturities,target_requirement_count,evidence,gap_detail,migration_note\r\nCIRC,LIB,baseline_to_target,CIRC-CORE-01,Check out books,L1,CORE,Circulation,live,proven,4,native,high,none,LIB-LEND-01,Loans,ga,available,2,\"Loans cover checkout, with the fine limit as a loan rule. The platform notes and the desk manual were read side by side for this capability, and the steps match.\",,\r\nCIRC,LIB,baseline_to_target,CIRC-CORE-02,Holds queue,L1,CORE,Circulation,pilot,partial,2,partial,medium,medium,LIB-LEND-02 | LIB-LEND-01,Reservations | Loans,beta | ga,available | partial,3,\"Reservations queue holds, but cannot skip a patron who is away. The platform notes and the desk manual were read side by side for this capability, and the steps match.\",\"No skip, so the desk keeps a paper list.\",\r\nCIRC,LIB,baseline_to_target,CIRC-CORE-02a,Hold pickup window,L1,CORE,Circulation,live,proven,1,configurable,medium,low,LIB-LEND-02,Reservations,beta,partial,1,\"The pickup window is a reservation setting. The platform notes and the desk manual were read side by side for this capability, and the steps match.\",,Set the window to 5 days.\r\nCIRC,LIB,baseline_to_target,CIRC-PAT-01,Patron record,L2,PAT,Patrons,live,proven,2,native,high,low,LIB-MEM-01,Members,ga,available,1,\"Member records hold the patron fields, guardian, too. The platform notes and the desk manual were read side by side for this capability, and the steps match.\",,\r\nCIRC,LIB,baseline_to_target,CIRC-RPT-01,Overdue report,L3,RPT,Reports,planned,planned,1,gap,low,high,,,,,0,\"No overdue report is listed; the platform exports loans as a file instead. The platform notes and the desk manual were read side by side for this capability, and the steps match.\",Build the report from the export.,Keep the old report until then.\r\nCIRC,LIB,target_only,,,L2,MEM,Members,,,,target_only,medium,unknown,LIB-MEM-02,Self-service kiosk,roadmap,planned,1,\"A self-service kiosk is new: the branches have no such thing today and would gain it. The platform notes and the desk manual were read side by side for this capability, and the steps match.\",,Pilot one kiosk at the main branch.\r\n"
+        },
+        "deliver/fit-gap/circ-lib-fit-gap.json": {
+          "text": "{\n \"meta\": {\n  \"mode\": \"replacement\",\n  \"baseline_system\": \"CIRC\",\n  \"target_system\": \"LIB\",\n  \"generated\": \"2026-01-15\",\n  \"row_counts\": {\n   \"baseline_to_target\": 5,\n   \"target_only\": 1\n  },\n  \"verdicts\": {\n   \"native\": 2,\n   \"partial\": 1,\n   \"configurable\": 1,\n   \"gap\": 1\n  }\n },\n \"baseline_to_target\": [\n  {\n   \"baseline_capability_id\": \"CIRC-CORE-01\",\n   \"target_capability_ids\": [\n    \"LIB-LEND-01\"\n   ],\n   \"verdict\": \"native\",\n   \"confidence\": \"high\",\n   \"effort\": \"none\",\n   \"evidence\": \"Loans cover checkout, with the fine limit as a loan rule. The platform notes and the desk manual were read side by side for this capability, and the steps match.\"\n  },\n  {\n   \"baseline_capability_id\": \"CIRC-CORE-02\",\n   \"target_capability_ids\": [\n    \"LIB-LEND-02\",\n    \"LIB-LEND-01\"\n   ],\n   \"verdict\": \"partial\",\n   \"confidence\": \"medium\",\n   \"effort\": \"medium\",\n   \"evidence\": \"Reservations queue holds, but cannot skip a patron who is away. The platform notes and the desk manual were read side by side for this capability, and the steps match.\",\n   \"gap_detail\": \"No skip, so the desk keeps a paper list.\"\n  },\n  {\n   \"baseline_capability_id\": \"CIRC-CORE-02a\",\n   \"target_capability_ids\": [\n    \"LIB-LEND-02\"\n   ],\n   \"verdict\": \"configurable\",\n   \"confidence\": \"medium\",\n   \"effort\": \"low\",\n   \"evidence\": \"The pickup window is a reservation setting. The platform notes and the desk manual were read side by side for this capability, and the steps match.\",\n   \"migration_note\": \"Set the window to 5 days.\"\n  },\n  {\n   \"baseline_capability_id\": \"CIRC-PAT-01\",\n   \"target_capability_ids\": [\n    \"LIB-MEM-01\"\n   ],\n   \"verdict\": \"native\",\n   \"confidence\": \"high\",\n   \"effort\": \"low\",\n   \"evidence\": \"Member records hold the patron fields, guardian, too. The platform notes and the desk manual were read side by side for this capability, and the steps match.\"\n  },\n  {\n   \"baseline_capability_id\": \"CIRC-RPT-01\",\n   \"target_capability_ids\": [],\n   \"verdict\": \"gap\",\n   \"confidence\": \"low\",\n   \"effort\": \"high\",\n   \"evidence\": \"No overdue report is listed; the platform exports loans as a file instead. The platform notes and the desk manual were read side by side for this capability, and the steps match.\",\n   \"gap_detail\": \"Build the report from the export.\",\n   \"migration_note\": \"Keep the old report until then.\"\n  }\n ],\n \"target_only\": [\n  {\n   \"target_capability_id\": \"LIB-MEM-02\",\n   \"confidence\": \"medium\",\n   \"effort\": \"unknown\",\n   \"evidence\": \"A self-service kiosk is new: the branches have no such thing today and would gain it. The platform notes and the desk manual were read side by side for this capability, and the steps match.\",\n   \"opportunity\": \"Pilot one kiosk at the main branch.\"\n  }\n ]\n}"
+        }
+      }
+    },
+    {
+      "step": 3,
+      "args": [
+        "validate",
+        "--model",
+        "deliver/CIRC/circ-capability-model.json",
+        "--narrative",
+        "deliver/CIRC/Current Circulation System - Capability Model.md"
+      ],
+      "exit": 0,
+      "stdout": "== model CIRC ==\n  PASS  capability ids unique\n  PASS  requirement ids unique\n  PASS  capability id format CIRC-LAYER-NN\n  PASS  id layer segment matches layer code\n  PASS  all dependencies resolve\n  PASS  all parent_ids resolve\n  PASS  capability types in vocabulary\n  PASS  statuses in system vocabulary\n  PASS  maturity in fixed vocabulary\n  PASS  origin in vocabulary\n  PASS  requirement kinds in vocabulary\n  PASS  every setting has a valid option_scope\n  PASS  non-settings carry no option fields\n  PASS  every capability has a substantive summary\n  PASS  every requirement has text\n  PASS  no empty capabilities\n  PASS  doc_refs unique among root capabilities\n  PASS  child capabilities share their parent doc_ref or carry a unique one\n  PASS  capability_tree complete\n  PASS  design principles carry id, name, statement\n  PASS  CSV row counts match JSON\n  PASS  requirement_count column sums to requirement rows\n== narrative CIRC ==\n  PASS  every root capability has a narrative section (### <doc_ref> <name>)\n  PASS  section headings match root capability names exactly (mismatches: [])\n  PASS  every child capability is named in the narrative\n  PASS  every design principle appears in narrative\n  PASS  narrative has Part I framing and a capability inventory\n\nALL CHECKS PASSED\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 4,
+      "args": [
+        "validate",
+        "--model",
+        "deliver/LIB/lib-capability-model.json"
+      ],
+      "exit": 0,
+      "stdout": "== model LIB ==\n  PASS  capability ids unique\n  PASS  requirement ids unique\n  PASS  capability id format LIB-LAYER-NN\n  PASS  id layer segment matches layer code\n  PASS  all dependencies resolve\n  PASS  all parent_ids resolve\n  PASS  capability types in vocabulary\n  PASS  statuses in system vocabulary\n  PASS  maturity in fixed vocabulary\n  PASS  origin in vocabulary\n  PASS  requirement kinds in vocabulary\n  PASS  every setting has a valid option_scope\n  PASS  non-settings carry no option fields\n  PASS  every capability has a substantive summary\n  PASS  every requirement has text\n  PASS  no empty capabilities\n  PASS  doc_refs unique among root capabilities\n  PASS  child capabilities share their parent doc_ref or carry a unique one\n  PASS  capability_tree complete\n  PASS  design principles carry id, name, statement\n  PASS  CSV row counts match JSON\n  PASS  requirement_count column sums to requirement rows\n\nALL CHECKS PASSED\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 5,
+      "args": [
+        "validate",
+        "--model",
+        "deliver/CIRC/circ-capability-model.json",
+        "--fitgap",
+        "deliver/fit-gap/circ-lib-fit-gap.json",
+        "--baseline",
+        "deliver/CIRC/circ-capability-model.json",
+        "--target",
+        "deliver/LIB/lib-capability-model.json"
+      ],
+      "exit": 0,
+      "stdout": "== model CIRC ==\n  PASS  capability ids unique\n  PASS  requirement ids unique\n  PASS  capability id format CIRC-LAYER-NN\n  PASS  id layer segment matches layer code\n  PASS  all dependencies resolve\n  PASS  all parent_ids resolve\n  PASS  capability types in vocabulary\n  PASS  statuses in system vocabulary\n  PASS  maturity in fixed vocabulary\n  PASS  origin in vocabulary\n  PASS  requirement kinds in vocabulary\n  PASS  every setting has a valid option_scope\n  PASS  non-settings carry no option fields\n  PASS  every capability has a substantive summary\n  PASS  every requirement has text\n  PASS  no empty capabilities\n  PASS  doc_refs unique among root capabilities\n  PASS  child capabilities share their parent doc_ref or carry a unique one\n  PASS  capability_tree complete\n  PASS  design principles carry id, name, statement\n  PASS  CSV row counts match JSON\n  PASS  requirement_count column sums to requirement rows\n== fit/gap replacement ==\n  PASS  every baseline capability scored exactly once\n  PASS  all cited target ids resolve\n  PASS  verdicts in vocabulary\n  PASS  confidence in vocabulary\n  PASS  effort in vocabulary\n  PASS  gap rows cite no target capabilities\n  PASS  native/partial/configurable rows cite targets\n  PASS  every row has substantive evidence (>=80 chars)\n  PASS  target_only rows == exactly the uncited target capabilities\n\nALL CHECKS PASSED\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 6,
+      "args": [
+        "fitgap",
+        "--mode",
+        "selection",
+        "--baseline",
+        "deliver/CIRC/circ-capability-model.json",
+        "--target",
+        "deliver/LIB/lib-capability-model.json",
+        "--rows",
+        "analysis/scored/rows-2.json",
+        "analysis/scored/rows-1.json",
+        "--out",
+        "deliver/selection"
+      ],
+      "exit": 0,
+      "stdout": "fitgap[CIRC->LIB]: 5 scored + 0 target-only -> deliver/selection/circ-lib-fit-gap.csv/.json  verdicts={'native': 2, 'partial': 1, 'configurable': 1, 'gap': 1}\n",
+      "stderr": "",
+      "files": {
+        "deliver/selection/circ-lib-fit-gap.csv": {
+          "text": "﻿baseline_system,target_system,direction,baseline_capability_id,baseline_name,layer_id,layer_code,layer_name,baseline_status,baseline_maturity,baseline_requirement_count,verdict,confidence,effort,target_capability_ids,target_capability_names,target_statuses,target_maturities,target_requirement_count,evidence,gap_detail,migration_note\r\nCIRC,LIB,baseline_to_target,CIRC-CORE-01,Check out books,L1,CORE,Circulation,live,proven,4,native,high,none,LIB-LEND-01,Loans,ga,available,2,\"Loans cover checkout, with the fine limit as a loan rule. The platform notes and the desk manual were read side by side for this capability, and the steps match.\",,\r\nCIRC,LIB,baseline_to_target,CIRC-CORE-02,Holds queue,L1,CORE,Circulation,pilot,partial,2,partial,medium,medium,LIB-LEND-02 | LIB-LEND-01,Reservations | Loans,beta | ga,available | partial,3,\"Reservations queue holds, but cannot skip a patron who is away. The platform notes and the desk manual were read side by side for this capability, and the steps match.\",\"No skip, so the desk keeps a paper list.\",\r\nCIRC,LIB,baseline_to_target,CIRC-CORE-02a,Hold pickup window,L1,CORE,Circulation,live,proven,1,configurable,medium,low,LIB-LEND-02,Reservations,beta,partial,1,\"The pickup window is a reservation setting. The platform notes and the desk manual were read side by side for this capability, and the steps match.\",,Set the window to 5 days.\r\nCIRC,LIB,baseline_to_target,CIRC-PAT-01,Patron record,L2,PAT,Patrons,live,proven,2,native,high,low,LIB-MEM-01,Members,ga,available,1,\"Member records hold the patron fields, guardian, too. The platform notes and the desk manual were read side by side for this capability, and the steps match.\",,\r\nCIRC,LIB,baseline_to_target,CIRC-RPT-01,Overdue report,L3,RPT,Reports,planned,planned,1,gap,low,high,,,,,0,\"No overdue report is listed; the platform exports loans as a file instead. The platform notes and the desk manual were read side by side for this capability, and the steps match.\",Build the report from the export.,Keep the old report until then.\r\n"
+        },
+        "deliver/selection/circ-lib-fit-gap.json": {
+          "text": "{\n \"meta\": {\n  \"mode\": \"selection\",\n  \"baseline_system\": \"CIRC\",\n  \"target_system\": \"LIB\",\n  \"generated\": \"\",\n  \"row_counts\": {\n   \"baseline_to_target\": 5,\n   \"target_only\": 0\n  },\n  \"verdicts\": {\n   \"native\": 2,\n   \"partial\": 1,\n   \"configurable\": 1,\n   \"gap\": 1\n  }\n },\n \"baseline_to_target\": [\n  {\n   \"baseline_capability_id\": \"CIRC-CORE-01\",\n   \"target_capability_ids\": [\n    \"LIB-LEND-01\"\n   ],\n   \"verdict\": \"native\",\n   \"confidence\": \"high\",\n   \"effort\": \"none\",\n   \"evidence\": \"Loans cover checkout, with the fine limit as a loan rule. The platform notes and the desk manual were read side by side for this capability, and the steps match.\"\n  },\n  {\n   \"baseline_capability_id\": \"CIRC-CORE-02\",\n   \"target_capability_ids\": [\n    \"LIB-LEND-02\",\n    \"LIB-LEND-01\"\n   ],\n   \"verdict\": \"partial\",\n   \"confidence\": \"medium\",\n   \"effort\": \"medium\",\n   \"evidence\": \"Reservations queue holds, but cannot skip a patron who is away. The platform notes and the desk manual were read side by side for this capability, and the steps match.\",\n   \"gap_detail\": \"No skip, so the desk keeps a paper list.\"\n  },\n  {\n   \"baseline_capability_id\": \"CIRC-CORE-02a\",\n   \"target_capability_ids\": [\n    \"LIB-LEND-02\"\n   ],\n   \"verdict\": \"configurable\",\n   \"confidence\": \"medium\",\n   \"effort\": \"low\",\n   \"evidence\": \"The pickup window is a reservation setting. The platform notes and the desk manual were read side by side for this capability, and the steps match.\",\n   \"migration_note\": \"Set the window to 5 days.\"\n  },\n  {\n   \"baseline_capability_id\": \"CIRC-PAT-01\",\n   \"target_capability_ids\": [\n    \"LIB-MEM-01\"\n   ],\n   \"verdict\": \"native\",\n   \"confidence\": \"high\",\n   \"effort\": \"low\",\n   \"evidence\": \"Member records hold the patron fields, guardian, too. The platform notes and the desk manual were read side by side for this capability, and the steps match.\"\n  },\n  {\n   \"baseline_capability_id\": \"CIRC-RPT-01\",\n   \"target_capability_ids\": [],\n   \"verdict\": \"gap\",\n   \"confidence\": \"low\",\n   \"effort\": \"high\",\n   \"evidence\": \"No overdue report is listed; the platform exports loans as a file instead. The platform notes and the desk manual were read side by side for this capability, and the steps match.\",\n   \"gap_detail\": \"Build the report from the export.\",\n   \"migration_note\": \"Keep the old report until then.\"\n  }\n ],\n \"target_only\": []\n}"
+        }
+      }
+    },
+    {
+      "step": 7,
+      "args": [
+        "validate",
+        "--model",
+        "deliver/CIRC/circ-capability-model.json",
+        "--fitgap",
+        "deliver/selection/circ-lib-fit-gap.json",
+        "--baseline",
+        "deliver/CIRC/circ-capability-model.json",
+        "--target",
+        "deliver/LIB/lib-capability-model.json"
+      ],
+      "exit": 1,
+      "stdout": "== model CIRC ==\n  PASS  capability ids unique\n  PASS  requirement ids unique\n  PASS  capability id format CIRC-LAYER-NN\n  PASS  id layer segment matches layer code\n  PASS  all dependencies resolve\n  PASS  all parent_ids resolve\n  PASS  capability types in vocabulary\n  PASS  statuses in system vocabulary\n  PASS  maturity in fixed vocabulary\n  PASS  origin in vocabulary\n  PASS  requirement kinds in vocabulary\n  PASS  every setting has a valid option_scope\n  PASS  non-settings carry no option fields\n  PASS  every capability has a substantive summary\n  PASS  every requirement has text\n  PASS  no empty capabilities\n  PASS  doc_refs unique among root capabilities\n  PASS  child capabilities share their parent doc_ref or carry a unique one\n  PASS  capability_tree complete\n  PASS  design principles carry id, name, statement\n  PASS  CSV row counts match JSON\n  PASS  requirement_count column sums to requirement rows\n== fit/gap selection ==\n  PASS  every baseline capability scored exactly once\n  PASS  all cited target ids resolve\n  PASS  verdicts in vocabulary\n  PASS  confidence in vocabulary\n  PASS  effort in vocabulary\n  PASS  gap rows cite no target capabilities\n  PASS  native/partial/configurable rows cite targets\n  PASS  every row has substantive evidence (>=80 chars)\n  FAIL  target_only rows == exactly the uncited target capabilities\n\n*** 1 FAILURE(S) ***\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 8,
+      "args": [
+        "fitgap",
+        "--mode",
+        "integration",
+        "--models",
+        "deliver/CIRC/circ-capability-model.json",
+        "deliver/LIB/lib-capability-model.json",
+        "--rows",
+        "analysis/integration.json",
+        "--out",
+        "deliver/integration"
+      ],
+      "exit": 0,
+      "stdout": "integration[CIRC+LIB]: 3 rows -> deliver/integration/circ-lib-integration-map.csv/.json\n",
+      "stderr": "",
+      "files": {
+        "deliver/integration/circ-lib-integration-map.csv": {
+          "text": "﻿capability_key,name,layer_id,layer_code,overlap_type,proposed_owner,integration_need,data_flow,effort,confidence,CIRC_capability_ids,LIB_capability_ids,CIRC_capability_names,LIB_capability_names,evidence,notes\r\nlending,Lending,L1,CORE,duplicate,LIB,Move open loans,CIRC -> LIB,medium,high,CIRC-CORE-01,LIB-LEND-01,Check out books,Loans,Both systems lend books; the platform takes over lending at cut-over.,One weekend.\r\npatrons,Patrons,L2,PAT,handoff,,,,,medium,CIRC-PAT-01,,Patron record,,Patron records start in the old system and are copied to members nightly.,\r\nkiosk,Kiosk,L2,PAT,sideways,,,,,sure,,LIB-MEM-02,,Self-service kiosk,Too short.,\r\n"
+        },
+        "deliver/integration/circ-lib-integration-map.json": {
+          "text": "{\n \"meta\": {\n  \"mode\": \"integration\",\n  \"systems\": [\n   \"CIRC\",\n   \"LIB\"\n  ],\n  \"generated\": \"\",\n  \"row_count\": 3,\n  \"overlap_types\": {\n   \"duplicate\": 1,\n   \"handoff\": 1,\n   \"sideways\": 1\n  }\n },\n \"rows\": [\n  {\n   \"capability_key\": \"lending\",\n   \"name\": \"Lending\",\n   \"layer_id\": \"L1\",\n   \"overlap_type\": \"duplicate\",\n   \"proposed_owner\": \"LIB\",\n   \"integration_need\": \"Move open loans\",\n   \"data_flow\": \"CIRC -> LIB\",\n   \"effort\": \"medium\",\n   \"confidence\": \"high\",\n   \"systems\": {\n    \"CIRC\": [\n     \"CIRC-CORE-01\"\n    ],\n    \"LIB\": [\n     \"LIB-LEND-01\"\n    ]\n   },\n   \"evidence\": \"Both systems lend books; the platform takes over lending at cut-over.\",\n   \"notes\": \"One weekend.\"\n  },\n  {\n   \"capability_key\": \"patrons\",\n   \"name\": \"Patrons\",\n   \"layer_id\": \"L2\",\n   \"overlap_type\": \"handoff\",\n   \"confidence\": \"medium\",\n   \"systems\": {\n    \"CIRC\": [\n     \"CIRC-PAT-01\"\n    ]\n   },\n   \"evidence\": \"Patron records start in the old system and are copied to members nightly.\"\n  },\n  {\n   \"capability_key\": \"kiosk\",\n   \"name\": \"Kiosk\",\n   \"layer_id\": \"L2\",\n   \"overlap_type\": \"sideways\",\n   \"confidence\": \"sure\",\n   \"systems\": {\n    \"LIB\": [\n     \"LIB-MEM-02\"\n    ]\n   },\n   \"evidence\": \"Too short.\"\n  }\n ]\n}"
+        }
+      }
+    },
+    {
+      "step": 9,
+      "args": [
+        "validate",
+        "--model",
+        "deliver/LIB/lib-capability-model.json",
+        "--fitgap",
+        "deliver/integration/circ-lib-integration-map.json"
+      ],
+      "exit": 1,
+      "stdout": "== model LIB ==\n  PASS  capability ids unique\n  PASS  requirement ids unique\n  PASS  capability id format LIB-LAYER-NN\n  PASS  id layer segment matches layer code\n  PASS  all dependencies resolve\n  PASS  all parent_ids resolve\n  PASS  capability types in vocabulary\n  PASS  statuses in system vocabulary\n  PASS  maturity in fixed vocabulary\n  PASS  origin in vocabulary\n  PASS  requirement kinds in vocabulary\n  PASS  every setting has a valid option_scope\n  PASS  non-settings carry no option fields\n  PASS  every capability has a substantive summary\n  PASS  every requirement has text\n  PASS  no empty capabilities\n  PASS  doc_refs unique among root capabilities\n  PASS  child capabilities share their parent doc_ref or carry a unique one\n  PASS  capability_tree complete\n  PASS  design principles carry id, name, statement\n  PASS  CSV row counts match JSON\n  PASS  requirement_count column sums to requirement rows\n== fit/gap integration ==\n  FAIL  overlap types in vocabulary\n  FAIL  every row has substantive evidence\n\n*** 2 FAILURE(S) ***\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 10,
+      "args": [
+        "validate",
+        "--model",
+        "deliver/CIRC/circ-capability-model.json",
+        "--narrative",
+        "deliver/CIRC/narrative-wrong.md"
+      ],
+      "exit": 1,
+      "stdout": "== model CIRC ==\n  PASS  capability ids unique\n  PASS  requirement ids unique\n  PASS  capability id format CIRC-LAYER-NN\n  PASS  id layer segment matches layer code\n  PASS  all dependencies resolve\n  PASS  all parent_ids resolve\n  PASS  capability types in vocabulary\n  PASS  statuses in system vocabulary\n  PASS  maturity in fixed vocabulary\n  PASS  origin in vocabulary\n  PASS  requirement kinds in vocabulary\n  PASS  every setting has a valid option_scope\n  PASS  non-settings carry no option fields\n  PASS  every capability has a substantive summary\n  PASS  every requirement has text\n  PASS  no empty capabilities\n  PASS  doc_refs unique among root capabilities\n  PASS  child capabilities share their parent doc_ref or carry a unique one\n  PASS  capability_tree complete\n  PASS  design principles carry id, name, statement\n  PASS  CSV row counts match JSON\n  PASS  requirement_count column sums to requirement rows\n== narrative CIRC ==\n  FAIL  every root capability has a narrative section (### <doc_ref> <name>)\n  FAIL  section headings match root capability names exactly (mismatches: ['1.1', '1.2', '3.1'])\n  FAIL  every child capability is named in the narrative\n  FAIL  every design principle appears in narrative\n  FAIL  narrative has Part I framing and a capability inventory\n\n*** 5 FAILURE(S) ***\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 11,
+      "args": [
+        "validate",
+        "--model",
+        "deliver/CIRC/circ-capability-model.json",
+        "--fitgap",
+        "analysis/bad/fitgap-problems.json",
+        "--baseline",
+        "deliver/CIRC/circ-capability-model.json",
+        "--target",
+        "deliver/LIB/lib-capability-model.json"
+      ],
+      "exit": 1,
+      "stdout": "== model CIRC ==\n  PASS  capability ids unique\n  PASS  requirement ids unique\n  PASS  capability id format CIRC-LAYER-NN\n  PASS  id layer segment matches layer code\n  PASS  all dependencies resolve\n  PASS  all parent_ids resolve\n  PASS  capability types in vocabulary\n  PASS  statuses in system vocabulary\n  PASS  maturity in fixed vocabulary\n  PASS  origin in vocabulary\n  PASS  requirement kinds in vocabulary\n  PASS  every setting has a valid option_scope\n  PASS  non-settings carry no option fields\n  PASS  every capability has a substantive summary\n  PASS  every requirement has text\n  PASS  no empty capabilities\n  PASS  doc_refs unique among root capabilities\n  PASS  child capabilities share their parent doc_ref or carry a unique one\n  PASS  capability_tree complete\n  PASS  design principles carry id, name, statement\n  PASS  CSV row counts match JSON\n  PASS  requirement_count column sums to requirement rows\n== fit/gap replacement ==\n  FAIL  every baseline capability scored exactly once\n  FAIL  all cited target ids resolve\n  FAIL  verdicts in vocabulary\n  FAIL  confidence in vocabulary\n  FAIL  effort in vocabulary\n  FAIL  gap rows cite no target capabilities\n  FAIL  native/partial/configurable rows cite targets\n  FAIL  every row has substantive evidence (>=80 chars)\n  FAIL  target_only rows == exactly the uncited target capabilities\n\n*** 9 FAILURE(S) ***\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 12,
+      "args": [
+        "validate",
+        "--model",
+        "deliver/CIRC/circ-capability-model.json",
+        "--fitgap",
+        "analysis/bad/integration-problems.json"
+      ],
+      "exit": 1,
+      "stdout": "== model CIRC ==\n  PASS  capability ids unique\n  PASS  requirement ids unique\n  PASS  capability id format CIRC-LAYER-NN\n  PASS  id layer segment matches layer code\n  PASS  all dependencies resolve\n  PASS  all parent_ids resolve\n  PASS  capability types in vocabulary\n  PASS  statuses in system vocabulary\n  PASS  maturity in fixed vocabulary\n  PASS  origin in vocabulary\n  PASS  requirement kinds in vocabulary\n  PASS  every setting has a valid option_scope\n  PASS  non-settings carry no option fields\n  PASS  every capability has a substantive summary\n  PASS  every requirement has text\n  PASS  no empty capabilities\n  PASS  doc_refs unique among root capabilities\n  PASS  child capabilities share their parent doc_ref or carry a unique one\n  PASS  capability_tree complete\n  PASS  design principles carry id, name, statement\n  PASS  CSV row counts match JSON\n  PASS  requirement_count column sums to requirement rows\n== fit/gap integration ==\n  FAIL  overlap types in vocabulary\n  FAIL  every row has substantive evidence\n\n*** 2 FAILURE(S) ***\n",
+      "stderr": "",
+      "files": {}
+    }
+  ]
+}

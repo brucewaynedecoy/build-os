@@ -16,6 +16,9 @@
  * - `NaN`, `Infinity`, and `-Infinity` read and write as Python does.
  * - Errors carry Python's text: `Expecting value: line 1 column 1 (char 0)`,
  *   with positions in code points.
+ * - An integer of more than 4300 digits is Python's `ValueError` of `int()`
+ *   (`PyIntDigitsError`); a shorter one, and a float of any length, is read
+ *   (F-P9-04 review round 1, finding 2: a 4096-digit integer was refused).
  *
  * Nesting is capped at `PY_JSON_MAX_DEPTH`; Python stops near its recursion
  * limit with a `RecursionError` (a traceback), so a deeper document is a
@@ -88,6 +91,29 @@ export function codePointIndex(text: string, unit: number): number {
 
 const WS = new Set([0x20, 0x09, 0x0a, 0x0d]);
 
+/** Python's `NUMBER_RE` of `json.scanner`, matched at one position (no length cap: Python reads a number of any length). */
+const NUMBER = /(-?(?:0|[1-9][0-9]*))(\.[0-9]+)?([eE][-+]?[0-9]+)?/y;
+
+/**
+ * `sys.int_info.default_max_str_digits`: the most decimal digits that `int()`
+ * converts from a string (Python 3.11 and later; 4300 on Python 3.14, the
+ * version of the skill-script captures). `json` parses an integer with
+ * `int()`, so it has the same limit; a float has none.
+ */
+export const PY_INT_MAX_STR_DIGITS = 4300;
+
+/** Python's `ValueError` for a string of more than `PY_INT_MAX_STR_DIGITS` digits. `pyText` is Python's message; `message` is plain words. */
+export class PyIntDigitsError extends Error {
+  readonly digits: number;
+  readonly pyText: string;
+  constructor(digits: number) {
+    super(`an integer has ${digits} digits; Python reads at most ${PY_INT_MAX_STR_DIGITS}`);
+    this.name = "PyIntDigitsError";
+    this.digits = digits;
+    this.pyText = `Exceeds the limit (${PY_INT_MAX_STR_DIGITS} digits) for integer string conversion: value has ${digits} digits; use sys.set_int_max_str_digits() to increase the limit`;
+  }
+}
+
 /** `json.loads(text)` for a `str`. */
 export function pyLoads(text: string): PyValue {
   if (text.startsWith("\ufeff")) throw new PyJsonError("Unexpected UTF-8 BOM (decode using utf-8-sig)", text, 0);
@@ -123,11 +149,16 @@ class Parser {
     if (c === "N" && s.startsWith("NaN", at)) return [new PyFloat(Number.NaN), at + 3];
     if (c === "I" && s.startsWith("Infinity", at)) return [new PyFloat(Number.POSITIVE_INFINITY), at + 8];
     if (c === "-" && s.startsWith("-Infinity", at)) return [new PyFloat(Number.NEGATIVE_INFINITY), at + 9];
-    const number = /^(-?(?:0|[1-9][0-9]*))(\.[0-9]+)?([eE][-+]?[0-9]+)?/.exec(s.slice(at, at + 4096));
+    NUMBER.lastIndex = at;
+    const number = NUMBER.exec(s);
     if (number !== null && (c === "-" || (c !== undefined && c >= "0" && c <= "9"))) {
       const [text, integer, frac, exp] = number;
-      if (text.length === 4096) throw new PyJsonError("Expecting value", s, at);
-      if (frac === undefined && exp === undefined) return [pyInt(integer!), at + text.length];
+      if (frac === undefined && exp === undefined) {
+        // Python converts the digits with int(), which refuses more than 4300 of them (a ValueError, not a JSONDecodeError).
+        const digits = integer!.length - (integer!.startsWith("-") ? 1 : 0);
+        if (digits > PY_INT_MAX_STR_DIGITS) throw new PyIntDigitsError(digits);
+        return [pyInt(integer!), at + text.length];
+      }
       return [new PyFloat(Number(text)), at + text.length];
     }
     throw new PyJsonError("Expecting value", s, at);
@@ -340,6 +371,13 @@ function floatJson(value: number): string {
 
 // ---------------------------------------------------------------- repr and str
 
+/**
+ * `str.isprintable()`'s categories, from Node's Unicode tables (Node 26.13.1:
+ * Unicode 17.0). The skill-script goldens were captured with Python 3.14.10,
+ * whose `unicodedata` is Unicode 16.0: a character that Unicode 17.0 added
+ * (U+11DE1) is unassigned there, so Python's `repr` escapes it and this one
+ * prints it (F-P9-04 review round 2, finding 4; recorded in the evidence).
+ */
 const NOT_PRINTABLE = /[\p{Cc}\p{Cf}\p{Cs}\p{Co}\p{Cn}\p{Zl}\p{Zp}\p{Zs}]/u;
 
 /** `str.__repr__`. */

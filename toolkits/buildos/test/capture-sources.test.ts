@@ -21,7 +21,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join, relative, sep } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
-import { PALETTE_PATH, SCRIPT_FILES, SCRIPT_REVISION } from "./golden/skills/script-source.ts";
+import { PALETTE_PATH, SCRIPT_FILES, SCRIPT_REVISION, embeddedKey, embeddedScript } from "./golden/skills/script-source.ts";
 
 const PACKAGE = join(dirname(fileURLToPath(import.meta.url)), "..");
 const REPO = join(PACKAGE, "..", "..");
@@ -104,11 +104,17 @@ describe("capture sources are public commits", () => {
     assert.deepEqual(parents, [SCRIPT_REVISION], "the first commit of the repository has no parent");
     const pinned = JSON.parse(readFileSync(join(PACKAGE, "test", "golden", "skills", "script-sha256.json"), "utf8")) as Record<string, string>;
     const paths = [...Object.values(SCRIPT_FILES).flat().map((f) => f.path), PALETTE_PATH];
-    assert.deepEqual([...paths].sort(), Object.keys(pinned).filter((k) => k !== "$comment").sort(), "every pinned file is read");
+    // F-P9-04: an embedded script (cm_build.py in the capability-matrix skill) is pinned by its file and by its block.
+    const embedded = Object.values(SCRIPT_FILES).flat().filter((f) => f.embedded !== undefined);
+    assert.deepEqual([...paths, ...embedded.map(embeddedKey)].sort(), Object.keys(pinned).filter((k) => k !== "$comment").sort(), "every pinned file is read");
     for (const path of paths) {
       const show = git(["show", `${SCRIPT_REVISION}:${path}`]);
       assert.equal(show.status, 0, `${path} at ${SCRIPT_REVISION}`);
       assert.equal(createHash("sha256").update(show.stdout).digest("hex"), pinned[path], path);
+    }
+    for (const file of embedded) {
+      const block = embeddedScript(git(["show", `${SCRIPT_REVISION}:${file.path}`]).stdout.toString("utf8"), file.embedded!);
+      assert.equal(createHash("sha256").update(block, "utf8").digest("hex"), pinned[embeddedKey(file)], embeddedKey(file));
     }
   });
 

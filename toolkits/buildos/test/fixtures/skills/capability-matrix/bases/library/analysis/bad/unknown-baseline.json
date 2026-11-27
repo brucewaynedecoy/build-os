@@ -1,0 +1,9 @@
+[
+  {
+    "baseline_capability_id": "CIRC-CORE-99",
+    "target_capability_ids": [],
+    "verdict": "gap",
+    "confidence": "low",
+    "evidence": "x"
+  }
+]

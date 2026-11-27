@@ -1,0 +1,14 @@
+{
+  "meta": {
+    "mode": "integration"
+  },
+  "rows": [
+    {
+      "overlap_type": "duplicate",
+      "evidence": "Both lend books; the platform takes over lending at the cut-over weekend."
+    },
+    {
+      "overlap_type": "sideways"
+    }
+  ]
+}

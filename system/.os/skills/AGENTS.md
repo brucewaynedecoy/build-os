@@ -31,8 +31,7 @@ This folder holds the BuildOS skills. `buildos init` copies them here from the B
 ## What a skill needs
 
 - Every skill runs BuildOS commands through the project wrapper: `.os/scripts/buildos <domain> ...` from the project root (`.os\scripts\buildos.cmd` on Windows). The wrapper needs Node.js 24 or newer.
-- `buildos-bulk-extract`, `fit-gap-analysis`, and `buildos-export-azure-boards` run the commands `buildos extract bulk`, `buildos fitgap`, and `buildos export azure-boards` through that wrapper. They need only Node.js.
-- One skill still needs Python 3: `capability-matrix` (the tool it writes from its appendix). Check for Python before you start it, and tell the user when it is missing. BuildOS has no command for that tool yet.
+- `buildos-bulk-extract`, `fit-gap-analysis`, `buildos-export-azure-boards`, and `capability-matrix` run the commands `buildos extract bulk`, `buildos fitgap`, `buildos export azure-boards`, and `buildos capability-matrix` through that wrapper. They need only Node.js. No skill needs Python.
 
 ## Install one skill
 

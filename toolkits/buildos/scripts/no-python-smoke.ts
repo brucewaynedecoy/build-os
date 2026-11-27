@@ -1,6 +1,7 @@
-// W1 R7 P9 t11, A80: runs the three commands that replaced the skill scripts
-// (`buildos extract bulk`, `buildos fitgap`, `buildos export azure-boards`) on
-// a machine where Python cannot be found, from an installed BuildOS package.
+// W1 R7 P9 t11, A80: runs the four commands that replaced the skill scripts
+// (`buildos extract bulk`, `buildos fitgap`, `buildos export azure-boards`,
+// and, since F-P9-04, `buildos capability-matrix`) on a machine where Python
+// cannot be found, from an installed BuildOS package.
 //
 // Usage, from toolkits/buildos/, with PATH set to the folders the run may use:
 //
@@ -27,13 +28,17 @@
 //    file (npm ships node-gyp's gyp sources) is listed, but does not stop the
 //    run: a source file or a data folder is not a Python that can run.
 // 2. The project wrapper `.os/scripts/buildos` (`buildos.cmd` on Windows), as
-//    the skills call it: `help` lists the three domains (the published 0.1.0
+//    the skills call it: `help` lists the four domains (the published 0.1.0
 //    has none of them, so an npx fallback cannot pass), and each skill's own
 //    commands run: `extract bulk status`, `next`, and `template`; `fitgap
 //    frame`; `export azure-boards adapters`, `template`, `emit` of both skill
 //    manifests (each CSV byte for byte the skill's golden example), and
-//    `validate`.
-// 3. Every fixture case of the three commands (test/fixtures/skills/), run by
+//    `validate`; `capability-matrix skeleton`, `assemble` (with a quoted
+//    pattern, which BuildOS expands), and `validate` with a narrative whose
+//    name has spaces; and, in the initialized project itself, `capability-matrix
+//    skeleton` with a path that starts with `system/` (F-P9-04 review round 3,
+//    finding 2: the installed-path rule).
+// 3. Every fixture case of the four commands (test/fixtures/skills/), run by
 //    the installed package's own bin: each step's exit code is the one the
 //    goldens give (the SD-01 rule table of test/golden/skills/divergences.json)
 //    and it writes each file the golden step wrote. Text output and file
@@ -54,7 +59,7 @@ import { GOLDENS, SCRIPTS, loadCases, loadGolden, runCase, type Runner, type Scr
 const windows = process.platform === "win32";
 const PACKAGE_ROOT = resolve(import.meta.dirname, "..");
 const SKILL = join(PACKAGE_ROOT, "..", "..", "system", ".os", "skills", "buildos-export-azure-boards");
-const PREFIX: Record<ScriptName, string[]> = { "bulk-extract": ["extract", "bulk"], fitgap: ["fitgap"], "azure-boards": ["export", "azure-boards"] };
+const PREFIX: Record<ScriptName, string[]> = { "bulk-extract": ["extract", "bulk"], fitgap: ["fitgap"], "azure-boards": ["export", "azure-boards"], "capability-matrix": ["capability-matrix"] };
 
 function usage(message: string): never {
   process.stderr.write(`no-python-smoke: ${message}\nUsage: node scripts/no-python-smoke.ts --project <folder> --work <folder> [--filesystem <folder> [--skip <folder>]...]\n`);
@@ -232,7 +237,7 @@ async function main(): Promise<number> {
   // 2. The project wrapper, as the skills call it.
   const help = wrapper(project, ["help"], project);
   check(help.status === 0, "wrapper help: exit 0");
-  for (const domain of ["extract", "fitgap", "export"]) check(new RegExp(`^\\s+${domain}\\b`, "m").test(help.stdout), `wrapper help: lists ${domain}`);
+  for (const domain of ["extract", "fitgap", "export", "capability-matrix"]) check(new RegExp(`^\\s+${domain}\\b`, "m").test(help.stdout), `wrapper help: lists ${domain}`);
 
   const extract = join(work, "wrapper-extract");
   cpSync(join(PACKAGE_ROOT, "test", "fixtures", "skills", "bulk-extract", "bases", "library"), extract, { recursive: true });
@@ -257,6 +262,18 @@ async function main(): Promise<number> {
     const validate = wrapper(project, ["export", "azure-boards", "validate", "--input", "workspace/azure-boards.csv", "--profile", "target17-new", ...adapter], project);
     check(validate.status === 0, `wrapper export azure-boards validate ${manifest}: exit 0 (got ${validate.status})`);
   }
+  const matrix = join(work, "wrapper-capability-matrix");
+  cpSync(join(PACKAGE_ROOT, "test", "fixtures", "skills", "capability-matrix", "bases", "library"), matrix, { recursive: true });
+  const skeleton = wrapper(project, ["capability-matrix", "skeleton", "--root", matrix, "--skeleton", "cm/CIRC/skeleton.json"], work);
+  check(skeleton.status === 0 && /skeleton OK/.test(skeleton.stdout), `wrapper capability-matrix skeleton: exit 0 and skeleton OK (got ${skeleton.status})`);
+  const assemble = wrapper(project, ["capability-matrix", "assemble", "--root", matrix, "--skeleton", "cm/CIRC/skeleton.json", "--parts", "cm/CIRC/parts/*.json", "--out", "deliver/CIRC", "--date", "2026-01-15"], work);
+  check(assemble.status === 0 && existsSync(join(matrix, "deliver", "CIRC", "circ-capability-model.json")) && existsSync(join(matrix, "deliver", "CIRC", "circ-requirements.csv")), `wrapper capability-matrix assemble: exit 0 and the model files (got ${assemble.status})`);
+  const checked = wrapper(project, ["capability-matrix", "validate", "--root", matrix, "--model", "deliver/CIRC/circ-capability-model.json", "--narrative", "deliver/CIRC/Current Circulation System - Capability Model.md"], work);
+  check(checked.status === 0 && /\nALL CHECKS PASSED\n$/.test(checked.stdout), `wrapper capability-matrix validate: exit 0 and ALL CHECKS PASSED (got ${checked.status})`);
+  // F-P9-04 review round 3, finding 2: in the initialized project, a path with a leading `system/` names its root.
+  cpSync(join(PACKAGE_ROOT, "test", "fixtures", "skills", "capability-matrix", "bases", "library", "cm", "CIRC"), join(project, "workspace", "capability-matrix-smoke", "CIRC"), { recursive: true });
+  const installed = wrapper(project, ["capability-matrix", "skeleton", "--skeleton", "system/workspace/capability-matrix-smoke/CIRC/skeleton.json"], project);
+  check(installed.status === 0 && /skeleton OK/.test(installed.stdout), `wrapper capability-matrix skeleton with a system/ path in the initialized project: exit 0 and skeleton OK (got ${installed.status})`);
   process.stdout.write(`wrapper: ${problems.length === 0 ? "every skill command passed" : `${problems.length} problem(s)`}\n`);
 
   // 3. Every fixture case, by the installed bin.

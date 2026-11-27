@@ -16,7 +16,7 @@
 
 import type { FsPortFactory } from "../shared/fs-port.ts";
 import type { HashPort } from "../shared/hash-port.ts";
-import { pyLoads, PyJsonError, PyJsonDepthError, isDict, isList, pyDeepCopy, pyDumps, pyEquals, pyRepr, pyStr, pyStrip, pySplitlines, type PyDict, type PyValue } from "../shared/py-json.ts";
+import { pyLoads, PyIntDigitsError, PyJsonError, PyJsonDepthError, isDict, isList, pyDeepCopy, pyDumps, pyEquals, pyRepr, pyStr, pyStrip, pySplitlines, type PyDict, type PyValue } from "../shared/py-json.ts";
 import { keyError, PyException, pyDecodeUtf8, typeError, valueError } from "../shared/py-text.ts";
 import { jsonlRowLimit, READ_LIMITS } from "../shared/read-limits.ts";
 import { resolveDefaultRoot } from "../shared/root.ts";
@@ -103,6 +103,8 @@ function loads(text: string): PyValue {
   } catch (error) {
     if (error instanceof PyJsonError) throw new PyException("JSONDecodeError", error.message);
     if (error instanceof PyJsonDepthError) throw new PyException("RecursionError", error.message);
+    // json.loads raised int()'s ValueError (more than 4300 digits), not a JSONDecodeError.
+    if (error instanceof PyIntDigitsError) throw new PyException("ValueError", error.pyText);
     throw error;
   }
 }
@@ -1903,6 +1905,9 @@ function classify(error: PyException): BulkOutcome {
   if (error instanceof PublicationConflict) return "review";
   if (error.pyClass === "ValueError" && error.message === "--count must be positive") return "usage";
   if (error.forWrite) return "io";
+  // F-P9-04 review round 2 (finding 2): `json.loads` of an integer of more than 4300 digits raised int()'s ValueError;
+  // a file that cannot be parsed is an input error (exit 3), as the JSONDecodeError it was before the parser read such numbers.
+  if (error.pyClass === "ValueError" && /^Exceeds the limit \(\d+ digits\) for integer string conversion: /.test(error.message)) return "input";
   if (["JSONDecodeError", "UnicodeDecodeError", "KeyError", "TypeError", "AttributeError", "RecursionError", "FileNotFoundError", "PermissionError", "IsADirectoryError", "NotADirectoryError", "OSError"].includes(error.pyClass)) return "input";
   if (/^Invalid (staged )?JSONL in |^Missing or duplicate ID in |^Missing _stage block in |^Wrong row type in |^Reference index has no references list$|^Invalid reference record: |^Duplicate reference ID: |^Inconsistent source hashes: |^Invalid repo-relative path: |^Path leaves repo: |^embedded null byte$/.test(error.message)) return "input";
   return "contract";

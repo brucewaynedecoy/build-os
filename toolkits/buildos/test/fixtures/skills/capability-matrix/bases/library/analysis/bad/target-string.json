@@ -1,0 +1,9 @@
+[
+  {
+    "baseline_capability_id": "CIRC-CORE-01",
+    "target_capability_ids": "LIB-LEND-01",
+    "verdict": "native",
+    "confidence": "high",
+    "evidence": "x"
+  }
+]

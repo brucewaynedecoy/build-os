@@ -1,0 +1,1 @@
+{"system": {"code": "NUM", "converted": true, "status_vocabulary": ["live"], "maturity_map": {"live": "proven"}}, "layers": [{"id": "L1", "code": "CORE", "name": "Numbers"}], "capabilities": [{"id": 9007199254740993}, {"id": 9007199254740992}, {"id": 9007199254740994}, {"id": 1.5}]}

@@ -144,7 +144,7 @@ Turning a file from outside into clean text inside BuildOS, using code rather th
 
 **Not to be confused with.** [Extraction](#extraction). Converting produces text. Extraction reads that text and writes records. The two get mixed up constantly, including by people who know better.
 
-**Where it lives.** `.os/scripts/buildos intake convert --source <path>`
+**Where it lives.** `.os/scripts/buildos intake convert --source "<path>"`
 
 ---
 

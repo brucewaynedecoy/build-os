@@ -1,0 +1,17 @@
+{
+  "case": "validate-problems",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "validate",
+        "--model",
+        "models/broken/hm-capability-model.json"
+      ],
+      "exit": 1,
+      "stdout": "== model HM ==\n  FAIL  capability ids unique\n  FAIL  requirement ids unique\n  PASS  capability id format HM-LAYER-NN\n  FAIL  id layer segment matches layer code\n  FAIL  all dependencies resolve\n  PASS  all parent_ids resolve\n  FAIL  capability types in vocabulary\n  FAIL  statuses in system vocabulary\n  FAIL  maturity in fixed vocabulary\n  FAIL  origin in vocabulary\n  FAIL  requirement kinds in vocabulary\n  FAIL  every setting has a valid option_scope\n  FAIL  non-settings carry no option fields\n  FAIL  every capability has a substantive summary\n  FAIL  every requirement has text\n  FAIL  no empty capabilities\n  FAIL  doc_refs unique among root capabilities\n  FAIL  child capabilities share their parent doc_ref or carry a unique one\n  FAIL  capability_tree complete\n  FAIL  design principles carry id, name, statement\n  FAIL  CSV row counts match JSON\n  FAIL  requirement_count column sums to requirement rows\n\n*** 20 FAILURE(S) ***\n",
+      "stderr": "",
+      "files": {}
+    }
+  ]
+}

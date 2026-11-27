@@ -1,0 +1,82 @@
+{
+  "case": "spelled-paths",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "assemble",
+        "--skeleton",
+        "cm/CIRC/skeleton.json",
+        "--parts",
+        "cm/CIRC/parts/part-a.json/",
+        "cm/CIRC/parts/part-b.json",
+        "--out",
+        "deliver/CIRC"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "assemble: skeleton/parts mismatch  missing=['CIRC-CORE-01', 'CIRC-CORE-02', 'CIRC-CORE-02a'] extra=[]\n",
+      "files": {}
+    },
+    {
+      "step": 1,
+      "args": [
+        "assemble",
+        "--skeleton",
+        "cm/CIRC/skeleton.json",
+        "--parts",
+        "cm/CIRC/parts/*.json/",
+        "--out",
+        "deliver/CIRC"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "assemble: skeleton/parts mismatch  missing=['CIRC-CORE-01', 'CIRC-CORE-02', 'CIRC-CORE-02a', 'CIRC-PAT-01', 'CIRC-RPT-01'] extra=[]\n",
+      "files": {}
+    },
+    {
+      "step": 2,
+      "args": [
+        "assemble",
+        "--skeleton",
+        "cm/CIRC/skeleton.json",
+        "--parts",
+        "cm/CIRC/parts/*.json",
+        "--out",
+        "cm/CIRC/skeleton.json"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "FileExistsError: [Errno 17] File exists: 'cm/CIRC/skeleton.json'\n",
+      "files": {}
+    },
+    {
+      "step": 3,
+      "args": [
+        "assemble",
+        "--skeleton",
+        "cm/CIRC/skeleton.json",
+        "--parts",
+        "cm/CIRC/parts/*.json",
+        "--out",
+        "cm/CIRC/skeleton.json/out/deeper"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "NotADirectoryError: [Errno 20] Not a directory: 'cm/CIRC/skeleton.json/out'\n",
+      "files": {}
+    },
+    {
+      "step": 4,
+      "args": [
+        "skeleton",
+        "--skeleton",
+        "cm/bad/skeleton-surrogates.json"
+      ],
+      "exit": 1,
+      "stdout": "  L1   ONE      0  Desk\n",
+      "stderr": "UnicodeEncodeError: 'utf-8' codec can't encode characters in position 24-25: surrogates not allowed\n",
+      "files": {}
+    }
+  ]
+}

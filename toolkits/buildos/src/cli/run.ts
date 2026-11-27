@@ -11,6 +11,7 @@ import type { FsPortFactory } from "../core/shared/fs-port.ts";
 import { createNodeFsPort } from "../adapters/node-fs.ts";
 import { rootAsGiven } from "../core/shared/root.ts";
 import { currentBuildInfo } from "./build-info.ts";
+import { capabilityMatrixDomain } from "./commands/capability-matrix.ts";
 import { designDomain } from "./commands/design.ts";
 import { discoveryDomain } from "./commands/discovery.ts";
 import { entitiesDomain } from "./commands/entities.ts";
@@ -44,6 +45,7 @@ export const BUILTIN_DOMAINS: readonly Domain[] = [
   extractDomain,
   fitgapDomain,
   exportDomain,
+  capabilityMatrixDomain,
   versionDomain,
 ];
 

@@ -1,0 +1,41 @@
+{
+  "case": "validate-csv",
+  "steps": [
+    {
+      "step": 0,
+      "args": [
+        "validate",
+        "--model",
+        "models/lone/hm-capability-model.json"
+      ],
+      "exit": 1,
+      "stdout": "== model HM ==\n  PASS  capability ids unique\n  PASS  requirement ids unique\n  PASS  capability id format HM-LAYER-NN\n  PASS  id layer segment matches layer code\n  PASS  all dependencies resolve\n  PASS  all parent_ids resolve\n  PASS  capability types in vocabulary\n  PASS  statuses in system vocabulary\n  PASS  maturity in fixed vocabulary\n  PASS  origin in vocabulary\n  PASS  requirement kinds in vocabulary\n  PASS  every setting has a valid option_scope\n  PASS  non-settings carry no option fields\n  PASS  every capability has a substantive summary\n  PASS  every requirement has text\n  PASS  no empty capabilities\n  PASS  doc_refs unique among root capabilities\n  PASS  child capabilities share their parent doc_ref or carry a unique one\n  PASS  capability_tree complete\n  PASS  design principles carry id, name, statement\n  FAIL  companion CSVs present beside the model\n\n*** 1 FAILURE(S) ***\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 1,
+      "args": [
+        "validate",
+        "--model",
+        "models/crlf/hm-capability-model.json"
+      ],
+      "exit": 0,
+      "stdout": "== model HM ==\n  PASS  capability ids unique\n  PASS  requirement ids unique\n  PASS  capability id format HM-LAYER-NN\n  PASS  id layer segment matches layer code\n  PASS  all dependencies resolve\n  PASS  all parent_ids resolve\n  PASS  capability types in vocabulary\n  PASS  statuses in system vocabulary\n  PASS  maturity in fixed vocabulary\n  PASS  origin in vocabulary\n  PASS  requirement kinds in vocabulary\n  PASS  every setting has a valid option_scope\n  PASS  non-settings carry no option fields\n  PASS  every capability has a substantive summary\n  PASS  every requirement has text\n  PASS  no empty capabilities\n  PASS  doc_refs unique among root capabilities\n  PASS  child capabilities share their parent doc_ref or carry a unique one\n  PASS  capability_tree complete\n  PASS  design principles carry id, name, statement\n  PASS  CSV row counts match JSON\n  PASS  requirement_count column sums to requirement rows\n\nALL CHECKS PASSED\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 2,
+      "args": [
+        "validate",
+        "--model",
+        "models/badcount/hm-capability-model.json"
+      ],
+      "exit": 1,
+      "stdout": "== model HM ==\n  PASS  capability ids unique\n  PASS  requirement ids unique\n  PASS  capability id format HM-LAYER-NN\n  PASS  id layer segment matches layer code\n  PASS  all dependencies resolve\n  PASS  all parent_ids resolve\n  PASS  capability types in vocabulary\n  PASS  statuses in system vocabulary\n  PASS  maturity in fixed vocabulary\n  PASS  origin in vocabulary\n  PASS  requirement kinds in vocabulary\n  PASS  every setting has a valid option_scope\n  PASS  non-settings carry no option fields\n  PASS  every capability has a substantive summary\n  PASS  every requirement has text\n  PASS  no empty capabilities\n  PASS  doc_refs unique among root capabilities\n  PASS  child capabilities share their parent doc_ref or carry a unique one\n  PASS  capability_tree complete\n  PASS  design principles carry id, name, statement\n  PASS  CSV row counts match JSON\n",
+      "stderr": "ValueError: invalid literal for int() with base 10: 'one'\n",
+      "files": {}
+    }
+  ]
+}

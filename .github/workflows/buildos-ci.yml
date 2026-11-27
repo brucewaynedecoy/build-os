@@ -81,7 +81,7 @@ jobs:
         run: node scripts/check-dependencies.ts --installed
 
       # W1 R7 P9 t10, A79: no Python file and no Python call in the packaged
-      # skills, except the named exception that waits for the owner (F-P9-04).
+      # skills, with no exception since F-P9-04 (buildos capability-matrix).
       - name: No-Python check of the packaged skills
         run: node scripts/check-no-python.ts
 
@@ -155,7 +155,7 @@ jobs:
       - name: npm audit (fails on high or critical)
         run: npm audit --audit-level=high
 
-  # W1 R7 P9 t11, A80: the three commands that replaced the skill scripts run
+  # W1 R7 P9 t11, A80: the four commands that replaced the skill scripts run
   # with Node 24 and no Python. The runner images have Python, so the checks
   # run with a PATH that holds only a copy of node (and sh, which the project
   # wrapper's first line starts; on Windows, System32 for cmd.exe and
@@ -227,7 +227,7 @@ jobs:
             echo "NO_PYTHON_PATH=$bin" >> "$GITHUB_ENV"
           fi
 
-      - name: The three commands from the installed package, with no Python on PATH
+      - name: The four commands from the installed package, with no Python on PATH
         run: PATH="$NO_PYTHON_PATH" "$NO_PYTHON_NODE" scripts/no-python-smoke.ts --project "$RUNNER_TEMP/project" --work "$RUNNER_TEMP/no-python-work"
 
       - name: Skill-script parity, with no Python on PATH

@@ -1,0 +1,111 @@
+{
+  "case": "arguments",
+  "steps": [
+    {
+      "step": 0,
+      "args": [],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "usage: cm_build.py [-h] {skeleton,assemble,fitgap,validate} ...\ncm_build.py: error: the following arguments are required: cmd\n",
+      "files": {}
+    },
+    {
+      "step": 1,
+      "args": [
+        "build"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "usage: cm_build.py [-h] {skeleton,assemble,fitgap,validate} ...\ncm_build.py: error: argument cmd: invalid choice: 'build' (choose from 'skeleton', 'assemble', 'fitgap', 'validate')\n",
+      "files": {}
+    },
+    {
+      "step": 2,
+      "args": [
+        "skeleton"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "usage: cm_build.py skeleton [-h] --skeleton SKELETON\ncm_build.py skeleton: error: the following arguments are required: --skeleton\n",
+      "files": {}
+    },
+    {
+      "step": 3,
+      "args": [
+        "assemble",
+        "--skeleton",
+        "cm/CIRC/skeleton.json",
+        "--parts",
+        "--out",
+        "deliver/CIRC"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "usage: cm_build.py assemble [-h] --skeleton SKELETON --parts PARTS [PARTS ...]\n                            --out OUT [--date DATE]\ncm_build.py assemble: error: argument --parts: expected at least one argument\n",
+      "files": {}
+    },
+    {
+      "step": 4,
+      "args": [
+        "fitgap",
+        "--mode",
+        "merger",
+        "--rows",
+        "x.json",
+        "--out",
+        "deliver"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "usage: cm_build.py fitgap [-h] [--mode {replacement,selection,integration}]\n                          [--baseline BASELINE] [--target TARGET]\n                          [--models [MODELS ...]] --rows ROWS [ROWS ...]\n                          [--only [ONLY ...]] --out OUT [--date DATE]\ncm_build.py fitgap: error: argument --mode: invalid choice: 'merger' (choose from 'replacement', 'selection', 'integration')\n",
+      "files": {}
+    },
+    {
+      "step": 5,
+      "args": [
+        "validate",
+        "--model",
+        "deliver/CIRC/circ-capability-model.json",
+        "--strict"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "usage: cm_build.py [-h] {skeleton,assemble,fitgap,validate} ...\ncm_build.py: error: unrecognized arguments: --strict\n",
+      "files": {}
+    },
+    {
+      "step": 6,
+      "args": [
+        "skeleton",
+        "--skeleton",
+        "cm/CIRC/skeleton.json",
+        "extra"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "usage: cm_build.py [-h] {skeleton,assemble,fitgap,validate} ...\ncm_build.py: error: unrecognized arguments: extra\n",
+      "files": {}
+    },
+    {
+      "step": 7,
+      "args": [
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "usage: cm_build.py [-h] {skeleton,assemble,fitgap,validate} ...\n\npositional arguments:\n  {skeleton,assemble,fitgap,validate}\n\noptions:\n  -h, --help            show this help message and exit\n",
+      "stderr": "",
+      "files": {}
+    },
+    {
+      "step": 8,
+      "args": [
+        "validate",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "usage: cm_build.py validate [-h] --model MODEL [--narrative NARRATIVE]\n                            [--fitgap FITGAP] [--baseline BASELINE]\n                            [--target TARGET]\n\noptions:\n  -h, --help            show this help message and exit\n  --model MODEL\n  --narrative NARRATIVE\n  --fitgap FITGAP\n  --baseline BASELINE\n  --target TARGET\n",
+      "stderr": "",
+      "files": {}
+    }
+  ]
+}

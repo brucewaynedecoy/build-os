@@ -1,7 +1,8 @@
 // W1 R7 P9 t10, A79: the no-Python check over the packaged skills
-// (scripts/check-no-python.ts). It passes on this repository with one named
-// exception, and it fails on each planted Python file and call, naming each by
-// a tag, never by its text. Every planted value below is invented.
+// (scripts/check-no-python.ts). It passes on this repository with no
+// exception (the last one, capability-matrix, went with F-P9-04), and it fails
+// on each planted Python file and call, naming each by a tag, never by its
+// text. Every planted value below is invented.
 
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
@@ -29,16 +30,16 @@ function skills(files: Record<string, string>): string {
 const run = (dir: string) => spawnSync(process.execPath, [SCRIPT, "--dir", dir], { encoding: "utf8" });
 
 describe("no-Python check of the packaged skills (t10, A79)", () => {
-  it("passes on this repository; the only exception is capability-matrix, waiting for the command the owner decided on 2026-11-26 (F-P9-04), and it still matches", () => {
+  it("passes on this repository with no exception: capability-matrix runs buildos capability-matrix since F-P9-04 (A79)", () => {
     const r = spawnSync(process.execPath, [SCRIPT], { encoding: "utf8" });
     assert.equal(r.status, 0, r.stdout);
     assert.match(r.stdout, /no-python check: passed\n$/);
-    assert.deepEqual(EXCEPTIONS.map((e) => e.prefix), ["capability-matrix/"]);
-    assert.equal(EXCEPTIONS[0]!.status, "owner decision 2026-11-26: build the command in 0.2.0 (F-P9-04)");
+    assert.doesNotMatch(r.stdout, /exception/);
+    assert.deepEqual(EXCEPTIONS, []);
     const report = check(resolve(import.meta.dirname, "..", "..", "..", "system", ".os", "skills"));
     assert.deepEqual(report.failing, []);
     assert.deepEqual(report.stale, []);
-    assert.ok((report.excepted.get("capability-matrix/") ?? 0) > 0, "the exception still covers a Python call");
+    assert.deepEqual(findPython(resolve(import.meta.dirname, "..", "..", "..", "system", ".os", "skills")), [], "no Python file and no Python call anywhere in the skills");
   });
 
   it("finds each planted Python file and call, and prints a tag and a line, never the planted text", () => {
@@ -198,20 +199,22 @@ describe("no-Python check of the packaged skills (t10, A79)", () => {
 
   it("does not count prose that names Python, or a word that only contains py", () => {
     const dir = skills({
-      "capability-matrix/SKILL.md": "Run `python3 build/tool.json`.\n",
       "qzvnopy-d/SKILL.md": "This skill needs Python 3. It copies the happy path, a .pyramid of data, and spy notes. Python is not needed here.\n",
     });
     assert.deepEqual(check(dir).failing, []);
     assert.equal(run(dir).status, 0);
   });
 
-  it("fails on an exception that no longer matches anything, so it is removed when its skill needs no Python", () => {
-    const dir = skills({ "capability-matrix/SKILL.md": "Needs Node.js only.\n" });
-    const report = check(dir);
-    assert.deepEqual(report.stale, ["capability-matrix/"]);
-    const r = run(dir);
-    assert.equal(r.status, 1);
-    assert.match(r.stdout, /STALE exception capability-matrix\//);
+  it("an exception allows the findings under its folder, and one that no longer matches anything is stale, so it is removed when its skill needs no Python", () => {
+    const exception = [{ prefix: "qzvnopy-g/", status: "invented", reason: "invented" }];
+    const covered = check(skills({ "qzvnopy-g/SKILL.md": "Run `python3 tools/qzvnopy.json`.\n" }), exception);
+    assert.deepEqual(covered.failing, []);
+    assert.equal(covered.excepted.get("qzvnopy-g/"), 1);
+    assert.deepEqual(covered.stale, []);
+    const stale = check(skills({ "qzvnopy-g/SKILL.md": "Needs Node.js only.\n" }), exception);
+    assert.deepEqual(stale.stale, ["qzvnopy-g/"]);
+    const r = run(skills({ "qzvnopy-g/SKILL.md": "Run `python3 tools/qzvnopy.json`.\n" }));
+    assert.equal(r.status, 1, "with no exception, the same call fails");
   });
 
   it("refuses an argument it does not know (exit 2)", () => {

@@ -44,14 +44,13 @@ export const DEFAULT_DIR = join(PACKAGE_ROOT, "..", "..", "system", ".os", "skil
  * findings, with the follow-up and the decision it waits for. An exception
  * that matches no finding fails the check, so it is removed when its skill no
  * longer needs Python.
+ *
+ * None since F-P9-04 (2026-11-26): the last one, `capability-matrix/`, went
+ * when `buildos capability-matrix` replaced the Python tool that the skill
+ * embedded (owner decision 2026-11-26). The list stays, so a later exception
+ * needs a named follow-up and is checked for staleness the same way.
  */
-export const EXCEPTIONS: readonly { prefix: string; status: string; reason: string }[] = [
-  {
-    prefix: "capability-matrix/",
-    status: "owner decision 2026-11-26: build the command in 0.2.0 (F-P9-04)",
-    reason: "The skill tells the agent to write its tool cm_build.py from the skill's appendix and run it with Python 3. BuildOS has no command for that tool yet. The owner decided on 2026-11-26 that 0.2.0 gets the command; this exception stays until that command exists, and goes with it.",
-  },
-];
+export const EXCEPTIONS: readonly { prefix: string; status: string; reason: string }[] = [];
 
 const PYTHON_FILE = /(?:\.(?:py|pyc|pyo|pyw|pyz|pyi|ipynb)$|(?:^|\/)__pycache__\/|(?:^|\/)(?:requirements[^/]*\.txt|pyproject\.toml|setup\.py|setup\.cfg|Pipfile|Pipfile\.lock|poetry\.lock|uv\.lock)$)/i;
 // Where a command name ends: a space, the end of the line, a quote, a bracket, a comma, or a shell

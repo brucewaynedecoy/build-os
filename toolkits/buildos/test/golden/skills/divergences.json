@@ -1,9 +1,9 @@
 {
-  "$comment": "Deliberate differences between the three BuildOS commands of W1 R7 P9 and the skill scripts they replace (buildos extract bulk: work.py; buildos fitgap: fitgap.py; buildos export azure-boards: azure_boards_csv.mjs). test/skill-script-parity.test.ts fails on any difference a golden step shows that no entry here allows, and on an entry whose steps no longer differ. `steps` names the golden steps (script/case#step) that show the difference; an entry with no steps is held by its own test (`tests`). `changes_result` says whether a realistic project gets a different result; an entry that does carries `owner_recommendation` where review round 1 asked for the owner's view. Evidence: docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#p9-skill-script-commands",
+  "$comment": "Deliberate differences between the four BuildOS commands of W1 R7 P9 and the skill scripts they replace (buildos extract bulk: work.py; buildos fitgap: fitgap.py; buildos export azure-boards: azure_boards_csv.mjs; buildos capability-matrix: cm_build.py, the tool embedded in the capability-matrix skill, F-P9-04). test/skill-script-parity.test.ts fails on any difference a golden step shows that no entry here allows, and on an entry whose steps no longer differ. `steps` names the golden steps (script/case#step) that show the difference; an entry with no steps is held by its own test (`tests`). `changes_result` says whether a realistic project gets a different result; an entry that does carries `owner_recommendation` where review round 1 asked for the owner's view. Evidence: docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#p9-skill-script-commands",
   "divergences": [
     {
       "id": "SD-01",
-      "summary": "Exit codes follow PRD 20. The scripts exited 1 or 2 for every failure: work.py 2 for an error and 1 for `check` on a review that is not ready, fitgap.py 1 (a stop, a failed check, or a traceback) and 2 (argparse), azure_boards_csv.mjs 1. BuildOS exits 2 for usage, 3 for an input it cannot read or parse (or a path outside the project), 4 for a failed check (also `check` on a review that is not ready), 5 for a failed write, 10 when a failed write could not be undone. Human stdout and stderr are the script's.",
+      "summary": "Exit codes follow PRD 20. The scripts exited 1 or 2 for every failure: work.py 2 for an error and 1 for `check` on a review that is not ready, fitgap.py 1 (a stop, a failed check, or a traceback) and 2 (argparse), azure_boards_csv.mjs 1, cm_build.py 1 (a stop, a failed check, or a traceback) and 2 (argparse). BuildOS exits 2 for usage, 3 for an input it cannot read or parse (or a path outside the project), 4 for a failed check (also `check` on a review that is not ready), 5 for a failed write, 10 when a failed write could not be undone. Human stdout and stderr are the script's.",
       "authority": "PRD 20 Output and Exit Contract; the same choice as VD-01 for buildos validate",
       "changes_result": "only the exit code of a failure: pass and fail stay the same",
       "exit_rules": [
@@ -71,19 +71,42 @@
           "script_exit": 1,
           "buildos_exit": 4,
           "when": "an invalid manifest, adapter parameters, or CSV"
+        },
+        {
+          "script": "capability-matrix",
+          "script_exit": 2,
+          "buildos_exit": 2,
+          "when": "argparse usage",
+          "stderr": "^usage: "
+        },
+        {
+          "script": "capability-matrix",
+          "script_exit": 1,
+          "buildos_exit": 3,
+          "when": "a traceback: a file is missing or not JSON, the out folder cannot be made, or a value has the wrong shape (the script crashed)",
+          "stderr": "^(FileNotFoundError|FileExistsError|IsADirectoryError|NotADirectoryError|PermissionError|json\\.decoder\\.JSONDecodeError|UnicodeDecodeError|UnicodeEncodeError|KeyError|TypeError|AttributeError|ValueError|IndexError)"
+        },
+        {
+          "script": "capability-matrix",
+          "script_exit": 1,
+          "buildos_exit": 4,
+          "when": "a stop (`assemble: ...`, `fitgap: ...`) or a failed check (`FAIL` lines of skeleton and validate)"
         }
       ]
     },
     {
       "id": "SD-02",
-      "summary": "Usage and help text name buildos. The scripts printed argparse usage (`usage: work.py ...`, `usage: fitgap.py ...`) or the script's own usage (`node azure_boards_csv.mjs ...`, also after `Unknown command`); BuildOS prints the shared usage error (stderr, exit 2) and its own help (stdout, exit 0). `--help` and `-h` work at every level, before any required-option check (`buildos fitgap workbook --help`, `buildos extract bulk next --help`, `buildos export azure-boards emit --help`; review round 1, P9-R1-15). extract bulk and fitgap: options may follow positionals as with argparse, and `--name=value` works; argparse's abbreviated option names (`--auth` for `--author`) do not. export azure-boards keeps its original's grammar: each option and its value are separate tokens (`--input x.csv`, not `--input=x.csv`). A whole number (`--count`, `--max-requirements`) is ASCII digits with an optional sign and surrounding white space: Python's int() also took other Unicode digits (`٢`) and underscores (`1_0`), which BuildOS refuses (exit 2); a skill passes ASCII digits.",
+      "summary": "Usage and help text name buildos. The scripts printed argparse usage (`usage: work.py ...`, `usage: fitgap.py ...`) or the script's own usage (`node azure_boards_csv.mjs ...`, also after `Unknown command`); BuildOS prints the shared usage error (stderr, exit 2) and its own help (stdout, exit 0). `--help` and `-h` work at every level, before any required-option check (`buildos fitgap workbook --help`, `buildos extract bulk next --help`, `buildos export azure-boards emit --help`; review round 1, P9-R1-15). extract bulk, fitgap, and capability-matrix: options may follow positionals as with argparse, and `--name=value` works; argparse's abbreviated option names (`--auth` for `--author`) do not. export azure-boards keeps its original's grammar: each option and its value are separate tokens (`--input x.csv`, not `--input=x.csv`). A whole number (`--count`, `--max-requirements`) is ASCII digits with an optional sign and surrounding white space: Python's int() also took other Unicode digits (`٢`) and underscores (`1_0`), which BuildOS refuses (exit 2); a skill passes ASCII digits.",
       "authority": "PRD 20 Output and Exit Contract (help and usage are shared and assigned centrally)",
       "changes_result": "no: only the text of a usage error or help",
       "steps": [
         "bulk-extract/usage-errors#0-7",
         "fitgap/arguments#0-6",
         "azure-boards/help#0-3",
-        "azure-boards/arguments#0"
+        "azure-boards/arguments#0",
+        "capability-matrix/arguments#0-8",
+        "capability-matrix/dash-values#0",
+        "capability-matrix/dash-values#3"
       ]
     },
     {
@@ -296,6 +319,93 @@
       "owner_recommendation": "Keep: an unrelated row should not block recovery, and a file BuildOS cannot place needs a person, never a step that can publish a row twice.",
       "tests": [
         "test/skill-script-review-3.test.ts: P9-F-02"
+      ]
+    },
+    {
+      "id": "SD-23",
+      "summary": "capability-matrix: where cm_build.py crashed with a traceback (a missing file, a file that is not JSON or not UTF-8, a missing key, a value of the wrong type, an id with no dash, a count that is not a number), BuildOS prints one plain line on stderr, `capability-matrix <subcommand>: <what>`, and exits 3. A file that cannot be read, and an out folder that `os.makedirs` could not make, is named with Python's own text (`[Errno 2] No such file or directory: '<path>'`, also for an empty path such as `--baseline=`, `[Errno 20] Not a directory: '<path>'` for a path through a file such as `p.json/`, `[Errno 21] Is a directory: '<path>'`, `[Errno 17] File exists: '<out>'`, `<path> is not valid JSON: <json error>`), and a JSON integer of more than 4,300 digits, which Python's `int()` refused with a ValueError, is named in plain words (`<path>: an integer has 4301 digits; Python reads at most 4300`); a value of the wrong shape names the Python error the script raised, in Python 3.14's words (`KeyError: 'kind'`, `TypeError: cannot use 'list' as a set element (unhashable type: 'list')`, and a lone surrogate as `UnicodeEncodeError: 'utf-8' codec can't encode characters in position 24-25: surrogates not allowed`, the whole run of surrogates counted from the start of the chunk that Python wrote: the printed line, the CSV row, or the JSON encoder's chunk). stdout up to that point is the script's, byte for byte, and nothing is written. Each crash step's exact BuildOS stderr is pinned in `allowed`.",
+      "authority": "PRD 20 Output and Exit Contract (no stack trace; plain messages for non-technical users), as SD-03 and SD-11",
+      "changes_result": "no: the script stopped there too",
+      "steps": [
+        "capability-matrix/skeleton-crashes#0-5",
+        "capability-matrix/assemble-crashes#0-3",
+        "capability-matrix/fitgap-crashes#1-5",
+        "capability-matrix/validate-csv#2",
+        "capability-matrix/validate-crashes#1-4",
+        "capability-matrix/integer-limits#1",
+        "capability-matrix/integer-limits#3-5",
+        "capability-matrix/empty-values#5-6",
+        "capability-matrix/spelled-paths#2-4"
+      ],
+      "allowed": {
+        "capability-matrix/skeleton-crashes#0": "capability-matrix skeleton: [Errno 2] No such file or directory: 'cm/bad/missing.json'\n",
+        "capability-matrix/skeleton-crashes#1": "capability-matrix skeleton: cm/bad/skeleton-not-json.json is not valid JSON: Expecting ',' delimiter: line 2 column 1 (char 27)\n",
+        "capability-matrix/skeleton-crashes#2": "capability-matrix skeleton: cm/bad/skeleton-bom.json is not valid JSON: Unexpected UTF-8 BOM (decode using utf-8-sig): line 1 column 1 (char 0)\n",
+        "capability-matrix/skeleton-crashes#3": "capability-matrix skeleton: an input file is missing a field or has a value of the wrong type (KeyError: 'layers'). Check the inputs against the schema reference in the skill.\n",
+        "capability-matrix/skeleton-crashes#4": "capability-matrix skeleton: an input file is missing a field or has a value of the wrong type (IndexError: list index out of range). Check the inputs against the schema reference in the skill.\n",
+        "capability-matrix/skeleton-crashes#5": "capability-matrix skeleton: an input file is missing a field or has a value of the wrong type (TypeError: unsupported format string passed to NoneType.__format__). Check the inputs against the schema reference in the skill.\n",
+        "capability-matrix/assemble-crashes#0": "capability-matrix assemble: cm/CIRC/parts-bad/not-json.json is not valid JSON: Expecting ',' delimiter: line 1 column 24 (char 23)\n",
+        "capability-matrix/assemble-crashes#1": "capability-matrix assemble: an input file is missing a field or has a value of the wrong type (KeyError: 'kind'). Check the inputs against the schema reference in the skill.\n",
+        "capability-matrix/assemble-crashes#2": "capability-matrix assemble: [Errno 2] No such file or directory: 'cm/CIRC/missing.json'\n",
+        "capability-matrix/assemble-crashes#3": "capability-matrix assemble: an input file is missing a field or has a value of the wrong type (KeyError: 'status'). Check the inputs against the schema reference in the skill.\n",
+        "capability-matrix/fitgap-crashes#1": "capability-matrix fitgap: an input file is missing a field or has a value of the wrong type (TypeError: expected str, bytes or os.PathLike object, not NoneType). Check the inputs against the schema reference in the skill.\n",
+        "capability-matrix/fitgap-crashes#2": "capability-matrix fitgap: an input file is missing a field or has a value of the wrong type (TypeError: 'NoneType' object is not iterable). Check the inputs against the schema reference in the skill.\n",
+        "capability-matrix/fitgap-crashes#3": "capability-matrix fitgap: an input file is missing a field or has a value of the wrong type (IndexError: list index out of range). Check the inputs against the schema reference in the skill.\n",
+        "capability-matrix/fitgap-crashes#4": "capability-matrix fitgap: analysis/bad/not-json.json is not valid JSON: Expecting property name enclosed in double quotes: line 1 column 44 (char 43)\n",
+        "capability-matrix/fitgap-crashes#5": "capability-matrix fitgap: [Errno 2] No such file or directory: 'deliver/LIB/lib-capability-model.json'\n",
+        "capability-matrix/validate-csv#2": "capability-matrix validate: an input file is missing a field or has a value of the wrong type (ValueError: invalid literal for int() with base 10: 'one'). Check the inputs against the schema reference in the skill.\n",
+        "capability-matrix/validate-crashes#1": "capability-matrix validate: an input file is missing a field or has a value of the wrong type (KeyError: 'HM-ONE-77'). Check the inputs against the schema reference in the skill.\n",
+        "capability-matrix/validate-crashes#2": "capability-matrix validate: [Errno 2] No such file or directory: 'deliver/CIRC/missing.md'\n",
+        "capability-matrix/validate-crashes#3": "capability-matrix validate: an input file is missing a field or has a value of the wrong type (TypeError: expected str, bytes or os.PathLike object, not NoneType). Check the inputs against the schema reference in the skill.\n",
+        "capability-matrix/validate-crashes#4": "capability-matrix validate: models/not-json.json is not valid JSON: Expecting value: line 1 column 10 (char 9)\n",
+        "capability-matrix/integer-limits#1": "capability-matrix skeleton: cm/NUM/skeleton-4301.json: an integer has 4301 digits; Python reads at most 4300\n",
+        "capability-matrix/integer-limits#3": "capability-matrix validate: an input file is missing a field or has a value of the wrong type (ValueError: Exceeds the limit (4300 digits) for integer string conversion: value has 4301 digits; use sys.set_int_max_str_digits() to increase the limit). Check the inputs against the schema reference in the skill.\n",
+        "capability-matrix/integer-limits#4": "capability-matrix validate: an input file is missing a field or has a value of the wrong type (ValueError: invalid literal for int() with base 10: '\\x1c1\\x1c'). Check the inputs against the schema reference in the skill.\n",
+        "capability-matrix/integer-limits#5": "capability-matrix validate: an input file is missing a field or has a value of the wrong type (ValueError: invalid literal for int() with base 10: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx). Check the inputs against the schema reference in the skill.\n",
+        "capability-matrix/empty-values#5": "capability-matrix fitgap: [Errno 2] No such file or directory: ''\n",
+        "capability-matrix/empty-values#6": "capability-matrix validate: an input file is missing a field or has a value of the wrong type (TypeError: cannot use 'list' as a set element (unhashable type: 'list')). Check the inputs against the schema reference in the skill.\n",
+        "capability-matrix/spelled-paths#2": "capability-matrix assemble: [Errno 17] File exists: 'cm/CIRC/skeleton.json'\n",
+        "capability-matrix/spelled-paths#3": "capability-matrix assemble: [Errno 20] Not a directory: 'cm/CIRC/skeleton.json/out'\n",
+        "capability-matrix/spelled-paths#4": "capability-matrix skeleton: an input file is missing a field or has a value of the wrong type (UnicodeEncodeError: 'utf-8' codec can't encode characters in position 24-25: surrogates not allowed). Check the inputs against the schema reference in the skill.\n"
+      }
+    },
+    {
+      "id": "SD-24",
+      "summary": "capability-matrix: contained, checked, atomic reads and writes, as SD-04, SD-05, SD-06, and SD-13 hold them for buildos fitgap. Every file the user names (--skeleton, --parts, --rows, --only, --models, --baseline, --target, --model, --narrative, --fitgap) and every pattern match must be inside the project folder (exit 3 outside it); patterns are expanded by the fitgap port of Python's glob, but a file matched twice is read twice, as cm_build.py's globs did (it did not remove repeats). Each path is looked up as the operating system reads it, one name at a time (review round 2, finding 1): a name before the last must be a folder, so `p.json/`, `p.json/.`, `p.json/../p.json`, and `gone/../p.json` match nothing and cannot be opened, as in Python; a final separator matches only a folder; a link that leads nowhere is matched and then cannot be opened. Then `.` and `..` are folded as text, as every BuildOS path is: a `..` right after a folder link names the link's own parent folder, where macOS and Linux go to the parent of the link's target (so `--parts link/../p.json` reads `p.json` beside the link, where Python read the file beside the target), and `--out gone/../o` makes only `o`, where Python's `os.makedirs` also made the missing folder `gone`. On Windows, which folds `.` and `..` as text itself, only the whole path is looked up. A folder named before the project folder in a relative path (`../<project>/...`) is not looked at. An absolute path that is not inside the project folder as spelled is looked at differently (review round 3 of pull request 10 corrects this record): to recognize the project folder under another spelling (another letter case, `/var` for `/private/var`, a link to it; P9-R2-10), BuildOS looks at the metadata (device and inode, through links) of the path and of each of its parent folders, from the path upward until one is the project folder or the top of the volume is reached, and the one-name-at-a-time lookup does this for each folder of the path. Those folders can be outside the project folder, and this happens without --allow-outside-root: review round 3 counted metadata lookups of eight paths outside the root for one valid absolute input. Only metadata: no file outside the project is read, no folder outside it is listed, nothing is written there without the switch, and a path that does not end inside the project is refused (exit 3) with the same message whether it exists or not. Every output lands inside the project folder unless --allow-outside-root is given. The --out folder and its folders are looked at as the write uses them (review round 3, finding 1): with --allow-outside-root, a folder link at --out that leads outside the project is followed, and its outputs are written through it; without the switch it is refused with the message that names the switch (exit 3). In an initialized project, a path that starts with `system/` follows the installed-path rule before its names are looked at, and is named as typed (finding 2). An --out that is a link leading nowhere is `[Errno 17] File exists` (exit 3), as `os.makedirs` raised it; after a missing folder, a `..` climbs back, and the folded rest is checked as makedirs checked it (`planned71/../p.json/inner` is `[Errno 20] Not a directory`, exit 3), while the missing folder itself is not made (finding 5). The out folder is made only when the run writes, and a run that stops or crashes writes nothing: cm_build.py made --out before it read anything in fitgap, and it left a partial result when it crashed after its first write (assemble: the model JSON written and no CSV when a layer named by a capability is missing from the layers list, or when a value holds a lone surrogate, which also left the JSON half written; fitgap: the CSV written and no JSON when a verdict or an overlap type is a list). All outputs of a run are planned and checked first, then written together (PE-012 links, SD-05 undo). validate: the companion CSVs `<model folder>/<code>-capabilities.csv` and `-requirements.csv` are found by the script's own rule (`os.path.dirname(model) + '/'`); a companion path outside the project counts as missing (a FAIL line), so `--model model.json` with no folder fails 'companion CSVs present beside the model', as the script did after it looked for `/<code>-capabilities.csv` at the top of the disk. Every JSON input nests at most 512 levels and every file read is at most 128 MiB (SD-06).",
+      "authority": "PRD 20 Output and Exit Contract (a read of project data stays inside the project; a failed command leaves no files behind); SD-04 (owner decision 2026-11-25); SECURITY.md Read Safety and Contained Writes",
+      "changes_result": "yes, for a run that reads a file outside the project folder (move it in) or writes there (pass --allow-outside-root), and for a run that crashed after its first write (no partial file)",
+      "tests": [
+        "test/capability-matrix.test.ts: SD-24",
+        "test/capability-matrix.test.ts: paths as the operating system reads them (review round 2, finding 1)",
+        "test/capability-matrix-review-3.test.ts: findings 1, 2, and 5 (the --out folder; POSIX only where a link is made)"
+      ]
+    },
+    {
+      "id": "SD-25",
+      "summary": "capability-matrix: the same bytes on every system. cm_build.py wrote the model JSON and the fit/gap JSON with Python's text mode, so on Windows each \\n became \\r\\n, and stdout did the same; its CSVs (newline='') were the same everywhere. BuildOS writes \\n in every JSON file and on stdout on every system, as on macOS and Linux, and reads the narrative and the companion CSVs with Python's universal newlines on every system.",
+      "authority": "PRD 20 Compatibility (the same input gives the same bytes)",
+      "changes_result": "only on Windows: the JSON files and stdout end lines with \\n",
+      "tests": [
+        "test/skill-script-parity.test.ts: capability-matrix (the Windows CI job)"
+      ]
+    },
+    {
+      "id": "SD-26",
+      "summary": "capability-matrix skeleton and validate: cm_build.py put the system code into its id pattern unescaped (`re.fullmatch(rf'{code}-[A-Z]{{2,4}}-\\d{{2,3}}[a-z]?', id)`), so for a code with a pattern character (one of \\ . ^ $ * + ? { } [ ] | ( )) the check followed Python's pattern syntax: a code `A(` crashed, a code `A.B` also accepted `AxB-...`. BuildOS stops at the point where the script compiled the pattern (the first capability), with a plain message that names the code (exit 4). A code of other characters (letters, digits, `-`, `_`, spaces, non-ASCII letters) is matched exactly as Python matched it: no pattern is built from the code (review round 1 of pull request 10); the id must start with the code and a dash, as plain text, and the rest must match the fixed `[A-Z]{2,4}-\\d{2,3}[a-z]?`, with Python's `\\d` (any Unicode decimal digit).",
+      "authority": "None decided: owner question Q1 of F-P9-04 (evidence.md#f-p9-04-capability-matrix-command-2026-11-26); the owner decision is open, and the command is built as option A, which the review round 1 reviewer agreed with",
+      "changes_result": "yes, for a system code with a pattern character: a stop that names the code, where the script crashed or matched by Python's pattern rules",
+      "owner_recommendation": "Keep the stop (option A): real codes are short upper-case codes of letters and digits, the skill asks for one, and the stop names the code to change. Option B would read the code as plain text in the id check.",
+      "tests": [
+        "test/capability-matrix.test.ts: SD-26"
+      ]
+    },
+    {
+      "id": "SD-27",
+      "summary": "capability-matrix: the order in which a Python set is sorted. cm_build.py sorted three sets (`sorted(miss)` and `sorted(extra)` in assemble's mismatch message; the target statuses and maturities of a fitgap row). A Python set iterates in hash order, and a string's hash changes from run to run (PYTHONHASHSEED), as does a NaN's (by object). So when a set mixes values that cannot be ordered (a string and a number, None and a string), the script's TypeError named the two types in an order that changed between runs (`'<' not supported between instances of 'str' and 'int'`, or 'int' and 'str'), and a NaN among numbers sorted to a place that changed between runs. BuildOS sorts each set from its first-seen order, so its message and its order are the same on every run; Python's own output for such a set is one of the orders it can give. A set of values that can all be ordered (all strings, or all numbers without NaN) sorts the same in both.",
+      "authority": "PRD 20 Compatibility (the same input gives the same bytes)",
+      "changes_result": "no: the script crashed too (mixed types), or its order was not fixed (NaN)",
+      "tests": [
+        "test/capability-matrix.test.ts: SD-27"
       ]
     }
   ]
