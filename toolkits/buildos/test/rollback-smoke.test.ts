@@ -203,6 +203,24 @@ describe("review round 1 of pull request 15, finding 1: the route guard and the 
     assert.deepEqual(ancestorInstalls(folders, exists, nodePath), [join(base, "q", "work", "node_modules", "build-os")]);
   });
 
+  // Review round 2 of pull request 15, finding 3: a failed guard stops the run before any command on the disqualified route.
+  it("with a build-os install above the temporary root, the script stops at the first route guard with exit 1, before any npx command", (t) => {
+    const base = realpathSync.native(mkdtempSync(join(tmpdir(), "rollback-guard-")));
+    t.after(() => rmSync(base, { recursive: true, force: true }));
+    const install = join(base, "node_modules", "build-os");
+    mkdirSync(install, { recursive: true });
+    writeFileSync(join(install, "package.json"), JSON.stringify({ name: "build-os", version: "0.1.0" }));
+    const out = join(base, "out");
+    const r = spawnSync(process.execPath, [join(packageRoot, "scripts", "rollback-smoke.ts"), "--out", out], { encoding: "utf8", env: { ...process.env, TMPDIR: base, TEMP: base, TMP: base } });
+    assert.equal(r.status, 1, r.stdout + r.stderr);
+    assert.match(r.stdout, /\(0 of 1 steps\)\n {2}STOPPED: the route guard \(before any npx command\) failed, so the later steps did not run\n/);
+    assert.match(r.stdout, /FAILED: route guard \(before any npx command\): no node_modules\/build-os entry/);
+    const os = process.platform === "darwin" ? "macos" : process.platform === "win32" ? "windows" : process.platform;
+    const report = JSON.parse(readFileSync(join(out, `rollback-${os}.json`), "utf8")) as { steps: { name: string; stderr: string }[] };
+    assert.deepEqual(report.steps.map((s) => s.name), ["route guard (before any npx command)"]);
+    assert.match(report.steps[0]!.stderr, /found [^\n]*node_modules[\\/]build-os/);
+  });
+
   it("reads PATH as the wrapper's helper does: an empty or relative entry is relative to the current folder", (t) => {
     const base = realpathSync.native(mkdtempSync(join(tmpdir(), "rollback-guard-")));
     t.after(() => rmSync(base, { recursive: true, force: true }));
@@ -220,8 +238,10 @@ describe("review round 1 of pull request 15, finding 1: the route guard and the 
   });
 
   it("the script guards before any npx command, before the first wrapper run, and after the last one, and checks the launch probe of every wrapper run", () => {
-    assert.match(script, /routeGuard\("route guard \(before any npx command\)", repositoryHelper, [^\n]*\[root\]\);\n/);
-    assert.equal((script.match(/routeGuard\("route guard \((before the first wrapper run|after the last wrapper run)\)", join\(project, "\.os", "scripts", "pinned-version\.cjs"\), [^\n]*\[project, original\]\);/g) ?? []).length, 2);
+    // Review round 2 of pull request 15, finding 3: the first two guards stop the run when they fail (need); the last one records.
+    assert.match(script, /\nneed\(routeGuard\("route guard \(before any npx command\)", repositoryHelper, [^\n]*\[root\]\), "the route guard \(before any npx command\)"\);\n/);
+    assert.match(script, /\nneed\(routeGuard\("route guard \(before the first wrapper run\)", join\(project, "\.os", "scripts", "pinned-version\.cjs"\), [^\n]*\[project, original\]\), "the route guard \(before the first wrapper run\)"\);\n/);
+    assert.match(script, /\nrouteGuard\("route guard \(after the last wrapper run\)", join\(project, "\.os", "scripts", "pinned-version\.cjs"\), [^\n]*\[project, original\]\);\n/);
     assert.ok(script.indexOf('routeGuard("route guard (before any npx command)"') < script.indexOf("// 1. The reference versions, from the registry."));
     assert.ok(script.indexOf('routeGuard("route guard (before the first wrapper run)"') < script.indexOf("// Upgrade step 7: the checks, then commit."));
     assert.ok(script.indexOf('routeGuard("route guard (after the last wrapper run)"') > script.indexOf('const v = wrapper("original", "version", 0, original);'));
@@ -235,7 +255,11 @@ describe("review round 1 of pull request 15, finding 1: the route guard and the 
 // Review round 1 of pull request 15, finding 2: the F-P9-17 diagnostic of the helper started directly.
 describe("review round 1 of pull request 15, finding 2: the F-P9-17 diagnostic", () => {
   it("reads the two exit codes as cause (a), cause (b), or neither", () => {
-    assert.match(fP917Reading(2, 0, 2), /^cause \(b\) shown/);
+    // Review round 2 of pull request 15, finding 1: the helper and the wrapper do not run under the same cmd.exe, so (b) is consistent, not isolated.
+    assert.match(fP917Reading(2, 0, 2), /^cause \(b\) consistent, not isolated: /);
+    assert.match(fP917Reading(2, 0, 2), /lost on the wrapper invocation path \(a \.cmd wrapper started through cmd\.exe\)/);
+    assert.match(fP917Reading(2, 0, 2), /the batch wrapper's own exit path is the leading hypothesis, not shown$/);
+    assert.doesNotMatch(fP917Reading(2, 0, 2), /shown:/);
     assert.match(fP917Reading(0, 0, 2), /^cause \(a\) shown/);
     assert.match(fP917Reading(2, 2, 2), /^neither pattern/);
     assert.match(fP917Reading(null, 0, 2), /^neither pattern/);
@@ -249,5 +273,19 @@ describe("review round 1 of pull request 15, finding 2: the F-P9-17 diagnostic",
     // The batch wrapper starts node with these arguments, so the direct form matches it.
     const cmd = readFileSync(join(repoRoot, "system", ".os", "scripts", "buildos.cmd"), "utf8");
     assert.match(cmd, /node "%~dp0pinned-version\.cjs" --cmd "%~f0" "%~dp0\.\.\\manifest\.json" %\*\r?\nexit \/b/);
+  });
+});
+
+// Review round 2 of pull request 15, finding 2: run 3 saw the 0.1.0 usage error with exit 0 through the
+// Windows wrapper's npx route (F-P9-17), so the guide names that exception where it says exit code 2.
+describe("review round 2 of pull request 15, finding 2: the guide names the Windows exit code of F-P9-17", () => {
+  it("the first description of the failure names the exception, and the repeated claim points to it", () => {
+    const first = "a skill command stops with `unknown command` (exit code `2`). On Windows, through the project wrapper `.os\\scripts\\buildos.cmd`, the error text is right but the exit code can be `0`, so check the text, not only the code. A fix is planned.";
+    const repeated = "the command stops with `unknown command` (exit code `2`, or `0` on Windows through the project wrapper, as above).";
+    assert.ok(guideText.includes(first));
+    assert.ok(guideText.includes(repeated));
+    assert.ok(guideText.indexOf(first) < guideText.indexOf(repeated));
+    // No other claim of exit code 2 for unknown command is left without the exception.
+    assert.equal((guideText.match(/`unknown command` \(exit code `2`\)/g) ?? []).length, 1);
   });
 });

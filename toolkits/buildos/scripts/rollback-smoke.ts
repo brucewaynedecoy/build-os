@@ -49,8 +49,11 @@
 // (`pinned-version.cjs --cmd <buildos.cmd> <manifest> capability-matrix
 // --help`, no batch file) and records its exit code next to that of
 // `buildos.cmd` for the same command: 2 there and 0 through the batch file
-// shows cause (b), the batch wrapper's own exit path; 0 in both shows cause
-// (a), the cmd.exe that the helper starts for npm's npx.cmd. On Linux and
+// is consistent with cause (b), the batch wrapper's own exit path, but does
+// not isolate it (review round 2 of pull request 15, finding 1: the helper is
+// started directly and the wrapper through cmd.exe, so the two do not run
+// under the same shell); 0 in both shows cause (a), the cmd.exe that the
+// helper starts for npm's npx.cmd. On Linux and
 // macOS the same step starts the helper's `--npx` route directly and checks
 // exit 2.
 //
@@ -293,8 +296,10 @@ function npxRun(name: string, args: string[], expected: number, cwd: string): St
 }
 
 /** A step that starts no process: it reads the disk and records each problem in stderr. */
-function evidenceStep(name: string, what: string, stdout: string, checks: { check: string; problems: string[] }[]): void {
-  steps.push({ name, command: what, exit: null, expected_exit: null, stdout, stderr: checks.flatMap((c) => c.problems).map((p) => `${p}\n`).join(""), checks: checks.map((c) => ({ check: c.check, ok: c.problems.length === 0 })), ok: false });
+function evidenceStep(name: string, what: string, stdout: string, checks: { check: string; problems: string[] }[]): Step {
+  const step: Step = { name, command: what, exit: null, expected_exit: null, stdout, stderr: checks.flatMap((c) => c.problems).map((p) => `${p}\n`).join(""), checks: checks.map((c) => ({ check: c.check, ok: c.problems.length === 0 })), ok: false };
+  steps.push(step);
+  return step;
 }
 
 function readPin(dir: string): string {
@@ -403,7 +408,7 @@ const pathValue = Object.entries(env).find(([k]) => (WINDOWS ? k.toUpperCase() =
  * a PATH folder as that helper reads PATH, and npm's global prefix empty. So
  * the wrapper (and npx) can only run a version that npx fetches.
  */
-function routeGuard(name: string, helperFile: string, helperLabel: string, places: readonly string[]): void {
+function routeGuard(name: string, helperFile: string, helperLabel: string, places: readonly string[]): Step {
   const helper = loadHelper(helperFile);
   const installs: string[] = [];
   const programs: string[] = [];
@@ -417,7 +422,7 @@ function routeGuard(name: string, helperFile: string, helperLabel: string, place
     }
   }
   const prefix = readdirSync(globalPrefix);
-  evidenceStep(
+  return evidenceStep(
     name,
     `no process; with the lookup of ${helperLabel} (npmLocalPrefix, splitWindowsPath), it reads each folder of the wrapper's node_modules lookup for ${places.map((d) => clean(d)).join(" and ")}, each PATH folder, and npm's global prefix`,
     `${folders} lookup folders read (each project folder and each folder above it, then npm's local project folder and each folder above it)\n`,
@@ -434,7 +439,8 @@ function routeGuard(name: string, helperFile: string, helperLabel: string, place
 // same file as the project wrappers of 0.1.0 and 0.2.0), for the temporary
 // root and each folder above it. Every folder of the run is in the root.
 const repositoryHelper = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "system", ".os", "scripts", "pinned-version.cjs");
-routeGuard("route guard (before any npx command)", repositoryHelper, "system/.os/scripts/pinned-version.cjs of this repository", [root]);
+// Review round 2 of pull request 15, finding 3: a failed guard stops the run here, before any command runs on a disqualified route.
+need(routeGuard("route guard (before any npx command)", repositoryHelper, "system/.os/scripts/pinned-version.cjs of this repository", [root]), "the route guard (before any npx command)");
 
 // 1. The reference versions, from the registry.
 const revision: Record<string, string> = {};
@@ -464,7 +470,7 @@ mkdirSync(original);
   check(status, "no app folder (.claude, .agents, .github), so the app-folder steps do not apply", apps.length === 0);
   need(status, "the copy");
 }
-routeGuard("route guard (before the first wrapper run)", join(project, ".os", "scripts", "pinned-version.cjs"), "the test project's .os/scripts/pinned-version.cjs", [project, original]);
+need(routeGuard("route guard (before the first wrapper run)", join(project, ".os", "scripts", "pinned-version.cjs"), "the test project's .os/scripts/pinned-version.cjs", [project, original]), "the route guard (before the first wrapper run)");
 
 // Upgrade step 1: commit ("nothing to commit" is fine), the work folder, the backup.
 guide(UPGRADE_COMMIT[0]!, 0);
@@ -563,7 +569,7 @@ for (const c of ROLLBACK_PUT_BACK) need(guide(c, 0), c.sh);
     const args = [helperFile, "--cmd", self, manifest, "capability-matrix", "--help"];
     const direct = run(`rollback 5 (F-P9-17 evidence): node.exe .os\\scripts\\pinned-version.cjs --cmd .os\\scripts\\buildos.cmd <manifest> capability-matrix --help (no batch file)`, ["node", ...args].join(" "), process.execPath, args, null, project, { extraEnv: { BUILDOS_WRAPPER_ACTIVE: "1", NoDefaultCurrentDirectoryInExePath: "1" }, wrapperRoute: true });
     check(direct, `${FROM_VERSION} runs it and stops with unknown command "capability-matrix" (stderr)`, unknownCommand(direct.stderr, FROM_VERSION, "capability-matrix"));
-    evidenceStep("rollback 5 (F-P9-17 evidence): which layer loses the exit code", "no process; it compares the exit code of the helper started directly by node.exe with that of buildos.cmd, for the same command (recorded, no check)", `node.exe pinned-version.cjs --cmd ... capability-matrix --help: exit ${direct.exit}\n.os\\scripts\\buildos.cmd capability-matrix --help: exit ${cm.exit}\n${fP917Reading(direct.exit, cm.exit, 2)}\n`, []);
+    evidenceStep("rollback 5 (F-P9-17 evidence): which layer loses the exit code", "no process; it compares the exit code of the helper started directly by node.exe with that of buildos.cmd started through cmd.exe, for the same command (recorded, no check; the two do not run under the same cmd.exe)", `node.exe pinned-version.cjs --cmd ... capability-matrix --help: exit ${direct.exit}\n.os\\scripts\\buildos.cmd capability-matrix --help: exit ${cm.exit}\n${fP917Reading(direct.exit, cm.exit, 2)}\n`, []);
   } else if (npmRoot !== undefined) {
     const args = [helperFile, "--npx", join(npmRoot, "bin", "npx-cli.js"), FROM_VERSION, "capability-matrix", "--help"];
     const direct = run("rollback 5 (F-P9-17 evidence): node .os/scripts/pinned-version.cjs --npx <npx> 0.1.0 capability-matrix --help (the helper's npx route, started directly)", ["node", ...args].join(" "), process.execPath, args, 2, project, { extraEnv: { BUILDOS_WRAPPER_ACTIVE: "1" }, wrapperRoute: true });

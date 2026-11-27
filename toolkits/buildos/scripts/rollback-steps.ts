@@ -256,9 +256,16 @@ export function pathBuildosPrograms(pathValue: string, cwd: string, windows: boo
   return dirs.flatMap((d) => buildosNames(windows).map((n) => p.resolve(cwd, d, n))).filter((f) => exists(f));
 }
 
-/** The reading of the F-P9-17 diagnostic on Windows: the exit code of the helper started directly by node.exe, next to that of buildos.cmd, for the same failing command. */
+/**
+ * The reading of the F-P9-17 diagnostic on Windows: the exit code of the
+ * helper started directly by node.exe, next to that of buildos.cmd started
+ * through cmd.exe, for the same failing command. The two do not run under
+ * the same cmd.exe, so a lost code on the wrapper path is consistent with
+ * cause (b), the batch wrapper's own exit path, but does not isolate it
+ * (review round 2 of pull request 15, finding 1).
+ */
 export function fP917Reading(direct: number | null, wrapper: number | null, expected: number): string {
-  if (direct === expected && wrapper === 0) return `cause (b) shown: the helper started directly returns ${expected}, and buildos.cmd returns 0, so the code is lost in the batch wrapper's own exit path`;
+  if (direct === expected && wrapper === 0) return `cause (b) consistent, not isolated: the helper started directly by node.exe returns ${expected}, and buildos.cmd started through cmd.exe returns 0, so the code is lost on the wrapper invocation path (a .cmd wrapper started through cmd.exe); the two did not run under the same cmd.exe, so the batch wrapper's own exit path is the leading hypothesis, not shown`;
   if (direct === 0 && wrapper === 0) return "cause (a) shown: the helper started directly returns 0 too, so the code is lost below it, in the cmd.exe that it starts for npm's npx.cmd";
   return `neither pattern: the helper started directly returns ${direct ?? "(no code)"}, buildos.cmd returns ${wrapper ?? "(no code)"}`;
 }
