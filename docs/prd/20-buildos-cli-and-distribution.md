@@ -169,6 +169,8 @@ A write command that stopped before any write took effect, or that undid every w
 
 `buildos version` and every envelope report the package version and the source revision. A source build reports version `dev` and source revision `unknown`. A release build sets both.
 
+A command that BuildOS prints for the adopter to run (a fix to copy and run, such as the `entities rebuild-index` recovery command in the human `action:` line, `remediation_command`, `recovery_command`, and `correction`, the `Run ... help for command syntax.` advice after a usage error, and each "run ... again" sentence of `validate`, `init`, `extract bulk`, and `export azure-boards`) starts with `npx -y build-os@<version>`, where `<version>` is the running build's version, so it runs on every system with Node.js and no global install. A source build (`dev`), and any version that npm cannot hold as an exact version (for example one with build metadata, `+local`), prints `buildos` instead, because no npm version names that build. A folder path in such a command is always quoted for the shell: POSIX single quotes, and Command Prompt double quotes on Windows with each `\` written once. Usage lines and help text keep the program name `buildos` (`buildos <domain> [flags]`, `Run "buildos help <domain>" for domain details.`), and so does the legacy-name notice. JSON field names and shapes do not change. This is parity exception PE-023 (owner decision 2026-11-26, F-P8-11 and F-P8-10).
+
 Exit codes fall into these classes: success, usage error, contract or validation failure, needs operator review, and internal failure. The current numbered codes are:
 
 | Code | Meaning |
@@ -458,6 +460,14 @@ These observable outcomes are current requirements of this subsystem. The standa
 The adopter does not need to know about npm, `npx`, `PATH`, Node versions, bundling, wrapper choice, Make Docs setup flags, or where each chat app keeps skills.
 
 ## Requirement History
+
+### 2026-11-26 — W1 R7 owner decision (printed commands, F-P8-11)
+
+- Affected requirement or section: `## Output and Exit Contract` (the printed commands), `## Compatibility` (parity exception PE-023)
+- Previous contract: No requirement named the form of a printed command. BuildOS printed fix commands with a bare `buildos` and quoted the root with Go's `%q`, as the Go tools did, so a printed command exited 127 for an adopter who runs BuildOS through `npx` or the project wrapper, and on Windows the root showed each `\` twice.
+- Replacement contract: A command that BuildOS prints for the adopter to run starts with `npx -y build-os@<running version>` (a source build and a version that npm cannot hold print `buildos`), and a folder path in it is always quoted for the shell (POSIX single quotes; Command Prompt double quotes with each `\` written once). Usage lines, help text, and the legacy-name notice keep the name `buildos`. JSON field names and shapes stay. Parity exception PE-023 records the difference from the Go goldens.
+- Rationale: The owner decided on 2026-11-26 that F-P8-11 is fixed in `0.2.0`, with no `0.1.1`, and that a printed command takes the form `npx -y build-os@<running version> …`, which works on every system with no global install. The Windows quoting (F-P8-10) is fixed under the same decision.
+- Source: [F-P8-11 Printed Commands](../work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#f-p8-11-printed-commands-2026-11-26)
 
 ### 2026-11-26 — W1 R7 P8 owner decision (package name)
 

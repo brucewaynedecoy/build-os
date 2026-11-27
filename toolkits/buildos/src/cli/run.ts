@@ -29,6 +29,7 @@ import type { CliIo } from "./io.ts";
 import { formatEnvelopeHuman, formatFailureHuman } from "./output.ts";
 import { goQuote, wantsJson } from "./parse.ts";
 import { UsageError } from "./usage-error.ts";
+import { printedRun, runCommand } from "../core/shared/run-command.ts";
 
 const HELP_FLAGS = new Set(["help", "--help", "-h"]);
 
@@ -166,7 +167,7 @@ function reportFailure(error: unknown, io: CliIo, buildInfo: BuildInfo, json: bo
       code: "usage_error",
       severity: "error",
       message: error.message,
-      correction: "Run buildos help for command syntax.",
+      correction: `Run ${runCommand(printedRun(buildInfo.version, process.platform), ["help"])} for command syntax.`,
     };
     writeFailure(failureEnvelope(buildInfo, error.command, "", "not_requested", [diagnostic]), io, error.json);
     return code;

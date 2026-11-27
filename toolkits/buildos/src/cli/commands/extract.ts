@@ -14,6 +14,7 @@ import { sep } from "node:path";
 import { nodeHash } from "../../adapters/node-hash.ts";
 import { BULK_SUBCOMMANDS, runBulk } from "../../core/extract/bulk.ts";
 import { PyException } from "../../core/shared/py-text.ts";
+import { printedRun } from "../../core/shared/run-command.ts";
 import { READ_LIMITS } from "../../core/shared/read-limits.ts";
 import type { CommandContext, CommandOutcome, Domain } from "../domain.ts";
 import { StdinTooLargeError } from "../io.ts";
@@ -98,6 +99,7 @@ function runExtract(args: readonly string[], context: CommandContext): CommandOu
     now: context.now ?? (() => new Date()),
     sep,
     owner: { pid: process.pid, host: hostname() },
+    run: printedRun(context.buildInfo.version, process.platform),
     readStdin: () => {
       if (context.io.readStdin === undefined) return "";
       try {

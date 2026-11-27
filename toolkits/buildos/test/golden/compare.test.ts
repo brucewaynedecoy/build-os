@@ -23,6 +23,11 @@
 // neither) name the release identity of a release-stamped tarball: the
 // comparison then expects that identity where a golden holds the development
 // identity (withBuildIdentity in harness.ts; W1 R7 P8 review round 1).
+// PE-023 (owner decision 2026-11-26): each printed fix command in a golden is
+// compared in the form the port prints it (withPrintedCommands in harness.ts:
+// `buildos` for the development identity, `npx -y build-os@<version>` for a
+// release identity, and the root always quoted for the shell), only in the
+// cases PE-023 lists for the running operating system.
 // BUILDOS_GOLDEN_ROOT points the harness at
 // another golden folder, and
 // BUILDOS_GOLDEN_CASES (comma-separated IDs) limits the cases. The
@@ -56,6 +61,8 @@ import {
   loadManifest,
   PACKAGE_ROOT,
   pdfSeparations,
+  printedCommandClass,
+  printedProgram,
   readGoldenDir,
   runCase,
   selectGolden,
@@ -63,6 +70,7 @@ import {
   type GoldenCase,
   type Runner,
   withBuildIdentity,
+  withPrintedCommands,
 } from "./harness.ts";
 
 const goldenRoot = process.env["BUILDOS_GOLDEN_ROOT"] ?? GOLDEN_ROOT;
@@ -74,6 +82,9 @@ const buildIdentity = expectedBuildIdentity();
 const capturedExceptions = loadExceptions(goldenRoot);
 const capturedProposed = loadProposed(goldenRoot);
 const exceptions = buildIdentity === undefined ? capturedExceptions : { ...capturedExceptions, exceptions: exceptionsWithBuildIdentity(capturedExceptions.exceptions, buildIdentity) };
+const printed = printedCommandClass(capturedExceptions);
+const program = printedProgram(buildIdentity);
+const printedPlatform = process.platform as "darwin" | "linux" | "win32";
 const proposed = buildIdentity === undefined ? capturedProposed : { ...capturedProposed, proposed: exceptionsWithBuildIdentity(capturedProposed.proposed, buildIdentity) };
 
 let dir: string;
@@ -257,7 +268,11 @@ describe("golden parity", () => {
       }
       if (selection.status === "os") row.os++;
       const captured = readGoldenDir(selection.dir);
-      const golden = buildIdentity === undefined ? captured : withBuildIdentity(captured, buildIdentity);
+      const identified = buildIdentity === undefined ? captured : withBuildIdentity(captured, buildIdentity);
+      // PE-023: the printed fix commands, exactly in the listed cases.
+      const { observation: golden, hits } = withPrintedCommands(identified, program, process.platform);
+      assert.equal(hits.rebuild > 0, (printed.rebuild.cases[printedPlatform] ?? []).includes(testCase.id), `PE-023 rebuild form: ${hits.rebuild} in the golden of ${testCase.id}, which PE-023 ${(printed.rebuild.cases[printedPlatform] ?? []).includes(testCase.id) ? "lists" : "does not list"} for ${process.platform}`);
+      assert.equal(hits.usage > 0, printed.usage.cases.includes(testCase.id), `PE-023 usage form: ${hits.usage} in the golden of ${testCase.id}, which PE-023 ${printed.usage.cases.includes(testCase.id) ? "lists" : "does not list"}`);
       const run = runCase(testCase, runner);
       // PE-016: a legacy name writes one notice line first; it is checked and removed here.
       const notice = stripLegacyNotice(testCase.invocation, run.observation.stderr, exceptions);
@@ -277,6 +292,7 @@ describe("golden parity", () => {
   }
 
   it("summary", (t) => {
+    t.diagnostic(`printed fix commands expected to start with: ${program} (PE-023)`);
     t.diagnostic(buildIdentity === undefined ? "build identity expected: the goldens' development identity (dev, unknown)" : `build identity expected: ${buildIdentity.version} at ${buildIdentity.sourceRevision} (a release-stamped build)`);
     for (const [domain, info] of Object.entries(manifest.domains)) {
       const row = summary.get(domain);

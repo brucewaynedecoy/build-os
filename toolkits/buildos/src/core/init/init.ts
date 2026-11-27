@@ -31,9 +31,9 @@ import { isInstalledLayout } from "../shared/buildos-layout.ts";
 import type { FsPort, FsPortFactory } from "../shared/fs-port.ts";
 import type { HashPort } from "../shared/hash-port.ts";
 import { resolveDefaultRoot } from "../shared/root.ts";
+import { runCommand, SOURCE_RUN, type PrintedRun } from "../shared/run-command.ts";
 import { MAKE_DOCS_OWNED, MANIFEST_PATH, type PackageContent } from "./content.ts";
 import type { MakeDocsOutcome } from "./make-docs.ts";
-import { commandLine } from "./make-docs.ts";
 import { createManifest, isManifestVersion, serializeManifest, type ProjectManifest } from "./manifest.ts";
 import type { NotRestored } from "./apply.ts";
 import { planInit, type Before, type Clash, type InitNote, type InitPlan, type InitProblem, type InitSetup, type PlannedEntry } from "./plan.ts";
@@ -50,6 +50,8 @@ export interface PrepareInput {
   /** The BuildOS package version written to the manifest. */
   version: string;
   now: Date;
+  /** How printed commands start (PE-023). Defaults to the source-build form, `buildos`. */
+  run?: PrintedRun;
 }
 
 export interface PreparedInit {
@@ -60,6 +62,8 @@ export interface PreparedInit {
   plan: InitPlan;
   manifest: ProjectManifest;
   content: PackageContent;
+  /** How printed commands start (PE-023). */
+  run: PrintedRun;
   /**
    * After `replanInit`: each path BuildOS will write whose state changed
    * while Make Docs ran (W1 R7 P6 review round 3). Any entry stops the run.
@@ -90,13 +94,14 @@ export function prepareInit(input: PrepareInput): PreparedInit {
     const spec = SHARED_FILES.find((s) => s.path === file.path);
     if (spec !== undefined && !isSafeSectionBody(spec, file.data)) throw new Error(`the BuildOS package file ${file.path} holds buildos marker text, or ends inside a code block or comment`);
   }
-  checkProjectFolder(fs, root);
+  const run = input.run ?? SOURCE_RUN;
+  checkProjectFolder(fs, root, run);
   // The manifest contract (`manifest.ts`): BuildOS never writes a version that the wrappers refuse.
   if (!isManifestVersion(input.version)) throw new Error(`the BuildOS package version ${JSON.stringify(input.version)} is not an exact version or dev, so the wrappers could not pin it`);
   const fresh = createManifest(input.version, input.now);
-  const plan = planInit({ fs, hash: input.hash, content: input.content, manifest: serializeManifest(fresh) });
+  const plan = planInit({ fs, hash: input.hash, content: input.content, manifest: serializeManifest(fresh), again: initAgain(run) });
   // A rerun reports the manifest on disk, not a new one (W1 R7 P6 review round 2).
-  return { root, fs, hash: input.hash, plan, manifest: plan.installed ?? fresh, content: input.content };
+  return { root, fs, hash: input.hash, plan, manifest: plan.installed ?? fresh, content: input.content, run };
 }
 
 /**
@@ -115,7 +120,7 @@ export function prepareInit(input: PrepareInput): PreparedInit {
  *   folder the Go tools shipped (PRD 20 Project Initialization and
  *   Adoption). Any other `.os/` is not adopted.
  */
-function checkProjectFolder(fs: FsPort, root: string): void {
+function checkProjectFolder(fs: FsPort, root: string, run: PrintedRun): void {
   const probe = (rel: string) => {
     try {
       return fs.stat(rel)?.kind;
@@ -126,7 +131,7 @@ function checkProjectFolder(fs: FsPort, root: string): void {
   if (!isInstalledLayout(probe) && probe("system/.os") === "directory") {
     throw new NeedsOperatorReviewError(
       `${root} looks like the BuildOS source code, not a project: it has a system/.os/ folder and no .os/manifest.json. BuildOS changed nothing.`,
-      { code: "init_source_checkout", correction: "Run buildos init in your project folder, or pass --root with your project folder.", root },
+      { code: "init_source_checkout", correction: `Run ${initAgain(run)} in your project folder, or pass --root with your project folder.`, root },
     );
   }
   if (probe(".os") !== "directory" || probe(MANIFEST_PATH) !== undefined) return;
@@ -134,7 +139,7 @@ function checkProjectFolder(fs: FsPort, root: string): void {
   if (goFolders || probe(".os/data") === "directory") return;
   throw new NeedsOperatorReviewError(
     `${root} has an .os/ folder that the earlier BuildOS tools did not set up: it has no .os/data/ folder and not all of .os/, assets/, docs/, playbooks/, and workspace/. BuildOS sets up a new project or adopts a project set up with the earlier BuildOS tools, so it changed nothing.`,
-    { code: "init_unknown_os_folder", correction: "If .os/ belongs to another tool, run buildos init in another folder or move .os/ away. If it is an earlier BuildOS project, put back its .os/data/ folder, then run buildos init again.", root },
+    { code: "init_unknown_os_folder", correction: `If .os/ belongs to another tool, run ${initAgain(run)} in another folder or move .os/ away. If it is an earlier BuildOS project, put back its .os/data/ folder, then run ${initAgain(run)} again.`, root },
   );
 }
 
@@ -153,7 +158,7 @@ function checkProjectFolder(fs: FsPort, root: string): void {
  * BuildOS decides them from what is there after Make Docs ran.
  */
 export function replanInit(prepared: PreparedInit, fresh: ProjectManifest = prepared.manifest): PreparedInit {
-  const plan = planInit({ fs: prepared.fs, hash: prepared.hash, content: prepared.content, manifest: serializeManifest(fresh) });
+  const plan = planInit({ fs: prepared.fs, hash: prepared.hash, content: prepared.content, manifest: serializeManifest(fresh), again: initAgain(prepared.run) });
   const first = new Map(prepared.plan.entries.map((e) => [e.path, e] as const));
   const changed: ChangedPath[] = [];
   const seen = new Set<string>();
@@ -249,18 +254,26 @@ const NOT_CHECKED: ReadonlySet<SharedSkipReason> = new Set(["unreadable", "too_l
 
 /** How the CLI spells a `buildos init` command in the output. */
 export interface CommandStyle {
-  /** `buildos`, or the `npx -y build-os@<version>` form. */
-  program: string[];
+  /** `buildos`, or the `npx -y build-os@<version>` form (`runProgram`, PE-023). */
+  program: readonly string[];
   platform: string;
   json: boolean;
 }
 
 /** `buildos init --root <root> <flag>`, as a user would type it. */
 export function initCommand(style: CommandStyle, root: string, flag: string): string {
-  return commandLine([...style.program, "init", "--root", root, flag, ...(style.json ? ["--json"] : [])], style.platform);
+  return runCommand(style, ["init", "--root", root, flag, ...(style.json ? ["--json"] : [])]);
 }
 
-export const CLASH_TIP = "Move or back up these files, then run `buildos init` again.";
+/** The init command that a stop or failure says to run again: `buildos init`, or the runnable form of a release (PE-023). */
+export function initAgain(run: PrintedRun): string {
+  return runCommand(run, ["init"]);
+}
+
+/** The tip of a stop for paths that exist already. */
+export function clashTip(run: PrintedRun): string {
+  return `Move or back up these files, then run \`${initAgain(run)}\` again.`;
+}
 
 /** What the plan and the output say about the shared files. */
 export const SHARED_FILES_NOTE = "BuildOS changes only its own section of these files, between its buildos:begin and buildos:end lines, and only when that section is still exactly as BuildOS wrote it.";
@@ -331,8 +344,8 @@ function stopPrefix(makeDocs: MakeDocsReport | undefined): string {
 }
 
 /** The retry note after Make Docs ran: it is not run a second time. */
-function afterMakeDocs(makeDocs: MakeDocsReport | undefined): string {
-  return makeDocs !== undefined && (makeDocs.status === "set_up" || makeDocs.status === "failed") ? " Make Docs already ran, so add --skip-make-docs when you run buildos init again." : "";
+function afterMakeDocs(makeDocs: MakeDocsReport | undefined, run: PrintedRun): string {
+  return makeDocs !== undefined && (makeDocs.status === "set_up" || makeDocs.status === "failed") ? ` Make Docs already ran, so add --skip-make-docs when you run ${initAgain(run)} again.` : "";
 }
 
 /**
@@ -354,7 +367,7 @@ export function clashResult(prepared: PreparedInit, makeDocs?: MakeDocsReport): 
     setup: prepared.plan.setup,
     clashes: prepared.plan.clashes,
     problems,
-    tip: `${count > 0 ? CLASH_TIP : "Fix each file as shown, then run `buildos init` again."}${afterMakeDocs(makeDocs)}`,
+    tip: `${count > 0 ? clashTip(prepared.run) : `Fix each file as shown, then run \`${initAgain(prepared.run)}\` again.`}${afterMakeDocs(makeDocs, prepared.run)}`,
     reason: count > 0 ? "paths_exist" : manifest ? "manifest_problem" : "shared_file_problem",
     ...(makeDocs === undefined ? {} : { make_docs: makeDocs }),
   };
@@ -384,7 +397,7 @@ export function setupChangedResult(prepared: PreparedInit, now: PreparedInit, ma
     setup: prepared.plan.setup,
     planned_setup: prepared.plan.setup,
     found_setup: now.plan.setup,
-    tip: `Check the .os/ folder and what Make Docs added, then run \`buildos init\` again.${afterMakeDocs(makeDocs)}`,
+    tip: `Check the .os/ folder and what Make Docs added, then run \`${initAgain(prepared.run)}\` again.${afterMakeDocs(makeDocs, prepared.run)}`,
     reason: "setup_changed",
     make_docs: makeDocs,
   };
@@ -417,7 +430,7 @@ export function changedDuringSetupResult(prepared: PreparedInit, changed: Change
     summary: `${stopPrefix(makeDocs)} While Make Docs ran, ${count === 1 ? "1 path that BuildOS must write" : `${count} paths that BuildOS must write`} changed, so BuildOS did not write over ${count === 1 ? "it" : "them"}.`,
     setup: prepared.plan.setup,
     changed,
-    tip: `Check ${count === 1 ? "this path" : "these paths"}, then run \`buildos init\` again.${afterMakeDocs(makeDocs)}`,
+    tip: `Check ${count === 1 ? "this path" : "these paths"}, then run \`${initAgain(prepared.run)}\` again.${afterMakeDocs(makeDocs, prepared.run)}`,
     reason: "changed_during_setup",
     make_docs: makeDocs,
   };
@@ -436,7 +449,7 @@ export function notWritableResult(prepared: PreparedInit, folders: { path: strin
     summary: `Nothing was changed. BuildOS cannot write in ${folders.length === 1 ? "1 folder" : `${folders.length} folders`} that it must add files to.`,
     setup: prepared.plan.setup,
     folders,
-    tip: "Allow your user to write in these folders, then run `buildos init` again.",
+    tip: `Allow your user to write in these folders, then run \`${initAgain(prepared.run)}\` again.`,
     reason: "folder_not_writable",
   };
 }
@@ -642,10 +655,10 @@ export function failedResult(prepared: PreparedInit, why: string, notRestored: N
   if (makeDocs?.status === "set_up") summary += " Make Docs was set up before this, and it stays set up.";
   else if (makeDocs?.status === "failed") summary += " Make Docs ran before this, but it did not finish its setup.";
   const tip = undone
-    ? `Fix the problem shown in "Why", then run \`buildos init\` again.${afterMakeDocs(makeDocs)}`
+    ? `Fix the problem shown in "Why", then run \`${initAgain(prepared.run)}\` again.${afterMakeDocs(makeDocs, prepared.run)}`
     : onlyUnsure
-      ? `Check that each path listed holds what it held before, fix the problem shown in "Why", then run \`buildos init\` again.${afterMakeDocs(makeDocs)}`
-      : `Look at each path listed. Move away what BuildOS left there, fix the problem shown in "Why", then run \`buildos init\` again.${afterMakeDocs(makeDocs)}`;
+      ? `Check that each path listed holds what it held before, fix the problem shown in "Why", then run \`${initAgain(prepared.run)}\` again.${afterMakeDocs(makeDocs, prepared.run)}`
+      : `Look at each path listed. Move away what BuildOS left there, fix the problem shown in "Why", then run \`${initAgain(prepared.run)}\` again.${afterMakeDocs(makeDocs, prepared.run)}`;
   return {
     status: "failed",
     summary,

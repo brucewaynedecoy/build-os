@@ -14,6 +14,7 @@ import type { FsPortFactory } from "../../shared/fs-port.ts";
 import { ProjectFileError, ProjectFiles } from "../../shared/project-files.ts";
 import type { NotRestored } from "../../shared/not-restored.ts";
 import { READ_LIMITS } from "../../shared/read-limits.ts";
+import { runCommand, SOURCE_RUN, type PrintedRun } from "../../shared/run-command.ts";
 import { buildRows, encodeCsv, encodeCsvField, getProfile, validateCsvText, type AzureAdapter, type CsvValidation } from "./csv.ts";
 import { dynamics365Ce } from "./dynamics-365-ce.ts";
 
@@ -46,6 +47,8 @@ export interface ExportInput {
   cwd: string;
   openFs: FsPortFactory;
   allowOutsideRoot?: boolean;
+  /** How printed commands start (PE-023). Defaults to the source-build form, `buildos`. */
+  run?: PrintedRun;
 }
 
 class UsageFailure extends Error {}
@@ -210,7 +213,7 @@ export function runAzureBoards(input: ExportInput): ExportRun {
       print({ operation: "adapters", adapters: ADAPTERS.map((adapter) => ({ id: adapter.id, label: adapter.label, required_params: adapter.requiredParams })) });
       return run;
     }
-    throw new UsageFailure(`Unknown command '${command}'.\nRun "buildos export azure-boards --help" for the commands.`);
+    throw new UsageFailure(`Unknown command '${command}'.\nRun "${runCommand(input.run ?? SOURCE_RUN, ["export", "azure-boards", "--help"])}" for the commands.`);
   } catch (error) {
     run.stdout = "";
     run.report = undefined;

@@ -21,6 +21,7 @@ import {
 import type { Diagnostic } from "../../core/shared/diagnostics.ts";
 import { createEnvelope, serializeEnvelope, type Envelope, type WriteStatus } from "../../core/shared/envelope.ts";
 import { goMarshalIndent, type GoJsonValue } from "../../core/shared/go-json.ts";
+import { runProgram } from "../../core/shared/run-command.ts";
 import { formatDiagnosticsHuman } from "../diagnostics.ts";
 import type { CommandContext, Domain } from "../domain.ts";
 import { EXIT_CODES, exitCodeFor } from "../exit-codes.ts";
@@ -105,7 +106,7 @@ function formatGoHuman(envelope: Envelope, result: GoJsonValue): string {
 }
 
 function run(command: string, options: EntityOptions, context: CommandContext, hooks: Partial<EntityHooks> | undefined): EntityCommandResult {
-  const entityContext: EntityContext = { cwd: context.io.cwd, openFs: context.openFs, ...(hooks === undefined ? {} : { hooks }) };
+  const entityContext: EntityContext = { cwd: context.io.cwd, openFs: context.openFs, program: runProgram(context.buildInfo.version), ...(hooks === undefined ? {} : { hooks }) };
   switch (command) {
     case "resolve":
       return resolveCommand(entityContext, options.root, options.mode, options.id);

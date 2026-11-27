@@ -34,13 +34,14 @@ The capture script writes these tables. The first names the capture that made th
 | `os/<platform>/<tool>/<case-id>/` | One operating system's set (`darwin`, `linux`, or `win32`), in the same form. It holds every OS-dependent case, plus any shared case whose Go output differed on that system. |
 | `os/<platform>/capture-record.json` | The record of that set's capture: operating system, runner image, CI run, commit, Go version, case umask, drift, changed goldens, exit-code mismatches, `parity_exception_skips` (cases skipped under PE-005, each with its `observation_sha256`), `parity_exception_mismatches` (PE-005 cases whose Go observation was not the recorded defect), `derived_goldens` (each derived golden with its source and SHA-256), and `golden_files`, the SHA-256 of every file in the set (hidden files included). |
 | `os/win32/buildos/<case-id>/` with `derived` in `result.json` | A derived golden (see [Platform Exception Classes](#platform-exception-classes-pe-005)): made by `capture.mjs --derive` from a committed source golden, never captured from Go. |
-| `parity-exceptions.json` | Approved differences from the Go output, each with its owner decision. A `golden` entry holds the exact allowed TypeScript value of one field of one case; an entry with `platform` (`darwin`, `linux`, or `win32`) applies only on that operating system, for an OS-dependent case whose value differs by system (PE-004 since P3). PE-005 is a platform exception class: its `cases` list is the only allow-list for capture skips and derived goldens. |
+| `parity-exceptions.json` | Approved differences from the Go output, each with its owner decision. A `golden` entry holds the exact allowed TypeScript value of one field of one case; an entry with `platform` (`darwin`, `linux`, or `win32`) applies only on that operating system, for an OS-dependent case whose value differs by system (PE-004 since P3). PE-005 is a platform exception class: its `cases` list is the only allow-list for capture skips and derived goldens. PE-023 is the class rule for printed fix commands: see [Printed Fix Commands (PE-023)](#printed-fix-commands-pe-023). |
 | `proposed-exceptions.json` | Proposed parity exceptions that wait for an owner decision and are not approved (PE-009 to PE-011 since P4). The harness holds each to its exact pinned value: a `golden` entry matches one field of one case exactly and the compare summary lists it as pending; an owner approval moves an entry to `parity-exceptions.json`. PE-009 (approved) is a class exception: every PDF comparison with Go runs `pdfWordGapClass` in `harness.ts`, and its `pdf` entries are regression fixtures that record the exact spaces the class check finds. |
 | `evidence/pe-005-win32/<tool>/<case-id>/` | The real Go 1.24.1 defect observation of each PE-005 case on Windows, copied unchanged from the `buildos-goldens-win32` artifact of capture run 45293367433. It is evidence, not a golden: no golden set reads it. `pe-005.test.ts` recomputes each `go_observation_sha256` from it. |
 | `harness.ts` | Shared code for capture and comparison. |
 | `capture.mjs` | The maintainer capture script. Since W1 R7 P8 it only checks (`--verify-artifact`), derives (`--derive`), and writes the record tables (`--record`); its Go capture modes are retired. |
 | `compare.test.ts` | The comparison harness that CI runs. |
 | `self-test.test.ts` | The planted-difference self-test. |
+| `printed-command.test.ts` | PE-023: each list of the printed-command class is exactly where the form occurs, and every other difference still fails. |
 | `selection.test.ts` | Tests that pick the shared or per-OS golden and report `missing-golden`. |
 | `review-fixes.test.ts` | Regression tests for the P2 review fixes: root encodings and literal tokens, permission bits, exact exception fields, capture drift, the artifact manifest, the capture workflow, and flag coverage. |
 | `pe-005.test.ts` | Simulated win32 tests for PE-005: golden selection, the exact-digest capture skip, the rule that a derived golden counts only for a PE-005 case, and the `--verify-artifact` PE-005 rules. |
@@ -92,6 +93,15 @@ The derived `result.json` holds `derived`: the exception ID, the source folder, 
 - It recomputes the SHA-256 of each derived golden folder and of its committed source golden. Both must equal the record entry and the `result.json` mark (so an all-zero SHA-256 fails). The folder must also equal a fresh derivation from the committed source.
 - The three shared design cases have no folder in any set, derived or captured.
 - `parity_exception_skips` lists exactly the six PE-005 cases of the platform. Each has the PE-005 kind, exit codes, and golden, and an `observation_sha256` equal to PE-005's `go_observation_sha256`. A record from before this rule has no `observation_sha256`, so it fails and needs a fresh capture.
+
+## Printed Fix Commands (PE-023)
+
+PE-023 (owner decision 2026-11-26, F-P8-11 and F-P8-10) changes the printed fix commands, not the goldens. `applyPrintedCommands` in `harness.ts` turns each Go form in a golden into the form the port prints, in the text as printed and inside each JSON string (decoded, then encoded again with Go's escaping):
+
+- `buildos entities rebuild-index --root <Go %q root> --mode <mode> --apply` becomes `<program> entities rebuild-index --root <quoted root> --mode <mode> --apply`. The quoted root is `'<root>'` on Linux and macOS and `"<root>"` with each `\` written once on Windows.
+- `Run buildos help for command syntax.` becomes `Run <program> help for command syntax.`.
+
+`<program>` is `buildos` for the goldens' development identity and `npx -y build-os@<version>` for a release identity (`BUILDOS_GOLDEN_EXPECT_VERSION`). `compare.test.ts` applies the rule to every selected golden and fails when a form occurs in a case that PE-023 does not list for the running system, or not in a listed one. The entity edge seeds and the `$PWD` seeds get the same rule with `buildos` (`seedWithPrintedCommands`). No golden file changes.
 
 ## Frozen Go Baseline
 

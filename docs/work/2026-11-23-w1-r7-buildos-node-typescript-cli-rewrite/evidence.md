@@ -5379,7 +5379,7 @@ Unchanged: the plain Node.js message (byte for byte), the legacy-name notice (PE
 
 `intake convert`, `entities validate`, and `validate` have no P6 capture (they belong to P3, P4, and P7). Their output has the shape of their goldens and of the P7 `validate` text; the release run's installed golden gate compared 167 of 167 cases from the same tarball ([Publication Review](#retrospective-publication-review-t24)).
 
-Observation on Windows quoting: on Windows the shown `entities` remediation command quotes the folder the way Go's `%q` does, so each backslash is doubled (`--root "<drive>:\\<folder>\\<project>"`), in the human line and in `remediation_command`. This is the frozen Go behaviour that the goldens keep. Command Prompt accepts doubled separators in such a path in most cases; this pass did not run the command on Windows. Follow-up F-P8-10: check the shown Windows remediation commands and decide whether a parity exception is wanted. The same command also has the defect below, on every system.
+Observation on Windows quoting: on Windows the shown `entities` remediation command quotes the folder the way Go's `%q` does, so each backslash is doubled (`--root "<drive>:\\<folder>\\<project>"`), in the human line and in `remediation_command`. This is the frozen Go behaviour that the goldens keep. Command Prompt accepts doubled separators in such a path in most cases; this pass did not run the command on Windows. Follow-up F-P8-10: check the shown Windows remediation commands and decide whether a parity exception is wanted. The same command also has the defect below, on every system. Status (2026-11-26): fixed for `0.2.0` under the same parity exception as F-P8-11 (PE-023); see [F-P8-11 Printed Commands](#f-p8-11-printed-commands-2026-11-26).
 
 #### Defect: the Printed Rebuild Command Needs a Global Install (F-P8-11)
 
@@ -5417,7 +5417,7 @@ Other printed commands of the same kind (a bare `buildos ...` that BuildOS shows
 
 The no-TTY `init` question is not in this list: it shows `npx -y build-os@0.1.0 init ...`, which runs. The guide's [chapter 18](../../../guide/content/18-what-is-not-built-yet.md) also names a bare `buildos entities rebuild-index --mode strict --apply` as a workaround; that is guide text, not printed output, and is left for F-P8-11.
 
-Follow-up F-P8-11 (candidate for `0.1.1` or `0.2.0`; owner decision open): the commands that BuildOS prints as a fix use a bare `buildos`, which does not run without a global install. The owner decides whether to fix it, in which release, and in which form (for example the project wrapper form, or the `npx -y build-os@<version>` form), and approves a parity exception for the Go-golden cases (rows 1 and 2 of the table above; row 3 is partly under PE-001). This record does not decide it. Status (owner decision 2026-11-26): fixed in `0.2.0`, with no `0.1.1`; BuildOS prints the fix command as `npx -y build-os@<running version> …`. A separate pull request does it; see [P9 Stage 3 Review Round 1](#p9-stage-3-review-round-1-2026-11-26).
+Follow-up F-P8-11 (candidate for `0.1.1` or `0.2.0`; owner decision open): the commands that BuildOS prints as a fix use a bare `buildos`, which does not run without a global install. The owner decides whether to fix it, in which release, and in which form (for example the project wrapper form, or the `npx -y build-os@<version>` form), and approves a parity exception for the Go-golden cases (rows 1 and 2 of the table above; row 3 is partly under PE-001). This record does not decide it. Status (owner decision 2026-11-26): fixed in `0.2.0`, with no `0.1.1`; BuildOS prints the fix command as `npx -y build-os@<running version> …`. A separate pull request does it; see [P9 Stage 3 Review Round 1](#p9-stage-3-review-round-1-2026-11-26). Status (2026-11-26): built for `0.2.0` (not released), parity exception PE-023; see [F-P8-11 Printed Commands](#f-p8-11-printed-commands-2026-11-26).
 
 Disposition for A71: the smoke tests pass on three operating systems as the steps define them (first part met, verified); the steps do not run the printed fix commands, and one of them is the defect F-P8-11 above. That defect is not a difference from the P6 reviewed output (`entities validate` has no P6 capture, and its output equals the Go goldens), so it does not change the output-match count. The second part ("the captured output matches the P6 reviewed output except for version strings") is not met as written: the 5 differences in rows 2, 3, 6a, 8, and 9 are not version strings. Each traces to a later recorded owner decision, phase scope, or review fix, but the criterion is not re-worded. A71 needs the owner to accept these 5 differences, or it stays not met.
 
@@ -5532,7 +5532,7 @@ Tasks: no checkbox changes. Under the rule in [00-index.md](00-index.md), a task
 ### Follow-ups (Post-Publication Checks)
 
 - F-P8-09: prove rollback by version pin through npx to an earlier published version (`0.2.0` back to `0.1.0`) on a copied project, on three systems, when `0.2.0` exists. Owner: the `0.2.0` release phase.
-- F-P8-10: on Windows, the shown `entities` remediation command doubles each backslash (Go `%q` parity). Check that Command Prompt runs it as shown, and decide whether a parity exception is wanted.
+- F-P8-10: on Windows, the shown `entities` remediation command doubles each backslash (Go `%q` parity). Check that Command Prompt runs it as shown, and decide whether a parity exception is wanted. Status (2026-11-26): fixed for `0.2.0` in PE-023; see [F-P8-11 Printed Commands](#f-p8-11-printed-commands-2026-11-26).
 - F-P8-11: the commands that BuildOS prints as a fix use a bare `buildos` (first `entities rebuild-index`; also `buildos help`, `buildos validate`, `buildos init`, and the three legacy-name notices in their messages), which exits 127 for an adopter with no global install. Candidate for `0.1.1` or `0.2.0`; owner decision open, with a parity exception for the Go-golden cases. See [Defect: the Printed Rebuild Command Needs a Global Install (F-P8-11)](#defect-the-printed-rebuild-command-needs-a-global-install-f-p8-11).
 - F-P8-12: `toolkits/buildos/scripts/measure-npx-first-run.ts` does not pin the child `PATH` to the Node that runs the script, so the BuildOS CLI that `npx` starts could run under another Node (the script starts `npx` itself with the Node that runs the script). For the `PERF-002` pass of 2026-11-26 the raw JSON records Node 24.22.3 and the launch command put that Node first on `PATH`, so the result stands. Pin the child `PATH` in the next revision of the instrument. Status (2026-11-26): fixed in W1 R7 P9 Stage 3; see [P9 Stage 3](#p9-stage-3-skills-no-python-check-and-docs-2026-11-26).
 - F-P8-13: `toolkits/buildos/scripts/published-smoke.ts` cleans paths before it checks the legacy notice, so an account named `buildos` on the machine could make a correct notice fail the check. The three CI smoke jobs passed. Compare the raw stderr first, then clean the saved report. Status (2026-11-26): fixed in W1 R7 P9 Stage 3; see [P9 Stage 3](#p9-stage-3-skills-no-python-check-and-docs-2026-11-26).
@@ -6681,3 +6681,107 @@ Review round 3 of pull request 7 was the last round under the project stop rule 
 Not tested again: the fix pass changed text and three commands (`mkdir` without `-p`, one `cp` example, and the two router comparisons). The orchestrator did not run the full upgrade and rollback again after these changes. The Windows Command Prompt forms are still not tested. The steps are long because BuildOS has no update command; follow-up F-P9-08 (a W2 `buildos update`) stays open in `R-003`.
 
 Reviewer's verification of the rest of round 2 (its own run): typecheck and build passed; `npm test` 2,759 tests, 2,746 passed, 13 skipped, 0 failed; the static guard caught the three spellings of round 2 and the real tree had only the 19 findings of the named exception; the read-only checkout and scratch copy keep the image proof; the real deny-list scan found 0 matches with 168 of 168 package files read.
+
+## F-P8-11 Printed Commands (2026-11-26)
+
+Branch `fix/f-p8-11-printed-commands`, stacked on pull request 7 (`rewrite/p9-stage-3`, head `4743f39`), which waits for the owner's merge. This records the fix of F-P8-11 and F-P8-10 for `0.2.0`. No version, release candidate, tag, release, or stage changed.
+
+### Owner Decision 2026-11-26 (F-P8-11)
+
+The owner decided on 2026-11-26 (relayed by the orchestrating maintainer chat; recorded first in [Owner Decisions 2026-11-26 (Recorded in Review Round 1)](#owner-decisions-2026-11-26-recorded-in-review-round-1), item 1):
+
+1. F-P8-11 is fixed in `0.2.0`. There is no `0.1.1`.
+2. A command that BuildOS prints for the adopter to run takes the form `npx -y build-os@<running version> …`, which works on every system with no global install.
+
+This is the owner decision that parity exception PE-023 needs. The Windows quoting (F-P8-10) is fixed in the same exception, under this decision: the printed command is new text in any case, and a quoting that the shells run as shown is part of a command that "works on every system".
+
+### The Helper
+
+`toolkits/buildos/src/core/shared/run-command.ts` builds every printed command (`runProgram`, `printedRun`, `runCommand`). Its rules, each with a test in `test/run-command.test.ts`:
+
+| Input | Printed program | Why |
+| --- | --- | --- |
+| A release version, `MAJOR.MINOR.PATCH` (`0.2.0`) | `npx -y build-os@0.2.0` | npm holds that exact version, and the exact pin runs the same build. |
+| A prerelease (`0.2.0-rc.1`) | `npx -y build-os@0.2.0-rc.1` | npm can hold an exact prerelease, and an exact pin installs it whatever its dist-tag. |
+| A source build (`dev`), and the reserved `0.0.0-dev` | `buildos` | No npm version names this build, so an `npx` form cannot run it. `buildos` is the name a source build gets from `npm link` or a global install of its packed file. `buildos init` used this rule for its shown command since W1 R7 P6. |
+| A version with build metadata (`0.2.0+local`), or any other text | `buildos` | npm drops `+local` and would run the registry `0.2.0`, a different build; the manifest contract does not accept such a version either. |
+
+Quoting: a folder path (a `{ path }` word) is always quoted, as Go's `%q` always quoted the root, so the command has the same shape for every folder. POSIX gets single quotes (a `'` is written `'\''`), so the shell expands no `$`, backtick, or `\` in it; Go's `%q` double quotes did not stop `$` and backtick expansion. Windows gets Command Prompt double quotes (`quoteAlways` in `src/core/init/make-docs.ts`, the rule `buildos init` already used): each `\` is written once, a backslash run is doubled only before the closing quote, and a `%` is put outside the quotes as `^%`. Other words are quoted only when they hold a character outside the safe set.
+
+### Each Printed-Command Class
+
+| Class | Where | Changed or kept | Reason |
+| --- | --- | --- | --- |
+| A fix to copy and run: the `entities rebuild-index` recovery command | `src/core/entities/commands.ts` (`rebuildCommand`): the human `action:` line, `remediation_command`, `recovery_command`, `correction` | Changed to the runnable form; the root always quoted | It is the defect F-P8-11: the adopter copies it and runs it. |
+| A sentence that names a specific command to run: `Run buildos help for command syntax.` | `src/cli/run.ts` (every usage error) | Changed: `Run npx -y build-os@<version> help for command syntax.` | It tells the adopter to run one specific command (the orchestrator's reading). |
+| "run … again" advice of `validate` | `src/cli/commands/validate.ts`, `src/core/validate/validate.ts` | Changed | A fix to copy and run. |
+| "run … again" advice of `init` (stops, failures, the source-code folder, the unknown `.os/` folder, a shared file that changed during the run) | `src/core/init/init.ts`, `plan.ts`, `shared-files.ts`, `apply.ts`, `src/cli/commands/init.ts` | Changed: ``run `npx -y build-os@<version> init` again`` | A fix to copy and run; before init there is no wrapper, so only the `npx` form runs. |
+| "run … again" advice of `extract bulk` and the unknown-command line of `export azure-boards` | `src/core/extract/bulk.ts`, `src/core/export/azure-boards/export.ts` | Changed | New in `0.2.0`, found by the same search; each names a specific command to run. |
+| Usage lines and help text: `buildos <domain> [flags]`, `Run "buildos help <domain>" for domain details.`, `Run "buildos extract bulk --help" for the subcommands.` | `src/cli/help.ts` and each domain's help | Kept | The program name in usage text is a convention; the text describes the syntax and has placeholders, so it is not a command to copy. PE-001 pins the root help. |
+| The legacy-name notice: `Use "buildos intake" instead.` | `src/cli/invocation.ts`, and the project scripts with the legacy names | Kept | It names the new command name, not a fix to copy. The project scripts print the same fixed line (PE-016), and in a project the adopter runs `.os/scripts/buildos intake`. |
+| The legacy validator note of `init` adoption | `src/core/init/plan.ts` (`LEGACY_VALIDATOR_NOTE`) | Kept | It already names the runnable project form `.os/scripts/buildos validate`, which exists after adoption. |
+| The no-TTY `init` question | `src/core/init/init.ts` (`initCommand`) | Kept as it was (it already printed `npx -y build-os@<version> init --root <folder> …`), now built with the same helper | It already ran. Its root keeps the quote-only-when-needed form of `0.1.0`. |
+
+JSON field names and shapes do not change; only the command text does.
+
+### Parity Exception PE-023
+
+`toolkits/buildos/test/golden/parity-exceptions.json`, PE-023, with the owner decision above. It is a class rule, like PE-016, held in its `printed_command` field: `applyPrintedCommands` in `test/golden/harness.ts` states the rule independently of the CLI code and turns each Go form into the port's form, in the text as printed and inside each JSON string (decoded, then encoded again with Go's escaping). Every other byte is compared as before.
+
+| Form | Cases |
+| --- | --- |
+| `rebuild` (`buildos entities rebuild-index --root <Go %q root> --mode <mode> --apply`) | Goldens: 5 on darwin and linux (`entities-rebuild-check-stale-strict-json`, `entities-rebuild-apply-missing-json`, `entities-validate-missing-index-strict`, `entities-validate-missing-index-compat-json`, `entities-consolidate-apply-index-failure-json`) and 6 on win32 (the same 5 and `entities-rebuild-apply-write-failure-json`). Seeds: 11 entity edge seeds and 5 `$PWD` seeds. |
+| `usage` (`Run buildos help for command syntax.`) | 7 shared goldens (`cli-version-bad-flag`, `cli-version-bad-flag-json`, `cli-version-help`, `cli-unknown-command`, `entities-validate-no-root-usage`, `entities-resolve-no-id-usage-json`, `entities-consolidate-extra-arg-usage`). For a development build this form is unchanged; it changes only in the release-identity comparison of the release gate. The P1 seed `cli-goldens.json` holds it 64 times; its test runs only a development build. |
+
+Golden files changed: 0. `CAPTURE.md` says goldens never change; the approved mechanism is the exception, so the goldens stay the frozen Go baseline. `compare.test.ts` fails when a form occurs in a case that PE-023 does not list for the running system, or not in a listed one; `test/golden/printed-command.test.ts` checks that each list is exactly where each form occurs in the goldens of all three systems and in the seeds, that Go's own text, a bare `buildos` from a release build, and Go's `%q` root no longer match, and that no exact value pinned by another exception holds a Go-form command.
+
+### End-to-End Check (Locally Packed Build)
+
+macOS 27.2.1 arm64, Node 26.13.1, npm 11.20.0, outside the agent's network sandbox, 2026-11-26. The build: `node scripts/release-build.ts --allow-dirty` of this branch, which stamps the `package.json` version `0.1.0` (the version stays `0.1.0` in this pull request) and the revision `4743f39…-dirty`; tarball SHA-256 `ec59b20d2e30e4523228489f5163c7c220cce8bee07cb0450755398c1bc0f988` (two builds gave the same bytes). A new temporary folder, a new empty npm cache, npm update notice and install scripts off, stdin closed:
+
+| Step | Result |
+| --- | --- |
+| 1. `command -v buildos` | none: no `buildos` on `PATH` |
+| 2. `npx -y --package=<tgz> build-os init --skip-make-docs` in a new project folder | exit 0 |
+| 3. `npx -y --package=<tgz> build-os entities validate --root <project> --mode compat` | exit 0; `action: npx -y build-os@0.1.0 entities rebuild-index --root '<project>' --mode compat --apply` |
+| 4. The `action:` text, taken verbatim, split by `sh` (`set -- <text>`) | 10 words: `npx`, `-y`, `build-os@0.1.0`, `entities`, `rebuild-index`, `--root`, `<project>`, `--mode`, `compat`, `--apply`: the program and the arguments of the command BuildOS meant |
+| 5. The same text with only `build-os@0.1.0` replaced by `--package=<tgz> build-os`, run with `sh -c` | exit 0, `entities.rebuild-index: ok`; the index is written; `entities validate` then prints no `index_stale` |
+| 6. The index removed, then the `action:` text verbatim with `sh -c` | exit 0, `entities.rebuild-index: ok`, the index written. This ran the registry's `build-os@0.1.0`, because the stamped version is `0.1.0` |
+
+What this proves: a release-stamped build prints the `npx` form; the printed text parses in `sh` to exactly the intended program and arguments; with the local tarball in place of the registry version the command runs and repairs the index; the verbatim text runs as printed. What it does not prove: that the registry `build-os@0.2.0` runs it (it does not exist yet; step 6 ran the published `0.1.0` program with the text that this build printed); Windows and Linux (CI covers the shell runs below, not this tarball check). Step 10 of `scripts/published-smoke.ts` runs a printed fix command on the next published version.
+
+The release-identity golden comparison (`installedGate` of `scripts/release-gate.ts`, the step the release gate runs) on the same tarball, expecting `0.1.0` at `4743f39…-dirty`: 167 passed, 0 failed. So the PE-023 rule holds for a release build, where the program is `npx -y build-os@0.1.0` in all 12 listed cases on macOS.
+
+### Windows Quoting (F-P8-10)
+
+Go's `%q` doubled each `\`. Command Prompt passes `"D:\\work\\root"` on unchanged, so the program got the doubled path; Windows path rules fold the doubled separators of a drive path, so the `0.1.0` command most likely ran there (not tested on Windows), but it showed the folder wrongly, and a UNC root (`\\server\share`) came out with four leading backslashes, which is not a UNC path. PE-023 prints `"D:\work\root"`, which both Command Prompt and PowerShell pass as one argument with single backslashes.
+
+`test/run-command.test.ts` ("the printed rebuild command runs as printed in the system shell") takes the printed `action:` text of a source build, replaces only its program word `buildos` with `"<node>" "<bundle>"`, and runs it: in `sh` on Linux and macOS, for folders named `plain`, `with space`, and ``a$b `c` it's & (d)``; in Command Prompt (`cmd.exe /d /s /c`) and Windows PowerShell (`powershell.exe -Command "& …"`) on Windows, for `plain`, `with space`, and `a&b (c)`. Each run must exit 0 and write the index. Verified here: macOS (`sh`). Windows: the CI job `test (windows-latest, Node 24)` of this pull request; see [CI Run (F-P8-11)](#ci-run-f-p8-11). Not tested: a folder name with `$`, a backtick, or `%` in PowerShell (stated as a limit in `SECURITY.md`), PowerShell 7 (`pwsh`), and the `npx` program word on Windows (the published-smoke step 10 covers it on the next release).
+
+### Published Smoke Step 10
+
+`scripts/published-smoke.ts` gets step 10, last because it writes the project's entity index: `entities validate --json` in the project of step 3, then a check that `result.index.remediation_command` holds the rebuild command and that the human `action:` line of step 5 holds the same text. For `0.1.0` the step checks the bare `buildos` form (the known defect) and does not run it. For any later version the text must start with `npx -y build-os@<version> `, the step runs it as printed (`sh -c`, or Command Prompt on Windows), and `entities validate` must then print no index warning. Step counts: 13 on Linux and macOS (12 on Windows) for `0.1.0`, and 15 (14) for a later version; before this change they were 12 (11). A local run on macOS for `0.1.0`: "passed (13 of 13 steps)". The pull request runs the `buildos-smoke` workflow (its path filter names the script) for `0.1.0` on three systems.
+
+### Records
+
+PRD 20 (`## Output and Exit Contract`, Requirement History), the risk register (R-003 paragraph "W1 R7 printed commands"), the guide (chapter 18's workaround names the wrapper form and both versions), the user guide `docs/assets/user/entities-consolidation-curate-and-resolve-records.md` (from `0.2.0` the printed command runs as printed; the `0.1.0` advice stays for `0.1.0`), `guide/BuildOS-Guide.html` rebuilt, `RELEASE_NOTES.md` (`0.2.0` draft, "Fix commands run as printed"), `SECURITY.md` (Windows shown commands), `test/golden/CAPTURE.md` (Printed Fix Commands), and the history record `.make-docs/archive/history/2026-11-26-w1-r7-p9-printed-fix-commands.md`.
+
+Status: F-P8-11 and F-P8-10 are built for `0.2.0` (not released). They close when `0.2.0` is published and its smoke step 10 passes on three systems.
+
+### Check Results (F-P8-11)
+
+From `toolkits/buildos/` unless noted. macOS arm64, Node 26.13.1.
+
+| Check | Result |
+| --- | --- |
+| `npm ci --ignore-scripts`, `npm run typecheck`, `npm run build` | exit 0 |
+| `npm test` | exit 0; 2,787 tests, 2,774 pass, 0 fail, 13 skipped |
+| `node --test test/run-command.test.ts` | 16 tests, 16 pass |
+| `node --test test/golden/printed-command.test.ts` | 11 tests, 11 pass |
+| Release-identity golden comparison of the locally stamped tarball (`installedGate`) | 167 passed, 0 failed |
+| `node scripts/published-smoke.ts --version 0.1.0` | passed, 13 of 13 steps |
+| `node tools/build-guide.mjs` (in `guide/`) | rebuilt |
+
+### CI Run (F-P8-11)
+
+Recorded after the push.

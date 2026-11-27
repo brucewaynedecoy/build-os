@@ -18,6 +18,7 @@ import { join } from "node:path";
 import { after, before, describe, it } from "node:test";
 import { bundle } from "../scripts/build.ts";
 import { makePwdLayout, PWD_CASES, runPwdCase } from "../scripts/capture-pwd-goldens.ts";
+import { loadExceptions, seedWithPrintedCommands } from "./golden/harness.ts";
 
 let dir: string;
 let program: string[];
@@ -107,7 +108,8 @@ describe("a relative --root folds against $PWD, as Go's filepath.Abs (P3 t12)", 
     it(`${c.name} matches the Go seed byte for byte`, () => {
       const layout = makePwdLayout();
       try {
-        const golden = goldens.cases.find((g) => g.name === c.name)!;
+        // PE-023: Go's printed fix commands in the port's form; every other byte as Go wrote it.
+        const golden = seedWithPrintedCommands(c.name, goldens.cases.find((g) => g.name === c.name)!, "pwd", loadExceptions());
         assert.deepEqual(runPwdCase(program, c, layout), { exit: golden.exit, stdout: golden.stdout, stderr: golden.stderr });
       } finally {
         rmSync(layout.scratch, { recursive: true, force: true });

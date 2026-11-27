@@ -9,6 +9,7 @@
  */
 
 import { runAzureBoards } from "../../core/export/azure-boards/export.ts";
+import { printedRun } from "../../core/shared/run-command.ts";
 import type { CommandContext, CommandOutcome, Domain } from "../domain.ts";
 import { UsageError } from "../usage-error.ts";
 import { renderSkillRun, takeSharedFlags, wantsHelp, wantsJson, type SkillOutcome } from "./skill-output.ts";
@@ -74,7 +75,7 @@ function runExport(args: readonly string[], context: CommandContext): CommandOut
   if (flags.error !== undefined) throw new UsageError(flags.error, { command: "buildos export azure-boards", json: flags.json });
   // P9-R1-15: `--help` at any level (`export azure-boards emit --help`) prints the help and exits 0.
   if (wantsHelp(flags.rest)) return { rendered: { stdout: EXPORT_AZURE_BOARDS_HELP, stderr: "", exitCode: 0 }, command: "export.azure-boards", json: false };
-  const run = runAzureBoards({ args: flags.rest, root: flags.root, cwd: context.io.cwd, openFs: context.openFs, allowOutsideRoot: flags.allowOutsideRoot });
+  const run = runAzureBoards({ args: flags.rest, root: flags.root, cwd: context.io.cwd, openFs: context.openFs, allowOutsideRoot: flags.allowOutsideRoot, run: printedRun(context.buildInfo.version, process.platform) });
   if (run.outcome === "help") return { rendered: { stdout: EXPORT_AZURE_BOARDS_HELP, stderr: "", exitCode: 0 }, command: "export.azure-boards", json: false };
   const outcome: SkillOutcome = run.outcome;
   return renderSkillRun(

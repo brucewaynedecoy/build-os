@@ -24,6 +24,21 @@
 // entities validate, validate, one legacy name (buildos-intake), the project
 // wrapper with Node.js missing (exit 127, the plain message), and the project
 // wrapper with Node.js present (it runs the pinned version through npx).
+//
+// Step 10 (F-P8-11, PE-023; owner decision 2026-11-26): the printed fix
+// command. `entities validate --json` in the project of step 3 (which has no
+// entity index yet) prints the rebuild command in
+// `result.index.remediation_command`; the step checks that the human
+// `action:` line holds the same text. For 0.1.0 the text starts with a bare
+// `buildos` (the known defect F-P8-11, fixed in 0.2.0), so the step checks
+// that form and does not run it. For any other version the text must start
+// with `npx -y build-os@<version> `, and the step runs it as printed through
+// the system shell (`sh -c`, or Command Prompt on Windows), then runs
+// `entities validate` again, which must print no index warning. So the
+// step count is 13 on Linux and macOS (12 on Windows, which has one wrapper
+// step for Node.js missing) for 0.1.0, and 15 (14) for a later version:
+// version 2, init 2, intake 1, entities validate 1, validate 1, legacy name
+// 2, wrapper 3 (2), and step 10 with 1 for 0.1.0 or 3 for a later version.
 
 import { spawnSync, type SpawnSyncOptions } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
@@ -296,6 +311,31 @@ const project = newFolder("project");
     // Reported by the check below.
   }
   check(step, `the wrapper ran version ${version}`, parsed.version === version);
+}
+
+// 10. A printed fix command (F-P8-11, PE-023), run as printed. Last, because it writes the project's entity index.
+{
+  const json = npxRun("entities validate --json (the printed fix command)", ["entities", "validate", "--root", project, "--mode", "compat", "--json"], 0, project);
+  let printed = "";
+  try {
+    printed = (JSON.parse(json.stdout) as { result?: { index?: { remediation_command?: string } } }).result?.index?.remediation_command ?? "";
+  } catch {
+    // Reported by the checks below.
+  }
+  const human = steps.find((s) => s.name === "entities validate");
+  check(json, "result.index.remediation_command holds a rebuild-index command", printed.includes(" entities rebuild-index --root ") && printed.endsWith(" --mode compat --apply"));
+  check(json, "the human action: line of step 5 holds the same command", human !== undefined && human.stdout.split("\n").includes(`  action: ${printed}`));
+  if (version === "0.1.0") {
+    check(json, "0.1.0 prints a bare buildos (the known defect F-P8-11, fixed in 0.2.0); the step does not run it", printed.startsWith("buildos entities rebuild-index --root "));
+  } else {
+    check(json, `the command starts with npx -y build-os@${version}`, printed.startsWith(`npx -y build-os@${version} entities rebuild-index --root `));
+    const step = WINDOWS
+      ? run("the printed fix command, as printed, in Command Prompt", printed, process.env["ComSpec"] ?? "cmd.exe", [`/d /s /c "${printed}"`], 0, project, { verbatim: true })
+      : run("the printed fix command, as printed, in sh", printed, "/bin/sh", ["-c", printed], 0, project);
+    check(step, "stdout says entities.rebuild-index: ok and the write was applied", step.stdout.startsWith("entities.rebuild-index: ok\n") && step.stdout.includes("write status: applied\n"));
+    const after = npxRun("entities validate after the printed fix command", ["entities", "validate", "--root", project, "--mode", "compat"], 0, project);
+    check(after, "no index warning", after.stdout.startsWith("entities.validate: ok\n") && !after.stdout.includes("index_stale") && !after.stderr.includes("index_stale"));
+  }
 }
 
 for (const s of steps) s.ok = s.checks.every((c) => c.ok);

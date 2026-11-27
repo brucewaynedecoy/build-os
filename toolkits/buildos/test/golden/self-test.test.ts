@@ -186,7 +186,7 @@ describe("planted differences at the comparator", () => {
 
   it("keeps every real exception on a real difference", () => {
     const exceptions = loadExceptions();
-    assert.deepEqual(exceptions.exceptions.map((e) => e.id), ["PE-001", "PE-002", "PE-003", "PE-004", "PE-005", "PE-006", "PE-007", "PE-008", "PE-009", "PE-010", "PE-011", "PE-012", "PE-013", "PE-014", "PE-015", "PE-016", "PE-017", "PE-018", "PE-019", "PE-020", "PE-021", "PE-022"]);
+    assert.deepEqual(exceptions.exceptions.map((e) => e.id), ["PE-001", "PE-002", "PE-003", "PE-004", "PE-005", "PE-006", "PE-007", "PE-008", "PE-009", "PE-010", "PE-011", "PE-012", "PE-013", "PE-014", "PE-015", "PE-016", "PE-017", "PE-018", "PE-019", "PE-020", "PE-021", "PE-022", "PE-023"]);
   });
 
   it("no exception is pending; PE-018 and PE-019 (2026-11-24) and PE-021 (2026-11-25, the .xlsx content rule) were approved and carry the owner decision", () => {

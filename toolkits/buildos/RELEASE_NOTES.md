@@ -11,6 +11,13 @@ This section is a draft (W1 R7 P9 t12). The version is not set and nothing is pu
 - The three commands read only files inside the project folder. `fitgap` and `export azure-boards` write outside it only with `--allow-outside-root`.
 - `buildos intake` takes `--json` and prints the same envelope as the other domains.
 
+### Fix commands run as printed
+
+- A command that BuildOS prints for you to run now starts with `npx -y build-os@<version>`, where `<version>` is the version that printed it, so it runs as printed with no global install. This covers the `entities rebuild-index` recovery command (the `action:` line, `remediation_command`, `recovery_command`, and `correction` in JSON), `Run npx -y build-os@<version> help for command syntax.` after a usage error, and the "run ... again" advice of `validate`, `init`, `extract bulk`, and `export azure-boards`. In `0.1.0` these commands start with a bare `buildos`, which exits 127 without a global install (follow-up F-P8-11).
+- The folder in the printed `entities rebuild-index` command is always quoted for the shell: single quotes on Linux and macOS, so the shell expands nothing in it, and Command Prompt double quotes on Windows, with each `\` written once. `0.1.0` wrote each `\` twice there (follow-up F-P8-10).
+- A build from source (version `dev`) still prints `buildos`, because no npm version names it. Help text keeps the program name `buildos` in its usage lines, and the legacy-name notice still says `Use "buildos intake" instead.`
+- JSON field names and shapes are unchanged; only the command text changed. This is parity exception PE-023.
+
 ### Not in this draft yet
 
 - `capability-matrix` still needs Python 3 for its own tool. This is a temporary exception, not a `0.2.0` feature: the owner decided on 2026-11-26 to build a BuildOS command for that tool in `0.2.0`, and the exception goes away when the command is in. Until then, the skill tells the agent to write and run its own Python tool.

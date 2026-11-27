@@ -35,6 +35,7 @@
 import { CoreError, NeedsOperatorReviewError } from "../shared/errors.ts";
 import { leftoversOf, type ExpectedEntry, type FsEntryId, type FsPort } from "../shared/fs-port.ts";
 import type { Before, InitPlan } from "./plan.ts";
+import { SOURCE_INIT } from "./shared-files.ts";
 
 /** The temporary file name of an atomic write: `.gitignore` would give the refused default `..gitignore.`. */
 const TEMP_NAME = { tempPrefix: ".buildos-init-", tempSuffix: ".tmp" };
@@ -80,7 +81,7 @@ export class ApplyFailure extends Error {
 /** Why a failed write left an entry that this run could not remove. */
 const LEFT_BEHIND = "BuildOS could not remove this file after a failed write, so it is still there";
 
-export function applyInit(plan: InitPlan, fs: FsPort): void {
+export function applyInit(plan: InitPlan, fs: FsPort, again: string = SOURCE_INIT): void {
   const journal: Step[] = [];
   const leftBehind: NotRestored[] = [];
   /** Runs one write; a failed write that still committed its entry is journaled, and what it left behind is listed. */
@@ -141,7 +142,7 @@ export function applyInit(plan: InitPlan, fs: FsPort): void {
           ? fs.matchesEntry(shared.path, { kind: "symlink", target: shared.linkTarget ?? "" }) && sameEntry(fs.resolvedId(shared.path), fs.entryId(shared.linkTo))
           : fs.matchesEntry(shared.path, { kind: "file", data: shared.before ?? new Uint8Array(), ...(shared.mode === undefined ? {} : { mode: shared.mode }), ...(shared.id === undefined ? {} : { id: shared.id }) });
       if (!still) {
-        throw new NeedsOperatorReviewError(`${shared.path} changed while buildos init was running`, { code: "init_shared_file_changed", correction: "Run `buildos init` again." });
+        throw new NeedsOperatorReviewError(`${shared.path} changed while buildos init was running`, { code: "init_shared_file_changed", correction: `Run \`${again}\` again.` });
       }
     }
   } catch (error) {

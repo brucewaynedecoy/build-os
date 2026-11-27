@@ -140,6 +140,11 @@ export function commandLine(args: readonly string[], platform: string): string {
 
 export function quoteArg(arg: string, platform: string): string {
   if (/^[A-Za-z0-9_@%+=:,./-][A-Za-z0-9_@%+=:,./~-]*$/.test(arg) && !(platform === "win32" && arg.includes("%"))) return arg;
+  return quoteAlways(arg, platform);
+}
+
+/** `arg` quoted even when it holds only safe characters: Command Prompt quoting on `win32`, else POSIX single quotes. */
+export function quoteAlways(arg: string, platform: string): string {
   if (platform === "win32") {
     // Each part between two `%` is quoted on its own, so a backslash run before every closing quote is doubled.
     return arg

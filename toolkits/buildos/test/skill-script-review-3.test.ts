@@ -371,6 +371,26 @@ describe("P9-F-07: after an incomplete undo, publish describes the review as it 
     assertSame(r.exit, 10, "exit");
     assertIncludes(r.stderr, `BuildOS cannot tell what the review ${REVIEW} holds now. Run buildos extract bulk check REF-001`);
   });
+
+  it("PE-023: a release build names its runnable form in each command it prints (check and publish)", async () => {
+    const dir = await ownedAndApproved();
+    let failed = false;
+    const { factory } = instrumented((method, path, n) => {
+      if (method === "writeFileAtomic" && path === ".os/data/requirements.jsonl" && n <= 2) {
+        failed = true;
+        return "after";
+      }
+      return failed && method === "readFileLimited" && path === REVIEW;
+    });
+    const r = await buildos(["extract", "bulk", "--root", dir, "publish", "REF-001"], dir, { openFs: factory, version: "0.2.0" });
+    assertSame(r.exit, 10, "exit");
+    assertIncludes(r.stderr, `holds now. Run npx -y build-os@0.2.0 extract bulk check REF-001 to see its state`);
+    assert.ok(!r.stderr.includes("Run buildos extract"), "no bare buildos command");
+    const pending = await ownedAndApproved();
+    const intent = instrumented((method, path, n) => (method === "writeFileAtomic" && path === ".os/data/requirements.jsonl" && n <= 2 ? "after" : false));
+    const p = await buildos(["extract", "bulk", "--root", pending, "publish", "REF-001"], pending, { openFs: intent.factory, version: "0.2.0" });
+    assertIncludes(p.stderr, "Fix the problem above, then run npx -y build-os@0.2.0 extract bulk publish REF-001 again to finish it.");
+  });
 });
 
 // ---------------------------------------------------------------- P9-F-08

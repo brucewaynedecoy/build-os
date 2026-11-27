@@ -13,7 +13,7 @@ import { ContractError, IndexRebuildError, InputError, isCoreError, WriteError, 
 import type { FsPortFactory } from "../shared/fs-port.ts";
 import type { GoJsonValue } from "../shared/go-json.ts";
 import { goAbs, goJoinAll, goVolumeName, type GoPathPlatform } from "../shared/go-path.ts";
-import { goQuote } from "../shared/go-quote.ts";
+import { runCommand, SOURCE_RUN, type PrintedRun } from "../shared/run-command.ts";
 import { resolveEntityRoot, rootAsGiven } from "../shared/root.ts";
 import { consolidate, writeCanonicalAtomic, type CanonicalWriter, type ConsolidationResult } from "./consolidate.ts";
 import { loadGraph, type EntityGraph, type Location } from "./graph.ts";
@@ -38,6 +38,8 @@ export interface EntityContext {
   /** Path rules for the root spelling. Defaults to this platform's. */
   platform?: GoPathPlatform;
   hooks?: Partial<EntityHooks>;
+  /** The program words that printed fix commands start with (PE-023, `runProgram`). Defaults to the source-build form, `buildos`. Quoting follows `platform`. */
+  program?: readonly string[];
 }
 
 /**
@@ -72,6 +74,7 @@ interface OpenRoot {
   data: Location;
   index: Location;
   platform: GoPathPlatform;
+  run: PrintedRun;
 }
 
 /** Go `layout.Resolve`, through the core root model. A root that cannot be loaded is a typed error naming the given root (PE-004). */
@@ -82,14 +85,21 @@ function openRoot(context: EntityContext, rootPath: string): OpenRoot {
     root,
     fs,
     platform,
+    run: { program: context.program ?? SOURCE_RUN.program, platform },
     data: { port: ".os/data", go: goJoinAll(platform, root, ".os", "data"), platform },
     index: { port: ".os/indexes/entity-resolution.json", go: goJoinAll(platform, root, ".os", "indexes", "entity-resolution.json"), platform },
   };
 }
 
-/** Go `rebuildCommand`: the exact recovery command. */
-export function rebuildCommand(root: string, mode: Mode): string {
-  return `buildos entities rebuild-index --root ${goQuote(root)} --mode ${mode} --apply`;
+/**
+ * Go `rebuildCommand`: the exact recovery command. PE-023 (owner decision
+ * 2026-11-26, F-P8-11 and F-P8-10): it starts with the runnable program of
+ * this build (`npx -y build-os@<version>` for a release) and always quotes
+ * the root with the shown-command rule of `run.platform`
+ * (src/core/shared/run-command.ts), not with Go's `%q`.
+ */
+export function rebuildCommand(run: PrintedRun, root: string, mode: Mode): string {
+  return runCommand(run, ["entities", "rebuild-index", "--root", { path: root }, "--mode", mode, "--apply"]);
 }
 
 /** Go `indexDiagnostic`. */
@@ -161,7 +171,7 @@ function openValidatedRoot(context: EntityContext, rootPath: string, modeValue: 
   if (hasErrors(built.diagnostics)) return result(validationError("entity-resolution index cannot be derived"));
   let check: IndexCheckResult;
   try {
-    check = hooks.checkIndex(open.fs, open.index, built.index, rebuildCommand(open.root, mode));
+    check = hooks.checkIndex(open.fs, open.index, built.index, rebuildCommand(open.run, open.root, mode));
   } catch (error) {
     if (!(error instanceof GoError)) throw error;
     return result(ioError(error.message));
@@ -242,7 +252,7 @@ export function consolidateCommand(context: EntityContext, rootPath: string, mod
     }
     if (!apply) return ok(root, payload, diagnostics);
 
-    const recovery = rebuildCommand(root, mode);
+    const recovery = rebuildCommand(open.run, root, mode);
     const afterCanonical = (cause: string): EntityCommandResult => {
       if (!outcome.result.applied) return failed(root, payload, diagnostics, ioError(cause));
       diagnostics.push({ code: "index_stale", severity: "error", message: `canonical entity data was applied, but index completion failed: ${cause}`, correction: recovery });
@@ -301,7 +311,7 @@ export function rebuildIndexCommand(context: EntityContext, rootPath: string, mo
     const built = hooks.buildIndex(loaded.graph);
     diagnostics.push(...toCliDiagnostics(built.diagnostics));
     if (hasErrors(built.diagnostics)) return failed(root, null, diagnostics, validationError("entity-resolution index cannot be derived"));
-    const recovery = rebuildCommand(root, mode);
+    const recovery = rebuildCommand(open.run, root, mode);
     let before: IndexCheckResult;
     try {
       before = hooks.checkIndex(open.fs, open.index, built.index, recovery);
