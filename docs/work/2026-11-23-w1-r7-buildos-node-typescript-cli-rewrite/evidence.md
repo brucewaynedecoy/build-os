@@ -6684,7 +6684,7 @@ Reviewer's verification of the rest of round 2 (its own run): typecheck and buil
 
 ## F-P8-11 Printed Commands (2026-11-26)
 
-Branch `fix/f-p8-11-printed-commands`, stacked on pull request 7 (`rewrite/p9-stage-3`, head `4743f39`), which waits for the owner's merge. This records the fix of F-P8-11 and F-P8-10 for `0.2.0`. No version, release candidate, tag, release, or stage changed.
+Branch `fix/f-p8-11-printed-commands`, pull request 9. The change is one commit, `acad489`, on `4743f39`, the last commit of pull request 7. Pull request 7 was squash-merged into `main` (`4dd86ce`) while this work ran; the files of `4dd86ce` equal those of `4743f39`, so the merge of `main` into this branch keeps its files. A mistake on the way: the first `git checkout -b` did not take effect, so the commit was made on `rewrite/p9-stage-3`, and the push moved the remote `rewrite/p9-stage-3` forward from `4743f39` to `acad489` (a fast-forward, after pull request 7 was merged, so its merge did not change), and opened pull request 8 from that branch. Pull request 8 is closed in favour of pull request 9; `rewrite/p9-stage-3` was not force-pushed back, and the owner can delete or reset it. This records the fix of F-P8-11 and F-P8-10 for `0.2.0`. No version, release candidate, tag, release, or stage changed.
 
 ### Owner Decision 2026-11-26 (F-P8-11)
 
@@ -6756,7 +6756,7 @@ The release-identity golden comparison (`installedGate` of `scripts/release-gate
 
 Go's `%q` doubled each `\`. Command Prompt passes `"D:\\work\\root"` on unchanged, so the program got the doubled path; Windows path rules fold the doubled separators of a drive path, so the `0.1.0` command most likely ran there (not tested on Windows), but it showed the folder wrongly, and a UNC root (`\\server\share`) came out with four leading backslashes, which is not a UNC path. PE-023 prints `"D:\work\root"`, which both Command Prompt and PowerShell pass as one argument with single backslashes.
 
-`test/run-command.test.ts` ("the printed rebuild command runs as printed in the system shell") takes the printed `action:` text of a source build, replaces only its program word `buildos` with `"<node>" "<bundle>"`, and runs it: in `sh` on Linux and macOS, for folders named `plain`, `with space`, and ``a$b `c` it's & (d)``; in Command Prompt (`cmd.exe /d /s /c`) and Windows PowerShell (`powershell.exe -Command "& …"`) on Windows, for `plain`, `with space`, and `a&b (c)`. Each run must exit 0 and write the index. Verified here: macOS (`sh`). Windows: the CI job `test (windows-latest, Node 24)` of this pull request; see [CI Run (F-P8-11)](#ci-run-f-p8-11). Not tested: a folder name with `$`, a backtick, or `%` in PowerShell (stated as a limit in `SECURITY.md`), PowerShell 7 (`pwsh`), and the `npx` program word on Windows (the published-smoke step 10 covers it on the next release).
+`test/run-command.test.ts` ("the printed rebuild command runs as printed in the system shell") takes the printed `action:` text of a source build, replaces only its program word `buildos` with `"<node>" "<bundle>"`, and runs it: in `sh` on Linux and macOS, for folders named `plain`, `with space`, and ``a$b `c` it's & (d)``; in Command Prompt (`cmd.exe /d /s /c`) and Windows PowerShell (`powershell.exe -Command "& …"`) on Windows, for `plain`, `with space`, and `a&b (c)`. Each run must exit 0 and write the index. Verified: macOS (`sh`, here); Linux and macOS (`sh`) and Windows Server 2025 (Command Prompt and Windows PowerShell) in CI; see [CI Run (F-P8-11)](#ci-run-f-p8-11). Not tested: a folder name with `$`, a backtick, or `%` in PowerShell (stated as a limit in `SECURITY.md`), PowerShell 7 (`pwsh`), and the `npx` program word on Windows (the published-smoke step 10 covers it on the next release).
 
 ### Published Smoke Step 10
 
@@ -6784,4 +6784,10 @@ From `toolkits/buildos/` unless noted. macOS arm64, Node 26.13.1.
 
 ### CI Run (F-P8-11)
 
-Recorded after the push.
+Run 45930297238 (`buildos-ci`, commit `acad489`, the F-P8-11 commit) and run 45931157232 (`buildos-ci`, commit `db365b1`, the same files after the merge of `main`); `buildos-smoke` run 45931157462 for `0.1.0`.
+
+| Job | Result |
+| --- | --- |
+| `test` on ubuntu-latest, macos-latest, windows-latest (Node 24), run 45930297238 | passed. Windows: 2,330 tests, 2,214 pass, 0 fail, 116 skipped (POSIX-only tests); "the printed rebuild command runs as printed in the system shell" passed for `plain`, `with space`, and `a&b (c)`, each in Command Prompt and Windows PowerShell; the golden comparison expects the program `buildos` (PE-023) and the entities domain matched 27 of 27 cases with 24 win32 goldens; the installed-tarball comparison through npm's `.cmd` shims matched 167 of 167 |
+| `no Python` (three systems), the image job, the deny list (invented list), the Make Docs contract, the OSV scan | passed |
+| `buildos-smoke` for `0.1.0` (the pull request touches the script) | passed: Linux 13 of 13 steps, macOS 13 of 13, Windows 12 of 12. Step 10 found the known bare `buildos` form in `0.1.0` and did not run it |

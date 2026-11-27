@@ -29,6 +29,8 @@ Framing: [W1 R7 backlog](../../../docs/work/2026-11-23-w1-r7-buildos-node-typesc
 | Smoke | `scripts/published-smoke.ts` step 10 |
 | Records | PRD 20, the risk register (R-003), the evidence report, the guide chapter 18 and the user guide, the guide app, `RELEASE_NOTES.md`, `SECURITY.md` |
 
+Pull request 9 (`fix/f-p8-11-printed-commands`). CI passed on three systems for the F-P8-11 commit, with the printed rebuild command run in Command Prompt and Windows PowerShell on Windows, and `buildos-smoke` for `0.1.0` passed with step 10. Pull request 8 was opened by mistake from `rewrite/p9-stage-3` and is closed; the evidence records it.
+
 Deferred obligations and Unassisted Goal Testing: `not-needed-now`; no `O-###` or `NUAT-###` applies. Guide coverage: `update-existing`; chapter 18 and the entity consolidation user guide.
 
 ## Documentation
