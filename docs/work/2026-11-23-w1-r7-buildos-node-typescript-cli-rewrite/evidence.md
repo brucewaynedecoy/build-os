@@ -7866,7 +7866,7 @@ Runbook h1 binds the staged file to release run 46043810434 and the tag `v0.2.0`
 ```sh
 H=$(shasum -a 512 build-os-0.2.0.tgz | cut -d' ' -f1)
 curl -sS -X POST https://rekor.sigstore.dev/api/v1/index/retrieve -H 'Content-Type: application/json' -d "{\"hash\":\"sha512:$H\"}"
-curl -sS https://rekor.sigstore.dev/api/v1/log/entries/<uuid>
+curl -sS https://rekor.sigstore.dev/api/v1/log/entries/108e9186e8c5677aa877f1f771bbb5e622e9fb8d4ce8a7292bc40e23d6dd428cf7f355511e9e354e
 ```
 
 The lookup by SHA-512 `87bbc6f6911eea7b72c4f956da7a87db71fe04bb349459da8c525195ed98e1b04d1af556e5c1fe42d9b7aa76ab804a7b3d30d7c66bd7f76a97848c523afebe1a` gave two entries:
