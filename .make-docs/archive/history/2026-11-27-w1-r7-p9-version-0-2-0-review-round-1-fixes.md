@@ -32,6 +32,8 @@ Stacked on pull request 10 (`feat/capability-matrix-command`) and pull request 9
 
 Deferred obligations and Unassisted Goal Testing: `not-needed-now`; no `O-###` or `NUAT-###` applies. Guide coverage: `no-change`; no guide source changed.
 
+Review round 2 (same day): step h1 of the release runbook now binds the stage download to the release run through a transparency-log lookup by the file's SHA-512 (checked on `0.1.0`); step 0 exempts the reviewed ledger-only merge from the new-dry-run rule; the runbook says that step j is an owner-enforced gate, because nothing technical stops an early npm approval; the release notes say that `capability-matrix` exits `10` when the rollback or the cleanup is incomplete.
+
 ## Documentation
 
 ### Project
