@@ -16,7 +16,7 @@ const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = resolve(packageRoot, "..", "..");
 const PKG = "toolkits/buildos";
 const OWNER = "@brucewaynedecoy";
-const WORKFLOWS = ["buildos-ci.yml", "buildos-deny-list.yml", "buildos-release.yml"];
+const WORKFLOWS = ["buildos-ci.yml", "buildos-deny-list.yml", "buildos-release.yml", "buildos-smoke.yml"];
 
 /** CODEOWNERS patterns as matchers (the subset this repository uses: an anchored path, a folder with a trailing slash, `*` inside one segment). */
 export function codeownersMatchers(text: string): { pattern: string; owners: string[]; matches: (path: string) => boolean }[] {

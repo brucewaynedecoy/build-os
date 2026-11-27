@@ -504,3 +504,53 @@ describe("the owner checklist protects the refs before any secret exists (P8-F-0
     assert.doesNotMatch(security, /cannot check the rulesets or branch protection from inside the job/);
   });
 });
+
+// W1 R7 P8 t15 (2026-11-26): the published-package smoke workflow is not a
+// release workflow. It reads the public registry only: read-only repository
+// access, no secret, no environment, no OIDC token, actions pinned by SHA, and
+// the version input reaches the script only through the environment.
+describe("smoke workflow: read-only, no secret, pinned, three systems (t15)", () => {
+  const text = read("buildos-smoke.yml");
+  const on = text.slice(text.indexOf("\non:\n"), text.indexOf("\npermissions:"));
+
+  it("runs by hand with a version input (default 0.1.0), and on a pull request only for its own files", () => {
+    assert.match(on, /\n {2}workflow_dispatch:\n {4}inputs:\n {6}version:\n[^]*?default: "0\.1\.0"\n/);
+    assert.ok(on.includes('  pull_request:\n    paths:\n      - ".github/workflows/buildos-smoke.yml"\n      - "toolkits/buildos/scripts/published-smoke.ts"\n'), on);
+    assert.doesNotMatch(on, /\n {2}push:|\n {2}release:|pull_request_target/);
+  });
+
+  it("holds only contents: read, no secret, no environment, no id-token", () => {
+    assert.match(text, /\npermissions:\n {2}contents: read\n\n/);
+    assert.equal(text.match(/permissions:/g)?.length, 1);
+    assert.doesNotMatch(text, /secrets\.|environment:|id-token|GITHUB_TOKEN|github\.token/);
+    assert.match(text, /persist-credentials: false/);
+  });
+
+  it("pins actions to commit SHAs, runs on three systems with Node 24, and passes the version through the environment", () => {
+    for (const use of text.match(/uses: \S+/g) ?? []) assert.match(use, /@[0-9a-f]{40}$/, use);
+    assert.match(text, /os: \[ubuntu-latest, windows-latest, macos-latest\]/);
+    assert.match(text, /node-version: "24"/);
+    assert.match(text, /SMOKE_VERSION: \$\{\{ inputs\.version \|\| '0\.1\.0' \}\}\n/);
+    const scripts = runScripts(text);
+    assert.deepEqual(scripts, ['node scripts/published-smoke.ts --version "$SMOKE_VERSION" --out "$RUNNER_TEMP/smoke"']);
+    assert.match(text, /if: always\(\)\n {8}uses: actions\/upload-artifact@/);
+  });
+
+  it("the script refuses a version that is not plain, before any npm call", () => {
+    for (const bad of ["", "latest", "0.1", "0.1.0 && echo", "^0.1.0", "file:x.tgz"]) {
+      const r = spawnSync(process.execPath, [join(packageRoot, "scripts", "published-smoke.ts"), "--version", bad, "--out", join(tmpdir(), "never-written")], { encoding: "utf8" });
+      assert.equal(r.status, 2, bad);
+      assert.match(r.stderr, /--version must be a plain version/, bad);
+    }
+    const missing = spawnSync(process.execPath, [join(packageRoot, "scripts", "published-smoke.ts"), "--version", "0.1.0"], { encoding: "utf8" });
+    assert.equal(missing.status, 2);
+    assert.match(missing.stderr, /--out is required/);
+  });
+
+  it("the script turns npm install scripts off and uses a new npm cache", () => {
+    const script = readFileSync(join(packageRoot, "scripts", "published-smoke.ts"), "utf8");
+    assert.match(script, /npm_config_ignore_scripts: "true"/);
+    assert.match(script, /npm_config_cache: cache/);
+    assert.match(script, /const cache = join\(root, "npm-cache"\);\nmkdirSync\(cache\);/);
+  });
+});

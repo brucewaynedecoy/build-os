@@ -5138,3 +5138,442 @@ The reviewer (one round) found no code blocker and five findings. The orchestrat
 Smoke check from a clean npm cache: `npx -y build-os@0.1.0 version --json` printed version `0.1.0` and source revision `20f941a04494ce9c60301cee9e66fab33219a617`.
 
 Missed gate: the owner published `0.1.0` and approved the npm stage before t15 to t18 (the Stage 4 checks on the staged package) and t22 to t24 (`PERF-002` and the publication review) were done. The orchestrator's step list put the approval first. This was an orchestration mistake, not an owner decision to skip the checks. A74 and A75 are not met, and t25 stays open. Owner decision open. See [Release-order departure](08-release-0-1-0.md#closeout-notes) in [08 Release 0.1.0](08-release-0-1-0.md) and [`R-003`](../../prd/03-open-questions-and-risk-register.md#r-003-build-os-packaging-upgrade-rollback-and-removal-hardening).
+
+## Post-Publication Checks of 0.1.0 (2026-11-26)
+
+### Owner Decision 2026-11-26: Option 1
+
+Owner decision of 2026-11-26, recorded with this date as an owner decision: "Option 1: run them now on the published package." The outstanding checks of [08 Release 0.1.0](08-release-0-1-0.md) (t15 to t18 in Stage 4 and t22 to t24 in Stage 5) run on the published package `build-os@0.1.0`, whose bytes equal the staged and reviewed tarball (SHA-256 `54a8cd01f0165226927a74e5108dd37327323bd3db1905fdb6323c7373b21e8e`). This is a dated exception for `0.1.0` only. No acceptance criterion is re-worded or weakened. The order that A75 asks for ("publication happens only after a recorded maintainer approval" of the publication review) stays recorded as missed for `0.1.0`: a later review cannot meet it. A task closes only as the checkbox rule in [00-index.md](00-index.md) allows ("Mark a task done only when its stage acceptance criteria pass"), or by this explicit exception where this record says so plainly.
+
+Marks used below: "verified" means an agent ran the named command on 2026-11-26 and saw the result; "owner-reported" means the owner reported it and no agent checked it; "not done" means it did not happen. In captured output, temporary folders, the home folder, and the user name are replaced by `{TMP}`, `{PROJECT}`, `{HOME}`, and `{USER}`, and times by `{TIMESTAMP}`.
+
+### First-Run npx (PERF-002, P8)
+
+#### Execution Packet (t22)
+
+- Profile: [`## PERF-002 Profile`](08-release-0-1-0.md#perf-002-profile), version 1, written before any `PERF-002` measurement and committed before pass 1 (the commit that adds this packet).
+- Profile digest: `sha256:1637ae8a2d143b7e431ace19873c7982c41ffa108d28b6423af9a59495857990`, computed with `awk '/^## PERF-002 Profile$/{p=1} p{print} p&&/^\| Support Links /{exit}' 08-release-0-1-0.md | shasum -a 256` (the section from its heading to the end of the Lineage And Traceability table).
+- Package: the published `build-os@0.1.0`, not a staged-only package, under the owner decision above.
+- Instrument: `toolkits/buildos/scripts/measure-npx-first-run.ts`, SHA-256 `bce3485752f505def8887706c036c35bbd3230d06d7cdeffa76faca4965a92c6`, committed with the profile.
+- Machine: Apple M2 Pro, 10 cores, 16 GiB, macOS 27.2.1 on arm64; Node 24.22.3 and npm 11.19.1 (the official `node-v24.22.3-darwin-arm64.tar.gz`, SHA-256 checked against the nodejs.org `SHASUMS256.txt`, unpacked into a temporary folder for these checks; the machine's own Node is 26.13.1).
+- Command for each pass: `node scripts/measure-npx-first-run.ts --version 0.1.0 --tarball-sha256 54a8cd01f0165226927a74e5108dd37327323bd3db1905fdb6323c7373b21e8e --repetitions 10`, from `toolkits/buildos/`, outside the agent's network sandbox.
+- Target: none.
+
+#### Evidence Fingerprint (PERF-002)
+
+- Profile ID, version, and digest: `PERF-002` version 1, `sha256:1637ae8a2d143b7e431ace19873c7982c41ffa108d28b6423af9a59495857990`, committed in `e2bbbc1` before pass 1
+- Product build and relevant code state: the published `build-os@0.1.0`, registry tarball 1,070,295 bytes, SHA-256 `54a8cd01f0165226927a74e5108dd37327323bd3db1905fdb6323c7373b21e8e` (checked in every `tarball` run), 173 files, unpacked size 4,355,182 bytes (`npm view build-os@0.1.0 dist --json`); source commit `20f941a`
+- Dependency and configuration state: no runtime dependencies; npm 11.19.1; the configuration of the profile
+- Qualified environment: Apple M2 Pro, 10 cores, 16 GiB, macOS 27.2.1 arm64 (`darwin 27.2.0`), AC power; Node 24.22.3; the machine's normal network, no proxy, default registry
+- Workload and fixture or dataset: `cold`, `warm`, and `tarball` as in the profile; no fixture
+- Instrument version: `toolkits/buildos/scripts/measure-npx-first-run.ts` `sha256:bce3485752f505def8887706c036c35bbd3230d06d7cdeffa76faca4965a92c6` (the instrument reported the same digest)
+- Analysis method: median, p25, p75, IQR, and the order-statistic 95% median interval computed by the instrument
+- Comparability result and reasons: not comparable with `PERF-001` (no npm and no network there); within-pass comparison only
+
+#### Pass 1 Result (t23)
+
+Pass 1 ran on 2026-11-26 from 21:59:11.904Z to 21:59:25.958Z (verified: the command in the packet, on the profile commit `e2bbbc1`). 10 repetitions, 0 runs excluded in any workload.
+
+| Workload | n | Min | p25 | Median | p75 | Max | IQR | Median 95% interval |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `cold` (empty npm cache) | 10 | 708.0 | 715.3 | 725.6 | 754.9 | 987.7 | 39.6 | 708.0 to 987.7 |
+| `warm` (cache filled) | 10 | 383.1 | 391.9 | 397.1 | 401.9 | 415.6 | 10.0 | 383.1 to 415.6 |
+| `tarball` (fetch alone) | 10 | 221.3 | 232.7 | 261.8 | 263.6 | 267.3 | 30.9 | 221.3 to 267.3 |
+
+All values are milliseconds of wall-clock time. The `tarball` median is 36% of the `cold` median (261.8 of 725.6 ms), and it includes its own Node start, DNS, TLS, and hashing; it is a reference, not the size-dependent part of the cold run (see [Decision (t23)](#decision-t23)). The cache removes 328.5 ms (cold median minus warm median). The `warm` run still spends about 397 ms in npx and npm (registry metadata and start) before and around BuildOS, whose own start on this machine is about 70 ms ([`PERF-001` recheck](#startup-recheck-perf-001-p8)).
+
+#### Raw Samples (PERF-002)
+
+In repetition order, milliseconds:
+
+- `cold`: 987.7, 772.0, 716.6, 713.2, 708.0, 729.8, 714.9, 755.3, 721.4, 753.7
+- `warm`: 399.4, 392.0, 395.7, 391.8, 402.8, 411.4, 384.4, 415.6, 398.4, 383.1
+- `tarball`: 267.3, 264.1, 262.3, 241.6, 229.8, 261.8, 221.9, 221.3, 264.3, 261.8
+
+#### Agent Review (the one review cycle)
+
+- Every counted run exited 0 with `version: 0.1.0`, and every `tarball` digest equalled the reviewed digest. No path or user name is in the record. Install scripts were off. Every non-sacrificable constraint held.
+- The first `cold` run (987.7 ms) is the slowest; it is kept, as the profile says. It is the first contact of the pass with the registry (DNS and connection set-up) and is what a first chat session meets; the median is the decision statistic.
+- The spread is small for the decision: even the slowest `tarball` run (267.3 ms) is well under the fastest `cold` run (708.0 ms), so the `tarball` share is the smaller part in every repetition.
+- Outcome: `pass` (the baseline exists, within the protocol). No finding.
+
+#### Decision (t23)
+
+No package-size reduction is needed now, on the measured machine and network. The reason: the whole first run took under one second there (median 725.6 ms, slowest 987.7 ms), which does not put the protected outcome at risk. Under the profile's decision rule the `tarball` median (261.8 ms) is the smaller part of the `cold` median, so the record recommends no reduction.
+
+The `tarball` workload is a reference measurement, not an upper bound on what a smaller package could save. Its limits (corrected on 2026-11-26 after review round 1 of pull request 5; nothing was measured again):
+
+- The timer in `toolkits/buildos/scripts/measure-npx-first-run.ts` runs from the parent's `spawnSync` call to child exit. So each `tarball` sample also holds the start of its own Node process, DNS, TLS, and the SHA-256 of the bytes, and not only the transfer.
+- Inside a cold `npx` run the package size also changes work that the `tarball` workload does not do: unpacking the tarball and writing its 173 files (4,355,182 bytes unpacked) to the npm cache and the install folder.
+- So this pass does not say how much a smaller package would save, and it does not split the cold run into a size-dependent part and the rest. The profile's Comparison Method says "the `tarball` share of the cold time is the part a smaller package could shorten"; that is too strong for the reasons above. The profile stays as committed, because its digest is bound to this result; a later `PERF-002` version should say "reference" there.
+
+This sets no target. A slow, metered, or restricted network is outside this scope; it is the `R-012` trial (t17). The decision goes to the owner with the phase closeout.
+
+#### Budget Ledger (PERF-002)
+
+- Authorizing scope and budget event: [W1 R7 P8 Stage 5](08-release-0-1-0.md#stage-5---performance-evidence-and-publication-review), `PERF-002-P8-B1`
+- Requalification authorization: none
+- Declared limits: 2 passes, 0 correction attempts, 1 review cycle, 4 hours, 1 machine, 0 USD
+- Materially distinct attempts: pass 1 on 2026-11-26; no correction attempt
+- Affected checks: all three workloads in pass 1
+- Time, compute, and external spend: under 1 hour (the pass took 14 seconds); 1 machine; 0 USD
+- Review cycles used: 1
+- Remaining budget: 1 pass, 0 review cycles
+- Unchanged evidence reused: none
+- Stop reason and escalation: diminishing return. Pass 2 was not run: on the same fingerprint it could not change the decision (the `tarball` share is the smaller part in every repetition). No escalation.
+
+#### Result Record
+
+- Result ID: `PERF-002-P8-R1`
+- Exact profile binding: `PERF-002` version 1, `sha256:1637ae8a2d143b7e431ace19873c7982c41ffa108d28b6423af9a59495857990`
+- Build and evidence fingerprint: [Evidence Fingerprint](#evidence-fingerprint-perf-002) above
+- Environment and workload: as in the fingerprint
+- Raw and analyzed evidence: [Raw Samples](#raw-samples-perf-002) and [Pass 1 Result (t23)](#pass-1-result-t23) above
+- Observed distribution: `cold` median 725.6 ms (708.0 to 987.7), `warm` median 397.1 ms, `tarball` median 261.8 ms
+- Uncertainty and exclusions: the median intervals are the full ranges (10 runs); no run excluded
+- Budget ledger: [Budget Ledger](#budget-ledger-perf-002) above
+- Outcome: `pass`
+- Findings: none
+- Owner or reviewer disposition: agent review above; owner review open through the phase closeout
+- Supported-scope limit: `npx -y build-os@0.1.0 version` with an empty npm cache, Node 24.22.3 and npm 11.19.1, on the one measured Apple M2 Pro macOS arm64 machine and its network on 2026-11-26
+- Expiry: at the next release that changes the package size, or sooner at any material change trigger
+- Later result: none
+
+### Smoke Tests on Three Systems (t15)
+
+Script: `toolkits/buildos/scripts/published-smoke.ts` (kept in the repository for later releases). Workflow: `.github/workflows/buildos-smoke.yml` (`workflow_dispatch` with a `version` input, default `0.1.0`, and `pull_request` for its own two files; `contents: read` only, no secret, no environment, actions pinned by commit SHA; npm install scripts off through `npm_config_ignore_scripts=true`). Each step runs `npx -y build-os@0.1.0` (npx is started as `node <npm>/bin/npx-cli.js`, the file the `npx` command runs, so no shell is needed on Windows) in a new empty folder, with a new empty npm cache, npm's update notice off, and stdin closed (no TTY). The script writes `smoke-<os>.json` and `smoke-<os>.md` and exits 1 when a check fails.
+
+Steps and checks:
+
+1. `version` and `version --json`: exit 0, version `0.1.0`, a full source revision, empty stderr.
+2. `init` with no TTY and no flag: exit 10, the stop and the Make Docs question, the shown commands use `npx -y build-os@0.1.0`, the folder stays empty.
+3. `init --skip-make-docs`: exit 0, "Done. BuildOS is set up in this folder.", `.os/manifest.json` pins `0.1.0`, no `docs/` or `.make-docs/`.
+4. One intake conversion: `intake convert --source <HTML file outside the project> --repo-root <project> --assets-root assets`: exit 0, `assets/smoke-page/smoke-page.md` holds the heading and `status: "converted"`.
+5. `entities validate --root <project> --mode compat`: exit 0, `entities.validate: ok`, version `0.1.0`.
+6. `validate --root <project>`: exit 0, "OK. No problems found."
+7. One legacy name: `npx -y --package=build-os@0.1.0 buildos-intake --help`: exit 0; the first stderr line is the legacy notice; the rest of stderr and all of stdout equal `buildos intake --help`.
+8. The project wrapper with Node.js missing: on macOS and Linux `sh .os/scripts/buildos version` and `sh .os/scripts/buildos-intake version` with `PATH` set to a folder that holds only `sh`; on Windows `.os\scripts\buildos.cmd version` with `PATH` set to `%SystemRoot%\System32;%SystemRoot%` (checked to hold no `node.exe`): exit 127 and exactly the plain message.
+9. The project wrapper with Node.js present: `.os/scripts/buildos version --json` (`buildos.cmd` on Windows): exit 0, version `0.1.0` (the wrapper runs the pinned version through npx).
+
+Results (verified):
+
+| System | Where | Node, npm | Result |
+| --- | --- | --- | --- |
+| macOS 27.2.1 arm64 (Apple M2 Pro) | this maintainer machine, 2026-11-26T21:55:48Z, outside the agent's network sandbox, Node from the official `node-v24.22.3-darwin-arm64.tar.gz` (SHA-256 checked) | 24.22.3, 11.19.1 | passed, 12 of 12 steps |
+| `macos-latest` (arm64) | [`buildos-smoke` run 45901774926](https://github.com/brucewaynedecoy/build-os/actions/runs/45901774926) on `e2bbbc1` (pull request 5) | 24.22.3, 11.19.1 | passed, 12 of 12 steps |
+| `ubuntu-latest` (x64) | the same run | 24.22.3, 11.19.1 | passed, 12 of 12 steps |
+| `windows-latest` (x64) | the same run | 24.22.3, 11.19.1 | passed, 11 of 11 steps (one Node-missing step on Windows) |
+| `macos-latest`, `ubuntu-latest`, `windows-latest` | [`buildos-smoke` run 45902212190](https://github.com/brucewaynedecoy/build-os/actions/runs/45902212190) on `c0c1420` (pull request 5, with the cleaning fix) | 24.22.3, 11.19.1 | passed on all three (12, 12, and 11 steps); the output equals that of run 45901774926, except that the twice-escaped Windows path is now replaced |
+
+"Passed" means that every check in the steps above passed. The steps do not run the commands that BuildOS prints as a fix. Review round 1 of pull request 5 found that one of them, printed in step 5, does not run for an adopter: see [Defect: the Printed Rebuild Command Needs a Global Install (F-P8-11)](#defect-the-printed-rebuild-command-needs-a-global-install-f-p8-11).
+
+The captured output is the same on the three systems, apart from the system line, path separators, and two Windows forms that `buildos init` writes on purpose: "run this in Command Prompt:" and the folder in double quotes (`--root "{PROJECT}"`). The run 45901774926 capture showed one Windows path the cleaning missed: the entities `remediation_command` holds a Go-quoted path inside a JSON string, escaped twice. The script now cleans that form too (`c0c1420`); the path is replaced in this record.
+
+Captured output, macOS (the same on Linux; paths replaced as stated at the top of this section):
+
+```text
+$ npx -y build-os@0.1.0 version            (exit 0, stderr empty)
+version: ok
+root: not_applicable
+mode: not_applicable
+version: 0.1.0
+source revision: 20f941a04494ce9c60301cee9e66fab33219a617
+write status: not_requested
+{
+  "version": "0.1.0",
+  "source_revision": "20f941a04494ce9c60301cee9e66fab33219a617"
+}
+
+$ npx -y build-os@0.1.0 init               (no TTY; exit 10, stderr empty, folder still empty)
+Project folder: {PROJECT}
+Stopped. Nothing was changed. BuildOS needs one answer from the user first.
+
+Ask the user: "Set up Make Docs in this project?"
+
+Make Docs is an optional companion tool. It adds docs/ folders for designs, plans, requirements, and work, each with instructions for agents, and keeps its templates, rules, and prompts in .make-docs/, so agents can keep project documents in order.
+If the user says no, Make Docs cannot be set up in this folder later with this Make Docs version: it does not set up a folder that has an AGENTS.md or CLAUDE.md file that Make Docs did not write, and BuildOS adds such a file here.
+
+If the user says yes, run:
+  npx -y build-os@0.1.0 init --root {PROJECT} --make-docs
+If the user says no, run:
+  npx -y build-os@0.1.0 init --root {PROJECT} --skip-make-docs
+
+$ npx -y build-os@0.1.0 init --skip-make-docs   (exit 0, stderr empty)
+Project folder: {PROJECT}
+
+Planned changes (new BuildOS project, 234 paths):
+  add      .os/
+  add      .os/config/
+  [... 229 more rows cut from this report ...]
+  add      workspace/runs/AGENTS.md
+  add      workspace/runs/CLAUDE.md
+
+Shared files. BuildOS changes only its own section of these files, between its buildos:begin and buildos:end lines, and only when that section is still exactly as BuildOS wrote it.
+  AGENTS.md: created, with only the BuildOS section
+  CLAUDE.md: created, with only the BuildOS section
+  .gitignore: created, with only the BuildOS section
+
+Done. BuildOS is set up in this folder.
+Make Docs: not set up, as chosen. With this Make Docs version, Make Docs cannot be set up in this folder later. This Make Docs version does not set up a folder that has an AGENTS.md or CLAUDE.md file that Make Docs did not write.
+
+$ npx -y build-os@0.1.0 intake convert --source {TMP}/source/smoke-page.html --repo-root {PROJECT} --assets-root assets   (exit 0)
+wrote {PROJECT}/assets/smoke-page/smoke-page.md
+
+$ npx -y build-os@0.1.0 entities validate --root {PROJECT} --mode compat   (exit 0; the human lines, then the result JSON)
+entities.validate: ok
+root: {PROJECT}
+mode: compat
+version: 0.1.0
+source revision: 20f941a04494ce9c60301cee9e66fab33219a617
+write status: not_requested
+WARNING [index_stale]: entity-resolution index is missing
+  action: buildos entities rebuild-index --root "{PROJECT}" --mode compat --apply
+
+$ npx -y build-os@0.1.0 validate --root {PROJECT}   (exit 0)
+Project folder: {PROJECT}
+Checked: the config contract, the config file, 13 files with scoped frontmatter, and 8 entity data files.
+
+OK. No problems found.
+
+$ npx -y --package=build-os@0.1.0 buildos-intake --help   (exit 0; stdout equals buildos intake --help)
+stderr: Note: the command name "buildos-intake" goes away in BuildOS 0.3.0. Use "buildos intake" instead.
+
+$ PATH=<folder with only sh> sh .os/scripts/buildos version   (exit 127, stdout empty)
+stderr: BuildOS needs Node.js 24 or newer on this computer. Install it from https://nodejs.org, then try again.
+
+$ PATH=<folder with only sh> sh .os/scripts/buildos-intake version   (exit 127, stdout empty)
+stderr: Note: the command name "buildos-intake" goes away in BuildOS 0.3.0. Use "buildos intake" instead.
+stderr: BuildOS needs Node.js 24 or newer on this computer. Install it from https://nodejs.org, then try again.
+
+$ sh .os/scripts/buildos version --json   (exit 0; version 0.1.0, through npx)
+```
+
+The converted file (`assets/smoke-page/smoke-page.md`) has the front matter `source: "{TMP}/source/smoke-page.html"`, `sha256: "f63de4e5df56e4c09ecc924c7ddeb9bc141ddbf0d5e7ee833e1d841f90594a4b"`, `converter: "buildos-intake/0.1.0"`, `timestamp: "{TIMESTAMP}"`, `type: "markdown"`, `status: "converted"`, then `# Smoke Test`, `One bold line.`, `- a`, and `- b`. On Windows the `.cmd` wrapper with Node.js missing prints the same one plain line and exits 127.
+
+#### Comparison With the P6 Reviewed Output
+
+The P6 reviewed output is the final output of the P6 review: the P6 captures ([P6 Captures (t26)](#p6-captures-t26), a source build with version `dev`, taken before the P6 decisions and review rounds) with every later P6 text in their place: [P6 Shared Files and Make Docs Order](#p6-shared-files-and-make-docs-order), [P6 Review Round 1](#p6-review-round-1) (its UX note on open item 10) and its [Orchestrator Decision: Make Docs "Later" Text](#orchestrator-decision-make-docs-later-text), [Review Round 2 Messages](#review-round-2-messages), [Review Round 3 Messages](#review-round-3-messages), and [Review Round 4 Messages](#review-round-4-messages). Where a P6 capture was superseded by a later P6 text, the later text is the reviewed output.
+
+Corrected on 2026-11-26 after review round 1 of pull request 5: the first version of this table compared rows 4 to 7 and 10 with superseded P6 captures, or counted a first capture as a difference. The rows keep their numbers. Classes: "allowed" (a version string, the one kind A71 allows), "needs owner acceptance" (a real difference that is not a version string), "no difference" (equal to the reviewed P6 text), and "first capture" (P6 has no capture; nothing to compare).
+
+| # | Output | P6 reviewed output | Published `0.1.0` | Class | Source of the change |
+| --- | --- | --- | --- | --- | --- |
+| 1 | `version`, the envelope, `entities validate` | version `dev`, source revision `unknown` | version `0.1.0`, source revision `20f941a04494ce9c60301cee9e66fab33219a617` | allowed | A version string (the release build, t6). |
+| 2 | Commands that `init` shows | `npx -y @brucewaynedecoy/buildos@<version> init --root ... --make-docs` (and `--skip-make-docs`) for a release ([P6 Implementation Choices](#implementation-choices): "for a release"; the source-build capture shows `buildos init --root ...`) | `npx -y build-os@0.1.0 init --root {PROJECT} --make-docs` and `... --skip-make-docs` | needs owner acceptance | The package name `build-os`: `Q-017`, owner decision of 2026-11-26. Only the package name differs besides the version. |
+| 3 | `init --skip-make-docs` plan | "new BuildOS project, 120 paths" (the P6 Captures note: 123 before the shared-files decision, 120 after it) | "new BuildOS project, 234 paths" | needs owner acceptance | The W1 R7 P7 phase scope ([P7 Skills and Validation](#p7-skills-and-validation)): `init` copies the 21 skills under `.os/skills/` (and their folders). Not an owner decision about this output. The plan lists three Python skill-script files (`buildos-bulk-extract/scripts/work.py`, `buildos-bulk-extract/tests/test_work.py`, `fit-gap-analysis/scripts/fitgap.py`), as t14 recorded; P9 removes them. |
+| 4 | `init --skip-make-docs` shared files | result rows only, after the write: P6 review round 1, UX note on open item 10, "With a flag, the plan lists only paths and the result lists the shared files once" (the row words of review round 3) | result rows only, after the write | no difference | The first version of this table compared the superseded P6 capture (plan rows and result rows). |
+| 5 | `init --skip-make-docs` last line | "Make Docs: not set up, as chosen. With this Make Docs version, Make Docs cannot be set up in this folder later. This Make Docs version does not set up a folder that has an AGENTS.md or CLAUDE.md file that Make Docs did not write." (the "No result (new project)" text of the orchestrator decision in P6 review round 1) | the same text | no difference | The first version compared the superseded P6 capture ("To set it up later, run: ..."). |
+| 6a | `init` with no TTY, the first sentence of the Make Docs paragraph | "Make Docs is an optional companion tool. It adds a docs/ folder with guides and templates for plans, designs, and requirements, so agents can keep project documents in order." (orchestrator decision, P6 review round 1) | "Make Docs is an optional companion tool. It adds docs/ folders for designs, plans, requirements, and work, each with instructions for agents, and keeps its templates, rules, and prompts in .make-docs/, so agents can keep project documents in order." | needs owner acceptance | P8 final-check finding [P8-F-06](#findings-and-dispositions-final-check) (fixed by the P8 review: Make Docs 2.0.9 keeps its templates in `.make-docs/`). A review fix, not an owner decision. |
+| 6b | `init` with no TTY, the second sentence | "If the user says no, Make Docs cannot be set up in this folder later with this Make Docs version: it does not set up a folder that has an AGENTS.md or CLAUDE.md file that Make Docs did not write, and BuildOS adds such a file here." (Review Round 2 Messages, the text for a new project with no routers) | the same text | no difference | The first version compared the superseded P6 capture ("The user can also say no now ..."). |
+| 7 | `init` with no TTY, Windows | "If the user says yes, run this in Command Prompt:" (Review Round 2 Messages); a folder path quoted in double quotes by the Windows rule of P6-R1-18 (`quoteArg` in `src/core/init/make-docs.ts` quotes any argument with a character outside its plain set, such as `\`) | "If the user says yes, run this in Command Prompt:" and `--root "{PROJECT}"` in double quotes | no difference (first capture of reviewed text) | P6 CI ran the Windows tests only, so this is the first capture; it equals the reviewed text. |
+| 8 | Legacy project wrapper with Node.js missing | `.os/scripts/buildos-intake index references`: the one plain line only | `.os/scripts/buildos-intake version`: the legacy notice line, then the plain line | needs owner acceptance | `Q-016`, owner decision of 2026-11-25: the project scripts with legacy names print the legacy-name notice. (The arguments differ too; the Node.js check comes before any argument is read.) |
+| 9 | Project wrapper with Node.js present | the A42 stub recorded `npx -y @brucewaynedecoy/buildos@1.2.3 ...` | `version: 0.1.0` in the output; the shipped `.os/scripts/pinned-version.cjs` builds `npx -y --prefix <current folder> --workspaces=false build-os@0.1.0 ...` (read in the file, not captured by the smoke) | needs owner acceptance | Three later decisions: pin-first wrappers (`Q-015`, owner decision of 2026-11-25), `--prefix` and `--workspaces=false` (finding 2 of the [pin-first final check](#findings-and-dispositions-pin-first-final-check), a review fix), and the package name (`Q-017`, owner decision of 2026-11-26). |
+| 10 | `buildos.cmd` with Node.js missing | not captured ("waits for the Windows CI run") | the one plain line, exit 127 | first capture | P6 review round 2 (P6-R2-12) states that the Windows wrapper prints the Node.js message; the capture shows it. |
+
+Differences that need the owner's acceptance for A71 (5): rows 2 (`Q-017`), 3 (the P7 skills), 6a (P8-F-06), 8 (`Q-016`), and 9 (`Q-015`, the pin-first final check finding 2, and `Q-017`). The first version of this record counted ten; rows 4, 5, 6b, 7, and 10 are not differences from the reviewed P6 output.
+
+Unchanged: the plain Node.js message (byte for byte), the legacy-name notice (PE-016) and the rest of the legacy-name output, the "Stopped. Nothing was changed." stop with exit 10, the shared-files note and result rows of review round 3, "Done. BuildOS is set up in this folder.", and exit codes 0, 10, and 127.
+
+`intake convert`, `entities validate`, and `validate` have no P6 capture (they belong to P3, P4, and P7). Their output has the shape of their goldens and of the P7 `validate` text; the release run's installed golden gate compared 167 of 167 cases from the same tarball ([Publication Review](#retrospective-publication-review-t24)).
+
+Observation on Windows quoting: on Windows the shown `entities` remediation command quotes the folder the way Go's `%q` does, so each backslash is doubled (`--root "<drive>:\\<folder>\\<project>"`), in the human line and in `remediation_command`. This is the frozen Go behaviour that the goldens keep. Command Prompt accepts doubled separators in such a path in most cases; this pass did not run the command on Windows. Follow-up F-P8-10: check the shown Windows remediation commands and decide whether a parity exception is wanted. The same command also has the defect below, on every system.
+
+#### Defect: the Printed Rebuild Command Needs a Global Install (F-P8-11)
+
+Found by review round 1 of pull request 5 on 2026-11-26. The first version of this record said "Defects in the published package: none found by these steps". That was wrong: the steps showed this defect in step 5 and did not check it.
+
+What the adopter sees: in a project made with `npx -y build-os@0.1.0 init`, `entities validate` with no index prints `WARNING [index_stale]: entity-resolution index is missing` and `action: buildos entities rebuild-index --root "<project>" --mode compat --apply`. The JSON result holds the same command in `result.index.remediation_command` and `diagnostics[].correction`. The command is bare `buildos`. An adopter who uses BuildOS through `npx` or the project wrapper has no `buildos` command on `PATH`, so the printed command stops with `buildos: command not found` (exit 127).
+
+Impact: a printed fix command that does not run for an adopter who has no global install. The data and the validation result are correct: `entities validate` exits 0 with `valid: true` in compat mode, and the warning is true. An agent that copies the printed command gets exit 127 and must find the right form itself. With a global install (`npm install -g build-os@0.1.0`, as in the guide's offline install) the bare command runs.
+
+Workarounds (both verified, see the reproduction): `.os/scripts/buildos entities rebuild-index --root <project> --mode compat --apply` (`.os\scripts\buildos.cmd` on Windows, not run in this pass), or `npx -y build-os@0.1.0 entities rebuild-index --root <project> --mode compat --apply`.
+
+Reproduction (verified, macOS 27.2.1 arm64, the official Node 24.22.3 and npm 11.19.1 unpacked into a temporary folder, outside the agent's network sandbox, 2026-11-26). In a new temporary folder with a new empty npm cache (`npm_config_cache=<new empty folder>`), npm's update notice off, stdin closed, and `PATH` set to the Node 24 `bin` folder followed by the standard system command folders only:
+
+| Step | Command (from the project folder) | Result |
+| --- | --- | --- |
+| 1 | `command -v buildos` | prints nothing, exit 1: no `buildos` on `PATH` |
+| 2 | `npx -y build-os@0.1.0 init --skip-make-docs` | exit 0 |
+| 3 | `npx -y build-os@0.1.0 entities validate --root <project> --mode compat` | exit 0; `action: buildos entities rebuild-index --root "<project>" --mode compat --apply`, and the same text in `remediation_command` |
+| 4 | the printed command, run as `sh -c 'buildos entities rebuild-index --root "<project>" --mode compat --apply'` | exit 127, `sh: buildos: command not found` |
+| 5 | `.os/scripts/buildos entities rebuild-index --root <project> --mode compat --apply`, on a copy of the project with no index and a new empty npm cache | exit 0, `entities.rebuild-index: ok`, `write status: applied`, stderr empty; then `.os/scripts/buildos entities validate --root <project> --mode compat`: exit 0, no warning |
+| 6 | `npx -y build-os@0.1.0 entities rebuild-index --root <project> --mode compat --apply`, on another copy with no index and a new empty npm cache | exit 0, stderr empty; then `npx -y build-os@0.1.0 entities validate --root <project> --mode compat`: exit 0, no warning |
+
+Go baseline: the Go tool printed the same bare command. The Go goldens hold it, for example `toolkits/buildos/test/golden/os/linux/buildos/entities-validate-missing-index-compat-json/stdout` (`"remediation_command": "buildos entities rebuild-index --root \"{ROOT}/root\" --mode compat --apply"` and the same `correction`), and the `rebuildCommand` function in `toolkits/buildos/src/core/entities/commands.ts` is the port of Go `rebuildCommand`. So this is inherited behaviour. In `0.1.0`, adopters run BuildOS through `npx` and the project wrapper, where no `buildos` program needs to be on `PATH`. A fix changes golden output, so it needs a parity exception with an owner decision (`toolkits/buildos/AGENTS.md`: "Output must match the Go goldens byte for byte unless a parity exception with an owner decision says otherwise (`test/golden/parity-exceptions.json`)").
+
+Other printed commands of the same kind (a bare `buildos ...` that BuildOS shows to an adopter as a thing to run), found with `grep` in `toolkits/buildos/src` on 2026-11-26. Not fixed here.
+
+| Where in the source | Printed text | Shown when | Go golden | Tested on `0.1.0` |
+| --- | --- | --- | --- | --- |
+| `src/core/entities/commands.ts:92` (`rebuildCommand`) | `buildos entities rebuild-index --root "<root>" --mode <mode> --apply`, in the human `action:` line, `remediation_command`, and `correction` | `entities validate`, `entities rebuild-index` without `--apply`, and an index failure after `consolidate --apply`, when the index is missing or stale | yes (Go `rebuildCommand`) | yes, smoke step 5: see the reproduction above (exit 127) |
+| `src/cli/run.ts:151` | `action: Run buildos help for command syntax.` | an unknown command or a usage error | yes (`test/golden/buildos/cli-unknown-command/stderr`) | yes: `.os/scripts/buildos bogus` printed it, exit 2 |
+| `src/cli/help.ts:28` and the usage lines of each domain's help (for example `src/cli/commands/entities.ts:33` to `:36`, `src/cli/commands/validate.ts:26`, `src/cli/commands/version.ts:13`) | `Run "buildos help <domain>" for domain details.` and `buildos <domain> ...` usage lines | `help` and `--help` | the Go help had the same form (`Run "buildos entities help" ...`); the root help text is PE-001 | yes: `.os/scripts/buildos help` printed the line, exit 0 |
+| `src/cli/commands/validate.ts:67` and `:103`, `src/core/validate/validate.ts:106` and `:149` | "Fix each problem, then run buildos validate again.", "Run buildos validate in the project folder, or pass --root ...", and the same words in `correction` | `validate` finds a problem, finds no project, or stops at its finding limit | no (`validate` is new in P7) | yes, line 103: on a copy with a broken `.os/config/instance.yaml`, `.os/scripts/buildos validate` printed it, exit 4 |
+| `src/core/init/init.ts:263` (`CLASH_TIP`), `:357`, `:387`, `:420`, `:439`, `:645` to `:648`; `src/core/init/shared-files.ts:160` to `:170`, `:281`, `:291`, `:357`; `src/core/init/plan.ts:184`, `:265`, `:275`; `src/core/init/apply.ts:144`; `src/cli/commands/init.ts:210` | "... then run \`buildos init\` again." and similar | an `init` stop or failure (a clash, a shared-file problem, a folder that cannot be written, an undo) | no (`init` is new in P6) | yes, `CLASH_TIP`: `npx -y build-os@0.1.0 init --skip-make-docs` in a new folder that held a file named `.os` printed it, exit 10. There the adopter has neither a global install nor a wrapper yet. |
+| `src/cli/invocation.ts:47` (`legacyNotice`) | `Note: the command name "buildos-intake" goes away in BuildOS <version>. Use "buildos intake" instead.`, and the same line for `buildos-discovery` and `buildos-design` | every run through a legacy name, on stderr | no (the notice is new in the rewrite; `Q-016`) | yes (review round 2 of pull request 5, reviewer's run): `npx -y --package=build-os@0.1.0 buildos-intake --help` printed the line; the discovery and design names printed theirs. The named command was not run. |
+
+The no-TTY `init` question is not in this list: it shows `npx -y build-os@0.1.0 init ...`, which runs. The guide's [chapter 18](../../../guide/content/18-what-is-not-built-yet.md) also names a bare `buildos entities rebuild-index --mode strict --apply` as a workaround; that is guide text, not printed output, and is left for F-P8-11.
+
+Follow-up F-P8-11 (candidate for `0.1.1` or `0.2.0`; owner decision open): the commands that BuildOS prints as a fix use a bare `buildos`, which does not run without a global install. The owner decides whether to fix it, in which release, and in which form (for example the project wrapper form, or the `npx -y build-os@<version>` form), and approves a parity exception for the Go-golden cases (rows 1 and 2 of the table above; row 3 is partly under PE-001). This record does not decide it.
+
+Disposition for A71: the smoke tests pass on three operating systems as the steps define them (first part met, verified); the steps do not run the printed fix commands, and one of them is the defect F-P8-11 above. That defect is not a difference from the P6 reviewed output (`entities validate` has no P6 capture, and its output equals the Go goldens), so it does not change the output-match count. The second part ("the captured output matches the P6 reviewed output except for version strings") is not met as written: the 5 differences in rows 2, 3, 6a, 8, and 9 are not version strings. Each traces to a later recorded owner decision, phase scope, or review fix, but the criterion is not re-worded. A71 needs the owner to accept these 5 differences, or it stays not met.
+
+### Rollback by Version Pin (t16)
+
+No earlier runnable public version exists: `0.0.0-reserved.0` and `0.0.0-stage` hold no program, and `0.1.0` is the first runnable release. So a rollback through npx to an earlier published version cannot be shown yet, and this record does not fake one.
+
+What was tested instead (verified, macOS, Node 24.22.3, npm 11.19.1, 2026-11-26): an earlier release-candidate version, built locally and never published. In a scratch clone at the source commit `20f941a`, `package.json` was set to `0.0.1-rc.rollback`, then `npm ci --ignore-scripts` and `node scripts/release-build.ts --allow-dirty`: tarball `build-os-0.0.1-rc.rollback.tgz`, SHA-256 `0cad1bf14336ff5b823c9901090083b53f87046fb4de9fb5bcd9b9ed0ecfd82e`, reporting version `0.0.1-rc.rollback` and source revision `20f941a04494ce9c60301cee9e66fab33219a617-dirty`. A project was set up with `npx -y build-os@0.1.0 init --skip-make-docs` and copied (`cp -Rp`); the copy is the test project. The candidate was installed into the copy with `npm install --ignore-scripts --no-save --no-package-lock <tarball>`. Each check ran `sh .os/scripts/buildos version --json`:
+
+| Case | Pin in `.os/manifest.json` | Local install in the copy | Result |
+| --- | --- | --- | --- |
+| A | `0.1.0` | none | version `0.1.0` (through npx), exit 0 |
+| B | `0.1.0` | `0.0.1-rc.rollback` | version `0.1.0`, exit 0: the install of another version does not count |
+| C | `0.0.1-rc.rollback` (rolled back) | `0.0.1-rc.rollback` | version `0.0.1-rc.rollback`, revision `20f941a...-dirty`, exit 0: the wrapper ran the pinned earlier version; the legacy wrapper `buildos-intake --help` printed its notice and then the help of that version |
+| D | the original project, `0.1.0`, untouched | none | version `0.1.0`, exit 0 |
+| E | `0.0.1-rc.rollback` | removed | exit 1: npx stops with `npm error code ETARGET` and "No matching version found for build-os@0.0.1-rc.rollback."; the wrapper does not fall back to any other version |
+| F | `0.1.0` again (roll forward) | `0.0.1-rc.rollback` still there | version `0.1.0`, exit 0 |
+
+What this proves: on a copied project, the manifest edit alone moves the project wrapper to the pinned version and back, a local npm install counts only when its version equals the pin, and a pin with no matching install and no published version stops instead of running another version. What it does not prove: a rollback to an earlier published version through npx from the registry, which is the path most adopters use, and the Windows `.cmd` wrapper (not run in this pass; the pin-first wrapper tests cover it in CI). So this proves less than A72 asks for the public path, and t16 stays open. Follow-up F-P8-09: prove the public rollback with the second runnable release (`0.2.0` rolling back to `0.1.0`) on a copied project, on the three systems (the smoke workflow can carry the step).
+
+### Provenance and Digest (t18)
+
+The staged-only package no longer exists: the owner approved the stage. The record of the staged package is the `stage` job ("Stage on npm (approval with 2FA needed)", job 140165474214) of [release run 45894295344](https://github.com/brucewaynedecoy/build-os/actions/runs/45894295344), read with `gh api repos/brucewaynedecoy/build-os/actions/jobs/140165474214/logs` (verified):
+
+- `release stage check provenance: pass` (precheck: public repository, OIDC token present), `release github environment: pass` (`buildos-npm-stage` deploys from `tag:v*`, a required reviewer approved this run), `release github rulesets: pass`.
+- The run's verify artifact `buildos-release-45894295344-1` downloaded with its expected digest `sha256:68e6b885c6610dba3438d1c4fcb545d5ce728213061b70cfba1a924a490521d6`.
+- `release github download-asset: pass`: `build-os-0.1.0.tgz` (`sha256:54a8cd01f0165226927a74e5108dd37327323bd3db1905fdb6323c7373b21e8e`) and `buildos-0.1.0.cdx.json` (`sha256:11bd878191d2bc67db9f13229d7f073ba0bb33783c49deced38110c0efc7974d`) from the immutable release.
+- npm staged the release asset with `shasum` `bf2435c51fc5693f9f32e164d1b59fb080fbd290`, 173 files, the tag `latest`, and a signed provenance statement in the transparency log (log index 4134502337): `+ build-os@0.1.0 (staged with id 8b8c8ef6-9e53-4973-928b-7826f1ddc85d)`.
+- `release stage check digest: pass`: tarball SHA-256 `54a8cd01...21e8e`, reviewed entry `v0.1.0` (`brucewaynedecoy`, 2026-11-26), ledger read from git at `8e92605a3db9b23fec1209f468fd32d3aea0e542`; then `release stage check publish: pass`.
+
+The published package (verified on 2026-11-26):
+
+| Check | Command | Result |
+| --- | --- | --- |
+| Registry data | `npm view build-os@0.1.0 dist --json` | `shasum` `bf2435c51fc5693f9f32e164d1b59fb080fbd290`, `integrity` `sha512-e1rWFwN1ZILE...lw3E5/aPqW/FA==`, 173 files, unpacked size 4,355,182 bytes, one registry signature, attestations with provenance predicate `https://slsa.dev/provenance/v1`. `npm view build-os dist-tags --json`: only `latest`, `0.1.0`. |
+| Attestation | `curl -fsS https://registry.npmjs.org/-/npm/v1/attestations/build-os@0.1.0`, the DSSE payloads decoded | Two attestations, the npm publish attestation and SLSA provenance v1. Both subjects are `pkg:npm/build-os@0.1.0` with SHA-512 `7b5ad617...3ea5bf14`, equal to the registry `integrity`. Provenance: build type `https://slsa-framework.github.io/github-actions-buildtypes/workflow/v1`; workflow `.github/workflows/buildos-release.yml`, repository `https://github.com/brucewaynedecoy/build-os`, ref `refs/tags/v0.1.0`; resolved source `git+https://github.com/brucewaynedecoy/build-os@refs/tags/v0.1.0` at commit `8e92605a3db9b23fec1209f468fd32d3aea0e542`; invocation `https://github.com/brucewaynedecoy/build-os/actions/runs/45894295344/attempts/1`; builder GitHub-hosted. |
+| Signatures | in a new temporary project with a new npm cache: `npm init -y`, `npm install --ignore-scripts build-os@0.1.0`, `npm audit signatures` (Node 24.22.3, npm 11.19.1) | exit 0: "1 package has a verified registry signature", "1 package has a verified attestation"; the installed version is `0.1.0`. |
+| Digest | `curl` of `https://registry.npmjs.org/build-os/-/build-os-0.1.0.tgz`, then `shasum -a 256`, `-a 512`, and `-a 1` | 1,070,295 bytes; SHA-256 `54a8cd01f0165226927a74e5108dd37327323bd3db1905fdb6323c7373b21e8e`; SHA-512 equal to the attestation subject and the `integrity`; SHA-1 equal to `shasum`. |
+| Ledger at the tag | `git show v0.1.0:toolkits/buildos/release-candidates.json`; `git rev-parse v0.1.0^{commit}` | the one `reviewed` entry for `0.1.0` has `tarball_sha256` `54a8cd01f0165226927a74e5108dd37327323bd3db1905fdb6323c7373b21e8e`, equal to the registry tarball; source commit `20f941a04494ce9c60301cee9e66fab33219a617`; the tag peels to `8e92605a3db9b23fec1209f468fd32d3aea0e542`, the commit the provenance names. |
+
+`buildos version` of the published package reports `0.1.0` and `20f941a04494ce9c60301cee9e66fab33219a617` (t15).
+
+### Offline Install in the Guide (A73, guide part)
+
+The guide documents the offline install: chapter 04, section "Install without access to the npm registry" in `guide/content/04-install-and-configure-your-instance.md` (fetch with `npm pack build-os@0.1.0`, check the SHA-256 against `SECURITY.md` "How to Check a Release", `npm install -g --offline ./build-os-0.1.0.tgz`, then `buildos init`), and "Update and roll back" says how the wrappers use such an install. No guide change was needed.
+
+The documented steps were run (verified, macOS, Node 24.22.3, npm 11.19.1, inside the agent's sandbox): with an empty npm cache and a temporary global prefix, `npm install -g --offline --ignore-scripts ./build-os-0.1.0.tgz` (the registry tarball, SHA-256 `54a8cd01...21e8e`) added 1 package; `buildos init --skip-make-docs` ended "Done. BuildOS is set up in this folder."; `npm_config_offline=true sh .os/scripts/buildos version` printed `version: 0.1.0` (the wrapper ran the installed package, no npx); and `npx -y --offline --package ../build-os-0.1.0.tgz -- buildos version` printed `version: 0.1.0`. This is npm's offline mode, not a restricted network: the restricted-network trial is t17.
+
+### Owner Checklist for t17 (R-012)
+
+t17 needs the maintainer, and no agent did it. Not done. These are the exact steps; record the results in a new dated section of this file named "Chat-App and Restricted-Network Trials (t17)", marked owner-reported, with paths and user names replaced as above, and add one dated evidence paragraph to [`R-012`](../../prd/03-open-questions-and-risk-register.md#r-012-node-24-and-npx-reach-in-chat-app-and-enterprise-environments).
+
+Chat-app trial (at least one chat app with folder access that adopters use):
+
+1. On a computer with Node.js 24 or newer, run `node --version` and `npm --version` in a terminal and note both.
+2. Make a new empty folder. Give the chat app access to that folder only.
+3. Ask the agent, word for word: "In this folder, run `npx -y build-os@0.1.0 init`. If BuildOS asks a question, ask me, then run the command it prints."
+4. Answer "no" to the Make Docs question (or "yes", and note which).
+5. Then ask: "Run `.os/scripts/buildos validate` in this folder." (On Windows: `.os\scripts\buildos.cmd validate`.)
+6. Capture: the chat app name and version; the operating system; whether the agent could start `npx` at all (sandbox or permission prompts, and what you approved); the full text the agent got from each command, with its exit code when shown; about how long the first command took before any output, and whether at any point you thought it had failed or hung; whether the agent asked you the Make Docs question; and the folder after: the list of top-level names and the text of `.os/manifest.json`.
+
+Restricted-network trial (once, on a network that blocks or proxies `registry.npmjs.org`, for example a company network or a firewall rule):
+
+1. Run `npm view build-os@0.1.0 version` and `npx -y build-os@0.1.0 version` in a new empty folder with a new empty npm cache (`npm_config_cache=<new empty folder>`). Capture the exact error text, the exit code, and about how long each took to fail.
+2. Follow guide chapter 04, "Install without access to the npm registry", steps 1 to 4, with the tarball fetched on a machine with access. The SHA-256 must be `54a8cd01f0165226927a74e5108dd37327323bd3db1905fdb6323c7373b21e8e`; capture the `shasum` (or `certutil`) line.
+3. In a new empty folder: `buildos init --skip-make-docs`, then `.os/scripts/buildos version` (Windows: `.os\scripts\buildos.cmd version`). Capture the output and exit codes, and whether any command tried to reach the registry.
+
+Where the result goes: the new section named above (the facts, marked owner-reported), the `R-012` evidence paragraph (one paragraph with the date and a link to that section), and the t17 line of [08 Release 0.1.0](08-release-0-1-0.md#stage-4---staged-package-proof). `R-012` closes only when its "To close" text is met: tested in the chat apps adopters use, including at least one restricted network, and the offline install documented.
+
+### Retrospective Publication Review (t24)
+
+This review is retrospective. It is written on 2026-11-26, after `build-os@0.1.0` was published at 2026-11-26T21:04:34.703Z, because the npm approval came before t15 to t18 and t22 to t24 (an orchestration mistake; see the release-order departure in [08 Release 0.1.0](08-release-0-1-0.md#closeout-notes)). The owner decided on 2026-11-26 to run the outstanding checks on the published package (option 1, above). The review can inform the owner's acceptance of `0.1.0`; it cannot make the publication come after an approval of this review, so that part of A75 stays missed for `0.1.0`.
+
+| Item | Source | Result |
+| --- | --- | --- |
+| Tarball digest | `reviewed` entry at `v0.1.0` (`release-candidates.json`); release run 45894295344 verify job (`release gate digest: pass`) and stage job (`release stage check digest: pass`); the registry tarball (t18) | `54a8cd01f0165226927a74e5108dd37327323bd3db1905fdb6323c7373b21e8e` everywhere: the reviewed entry, the release asset, the staged tarball, and the registry tarball. Verified. |
+| Provenance | npm attestations, `npm audit signatures` (t18) | SLSA provenance v1 from `.github/workflows/buildos-release.yml` at `refs/tags/v0.1.0`, commit `8e92605`, run 45894295344; registry signature and attestation verified. Verified. |
+| SBOM | release asset `buildos-0.1.0.cdx.json` (`gh release download v0.1.0 --pattern 'buildos-0.1.0.cdx.json'`); verify job `release gate sbom: pass` | SHA-256 `11bd878191d2bc67db9f13229d7f073ba0bb33783c49deced38110c0efc7974d`, equal to the stage job's check. CycloneDX 1.5, valid against the vendored schema (gate). Metadata component `build-os` `0.1.0`, purl `pkg:npm/build-os@0.1.0`, SHA-256 equal to the tarball digest, `buildos:source_revision` `20f941a`. 57 components: 4 bundled into `dist/buildos.js` (`entities` 9.0.0, `fflate` 0.8.3, `parse5` 8.1.1, `unpdf` 2.1.0), 3 ported to TypeScript with no Go code shipped (Go standard library 1.24.1, `golang.org/x/net` v0.48.0, `github.com/ledongthuc/pdf`), 50 build-time only. Verified. |
+| Scans | verify job of run 45894295344 | `npm audit`: info 0, low 0, moderate 0, high 0, critical 0. OSV: `osv-scanner` exit 0, 0 findings. Verified from the job log. |
+| Deny-list result | the `deny-list` job of run 45894295344 (real list, trusted scanner); the verify job (invented list); this branch | Release run, real list: 2394 files checked, 0 matches, 0 home folder paths. Verify job, invented list: pass. This branch before each push, real list: 0 matches, 0 home folder paths, 173 of 173 package files read. Verified. |
+| Eval gate | verify job of run 45894295344 | `conversion eval gate: 12 of 12 files ran, 12 passed`. Also in that job: typecheck passed; unit tests 2191 passed, 0 failed; golden suites 286 passed, 0 failed; installed golden comparison (expects `0.1.0` at `20f941a`) 167 passed, 0 failed. Verified from the job log. |
+| Smoke results | [Smoke Tests on Three Systems (t15)](#smoke-tests-on-three-systems-t15) | Passed on macOS (here and in CI), Linux, and Windows with Node 24 through `npx -y build-os@0.1.0`. Corrected after review round 1 of pull request 5: the output differs from the P6 reviewed output in 5 listed ways that are not version strings (rows 2, 3, 6a, 8, and 9); each traces to a later recorded owner decision, phase scope, or review fix. A71's output-match part is not met as written. One defect in the published package: the printed `entities rebuild-index` fix command uses a bare `buildos` and exits 127 without a global install; the data and the validation result are correct (F-P8-11, Go parity, owner decision open). Verified. |
+| Rollback | [Rollback by Version Pin (t16)](#rollback-by-version-pin-t16) | The wrapper's pin behaviour is shown with a local, unpublished earlier candidate; the public rollback waits for `0.2.0` (F-P8-09). t16 open. |
+| Chat-app and restricted network | [Owner Checklist for t17 (R-012)](#owner-checklist-for-t17-r-012) | Not done; needs the maintainer. The offline install is documented and its steps work in npm's offline mode. |
+| Performance outcomes | [`PERF-001` recheck](#startup-recheck-perf-001-p8) (2026-11-24) and [First-Run npx (PERF-002, P8)](#first-run-npx-perf-002-p8) | `PERF-001`: `pass`; BuildOS overhead about 40 ms; the owner decided on 2026-11-25 to ship `0.1.0` as it is, with the PDF reader lazy load later (F-P8-06). `PERF-002`: `pass`; first run 725.6 ms median on the measured machine and network; no size reduction needed now; the `tarball` fetch is a reference measurement, not an upper bound on a size saving. Both within budget, no target. |
+| `SECURITY.md` | `toolkits/buildos/SECURITY.md`; `git diff v0.1.0 HEAD -- toolkits/buildos/SECURITY.md toolkits/buildos/package-lock.json toolkits/buildos/src` | Unchanged since the tag (the diff is empty). It names every component the SBOM marks as shipped, with the same versions and licenses ("Bundled npm Packages" and "Other Bundled Code"), plus the pdf.js inner components. "How to Check a Release" matches the checks run in t18. A68 recheck: no gap. Verified. |
+| `D-005` | [PRD 03 `D-005`](../../prd/03-open-questions-and-risk-register.md#d-005-legacy-editorial-prds-fail-prd-authority-validation) | Status `Closed`. Verified by reading the register. |
+| Release and approvals | First Publication of 0.1.0 (above) | The GitHub Release is immutable with exactly the tarball and the SBOM; GitHub records the environment approval of `brucewaynedecoy` for run 45894295344 (verified earlier the same day); the npm 2FA approval is owner-reported. |
+
+Open at the time of this review: t16 (public rollback), t17 (owner trials), the owner's acceptance of the 5 A71 output differences, the owner's decision on F-P8-11, and t25.
+
+### Question for t25
+
+t25 stays for the maintainer, and no agent ticks it. To close t25 by the dated exception of 2026-11-26, the owner answers one question:
+
+> Do you accept the retrospective publication review of 2026-11-26 for `build-os@0.1.0` (the section above) as the publication approval of `0.1.0`: yes or no?
+
+What stays missed whatever the answer: A75's order. The review was not approved before publication, so for `0.1.0` "publication happens only after a recorded maintainer approval" is recorded as missed, and a later review cannot meet it. A "yes" closes t25 by the explicit exception, and the record must say so; it does not make A75 met. A "no" leaves t25 open and asks for an owner decision on `0.1.0` (for example a `0.1.1`, or deprecating `0.1.0`).
+
+### Acceptance Status After These Checks (A71 to A75)
+
+| Case | Status |
+| --- | --- |
+| A71 | Smoke tests pass on three operating systems as the steps define them (met); the steps do not run printed fix commands, and one of them is the defect F-P8-11. The output-match part is not met as written: the 5 differences in rows 2, 3, 6a, 8, and 9 of the [comparison](#comparison-with-the-p6-reviewed-output) are not version strings. Needs the owner's acceptance of these 5 differences. |
+| A72 | Not met. The wrapper's pin behaviour is shown on a copied project with a local, never-published earlier candidate; a pinned earlier published version cannot run before a second runnable release exists (F-P8-09). |
+| A73 | Not met. The guide documents the offline install (met for that part); the chat-app and restricted-network results are not recorded (t17, owner). |
+| A74 | Both performance results are in this report within their budgets, each with a stated decision and no target. Its text is met. |
+| A75 | The publication review lists every item in t24 (met for that part, retrospectively). The order is missed for `0.1.0`: publication came before a recorded approval of the review. Not met, and it cannot be met for `0.1.0`. |
+
+Tasks: no checkbox changes. Under the rule in [00-index.md](00-index.md), a task is done only when its stage acceptance criteria pass, and neither Stage 4 nor Stage 5 passes. t15, t18, t22, t23, and t24 are performed, and their results stand, pending stage acceptance; t16 and t17 are open; t25 is open for the owner.
+
+### Follow-ups (Post-Publication Checks)
+
+- F-P8-09: prove rollback by version pin through npx to an earlier published version (`0.2.0` back to `0.1.0`) on a copied project, on three systems, when `0.2.0` exists. Owner: the `0.2.0` release phase.
+- F-P8-10: on Windows, the shown `entities` remediation command doubles each backslash (Go `%q` parity). Check that Command Prompt runs it as shown, and decide whether a parity exception is wanted.
+- F-P8-11: the commands that BuildOS prints as a fix use a bare `buildos` (first `entities rebuild-index`; also `buildos help`, `buildos validate`, `buildos init`, and the three legacy-name notices in their messages), which exits 127 for an adopter with no global install. Candidate for `0.1.1` or `0.2.0`; owner decision open, with a parity exception for the Go-golden cases. See [Defect: the Printed Rebuild Command Needs a Global Install (F-P8-11)](#defect-the-printed-rebuild-command-needs-a-global-install-f-p8-11).
+- F-P8-12: `toolkits/buildos/scripts/measure-npx-first-run.ts` does not pin the child `PATH` to the Node that runs the script, so the BuildOS CLI that `npx` starts could run under another Node (the script starts `npx` itself with the Node that runs the script). For the `PERF-002` pass of 2026-11-26 the raw JSON records Node 24.22.3 and the launch command put that Node first on `PATH`, so the result stands. Pin the child `PATH` in the next revision of the instrument.
+- F-P8-13: `toolkits/buildos/scripts/published-smoke.ts` cleans paths before it checks the legacy notice, so an account named `buildos` on the machine could make a correct notice fail the check. The three CI smoke jobs passed. Compare the raw stderr first, then clean the saved report.
+
+### Check Results (Post-Publication Checks)
+
+On 2026-11-26, macOS (this machine's Node.js 26.13.1 and npm 11.20.0 for the repository checks), from `toolkits/buildos/` unless named.
+
+| Check | Result |
+| --- | --- |
+| `npm ci --ignore-scripts` | passed, 0 vulnerabilities |
+| `npm run typecheck` | passed |
+| `npm test` (outside the sandbox: three tests open a local port) | 2509 tests: 2496 passed, 0 failed, 13 skipped (the Windows-only and other conditional cases) |
+| `node --test test/release-workflow.test.ts test/codeowners.test.ts` | 41 of 41 passed (5 new smoke-workflow tests; CODEOWNERS covers the new workflow and scripts) |
+| `npm run build`, then `node scripts/check-deny-list.mjs --root ../.. --pack .` with the real list, before each push | 0 matches, 0 home folder paths, 173 of 173 package files read |
+| `make-docs project paths validate --target-root .` (repository root) | valid, 0 failing findings |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | passed |
+| `make-docs check performance-evidence --target-root . --json` (repository root) | `failed`, with the same 12 findings as `main` at `34fc94b` (none new): 11 `PERF-VAL-014` warnings in older records and one `PERF-VAL-007` error, "The recorded evidence expired on 2026-11-24", for the P1 `PERF-001` profile, whose expiry at the P8 recheck the profile itself records. A first run of this check on this branch found one new error, `PERF-VAL-004` (the `PERF-002` profile had no Evidence Fingerprint); the fingerprint and result record were added after the digested part, as in the `PERF-001` profile, and the error is gone. |
+| `git diff --check` | clean |
+| `buildos-smoke` on pull request 5 | run 45901774926 on `e2bbbc1` and run 45902212190 on `c0c1420`: success on `ubuntu-latest`, `windows-latest`, and `macos-latest` |
+
+Not done in this pass: t17 (owner), the public rollback (F-P8-09), the Windows `.cmd` rollback case, and any check that needs a staged-only package.
+
+### Review Round 1 of Pull Request 5 (2026-11-26)
+
+An independent review of pull request 5 gave FAIL with five findings. Each was checked first and is confirmed. Only records and one user-guide sentence changed; no shipped source changed.
+
+| Finding | Disposition |
+| --- | --- |
+| 1 (blocker) a defect in the published package, recorded as "no defect" | Reproduced (exit 127 for the printed bare command; exit 0 for the wrapper and `npx` forms). Recorded in [Defect: the Printed Rebuild Command Needs a Global Install (F-P8-11)](#defect-the-printed-rebuild-command-needs-a-global-install-f-p8-11) with the other printed bare commands and the Go baseline (the Go tool printed the same command). Every "no defect" statement is corrected here, in the P8 phase file, in `R-003`, in the history record, and in the pull request body. The user guide `docs/assets/user/entities-consolidation-curate-and-resolve-records.md` tells adopters to run the recovery command that the diagnostic prints; it now says to run it with `<buildos>` in place of the bare `buildos` (one sentence, and a pointer to it in the safe-stop section). A71's text is unchanged; its status says that the smoke steps do not run printed fix commands. |
+| 2 (should-fix) the A71 comparison used superseded P6 captures | The [comparison](#comparison-with-the-p6-reviewed-output) now uses the final reviewed P6 output. Rows 4, 5, 6b, 7, and 10 are not differences; 5 differences need the owner's acceptance (rows 2, 3, 6a, 8, and 9), each with its source. The count is corrected everywhere it was stated. |
+| 3 (should-fix) the `PERF-002` upper-bound claim | The [decision](#decision-t23) keeps the numbers and the decision, calls the `tarball` workload a reference measurement, removes the upper-bound claim, and states its limits. Nothing was measured again. The profile stays as committed (its digest is bound to the result). |
+| 4 (note) an illustrative absolute Windows path | Replaced with the placeholder `<drive>:\\<folder>\\<project>`. |
+| 5 (blocker) a failed pull request check | The macOS job's `npm audit` step of run 45903053231 failed with `getaddrinfo ENOTFOUND registry.npmjs.org`, a runner network error. The push of these fixes starts new runs; their result is reported in the pull request, not here, because it comes after this commit. |
+
+Check results for this round (2026-11-26, macOS, this machine's Node.js 26.13.1, from `toolkits/buildos/` unless named):
+
+| Check | Result |
+| --- | --- |
+| `npm run build`, then `node scripts/check-deny-list.mjs --root ../.. --pack .` with the real list | 0 matches, 0 home folder paths, 173 of 173 package files read |
+| `node --test test/guide-walk.test.ts test/skills.test.ts test/design.test.ts test/release-workflow.test.ts` (the tests that read the changed documents) | 144 tests: 139 passed, 0 failed, 5 skipped |
+| `make-docs project paths validate --target-root .` (repository root) | valid, 0 failing findings |
+| `make-docs run prd authority validate --target-root . --json` (repository root) | passed |
+| `make-docs check performance-evidence --target-root . --json` (repository root) | `failed`, with the same 12 findings as `main` at `34fc94b` (11 `PERF-VAL-014` warnings and the one `PERF-VAL-007` error of the P1 `PERF-001` profile); none new |
+| `git diff --check` | clean |
+
+Not done in this round: the full `npm test` (no source or test changed), and the Windows `.cmd` form of the workaround.

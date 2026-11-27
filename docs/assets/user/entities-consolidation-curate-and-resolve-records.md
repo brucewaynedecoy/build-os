@@ -2,7 +2,7 @@
 title: "Curate and Resolve Duplicate Entity Records"
 path: "entities/consolidation"
 status: draft
-version: "2026-11-24"
+version: "2026-11-26"
 order: 145
 tags:
   - entities
@@ -172,7 +172,7 @@ Set the paths explicitly. `<buildos>` is the BuildOS command at the exact versio
    <buildos> entities rebuild-index --root <copied-root> --mode strict --check
    ```
 
-   If the check says the index is missing or stale, use the exact recovery command in the diagnostic. Its operation is equivalent to:
+   If the check says the index is missing or stale, use the exact recovery command in the diagnostic. In BuildOS `0.1.0` that command starts with a bare `buildos`; always run it with `<buildos>` in place of `buildos`, so the recovery uses the version you selected (a global install can be another version). Its operation is equivalent to:
 
    ```sh
    <buildos> entities rebuild-index --root <copied-root> --mode strict --apply
@@ -250,7 +250,7 @@ To rehearse rollback, restore the entire copied `.os/data/` and `.os/indexes/` s
 
 Prefer proving rollback into a new `<restored-root>` rather than deleting or overwriting the failed rehearsal. If a future live migration fails, stop using redirect-unaware tools, preserve the failure output and affected root, and follow the separately approved rollback procedure from the copied-root rehearsal. Do not delete losing rows or hand-edit the generated resolution index.
 
-Exit code `6` is a special safe stop: canonical data committed, but index rebuilding failed. Do not restore only one file or rerun consolidation blindly. Preserve the output and run the exact `rebuild-index` recovery command reported by the tool against the same approved root.
+Exit code `6` is a special safe stop: canonical data committed, but index rebuilding failed. Do not restore only one file or rerun consolidation blindly. Preserve the output and run the exact `rebuild-index` recovery command reported by the tool against the same approved root. Run it with `<buildos>` in place of its leading `buildos`, as in step 10 of the Copied-Root Workflow.
 
 ## Troubleshooting
 
