@@ -103,15 +103,16 @@ describe("release notes: the 0.2.0 release body extracted at the tag", () => {
   });
 });
 
-// The 0.2.1 version pull request: the 0.2.1 notes stand above 0.2.0. The release procedure of 0.2.1
-// waits for the owner's decision on the release process, so no document holds a 0.2.1 extraction
-// line yet. This test runs the 0.2.0 filter of the runbook and SECURITY.md with only the version
-// changed, on a scratch copy tagged v0.2.1, so the 0.2.1 headings stay compatible with it.
+// The 0.2.1 version pull request: the 0.2.1 notes stand above 0.2.0. Review round 2 of pull request 17:
+// the owner chose the short release checklist, and its owner step 3 holds the 0.2.1 extraction line.
+// The line must be the 0.2.0 filter of the runbook and SECURITY.md with only the version changed. This
+// test runs it on a scratch copy tagged v0.2.1, so the 0.2.1 headings stay compatible with it.
 const SECTIONS_021 = ["### Fixed", "### Update a project from 0.2.0", "### Known limits", "### Check the package", "### Roll back"];
 
 describe("release notes: the 0.2.1 release body extracted at the tag, with the 0.2.0 filter for 0.2.1", () => {
   const command020 = pipeline(evidence, "the release runbook");
   const command = command020.replace("git show v0.2.0:", "git show v0.2.1:").replace("/^## 0\\.2\\.0$/", "/^## 0\\.2\\.1$/");
+  const checklistLines = evidence.split("\n").map((l) => l.trim()).filter((l) => l.startsWith("git show v0.2.1:toolkits/buildos/RELEASE_NOTES.md | "));
   // The 0.2.1 notes, with exactly one draft status line, whether or not the real notes still hold it.
   const withoutDraft = notes.replace(`\n## 0.2.1\n\n${DRAFT_LINE}\n\n`, "\n## 0.2.1\n\n");
   const fixture021 = withoutDraft.replace("\n## 0.2.1\n\n", `\n## 0.2.1\n\n${DRAFT_LINE}\n\n`);
@@ -140,6 +141,8 @@ describe("release notes: the 0.2.1 release body extracted at the tag, with the 0
     assert.ok(notes.indexOf("\n## 0.2.1\n") < notes.indexOf("\n## 0.2.0\n"));
     assert.ok(fixture021.includes(`\n## 0.2.1\n\n${DRAFT_LINE}\n`), "the scratch copy holds the draft line");
     assert.notEqual(command, command020);
+    assert.equal(checklistLines.length, 1, "the 0.2.1 checklist holds exactly one extraction line");
+    assert.equal(checklistLines[0], `${command} > "$D/notes-0.2.1.md"`, "the checklist's line is the 0.2.0 filter with only the version changed");
     assert.match(command, /^git show v0\.2\.1:toolkits\/buildos\/RELEASE_NOTES\.md \| awk '\/\^## 0\\\.2\\\.1\$\/\{p=1;next\} \/\^## \/\{p=0\} p' \| grep -v '\^Status: draft'$/);
   });
 

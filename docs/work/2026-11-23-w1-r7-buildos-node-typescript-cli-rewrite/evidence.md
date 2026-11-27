@@ -8891,7 +8891,7 @@ Not changed by the first commit: `SECURITY.md` (since review round 1, only its t
 | `.github/workflows/buildos-smoke.yml` and its test; `SECURITY.md` examples | Default and examples `0.2.0` | Unchanged here; after publication, the release process decides |
 | `SECURITY.md`, "How to Check a Release" and the `buildos-smoke` source list | "`0.2.0` ... was the `latest` version on 2026-11-27"; "`0.2.0` (the latest published version on 2026-11-27 ...)" | Dated in review round 1 of pull request 17, so both stay true. After publication, `latest` is `0.2.1`: the release process decides whether these sentences and the examples move to `0.2.1` |
 
-The release steps for `0.2.1` wait for the owner's decision on the release process (the owner asked for the Make Docs pattern; a separate task proposes it).
+The release steps for `0.2.1` waited for the owner's decision on the release process (the owner asked for the Make Docs pattern; a separate task proposes it). The owner decided on 2026-11-27: see [Release Route for 0.2.1](#release-route-for-021-2026-11-27).
 
 ## Review Round 1 (Pull Request 17) (2026-11-27)
 
@@ -8980,4 +8980,62 @@ On 2026-11-27, macOS, from `toolkits/buildos/` and the repository root, the sand
 | `make-docs project paths validate` | valid, 0 failing findings |
 | `make-docs project markdown validate` | 184 findings, the same count as before the round; none new |
 
-No golden capture ran. No workflow was started by hand.
+`test/release-notes.test.ts` now reads the `0.2.1` extraction line from owner step 3 of the [Release Checklist for 0.2.1](#release-checklist-for-021) and checks that it is the `0.2.0` filter with only the version changed, then runs it on a scratch copy tagged `v0.2.1`. No golden capture ran. No workflow was started by hand.
+
+## Release Route for 0.2.1 (2026-11-27)
+
+### Owner Decision of 2026-11-27 (0.2.1 Release Route)
+
+The orchestrator asked the owner on 2026-11-27: "How do we release 0.2.1? 1. Short checklist now, rebuild after. You get 7 steps. The agents do all checks before your first step. The full workflow rebuild comes after 0.2.1. 2. Rebuild first." The owner answered, word for word: "Option 1." The owner was told that option 1 changes three things from the [Release Runbook for 0.2.0](#release-runbook-for-020): (a) the owner's "accept" reply in owner step 1 counts as the release approval, with no second written approval later; (b) two checks move to after the release: the signing-log (Rekor) check of the staged file and the speed measurement (`PERF-002`); (c) the record goes into the next pull request, with no separate record pull request after the release. No other owner decision is recorded here.
+
+### Release Checklist for 0.2.1
+
+The short route of the decision above. Where a command is the same as in the [Release Runbook for 0.2.0](#release-runbook-for-020), the step names the runbook step, with `0.2.1` for the new version and `0.2.0` for the previous one. `<H1>` is the full SHA of the reviewed head of this pull request, `<H2>` the ledger commit on top of it, `<run>` and `<attempt>` the run ID and attempt of the `<H1>` dry run, `<sha256>` its tarball SHA-256, and `$D` a new empty folder outside the repository (`D=$(mktemp -d)`).
+
+Agent steps, before the owner's first step. Each passes, with its run ID in the evidence, or the release stops.
+
+1. The dry run of `<H1>` (orchestrator). The branch is up to date with `main`, and nothing else merges into `main` until the tag. From the repository root: `git push origin <H1>:refs/heads/release-dry-run/0.2.1`. A push to a `release-dry-run/` branch is a dry run with candidates `self`. Every gate passes (runbook step b).
+2. Inspect the tarball (every check of runbook step c): the SHA-256 equals `tarball_sha256` in `release-build.json`; the file list; `npm diff --diff=build-os@0.2.0 --diff="$D/artifact/build-os-0.2.1.tgz"`; the offline install; `version --json` reports `0.2.1` and `<H1>`; the SBOM; the real-list deny-list scan of the tarball (0 matches); the size and file count against `0.2.0`.
+3. The smoke on three systems on that tarball (runbook step c): `gh workflow run buildos-smoke.yml --repo brucewaynedecoy/build-os --ref main -f source=release-run -f release_run=<run> -f release_run_attempt=<attempt> -f tarball_sha256=<sha256>`; each report has `tarball.version` `0.2.1`.
+4. The upgrade and the rollback with that tarball, in `sh` on macOS or Linux: the guide's "From 0.2.0 to 0.2.1" and "Roll back from 0.2.1 to 0.2.0", in a project made by `npx -y build-os@0.2.0 init --skip-make-docs`, with the guide's offline form of step 2 on that file and an install of that file as the `0.2.1` install. The record says what did not run: the Command Prompt and PowerShell forms, without a Windows machine.
+5. The ledger entry, as a second commit `<H2>` on this pull request's branch. In `toolkits/buildos/` of a clean checkout of `<H1>`: `node scripts/release-candidate.ts compute --tarball "$D/artifact/build-os-0.2.1.tgz" --build "$D/artifact/release-build.json" --reviewed-by brucewaynedecoy --reviewed-on <YYYY-MM-DD> --evidence "<text>"`. The build record names `<H1>`, so the entry's `source_commit` is `<H1>`. Add the printed entry after the `v0.2.0` entry. `node scripts/release-candidate.ts check` and `node scripts/release-candidate.ts verify --tag v0.2.1 --tarball "$D/artifact/build-os-0.2.1.tgz"` pass, and `git diff --name-only <H1> <H2>` prints only `toolkits/buildos/release-candidates.json` (commit type `chore`, no history record, as in runbook step d). Then the dry run of `<H2>` with candidates `committed`. A push to a `release-dry-run/` branch always uses `self`, so it is a hand-started run on this pull request's branch, while its head is `<H2>`: `gh workflow run buildos-release.yml --repo brucewaynedecoy/build-os --ref release/0.2.1-version -f purpose=dry-run -f tag=v0.2.1 -f candidates=committed -f plant=none`. Its summary names commit `<H2>` and candidates `committed`, and every gate passes: the identity gate accepts `<H1>`, because `<H1>` is an ancestor of `<H2>` and the two differ only in the ledger (`sourceCommitProblems` in `scripts/release-gate.ts`), and the digest gate rebuilds with the source revision `<H1>` and gets `<sha256>` again. The same holds at the tag only for a merge commit: a squash merge makes a commit that does not have `<H1>` as an ancestor, and the gate stops.
+6. An independent review of `<H2>` (the ledger change only).
+
+Owner steps.
+
+1. Read the orchestrator's one-page summary. Reply "accept 0.2.1" with the SHA-256 `<sha256>`. This reply is the recorded publication approval.
+2. Merge this pull request with "Create a merge commit". Never squash.
+3. Tag and draft. From the repository root:
+
+   ```sh
+   git fetch origin
+   git diff --name-only <H1> origin/main
+   git tag v0.2.1 origin/main
+   git push origin refs/tags/v0.2.1
+   D=$(mktemp -d)
+   git show v0.2.1:toolkits/buildos/RELEASE_NOTES.md | awk '/^## 0\.2\.1$/{p=1;next} /^## /{p=0} p' | grep -v '^Status: draft' > "$D/notes-0.2.1.md"
+   grep '^##' "$D/notes-0.2.1.md"
+   gh release create v0.2.1 --repo brucewaynedecoy/build-os --draft --verify-tag --title "BuildOS 0.2.1" --notes-file "$D/notes-0.2.1.md"
+   ```
+
+   The `git diff` prints only `toolkits/buildos/release-candidates.json`; if it prints more, stop. The tag push prints the "Bypassed rule violations" notice of the `release tags` ruleset, as for `0.2.0`. The `grep` prints exactly five headings, in this order: `### Fixed`, `### Update a project from 0.2.0`, `### Known limits`, `### Check the package`, `### Roll back`.
+
+4. Start the prepare run: `gh workflow run buildos-release.yml --repo brucewaynedecoy/build-os --ref main -f purpose=prepare -f tag=v0.2.1 -f candidates=committed -f plant=none`.
+5. When the orchestrator says "ready" (the agent checked the prepare run, the two draft assets, their digest, release immutability, and the rulesets through the API, as in runbook step f): publish the draft, `gh release edit v0.2.1 --repo brucewaynedecoy/build-os --draft=false`. The release run starts. When it waits at `Stage on npm (approval with 2FA needed)`, approve the `buildos-npm-stage` deployment on the run page (Review deployments > Approve and deploy).
+6. Approve the stage on npm: `npm stage list build-os` lists the stage ID that the orchestrator read from the stage job's log; then `npm stage approve <stage-id>` (2FA).
+7. `npm view build-os versions dist-tags --json`: `versions` holds `0.2.1`, and `latest` is `0.2.1`. If `latest` is not `0.2.1`, run `npm dist-tag add build-os@0.2.1 latest` (2FA).
+
+After publication (agents; the results go into the next pull request): the registry digest equals the ledger (`npm pack build-os@0.2.1` and its SHA-256); `npm audit signatures` in a new folder; the Rekor lookup of runbook h1, on the registry tarball; the registry smoke on three systems (`-f source=registry -f version=0.2.1`); `PERF-002`, in the order of runbook step k; then the documentation pull request: remove the draft status line of the `0.2.1` notes, move the smoke default to `0.2.1` with its test, and check each row of [Facts That Depend on the 0.2.1 Release](#facts-that-depend-on-the-021-release).
+
+### Departures From the Written Rules (Owner Exception for 0.2.1)
+
+These departures are the dated owner exception of 2026-11-27 ("Option 1."), for `0.2.1` only. This pull request does not change the written rules: the workflow rebuild after `0.2.1` changes them in its own pull request.
+
+| Written rule | For 0.2.1 |
+| --- | --- |
+| `SECURITY.md`, Release Procedure step 6 and Maintainer Checklist; `toolkits/buildos/AGENTS.md`, Release and First Publication step 6; A81 and runbook steps i and j: the stage is approved on npm only after the recorded publication approval, which comes after the checks of the stage and names the stage ID | The recorded approval is the owner's "accept 0.2.1" reply of owner step 1, before staging. It names the tarball SHA-256, not a stage ID, because no stage exists yet. No second written approval follows. The stage is bound to that SHA-256 by the workflow: the `stage` job stages only the release asset whose SHA-256 equals the ledger entry, after the release run's fresh rebuild gave the same SHA-256 (Release Procedure, "What this guarantees"). The agent records the reply in the next pull request |
+| `SECURITY.md`, Maintainer Checklist: after staging, check the staged package's provenance and digest; runbook h1 | After publication: the Rekor lookup runs on the registry tarball, as it did for `0.2.0` |
+| Runbook h4: the performance check before the approval | `PERF-002` runs after publication, as for `0.2.0`: its instrument measures only a published package |
+| Runbook step k: the publication record, then a documentation pull request | The record goes into the next pull request, with no separate record pull request |
+| `toolkits/buildos/AGENTS.md`, Release, and the header of `scripts/release-candidate.ts`: the dry run on `release-dry-run/<short-sha>`; the ledger entry in its own pull request with nothing else | The dry-run branch is `release-dry-run/0.2.1`; the workflow takes any `release-dry-run/**` branch, and a name with `-plant-` would plant a failure. The ledger entry is the second commit `<H2>` of this pull request. The identity gate checks commits, not pull requests: `<H1>` is an ancestor of the tag commit and differs from it only in the ledger |
+| Runbook step d: the owner accepts the tarball before the entry is computed | The entry, with `--reviewed-by brucewaynedecoy`, is computed before owner step 1. The owner's reply accepts the tarball with that SHA-256; without it, the pull request is not merged |
