@@ -24,8 +24,8 @@
 // that one field. After the rollback, the project wrapper must run the
 // pinned 0.1.0 (its version, its JSON source revision equal to that of
 // `npx -y build-os@0.1.0 version --json`, no 0.2.0 domain in help, and a
-// 0.2.0 command stops with exit 2), the five compare commands against the
-// backup print nothing, and the tree equals the "Before BuildOS 0.2.0"
+// 0.2.0 command stops with exit 2; on Windows the .cmd wrapper exits 0
+// there, F-P9-17), the five compare commands against the backup print nothing, and the tree equals the "Before BuildOS 0.2.0"
 // commit; the original project is untouched; and the npm cache holds only
 // registry entries of build-os, with the registry's integrity for both
 // tarballs.
@@ -34,6 +34,16 @@
 // {ORIGINAL}, {HOME}, {USER}, {TIMESTAMP}, then any other absolute path). It
 // writes <out>/rollback-<os>.json and <out>/rollback-<os>.md and exits 1 when
 // a step fails, 2 on a usage error.
+//
+// F-P9-17 (pull-request run 46054715769, 2026-11-27): on Windows the project
+// wrapper `.os\scripts\buildos.cmd`, on its npx route, exited 0 when the
+// pinned 0.1.0 stopped with exit 2 (`capability-matrix --help`), and
+// `.os\scripts\buildos-intake.cmd version` exited 0 where 0.1.0 stops with
+// exit 1; stderr held the 0.1.0 error each time. Linux and macOS gave 2 and 1.
+// The run asserts that true behavior on Windows (exit 0 and the 0.1.0 error
+// text). The steps named "F-P9-17 evidence" find the layer that loses the
+// code: they run the same failure through each layer of the wrapper's npx
+// route, and on Windows they record the exit code without a check.
 
 import { spawnSync, type SpawnSyncOptions } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
@@ -210,6 +220,21 @@ function plain(name: string, file: string, args: string[], expected: number, cwd
   return run(name, [file === process.execPath ? "node" : file, ...args].join(" "), file, args, expected, cwd);
 }
 
+/**
+ * F-P9-17 evidence: one shell line in the test project (Command Prompt on
+ * Windows, sh elsewhere). Linux and macOS check `posixExit`; Windows records
+ * the exit code with no check, because the cause of F-P9-17 is not known yet.
+ */
+function evidenceLine(name: string, windowsLine: string, posixLine: string, posixExit: number): Step {
+  if (WINDOWS) return run(`${name}: ${windowsLine}`, windowsLine, process.env["ComSpec"] ?? "cmd.exe", commandPromptArgs(windowsLine), null, project, { verbatim: true });
+  return run(`${name}: ${posixLine}`, posixLine, "/bin/sh", ["-c", posixLine], posixExit, project);
+}
+
+/** The stderr of a BuildOS usage error for an unknown command, as `version` prints it. */
+function unknownCommand(stderr: string, version: string, command: string): boolean {
+  return stderr.includes(`version: ${version}\n`) && stderr.includes(`ERROR [usage_error]: unknown command "${command}"`);
+}
+
 function npxRun(name: string, args: string[], expected: number, cwd: string): Step {
   const t = npmTool("npx");
   return run(name, `npx ${args.join(" ")}`, t.file, [...t.prefix, ...args], expected, cwd, { shell: t.shell });
@@ -252,7 +277,8 @@ function finish(stopped?: string): never {
     removed += r.removed;
     return r.text;
   };
-  const reported = steps.map((s) => ({ ...s, command: scrub(s.command), stdout: scrub(s.stdout), stderr: scrub(s.stderr), checks: s.checks.map((c) => ({ ...c, check: scrub(c.check) })) }));
+  // A step name can hold the test project's folder (an F-P9-17 evidence step): clean() replaces it with {PROJECT}.
+  const reported = steps.map((s) => ({ ...s, name: clean(s.name), command: scrub(s.command), stdout: scrub(s.stdout), stderr: scrub(s.stderr), checks: s.checks.map((c) => ({ ...c, check: scrub(c.check) })) }));
   const t = npmTool("npm");
   const npmVersion = spawnSync(t.file, [...t.prefix, "--version"], { env, encoding: "utf8", shell: t.shell, cwd: root }).stdout?.toString().trim() ?? "";
   const report = {
@@ -386,6 +412,9 @@ for (const c of UPGRADE_REFRESH) need(guide(c, 0), c.sh);
   const json = wrapper("upgrade 7 (also)", "version --json", 0);
   const j = parseJson(json.stdout);
   check(json, `JSON version ${TO_VERSION} and the source revision of npx -y build-os@${TO_VERSION}`, j.version === TO_VERSION && j.source_revision === revision[TO_VERSION]);
+  // F-P9-17 evidence: does the wrapper lose the exit code with the 0.2.0 pin too?
+  const bad = evidenceLine("upgrade 7 (F-P9-17 evidence)", ".os\\scripts\\buildos.cmd no-such-command", ".os/scripts/buildos no-such-command", 2);
+  check(bad, `${TO_VERSION} runs it and stops with unknown command "no-such-command" (stderr)`, unknownCommand(bad.stderr, TO_VERSION, "no-such-command"));
 }
 for (const c of UPGRADE_CHECK_COMPARE) {
   const s = guide(c, 0);
@@ -409,10 +438,27 @@ for (const c of ROLLBACK_PUT_BACK) need(guide(c, 0), c.sh);
   const help = wrapper("rollback 5 (also)", "help", 0);
   const domains = helpDomains(help.stdout);
   check(help, `help lists none of ${NEW_DOMAINS.join(", ")}, and lists version`, domains.includes("version") && NEW_DOMAINS.every((d) => !domains.includes(d)));
-  const cm = wrapper("rollback 5 (also)", "capability-matrix --help", 2);
-  check(cm, 'a 0.2.0 command stops with unknown command (the guide: "exit code 2")', /unknown command/.test(cm.stdout + cm.stderr));
-  const legacy = guide({ step: "rollback 5 (also)", sh: ".os/scripts/buildos-intake version", guide: "literal" }, 1);
+  // F-P9-17: 0.1.0 stops with exit 2 here (the guide: "exit code 2"). On
+  // Windows the .cmd wrapper exits 0 on its npx route (run 46054715769), so
+  // there the run asserts 0, the true behavior, until F-P9-17 is fixed.
+  const cm = wrapper("rollback 5 (also)", "capability-matrix --help", WINDOWS ? 0 : 2);
+  check(cm, `${FROM_VERSION} runs it and stops with unknown command "capability-matrix" (stderr: version ${FROM_VERSION} and the usage error)`, unknownCommand(cm.stderr, FROM_VERSION, "capability-matrix"));
+  // F-P9-17: 0.1.0 exits 1 here; on Windows the .cmd wrapper exits 0, as above.
+  const legacy = guide({ step: "rollback 5 (also)", sh: ".os/scripts/buildos-intake version", guide: "literal" }, WINDOWS ? 0 : 1);
   check(legacy, `the legacy project script runs ${FROM_VERSION}: its notice, and "unknown command" for version (it shows the legacy route works; the version itself is shown by the wrapper checks above)`, legacy.stderr.startsWith(`${LEGACY_NOTICE}\n`) && legacy.stderr.includes('buildos-intake: error: unknown command "version"'));
+}
+// F-P9-17 evidence: the same 0.1.0 failure through each layer of the
+// wrapper's npx route. npx-cli.js started by node (no Command Prompt layer
+// above npm), then npx in the shell (on Windows npm's npx.cmd), then npx in
+// the shell with the wrapper's own npx arguments (pinned-version.cjs:
+// --prefix with the project folder, --workspaces=false). The wrapper itself
+// is the step "rollback 5 (also): ... capability-matrix --help" above.
+{
+  const t = npmTool("npx");
+  const direct = run(`rollback 5 (F-P9-17 evidence): node npx-cli.js -y build-os@${FROM_VERSION} capability-matrix --help`, `npx -y build-os@${FROM_VERSION} capability-matrix --help (npx-cli.js started by node)`, t.file, [...t.prefix, "-y", `build-os@${FROM_VERSION}`, "capability-matrix", "--help"], WINDOWS ? null : 2, project, { shell: t.shell });
+  const shell = evidenceLine("rollback 5 (F-P9-17 evidence)", `npx -y build-os@${FROM_VERSION} capability-matrix --help`, `npx -y build-os@${FROM_VERSION} capability-matrix --help`, 2);
+  const wrapperArgs = evidenceLine("rollback 5 (F-P9-17 evidence)", `npx -y --prefix "${project}" --workspaces=false build-os@${FROM_VERSION} capability-matrix --help`, `npx -y --prefix '${project}' --workspaces=false build-os@${FROM_VERSION} capability-matrix --help`, 2);
+  for (const s of [direct, shell, wrapperArgs]) check(s, `${FROM_VERSION} runs it and stops with unknown command "capability-matrix" (stderr)`, unknownCommand(s.stderr, FROM_VERSION, "capability-matrix"));
 }
 for (const c of ROLLBACK_CHECK_COMPARE) {
   const s = guide(c, 0);

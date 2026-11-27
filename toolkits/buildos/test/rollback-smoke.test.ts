@@ -112,4 +112,34 @@ describe("F-P9-16: the rollback proof runs the guide's commands", () => {
     // On Windows each guide command runs in Command Prompt, in its guide form.
     assert.match(script, /const line = commandPromptForm\(c\.sh\);\n {4}return run\(`\$\{c\.step\}: \$\{line\}`, line, process\.env\["ComSpec"\] \?\? "cmd\.exe", commandPromptArgs\(line\), expected, cwd, \{ verbatim: true \}\);/);
   });
+
+  // F-P9-17 (run 46054715769): on Windows the .cmd wrapper exited 0 where 0.1.0 stops with exit 2 or 1.
+  it("F-P9-17: the wrapper must run the pinned 0.1.0 on every system; the exit code is exact (2 and 1, and 0 on Windows, the true behavior), with the 0.1.0 error text", () => {
+    assert.match(script, /const cm = wrapper\("rollback 5 \(also\)", "capability-matrix --help", WINDOWS \? 0 : 2\);\n {2}check\(cm, [^\n]*unknownCommand\(cm\.stderr, FROM_VERSION, "capability-matrix"\)\);/);
+    assert.match(script, /const legacy = guide\(\{ step: "rollback 5 \(also\)", sh: "\.os\/scripts\/buildos-intake version", guide: "literal" \}, WINDOWS \? 0 : 1\);/);
+    assert.match(script, /legacy\.stderr\.startsWith\(`\$\{LEGACY_NOTICE\}\\n`\) && legacy\.stderr\.includes\('buildos-intake: error: unknown command "version"'\)/);
+    assert.match(script, /return stderr\.includes\(`version: \$\{version\}\\n`\) && stderr\.includes\(`ERROR \[usage_error\]: unknown command "\$\{command\}"`\);/);
+    // The pin checks stay on all three systems: exit 0, version 0.1.0, its source revision, and no 0.2.0 domain in help.
+    assert.match(script, /const v = guide\(ROLLBACK_CHECK_WRAPPER, 0\);\n {2}check\(v, `stdout names version \$\{FROM_VERSION\}`/);
+    assert.match(script, /const vj = wrapper\("rollback 5 \(also\)", "version --json", 0\);/);
+    assert.match(script, /const help = wrapper\("rollback 5 \(also\)", "help", 0\);/);
+    // The Windows exit 0 is named, never a bare expectation.
+    assert.equal((script.match(/WINDOWS \? 0 : [12]\)/g) ?? []).length, 2);
+    assert.match(script, /F-P9-17: 0\.1\.0 stops with exit 2 here/);
+  });
+
+  it("F-P9-17 evidence: the same failure runs through each layer of the wrapper's npx route; Linux and macOS check the exit code, Windows records it", () => {
+    assert.match(script, /if \(WINDOWS\) return run\(`\$\{name\}: \$\{windowsLine\}`, windowsLine, process\.env\["ComSpec"\] \?\? "cmd\.exe", commandPromptArgs\(windowsLine\), null, project, \{ verbatim: true \}\);\n {2}return run\(`\$\{name\}: \$\{posixLine\}`, posixLine, "\/bin\/sh", \["-c", posixLine\], posixExit, project\);/);
+    assert.match(script, /evidenceLine\("upgrade 7 \(F-P9-17 evidence\)", "\.os\\\\scripts\\\\buildos\.cmd no-such-command", "\.os\/scripts\/buildos no-such-command", 2\);/);
+    assert.match(script, /unknownCommand\(bad\.stderr, TO_VERSION, "no-such-command"\)/);
+    assert.match(script, /\[\.\.\.t\.prefix, "-y", `build-os@\$\{FROM_VERSION\}`, "capability-matrix", "--help"\], WINDOWS \? null : 2, project/);
+    assert.match(script, /evidenceLine\("rollback 5 \(F-P9-17 evidence\)", `npx -y build-os@\$\{FROM_VERSION\} capability-matrix --help`, `npx -y build-os@\$\{FROM_VERSION\} capability-matrix --help`, 2\);/);
+    assert.match(script, /`npx -y --prefix "\$\{project\}" --workspaces=false build-os@\$\{FROM_VERSION\} capability-matrix --help`, `npx -y --prefix '\$\{project\}' --workspaces=false build-os@\$\{FROM_VERSION\} capability-matrix --help`, 2\);/);
+    assert.match(script, /for \(const s of \[direct, shell, wrapperArgs\]\) check\(s, [^\n]*unknownCommand\(s\.stderr, FROM_VERSION, "capability-matrix"\)\);/);
+    // The evidence step names the project folder: the report cleans step names too.
+    assert.match(script, /const reported = steps\.map\(\(s\) => \(\{ \.\.\.s, name: clean\(s\.name\), command: scrub\(s\.command\),/);
+    // The pinned-version.cjs npx arguments that the evidence step copies.
+    const pinned = readFileSync(join(repoRoot, "system", ".os", "scripts", "pinned-version.cjs"), "utf8");
+    assert.match(pinned, /return \["-y", "--prefix", process\.cwd\(\), "--workspaces=false", PACKAGE_NAME \+ "@" \+ version\]\.concat\(args\);/);
+  });
 });
