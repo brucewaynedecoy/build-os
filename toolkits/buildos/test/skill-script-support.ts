@@ -43,7 +43,7 @@ export function walkDirs(dir: string): string[] {
   return out;
 }
 
-export function project(script: "bulk-extract" | "fitgap" | "azure-boards", base: string): string {
+export function project(script: "bulk-extract" | "fitgap" | "azure-boards" | "capability-matrix", base: string): string {
   const parent = realpathSync(mkdtempSync(join(tmpdir(), "buildos-skill-review-")));
   temps.push(parent);
   const dir = join(parent, "project");

@@ -92,7 +92,7 @@ describe("buildos validate: command", () => {
   it("is listed in the root help", async () => {
     const io = captureIo(scratch);
     assert.equal(await run(["help"], io), 0);
-    assert.match(io.stdout(), /\n {2}validate {3}Check the project config, scoped frontmatter, and entity records\n/);
+    assert.match(io.stdout(), /\n {2}validate +Check the project config, scoped frontmatter, and entity records\n/);
   });
 
   it("a clean project: exit 0, the folder, what was checked, and OK", async () => {

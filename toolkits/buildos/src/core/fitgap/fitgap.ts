@@ -167,7 +167,7 @@ function dumpTo(plan: WritePlan, value: PyValue, path: string): void {
  * a refusal (exit 3), never an empty match. A pattern inside it that matches
  * nothing gives no files, as the script's `glob.glob` did.
  */
-function pyGlob(ctx: FitgapContext, pattern: string): string[] {
+export function pyGlob(ctx: FitgapContext, pattern: string): string[] {
   const magic = /[*?[]/;
   const parts = pattern.split(sep === "\\" ? /[/\\]/ : "/");
   const first = parts.findIndex((part) => magic.test(part));
