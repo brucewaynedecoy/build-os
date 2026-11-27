@@ -284,7 +284,7 @@ describe("review round 1 of pull request 15, finding 2: the F-P9-17 diagnostic",
 // Pull request 16 (the F-P9-17 fix): the guide names the versions with the defect and says the fix waits for a release.
 describe("review round 2 of pull request 15, finding 2: the guide names the Windows exit code of F-P9-17", () => {
   it("the first description of the failure names the exception, and the repeated claim points to it", () => {
-    const first = "a skill command stops with `unknown command` (exit code `2`). On Windows, in BuildOS `0.1.0` and `0.2.0`, the project wrapper `.os\\scripts\\buildos.cmd` and the `.cmd` scripts with the old names give exit code `0` when they are started without `call`, for example by `cmd /c`, by PowerShell, or by an agent. The error text is right, so check the text, not only the code. The fix is in the BuildOS repository and waits for a release.";
+    const first = "a skill command stops with `unknown command` (exit code `2`). On Windows, in BuildOS `0.1.0` and `0.2.0`, the project wrapper `.os\\scripts\\buildos.cmd` and the `.cmd` scripts with the old names give exit code `0` when they are started by `cmd /c` without `call` or by PowerShell, which is how a script or an agent usually starts them. The error text is right, so check the text, not only the code. The fix is in the BuildOS repository and waits for a release.";
     const repeated = "the command stops with `unknown command` (exit code `2`, or `0` on Windows through the project wrapper of `0.1.0` or `0.2.0`, as above).";
     assert.ok(guideText.includes(first));
     assert.ok(guideText.includes(repeated));

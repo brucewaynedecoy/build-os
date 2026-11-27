@@ -268,7 +268,7 @@ describe(`F-P9-17: the project wrappers (${windows ? ".cmd" : "sh"}) exit with t
     });
   }
 
-  it(`a variable named ERRORLEVEL in the caller's environment does not change the exit code (${FORMS[0]})`, () => {
+  it(`a variable named ERRORLEVEL in the caller's environment does not change the exit code (${FORMS[0]})`, { skip: !windows && "Windows only" }, () => {
     const f = fixture("local install");
     assertPassed(runForm(f, "buildos", FORMS[0]!, 2, { ERRORLEVEL: "0" }), 2);
   });
