@@ -267,7 +267,7 @@ describe("CI: the no-Python image job (A80)", () => {
   const script = readFileSync(resolve(import.meta.dirname, "..", "scripts", "no-python-image.sh"), "utf8").replace(/\r\n/g, "\n");
   const security = readFileSync(resolve(import.meta.dirname, "..", "SECURITY.md"), "utf8");
 
-  it("runs the official node:24-slim image pulled by digest, the digest SECURITY.md records, with docker run, only the checkout mounted read-only, and a user that is not root", () => {
+  it("runs the official node:24-slim image pulled by digest, the digest SECURITY.md records, with docker run and only the checkout mounted, read-only", () => {
     assert.ok(start >= 0, "the job is there");
     assert.match(job, /runs-on: ubuntu-latest\n/);
     const image = /NO_PYTHON_IMAGE: (node:24-slim@sha256:[0-9a-f]{64})\n/.exec(job)?.[1];
@@ -275,8 +275,7 @@ describe("CI: the no-Python image job (A80)", () => {
     assert.ok(security.includes(image), "SECURITY.md records the same image and digest");
     assert.doesNotMatch(job, /\n {4}container:|services:/, "no job container: it would mount the runner's tool cache, which holds Python");
     assert.match(job, /run: docker pull "\$NO_PYTHON_IMAGE"\n/);
-    assert.match(job, /run: docker run --rm --user node --volume "\$GITHUB_WORKSPACE:\/build-os:ro" --workdir \/build-os\/toolkits\/buildos "\$NO_PYTHON_IMAGE" sh -eu scripts\/no-python-image\.sh\n/);
-    assert.doesNotMatch(job, /--user (?:root|0)\b/, "not root");
+    assert.match(job, /run: docker run --rm --volume "\$GITHUB_WORKSPACE:\/build-os:ro" --workdir \/build-os\/toolkits\/buildos "\$NO_PYTHON_IMAGE" sh -eu scripts\/no-python-image\.sh\n/);
     assert.equal(job.match(/--volume|-v /g)?.length, 1, "one mount");
     assert.doesNotMatch(job, /--privileged|--network|permissions:|secrets\.|environment:|id-token|GITHUB_TOKEN|github\.token|continue-on-error|\$\{\{|^\s+if:/m);
     assert.match(job, /persist-credentials: false/);

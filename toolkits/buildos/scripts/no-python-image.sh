@@ -2,11 +2,12 @@
 # smoke inside a Linux container image that has Node 24 and no Python at all.
 # The no-python-image job of .github/workflows/buildos-ci.yml runs it with
 # `sh -eu` inside the official node:24-slim image, pulled by digest, with only
-# the repository checkout mounted, read-only, as the image's user node, not
-# root (the digest is recorded in SECURITY.md). The script first copies the
-# checkout to a scratch folder inside the container and works only there, so
-# the run cannot write to the runner's checkout (review round 2 of pull
-# request 7).
+# the repository checkout mounted read-only (the digest is recorded in
+# SECURITY.md). The script first copies the checkout to a scratch folder inside
+# the container and works only there, so the run cannot write to the runner's
+# checkout (review round 2 of pull request 7). It runs as root: the filesystem
+# search must read every folder, and /root and some /var/cache folders are
+# readable only by root (a run as the user node failed on them).
 #
 # It does what the no-python job does on the three hosted systems, with the
 # image's own PATH: the dependency guards, an install with install scripts
