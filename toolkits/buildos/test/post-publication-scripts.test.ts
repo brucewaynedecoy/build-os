@@ -63,12 +63,15 @@ describe("F-P8-13: published-smoke.ts checks raw output and cleans only the repo
     assert.doesNotMatch(body, /stdout: clean\(|stderr: clean\(/);
   });
 
-  it("the report and the Markdown summary are built from the cleaned copy, after every check", () => {
-    const at = text.indexOf("const reported = steps.map((s) => ({ ...s, stdout: clean(s.stdout, stepFolder.get(s)), stderr: clean(s.stderr, stepFolder.get(s)) }));");
-    assert.ok(at > text.lastIndexOf("check("), "cleaned after the last check");
-    assert.match(text, /\n {2}steps: reported,\n/);
-    assert.match(text, /\nfor \(const s of reported\) \{\n {2}md\.push\(/);
-    assert.doesNotMatch(text.slice(at), /\n {2}steps,\n/);
+  it("the report and the Markdown summary are built from the cleaned copy (check labels included, PR 12 review round 1 finding 3), only in finish(), which runs after every check", () => {
+    const body = text.slice(text.indexOf("function finish(stopped?: string): never {"), text.indexOf("\n}\n", text.indexOf("function finish(")));
+    assert.ok(body.includes("const reported = steps.map((s) => ({ ...s, stdout: clean(s.stdout, stepFolder.get(s)), stderr: clean(s.stderr, stepFolder.get(s)), checks: s.checks.map((c) => ({ ...c, check: clean(c.check, stepFolder.get(s)) })) }));"), body);
+    assert.match(body, /\n {4}steps: reported,\n/);
+    assert.match(body, /\n {2}for \(const s of reported\) \{\n {4}md\.push\(/);
+    assert.doesNotMatch(body, /\n {4}steps,\n/);
+    // finish() runs last, after the last check, or right after a failed preflight (before step 1).
+    assert.ok(text.trimEnd().endsWith("\nfinish();"));
+    assert.equal(text.match(/\bfinish\(/g)?.length, 3, "the definition, the preflight stop, and the end");
   });
 });
 
@@ -164,9 +167,9 @@ describe("F-P8-11 review rounds 1 and 2 (findings 3 and 4): smoke step 10 runs a
 
   it("published-smoke.ts runs step 10 through printedFixStep, on Windows in Command Prompt with delayed expansion off", () => {
     assert.deepEqual(commandPromptArgs("a b"), ['/d /v:off /s /c "a b"']);
-    const step = text.slice(text.indexOf("// 10. A printed fix command"), text.indexOf("for (const s of steps) s.ok"));
+    const step = text.slice(text.indexOf("// 10. A printed fix command"), text.indexOf("// Tarball mode only, after step 10"));
     assert.match(step, /^\/\/ 10\. A printed fix command[^\n]*\nprintedFixStep\(\{\n/);
-    assert.match(step, /WINDOWS \? run\(name, command, process\.env\["ComSpec"\] \?\? "cmd\.exe", commandPromptArgs\(command\), 0, project, \{ verbatim: true \}\) : run\(name, command, "\/bin\/sh", \["-c", command\], 0, project\)/);
+    assert.match(step, /WINDOWS \? run\(name, command, process\.env\["ComSpec"\] \?\? "cmd\.exe", commandPromptArgs\(command\), 0, project, \{ verbatim: true, role: "fix-run" \}\) : run\(name, command, "\/bin\/sh", \["-c", command\], 0, project, \{ role: "fix-run" \}\)/);
     assert.equal(text.match(/\bprintedFixStep\(/g)?.length ?? 0, 1);
     assert.doesNotMatch(text, /function expectedRebuild\(/);
   });

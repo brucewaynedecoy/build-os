@@ -65,6 +65,7 @@ on:
       - ".github/workflows/buildos-smoke.yml"
       - "toolkits/buildos/scripts/published-smoke.ts"
       - "toolkits/buildos/scripts/printed-fix-step.ts"
+      - "toolkits/buildos/scripts/smoke-evidence.ts"
       - "toolkits/buildos/scripts/smoke-source.ts"
       - "toolkits/buildos/scripts/tar-reader.mjs"
 
@@ -146,6 +147,7 @@ jobs:
       actions: read
     outputs:
       tarball_name: ${{ steps.fetch.outputs.tarball_name }}
+      input_artifact_id: ${{ steps.keep.outputs.artifact-id }}
     steps:
       - name: Download the run artifact and check the tarball's SHA-256
         id: fetch
@@ -177,6 +179,7 @@ jobs:
           echo "tarball_name=$name" >> "$GITHUB_OUTPUT"
 
       - name: Keep the checked tarball for the smoke jobs
+        id: keep
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: buildos-smoke-input-${{ github.run_id }}-${{ github.run_attempt }}
@@ -194,6 +197,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       tarball_name: ${{ steps.fetch.outputs.tarball_name }}
+      input_artifact_id: ${{ steps.keep.outputs.artifact-id }}
     steps:
       - name: Download the release asset and check the tarball's SHA-256
         id: fetch
@@ -213,6 +217,7 @@ jobs:
           echo "tarball_name=$name" >> "$GITHUB_OUTPUT"
 
       - name: Keep the checked tarball for the smoke jobs
+        id: keep
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: buildos-smoke-input-${{ github.run_id }}-${{ github.run_attempt }}
@@ -257,12 +262,17 @@ jobs:
           node -e 'const b = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")); console.log(`LOCAL_TARBALL=${b.tarball}\nLOCAL_SHA256=${b.tarball_sha256}`);' "$RUNNER_TEMP/local-pack/release-build.json" >> "$GITHUB_ENV"
 
       # release-run and release-tag: the tarball that the fetch job checked
-      # (same run; the script checks the SHA-256 again before any step).
+      # (same run; the script checks the SHA-256 again before any step). It is
+      # downloaded by the artifact ID that the fetch job's upload returned (a
+      # job output), not by a name with the run attempt: a re-run of only a
+      # failed smoke job is a new attempt, while the fetch job's artifact
+      # keeps the attempt it was uploaded in (review round 1 of pull request
+      # 12, finding 4). One ID extracts into the path itself.
       - name: Download the checked tarball (tarball)
         if: matrix.mode == 'tarball'
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: buildos-smoke-input-${{ github.run_id }}-${{ github.run_attempt }}
+          artifact-ids: ${{ needs.fetch-run.outputs.input_artifact_id || needs.fetch-tag.outputs.input_artifact_id }}
           path: ${{ runner.temp }}/tarball
 
       # Every value reaches the script through the environment, never as

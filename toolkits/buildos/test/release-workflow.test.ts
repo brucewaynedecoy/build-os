@@ -529,7 +529,7 @@ describe("smoke workflow: read-only, no secret, pinned, three systems, registry 
     for (const input of ["release_run", "release_run_attempt", "release_tag", "tarball_sha256"]) assert.match(on, new RegExp(`\\n {6}${input}:\\n {8}description: `), input);
     assert.ok(
       on.includes(
-        '  pull_request:\n    paths:\n      - ".github/workflows/buildos-smoke.yml"\n      - "toolkits/buildos/scripts/published-smoke.ts"\n      - "toolkits/buildos/scripts/printed-fix-step.ts"\n      - "toolkits/buildos/scripts/smoke-source.ts"\n      - "toolkits/buildos/scripts/tar-reader.mjs"\n',
+        '  pull_request:\n    paths:\n      - ".github/workflows/buildos-smoke.yml"\n      - "toolkits/buildos/scripts/published-smoke.ts"\n      - "toolkits/buildos/scripts/printed-fix-step.ts"\n      - "toolkits/buildos/scripts/smoke-evidence.ts"\n      - "toolkits/buildos/scripts/smoke-source.ts"\n      - "toolkits/buildos/scripts/tar-reader.mjs"\n',
       ),
       on,
     );
@@ -567,7 +567,14 @@ describe("smoke workflow: read-only, no secret, pinned, three systems, registry 
   it("local-pack makes a release build of the tree with install scripts off; the tarball mode downloads only the artifact that a fetch job checked", () => {
     const smoke = job(text, "smoke");
     assert.match(smoke, /if: matrix\.mode == 'local-pack'\n {8}run: \|\n {10}node scripts\/check-dependencies\.ts\n {10}npm ci --ignore-scripts\n {10}node scripts\/check-dependencies\.ts --installed\n {10}node scripts\/release-build\.ts --out "\$RUNNER_TEMP\/local-pack"\n/);
-    assert.match(smoke, /if: matrix\.mode == 'tarball'\n {8}uses: actions\/download-artifact@[0-9a-f]{40} # v8\.0\.2\n {8}with:\n {10}name: buildos-smoke-input-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}\n/);
+    // Review round 1 of pull request 12, finding 4: by the artifact ID from the fetch job, so a re-run of only a smoke job (a new run attempt) finds it.
+    assert.match(smoke, /if: matrix\.mode == 'tarball'\n {8}uses: actions\/download-artifact@[0-9a-f]{40} # v8\.0\.2\n {8}with:\n {10}artifact-ids: \$\{\{ needs\.fetch-run\.outputs\.input_artifact_id \|\| needs\.fetch-tag\.outputs\.input_artifact_id \}\}\n {10}path: \$\{\{ runner\.temp \}\}\/tarball\n/);
+    assert.doesNotMatch(smoke, /github\.run_attempt/);
+    for (const fetch of ["fetch-run", "fetch-tag"]) {
+      const body = job(text, fetch);
+      assert.match(body, /\n {4}outputs:\n {6}tarball_name: \$\{\{ steps\.fetch\.outputs\.tarball_name \}\}\n {6}input_artifact_id: \$\{\{ steps\.keep\.outputs\.artifact-id \}\}\n/, fetch);
+      assert.match(body, /- name: Keep the checked tarball for the smoke jobs\n {8}id: keep\n {8}uses: actions\/upload-artifact@[0-9a-f]{40} # v7\.0\.2\n/, fetch);
+    }
     assert.match(smoke, /needs: \[check-inputs, fetch-run, fetch-tag\]\n {4}if: \$\{\{ !cancelled\(\) && needs\.check-inputs\.result == 'success' && needs\.fetch-run\.result != 'failure' && needs\.fetch-tag\.result != 'failure' \}\}\n/);
   });
 

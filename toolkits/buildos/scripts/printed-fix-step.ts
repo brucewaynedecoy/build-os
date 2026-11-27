@@ -47,8 +47,8 @@ export interface PrintedFixInput<S extends RanStep> {
   project: string;
   /** The stdout of step 5 (human `entities validate`), or undefined when it did not run. */
   humanStdout: string | undefined;
-  /** Runs `npx -y build-os@<version> <args>` in the project; `expected` is the exit code it must give. */
-  npxRun: (name: string, args: string[], expected: number) => S;
+  /** Runs `npx -y build-os@<version> <args>` in the project; `expected` is the exit code it must give; `role` is the run's part in the report claims (scripts/smoke-source.ts). */
+  npxRun: (name: string, args: string[], expected: number, role: "fix-check" | "fix-after") => S;
   /** Runs `command` through the system shell in the project (exit 0 expected). */
   shellRun: (name: string, command: string) => S;
   check: (step: S, what: string, ok: boolean) => void;
@@ -99,7 +99,7 @@ function parse(text: string): ValidateJson {
 /** Runs step 10. */
 export function printedFixStep<S extends RanStep>(input: PrintedFixInput<S>): void {
   const { version, windows, project, check } = input;
-  const json = input.npxRun("entities validate --json (the printed fix command)", ["entities", "validate", "--root", project, "--mode", "compat", "--json"], 0);
+  const json = input.npxRun("entities validate --json (the printed fix command)", ["entities", "validate", "--root", project, "--mode", "compat", "--json"], 0, "fix-check");
   const printed = parse(json.stdout).result?.index?.remediation_command ?? "";
   const humanLines = input.humanStdout === undefined ? [] : input.humanStdout.split("\n");
   if (version === "0.1.0") {
@@ -123,7 +123,7 @@ export function printedFixStep<S extends RanStep>(input: PrintedFixInput<S>): vo
   const tarballNote = ` (tarball mode: npm resolves build-os@${version} to the project's local install of the tarball, with the registry blocked; the registry fetch of this literal command is proven only after publication, runbook step k)`;
   const step = input.shellRun(input.source === "tarball" ? `${shellName}${tarballNote}` : shellName, printed);
   check(step, "stdout says entities.rebuild-index: ok and the write was applied", step.stdout.startsWith("entities.rebuild-index: ok\n") && step.stdout.includes("write status: applied\n"));
-  const after = input.npxRun("entities validate --json after the printed fix command", ["entities", "validate", "--root", project, "--mode", "compat", "--json"], 0);
+  const after = input.npxRun("entities validate --json after the printed fix command", ["entities", "validate", "--root", project, "--mode", "compat", "--json"], 0, "fix-after");
   const parsed = parse(after.stdout);
   const index = parsed.result?.index;
   const indexDiagnostics = (parsed.diagnostics ?? []).filter((d) => typeof d.code === "string" && d.code.startsWith("index_")).map((d) => d.code);
