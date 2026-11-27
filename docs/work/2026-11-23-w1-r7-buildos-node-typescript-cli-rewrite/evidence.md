@@ -6587,3 +6587,82 @@ Not run here: the `no-python-image` job (Docker is not on this machine), Node 24
 - The OSV gate, the Make Docs contract job, and the cross-OS pack report passed.
 
 A80: met. For Linux by the image: each command runs in the `node:24-slim` image, which holds no Python at all. For macOS and Windows by the restricted `PATH`: the commands run with no Python on `PATH`, on runner images that do have Python. A79 stays open until the `capability-matrix` command exists (owner decision 2026-11-26); A81 stays open (t13). No Stage 3 task is ticked.
+
+## P9 Stage 3 Review Round 2 (2026-11-26)
+
+Review round 2 of pull request 7 (an independent reviewer) gave FAIL on `54d849b`: one blocker, two should-fix findings, and one hardening note. The fixes are new commits on `rewrite/p9-stage-3`, from `54d849b`. macOS arm64, Node 26.13.1, unless a row says otherwise.
+
+### Findings and Dispositions (Stage 3 Review Round 2)
+
+| Finding | Disposition | Proof |
+| --- | --- | --- |
+| 1 (blocker): the written upgrade from `0.1.0` to `0.2.0`, and its rollback, can lose adopter work | Fixed. The steps are written once, in the guide, chapter 4, "From 0.1.0 to 0.2.0" with its part "Roll back from 0.2.0 to 0.1.0". The release-notes draft says what changes and points to that section. A backup is step 1. Only the three changed skills and the router are refreshed, by name; `.os/skills/` is never deleted. A `git diff --no-index` against a clean `0.1.0` copy finds an adopter's change, and the change is made again by hand. App copies are refreshed one skill at a time. The rollback restores the pin, the router, and the three skills in the project and in each app folder from the backup, and a diff against the backup fails while a `0.2.0` skill is still in place. The "Update and roll back" bullets of the guide and `SECURITY.md` ("Rollback by Version Pin") now say that the skills go back too when they changed. | [Upgrade and Rollback Test](#upgrade-and-rollback-test-finding-1) |
+| 2 (should-fix): the static guard misses `PYTHON.EXE -V`, `/usr/bin/python3>/dev/null`, and `spawnSync("pip3", ["install", ...])` | Fixed in `toolkits/buildos/scripts/check-no-python.ts`: a name may end at a shell operator or a redirection (`>`, `<`, `|`, `;`, `&`, `)`); a lower-case name may have `.exe` in any case; a name in capitals (`PYTHON`, `PYTHON3`) counts; a name in any other case counts with `.exe` or before a flag (`Python3 -V`), so prose such as "needs Python 3" stays prose; the `py`, `pip`, and `uv` rules ignore case; a quoted `pip`, `pip3`, `pipx`, `uv`, or `uvx`, also after a folder and with `.exe`, counts as a program to start. A new test plants 20 lines (the three spellings of the finding and 17 more) and needs a finding on each with the right rule; a second new test checks that prose in other cases and words that only contain the names give no finding. | With the old script, the new test fails: it finds only lines 9, 11, and 16 of the 20. With the fix, `node --test test/check-no-python.test.ts` passes 16 of 16. On this repository the check still passes: 59 files, 19 findings under the `capability-matrix/` exception, as before. |
+| 3 (should-fix): release status wording | Fixed in `toolkits/buildos/RELEASE_NOTES.md`: the `0.1.0` Known limits sentence says that the unpublished `0.2.0` draft implements `extract bulk`, `fitgap`, and `export azure-boards`; "planned" stays only for the `capability-matrix` command. In the `0.2.0` draft, the `capability-matrix` line moved from "What is new" to a new "Not in this draft yet" part, as a temporary exception that goes away when the command is built (owner decision of 2026-11-26). The pull request body says the same. A search of the guide, the package docs, the skills router, the maintainer docs, and PRD 20 for "planned", "plans to", and "is planned" finds no other text that calls the three commands planned. | `grep` over those files |
+| Hardening note: the `no-python-image` job ran Docker as root with the checkout mounted writable | Done. `docker run --rm --user node --volume "$GITHUB_WORKSPACE:/build-os:ro"`: the checkout is mounted read-only and the container runs as the image's user `node`. `scripts/no-python-image.sh` first copies the checkout to a scratch folder (`mktemp -d`) and works only there, and the filesystem search skips the mount and the copy (it skipped the mount before). The proof is the same: the guards, the install, the no-Python check, the build, the pack, the smoke with the filesystem search and the fixture cases, and the parity test; the digest pin is unchanged. `test/check-no-python.test.ts` checks the read-only mount, the user, and that the copy comes before the first `node` and `npm` command; `SECURITY.md` (CI Checks) says the same. | The CI run below (Docker is not on this machine) |
+
+### Upgrade and Rollback Test (Finding 1)
+
+What changes between `0.1.0` and `0.2.0`: the published `build-os@0.1.0` package (`npm pack build-os@0.1.0`, `dist/system/.os/skills/`) equals `system/.os/skills/` at the tag `v0.1.0` (`diff -r`: no difference). `git diff --stat v0.1.0 HEAD -- system/.os/skills/` lists 14 files in one router file and three skill folders:
+
+| In `.os/skills/` | Changed | Removed |
+| --- | --- | --- |
+| `AGENTS.md` | The list "What a skill needs" (4 lines) | None |
+| `buildos-bulk-extract/` | `SKILL.md` | `scripts/work.py`, `tests/test_work.py` |
+| `buildos-export-azure-boards/` | `SKILL.md`, `adapters/00-adapter-registry.md`, `adapters/dynamics-365-ce/ADAPTER.md`, `references/azure-boards-csv-contract.md` | `scripts/azure_boards_csv.mjs`, `scripts/adapters/dynamics-365-ce.mjs` |
+| `fit-gap-analysis/` | `SKILL.md`, `references/formats.md`, `references/scoring-brief.md` | `scripts/fitgap.py` |
+
+The other 18 skills and `.os/skills/CLAUDE.md` are the same. This is to check again at t13, against the final `0.2.0` tree.
+
+How `0.2.0` was simulated: a copy of `HEAD` (`git archive`) in a scratch folder, with `version` set to `0.2.0` in the copy's `toolkits/buildos/package.json`, built with `BUILDOS_RELEASE_VERSION=0.2.0` and packed (`build-os-0.2.0.tgz`). This repository's version is unchanged. Two commands of the text could not run as written before publication: `npx -y build-os@0.2.0 init …` ran as `npx -y --package=<build-os-0.2.0.tgz> -- buildos init …`, and in step 6 the npm install of `0.2.0` was the tarball (`npm install --offline --ignore-scripts --no-save <tarball>` in the project), which the wrapper uses as an npm install of exactly the pinned version. The step 6 edit of `.os/manifest.json` was made with `sed`, and step 5 ("make your change again by hand") appended the two noted lines to the new files. Every other command ran exactly as the guide writes it, from the project folder, with the work folder `../buildos-upgrade`.
+
+The project: a new git project, `npx -y build-os@0.1.0 init --root . --skip-make-docs` from the registry, then (a) an adopter-added skill `.os/skills/team-notes/SKILL.md`; (b) one adopter line added to `.os/skills/fit-gap-analysis/SKILL.md`; (c) the app folder `.claude/skills/` with copies of `buildos-bulk-extract` and `buildos-intake`, one adopter line added to the app copy of `buildos-bulk-extract/SKILL.md`, and an app-only skill `team-app-skill`; all committed.
+
+| Step | Result |
+| --- | --- |
+| 1. Backup (`git add -A`, `git commit`, `mkdir -p`, `cp` of the manifest, `cp -R` of `.os/skills` and `.claude/skills`) | exit 0 each; `git commit` said "nothing to commit" (exit 1), because the project was already committed, which the text says is fine |
+| 2. Clean `0.1.0` and `0.2.0` copies with `init --root ../buildos-upgrade/old` and `…/new` | exit 0 each |
+| 3. `git --no-pager diff --no-index --stat` against the `0.1.0` copy | `buildos-bulk-extract`, `buildos-export-azure-boards`, `AGENTS.md`: no output, exit 0. `fit-gap-analysis`: lists `SKILL.md`, 1 insertion, exit 1 (case b). The app copy `.claude/skills/buildos-bulk-extract`: lists `SKILL.md`, 1 insertion, exit 1 (case c) |
+| 4. `rm -rf` of the three skills, `cp -R` of each from `new`, `cp` of `AGENTS.md`; in the app folder `rm -rf` and `cp -R` of `buildos-bulk-extract` only | exit 0 each |
+| 5. The two noted changes made again in the new files | Done |
+| 6. Pin `0.2.0`; the tarball installed | One line of `.os/manifest.json` changed |
+| 7. Checks | `version: 0.2.0`; `help` lists `extract`, `fitgap`, and `export`; `export azure-boards adapters` lists `dynamics-365-ce`, exit 0; the diff against `new` prints nothing for `buildos-bulk-extract` and `buildos-export-azure-boards`, and only the adopter's line for `fit-gap-analysis` (b) and the app copy (c) |
+| After the upgrade | (a) `team-notes` the same (`diff -r` with the copy taken before the upgrade); `team-app-skill` and the app copy of `buildos-intake` the same; 24 entries in `.os/skills/`, 3 in `.claude/skills/`; the adopter lines of (b) and (c) are in the new files; no `.py`, `azure_boards_csv.mjs`, or `dynamics-365-ce.mjs` file is left in `.os/skills/` or `.claude/skills/`; the app copy names `buildos extract bulk`. `git status`: the 7 script files deleted (5 in the project, 2 in the app copy), 9 skill files, the router, the manifest, and the app `SKILL.md` changed, nothing else |
+| Rollback 1 and 2 (the manifest, the router, the three skills from the backup) | exit 0 each |
+| Rollback 5 run early, before step 3 | `git --no-pager diff --no-index --stat ../buildos-upgrade/backup/claude-skills/buildos-bulk-extract .claude/skills/buildos-bulk-extract` lists `SKILL.md` and the two scripts, exit 1: the check fails while a `0.2.0` skill is in the app folder |
+| Rollback 3 (the app copy from its backup) and 4 (an npm install of `0.1.0` from the registry) | exit 0 each |
+| Rollback 5 | `version: 0.1.0`; the diff against the backup prints nothing, exit 0, for the three skills in the project and for the app copy |
+| After the rollback | `diff -r` of `.os/` and `.claude/` with the copies taken before the upgrade: no difference, so (a), (b), and (c) are as before. `git status --short`: no change against the commit made before the upgrade. `.os/scripts/buildos fitgap frame …` prints `unknown command "fitgap"`, as `0.1.0` does, and no skill in the project or the app folder calls it: the `0.1.0` skills run their own scripts again |
+
+Not tested: the Command Prompt forms on Windows (no Windows machine here), a skills folder in the home folder, and the `npx` fallback of the wrapper for `0.2.0` (it needs the published version).
+
+Finding 1 asked whether the product can make this safe without a new command. The steps above are safe when followed, and the test shows it, but they are by hand and long. New follow-up F-P9-08 (W2, R-003): `buildos update` should refresh only the first-party skills that changed between two versions, by name, in the project and in the app copies, keep skills that the adopter added, find and report adopter changes before it writes, and undo the refresh. This pull request does not build it.
+
+### Bot Review Threads (Pull Request 7)
+
+| Thread | What it says | Done |
+| --- | --- | --- |
+| `guide/content/04-install-and-configure-your-instance.md` line 479 | The rollback does not restore the app copies | Fixed with finding 1: rollback step 3 and the check in rollback step 5 |
+| `guide/content/14-export-to-a-work-tracker.md` line 53 | Readers on `0.1.0` have no script form of the commands | Fixed: step 2 says to write `node .os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs` in place of `.os/scripts/buildos export azure-boards`, with the same subcommands and options. Tested on the `0.1.0` project above: `adapters`, `emit` of the synthetic manifest (the CSV equals the golden example byte for byte), and `validate`, exit 0 each |
+| `toolkits/buildos/scripts/check-no-python.ts` line 61 | A quoted installer (`spawnSync("pip3", …)`, `spawnSync("uv", …)`) gives no finding | Fixed with finding 2 |
+
+The threads are not marked resolved here; the reviewer resolves them.
+
+### Check Results (Stage 3 Review Round 2)
+
+From `toolkits/buildos/` unless noted. macOS arm64, Node 26.13.1.
+
+| Check | Result |
+| --- | --- |
+| `npm ci --ignore-scripts`, `npm run typecheck`, `npm run build` | exit 0 |
+| `npm test` | exit 0; 2,759 tests, 2,746 pass, 0 fail, 13 skipped |
+| `node --test test/check-no-python.test.ts` | 16 tests, 16 pass (2 new for finding 2; the image job test checks the read-only mount, the user, and the copy) |
+| The new finding 2 test with the old `scripts/check-no-python.ts` | fails: findings on lines 9, 11, and 16 only |
+| `node scripts/check-no-python.ts` | exit 0; 59 files; exception `capability-matrix/`: 19 findings |
+| `sh -n scripts/no-python-image.sh` | exit 0 |
+| `node tools/build-guide.mjs` (in `guide/`) | rebuilt; a second run changes nothing |
+| `make-docs project paths validate` (repository root) | valid, 0 failing findings |
+| `node scripts/check-deny-list.mjs --root ../.. --pack .` with the real list | 0 matches, 0 home folder paths, 168 of 168 package files read |
+| Added lines: absolute home paths, the machine user name, new `~/` paths, `file://` | 0 of each (the guide app keeps its 2 `~/` from before) |
+
+Not run here: the `no-python-image` job (Docker is not on this machine), Node 24, Linux, and Windows; the CI run of the pull request covers them.

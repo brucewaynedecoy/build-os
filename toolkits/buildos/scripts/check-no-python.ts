@@ -19,8 +19,11 @@
 //     Pipfile.lock, poetry.lock, uv.lock);
 //   - call: a line of a text file that runs Python: the commands `python`,
 //     `python3`, `python3.N`, `py -<flag>` or `py <file>`, each also after a
-//     folder or in quotes (`/usr/bin/python3`, `"python3"`, `"py"`), `pip install`,
-//     `pip3 install`, `pipx`, `uv run`, `uv pip`, or `uvx`; a `#!` line that
+//     folder or in quotes (`/usr/bin/python3`, `"python3"`, `"py"`), also with
+//     `.exe` and in Windows casing (`PYTHON.EXE`), also right before a shell
+//     operator or a redirection (`python3>/dev/null`), `pip install`,
+//     `pip3 install`, `pipx`, `uv run`, `uv pip`, or `uvx`, and a quoted `pip`,
+//     `pip3`, `pipx`, `uv`, or `uvx` as a program to start; a `#!` line that
 //     names python; a `python` or `py` code fence; or a `.py` file name.
 // Prose that names Python ("needs Python 3") is not a call.
 //
@@ -51,17 +54,33 @@ export const EXCEPTIONS: readonly { prefix: string; status: string; reason: stri
 ];
 
 const PYTHON_FILE = /(?:\.(?:py|pyc|pyo|pyw|pyz|pyi|ipynb)$|(?:^|\/)__pycache__\/|(?:^|\/)(?:requirements[^/]*\.txt|pyproject\.toml|setup\.py|setup\.cfg|Pipfile|Pipfile\.lock|poetry\.lock|uv\.lock)$)/i;
-const CALLS: readonly { rule: string; pattern: RegExp }[] = [
+// Where a command name ends: a space, the end of the line, a quote, a bracket, a comma, or a shell
+// operator or redirection (`>`, `<`, `|`, `;`, `&`, `)`).
+const END = String.raw`(?=[\s\`'"),;\]<>|&]|$)`;
+// A quoted program name, also after a folder: `spawnSync("pip3", args)`, `"C:\\Windows\\py.exe"`.
+const quoted = (names: string) => new RegExp(String.raw`(["'])(?:[^"'\s]*[/\\])?(?:${names})(?:\.exe)?\1`, "i");
+const PYTHON = String.raw`python(?:[23](?:\.\d+)?)?`;
+const CALLS: readonly { rule: string; patterns: readonly RegExp[] }[] = [
   // A name may follow a folder (`/usr/bin/python3`, `C:\Python312\python.exe`) and may be quoted
-  // (`spawnSync("python3", args)`), so a slash, a backslash, or a quote can come before it and a
-  // quote, a bracket, a comma, or a semicolon can come after it (review round 1 of pull request 7, finding 3).
-  { rule: "python command", pattern: /(?<![\w.-])python(?:[23](?:\.\d+)?)?(?:\.exe)?(?=[\s`'"),;\]]|$)/ },
-  { rule: "py launcher", pattern: /(?<![\w.-])py(?:\.exe)?\s+(?:-[0-9A-Za-z]|[^\s]+\.pyw?\b)|(["'])(?:[^"'\s]*[/\\])?py(?:\.exe)?\1/ },
-  { rule: "pip install", pattern: /(?<![\w.-])(?:pip[23]?|pipx)(?:\.exe)?\s+(?:install|run)\b|(?<![\w.-])pipx\b/ },
-  { rule: "uv", pattern: /(?<![\w.-])(?:uv\s+(?:run|pip|tool)\b|uvx\b)/ },
-  { rule: "python shebang", pattern: /^#!.*\bpython/ },
-  { rule: "python code fence", pattern: /^\s*(?:```|~~~)\s*(?:python[0-9]?|py)\s*$/ },
-  { rule: ".py file name", pattern: /[\w-]\.pyw?\b(?![\w-])/ },
+  // (`spawnSync("python3", args)`), so a slash, a backslash, or a quote can come before it (review
+  // round 1 of pull request 7, finding 3). Windows names are not case-sensitive (`PYTHON.EXE -V`),
+  // and a shell operator or a redirection can follow a name (`python3>/dev/null`) (review round 2,
+  // finding 2). A name that is not all lower case can be prose ("needs Python 3"), so it counts only
+  // in capitals, with `.exe`, or before a flag (`Python -V`).
+  {
+    rule: "python command",
+    patterns: [
+      new RegExp(String.raw`(?<![\w.-])${PYTHON}(?:\.exe)?${END}`),
+      new RegExp(String.raw`(?<![\w.-])PYTHON(?:[23](?:\.\d+)?)?(?:\.EXE)?${END}`),
+      new RegExp(String.raw`(?<![\w.-])${PYTHON}(?:\.exe${END}|(?:\.exe)?\s+-[a-z])`, "i"),
+    ],
+  },
+  { rule: "py launcher", patterns: [/(?<![\w.-])py(?:\.exe)?(?:\s+(?:-[0-9a-z]|[^\s]+\.pyw?\b)|(?=[<>|;&]))/i, quoted("py")] },
+  { rule: "pip install", patterns: [/(?<![\w.-])(?:pip[23]?|pipx)(?:\.exe)?\s+(?:install|run)\b|(?<![\w.-])pipx\b/i, quoted("pip[23]?|pipx")] },
+  { rule: "uv", patterns: [/(?<![\w.-])(?:uv(?:\.exe)?\s+(?:run|pip|tool)\b|uvx\b)/i, quoted("uvx?")] },
+  { rule: "python shebang", patterns: [/^#!.*\bpython/i] },
+  { rule: "python code fence", patterns: [/^\s*(?:```|~~~)\s*(?:python[0-9]?|py)\s*$/] },
+  { rule: ".py file name", patterns: [/[\w-]\.pyw?\b(?![\w-])/] },
 ];
 
 export interface Finding {
@@ -101,8 +120,8 @@ export function findPython(dir: string): Finding[] {
     if (data.subarray(0, 8192).includes(0)) continue;
     const lines = data.toString("utf8").replace(/^﻿/, "").split(/\r?\n/);
     lines.forEach((text, index) => {
-      for (const { rule, pattern } of CALLS) {
-        if (pattern.test(text)) findings.push({ path, line: index + 1, rule });
+      for (const { rule, patterns } of CALLS) {
+        if (patterns.some((pattern) => pattern.test(text))) findings.push({ path, line: index + 1, rule });
       }
     });
   }

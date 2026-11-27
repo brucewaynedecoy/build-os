@@ -264,8 +264,10 @@ jobs:
       - name: Pull the image by digest
         run: docker pull "$NO_PYTHON_IMAGE"
 
+      # The checkout is mounted read-only and the container runs as the image's user node, not
+      # root; the script copies the checkout to a scratch folder inside the container and works there.
       - name: The smoke inside the image, with no Python anywhere in it
-        run: docker run --rm --volume "$GITHUB_WORKSPACE:/build-os" --workdir /build-os/toolkits/buildos "$NO_PYTHON_IMAGE" sh -eu scripts/no-python-image.sh
+        run: docker run --rm --user node --volume "$GITHUB_WORKSPACE:/build-os:ro" --workdir /build-os/toolkits/buildos "$NO_PYTHON_IMAGE" sh -eu scripts/no-python-image.sh
 
   # W1 R7 P8 t2: compares the tarball content lists of the three systems with
   # the Linux one and prints each difference. Report only (a warning, never a

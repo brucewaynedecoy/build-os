@@ -124,6 +124,73 @@ describe("no-Python check of the packaged skills (t10, A79)", () => {
     assert.doesNotMatch(run(dir).stdout, /qzvnopy/, "the output never names a planted value");
   });
 
+  // Review round 2 of pull request 7, finding 2: Windows casing, a shell operator or a redirection
+  // right after the name, and a quoted installer as the program to start were missed.
+  it("finds a Windows-cased name, a name before a shell operator or a redirection, and a quoted installer", () => {
+    const lines = [
+      "PYTHON.EXE -V",
+      "/usr/bin/python3>/dev/null",
+      'spawnSync("pip3", ["install", "qzvnopy"]);',
+      "Python.exe -m qzvnopy",
+      "Python3 -V",
+      "PYTHON3 qzvnopy",
+      "C:\\Python312\\PYTHON.EXE -c x",
+      "python3|tee out.txt",
+      "python3;echo done",
+      "command -v python3&&echo yes",
+      "(python3)",
+      "python<qzvnopy.txt",
+      "PY.EXE -3 qzvnopy",
+      "py>nul",
+      "spawn('pip', ['install', 'qzvnopy'])",
+      'execFile("/usr/local/bin/pipx", ["run", "qzvnopy"])',
+      'spawnSync("uv", ["run", "qzvnopy"])',
+      'spawnSync("C:\\\\Tools\\\\UV.EXE", args)',
+      "PIP3.EXE install qzvnopy",
+      "UV RUN qzvnopy",
+      "",
+    ];
+    const dir = skills({ "qzvnopy-g/notes.md": lines.join("\n") });
+    const found = findPython(dir);
+    const rules = found.map((f) => `${f.line} ${f.rule}`);
+    for (const want of [
+      "1 python command",
+      "2 python command",
+      "3 pip install",
+      "4 python command",
+      "5 python command",
+      "6 python command",
+      "7 python command",
+      "8 python command",
+      "9 python command",
+      "10 python command",
+      "11 python command",
+      "12 python command",
+      "13 py launcher",
+      "14 py launcher",
+      "15 pip install",
+      "16 pip install",
+      "17 uv",
+      "18 uv",
+      "19 pip install",
+      "20 uv",
+    ]) assert.ok(rules.includes(want), `${want} in ${JSON.stringify(rules)}`);
+    assert.doesNotMatch(run(dir).stdout, /qzvnopy/, "the output never names a planted value");
+  });
+
+  it("still does not count prose that names Python in another case, or words that only contain the names", () => {
+    const dir = skills({
+      "qzvnopy-h/SKILL.md": [
+        "This skill needs Python 3 (or Python).",
+        "Python, Node.js, and Go; Python|Node in a table; Python's tools.",
+        "A pipeline, a pip-free setup, the uv-index, and a uvula; a Pipfile-free folder.",
+        'The "pipe" and "uvula" words, and "pipes" in quotes.',
+        "",
+      ].join("\n"),
+    });
+    assert.deepEqual(check(dir).failing, []);
+  });
+
   it("does not count a path or a URL that only contains the word python", () => {
     const dir = skills({ "qzvnopy-f/SKILL.md": "See https://docs.python.org/3/ and github.com/python/cpython and my-python3-notes and python-helpers/ and the spy.py-less copy.\n" });
     assert.deepEqual(check(dir).failing, []);
@@ -200,7 +267,7 @@ describe("CI: the no-Python image job (A80)", () => {
   const script = readFileSync(resolve(import.meta.dirname, "..", "scripts", "no-python-image.sh"), "utf8").replace(/\r\n/g, "\n");
   const security = readFileSync(resolve(import.meta.dirname, "..", "SECURITY.md"), "utf8");
 
-  it("runs the official node:24-slim image pulled by digest, the digest SECURITY.md records, with docker run and only the checkout mounted", () => {
+  it("runs the official node:24-slim image pulled by digest, the digest SECURITY.md records, with docker run, only the checkout mounted read-only, and a user that is not root", () => {
     assert.ok(start >= 0, "the job is there");
     assert.match(job, /runs-on: ubuntu-latest\n/);
     const image = /NO_PYTHON_IMAGE: (node:24-slim@sha256:[0-9a-f]{64})\n/.exec(job)?.[1];
@@ -208,7 +275,8 @@ describe("CI: the no-Python image job (A80)", () => {
     assert.ok(security.includes(image), "SECURITY.md records the same image and digest");
     assert.doesNotMatch(job, /\n {4}container:|services:/, "no job container: it would mount the runner's tool cache, which holds Python");
     assert.match(job, /run: docker pull "\$NO_PYTHON_IMAGE"\n/);
-    assert.match(job, /run: docker run --rm --volume "\$GITHUB_WORKSPACE:\/build-os" --workdir \/build-os\/toolkits\/buildos "\$NO_PYTHON_IMAGE" sh -eu scripts\/no-python-image\.sh\n/);
+    assert.match(job, /run: docker run --rm --user node --volume "\$GITHUB_WORKSPACE:\/build-os:ro" --workdir \/build-os\/toolkits\/buildos "\$NO_PYTHON_IMAGE" sh -eu scripts\/no-python-image\.sh\n/);
+    assert.doesNotMatch(job, /--user (?:root|0)\b/, "not root");
     assert.equal(job.match(/--volume|-v /g)?.length, 1, "one mount");
     assert.doesNotMatch(job, /--privileged|--network|permissions:|secrets\.|environment:|id-token|GITHUB_TOKEN|github\.token|continue-on-error|\$\{\{|^\s+if:/m);
     assert.match(job, /persist-credentials: false/);
@@ -223,10 +291,16 @@ describe("CI: the no-Python image job (A80)", () => {
       "node scripts/check-no-python.ts\n",
       "npm run build\n",
       'npm install --offline --ignore-scripts --no-save --no-audit --no-fund --prefix "$temp/project" "$temp/$tarball"\n',
-      'node scripts/no-python-smoke.ts --project "$temp/project" --work "$temp/no-python-work" --filesystem / --skip "$checkout"\n',
+      'node scripts/no-python-smoke.ts --project "$temp/project" --work "$temp/no-python-work" --filesystem / --skip "$checkout" --skip "$copy"\n',
       "node --test --test-reporter=spec test/skill-script-parity.test.ts\n",
     ]) assert.ok(script.includes(line), line);
     const code = script.split("\n").filter((l) => !l.startsWith("#")).join("\n");
+    // Review round 2 of pull request 7 (hardening): the mounted checkout is only read; the script
+    // copies it to a scratch folder and moves there before its first command that writes.
+    const copied = code.indexOf('cp -R "$checkout/." "$copy"\ncd "$copy/toolkits/buildos"\n');
+    assert.ok(copied >= 0, "the script copies the checkout and works in the copy");
+    assert.ok(copied < code.indexOf("npm ci"), "the copy comes before the install");
+    assert.ok(copied < code.indexOf("node "), "the copy comes before the first node command");
     assert.doesNotMatch(code, /\b(?:apt|apt-get|apk|pip|pip3|uv|git)\b|(?<![\w-])python/, "installs nothing, runs no Python, needs no git");
   });
 

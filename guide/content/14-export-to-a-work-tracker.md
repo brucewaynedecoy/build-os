@@ -55,6 +55,8 @@ A single backlog directory can produce well over a hundred work items, arriving 
 
    It prints a short JSON block listing the registered adapters and the parameters each one requires. One adapter is registered today. On Windows, run `.os\scripts\buildos.cmd` with the same arguments, and write each command below on one line: Command Prompt does not read the `\` line breaks.
 
+   In a project that pins BuildOS `0.1.0`, the command does not exist yet. In each command on this page, write `node .os/skills/buildos-export-azure-boards/scripts/azure_boards_csv.mjs` in place of `.os/scripts/buildos export azure-boards`. The subcommands (`adapters`, `emit`, `validate`) and their options are the same.
+
 3. **Get the column list from the destination, not from documentation.** Open your tracker, run a saved query that returns some work items, export it, delete the columns you do not want, and save the result as a CSV. Hand that file to your agent as the format it must produce. The column template shipped with the skill was produced exactly this way, because a file from the destination reflects what the tracker will actually accept.
 
 4. **Smoke-test the exporter before you trust it with your own backlog.** The skill ships a synthetic example. From that same directory:

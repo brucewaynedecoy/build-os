@@ -799,6 +799,8 @@ Code anchors:
 
 **W1 R7 P9 owner decisions (2026-11-26, recorded in review round 1 of pull request 7)**: F-P8-11 is fixed in `0.2.0`, with no `0.1.1`, and BuildOS prints each fix command as `npx -y build-os@<running version> …`; a separate pull request builds it. F-P9-04: the `capability-matrix` skill gets its own BuildOS command in `0.2.0`, so that no skill needs Python; a separate pull request builds it, and the named exception of the no-Python check stays until then. See the [evidence report](../work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#p9-stage-3-review-round-1-2026-11-26).
 
+**W1 R7 P9 upgrade from 0.1.0 (2026-11-26, review round 2 of pull request 7)**: `0.2.0` changes three skills and the skills router. The guide (chapter 4, "From 0.1.0 to 0.2.0") gives tested hand steps: a backup first, only those three skills refreshed by name in the project and in each app copy, adopter changes found with a diff and made again by hand, and a rollback from the backup that a diff checks. New follow-up F-P9-08 for W2: `buildos update` refreshes only the first-party skills that changed, by name, in the project and in app copies, keeps adopter-added skills, reports adopter changes before it writes, and can undo the refresh. See the [evidence report](../work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#p9-stage-3-review-round-2-2026-11-26).
+
 **Disposition**: Existing R-003 reconciles DI-013. W1 R7 narrowed it from an archive, Homebrew, and signing matrix to npm packaging and rollback by version pin.
 
 Code anchors:
