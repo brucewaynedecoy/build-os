@@ -137,7 +137,7 @@ Human Experience Review is separate. The agent opens one `buildos fitgap` workbo
 
 - Four testing decisions: Pending phase close.
 - Performance evidence: None; not needed now.
-- Human Experience Review: Pending phase close.
+- Human Experience Review: Pending phase close. Done 2026-11-27 with F-P9-01, owner-reported: the owner compared a `buildos fitgap` workbook with the script's workbook of the same inputs, after the instructions that the orchestrator gave, and answered "Same"; the answer does not state separately which programs and versions were used, whether a repair message appeared, or whether the second pair was opened. See [Workbook Check (F-P9-01 and the Human Experience Review)](./evidence.md#workbook-check-f-p9-01-and-the-human-experience-review-2026-11-27).
 - Optional experience handoff: Pending phase close.
 - Explicit human acceptance gate: Maintainer approval of the `0.2.0` publication, per [PRD 20 Release](../../prd/20-buildos-cli-and-distribution.md#release). It blocks publication only.
 - Evidence report: Pending phase close.
