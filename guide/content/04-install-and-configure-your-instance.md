@@ -23,10 +23,10 @@ This page uses a few words that belong to the terminal rather than to BuildOS: e
 Open your project folder in your agent tool and ask the agent to run this command there:
 
 ```sh
-npx -y build-os@0.1.0 init
+npx -y build-os@0.2.0 init
 ```
 
-`npx` comes with Node.js. It fetches the BuildOS package from the npm registry, keeps a copy in npm's own cache folder on your machine (so the next run of the same version is faster), and runs it. It installs no `buildos` command for the whole machine, and the only files it adds to your project are the ones `buildos init` writes. `0.1.0` is the BuildOS version; use the version your team agreed on.
+`npx` comes with Node.js. It fetches the BuildOS package from the npm registry, keeps a copy in npm's own cache folder on your machine (so the next run of the same version is faster), and runs it. It installs no `buildos` command for the whole machine, and the only files it adds to your project are the ones `buildos init` writes. `0.2.0` is the BuildOS version; use the version your team agreed on.
 
 ### The one question: Make Docs
 
@@ -46,18 +46,18 @@ Make Docs is an optional companion tool. It adds docs/ folders for designs, plan
 If the user says no, Make Docs cannot be set up in this folder later with this Make Docs version: it does not set up a folder that has an AGENTS.md or CLAUDE.md file that Make Docs did not write, and BuildOS adds such a file here.
 
 If the user says yes, run:
-  npx -y build-os@0.1.0 init --root <project folder> --make-docs
+  npx -y build-os@0.2.0 init --root <project folder> --make-docs
 If the user says no, run:
-  npx -y build-os@0.1.0 init --root <project folder> --skip-make-docs
+  npx -y build-os@0.2.0 init --root <project folder> --skip-make-docs
 ```
 
 On Windows, the two commands are written for Command Prompt, and the folder is in double quotes:
 
 ```text
 If the user says yes, run this in Command Prompt:
-  npx -y build-os@0.1.0 init --root "<project folder>" --make-docs
+  npx -y build-os@0.2.0 init --root "<project folder>" --make-docs
 If the user says no, run this in Command Prompt:
-  npx -y build-os@0.1.0 init --root "<project folder>" --skip-make-docs
+  npx -y build-os@0.2.0 init --root "<project folder>" --skip-make-docs
 ```
 
 Your agent should ask you the question in plain words and then run the one command for your answer. If you type the command yourself in a terminal, `buildos init` asks `Set up Make Docs in this project? [Y/n]` instead.
@@ -93,7 +93,7 @@ It also writes `.os/manifest.json`, which records the BuildOS version this proje
 ```json
 {
   "schema_version": 1,
-  "buildos_version": "0.1.0",
+  "buildos_version": "0.2.0",
   "initialized_at": "2026-11-24T22:15:17.018Z"
 }
 ```
@@ -144,11 +144,11 @@ The output names the version:
 version: ok
 root: not_applicable
 mode: not_applicable
-version: 0.1.0
+version: 0.2.0
 source revision: <commit>
 write status: not_requested
 {
-  "version": "0.1.0",
+  "version": "0.2.0",
   "source_revision": "<commit>"
 }
 ```
@@ -431,17 +431,17 @@ Some company networks block the npm registry. You can still use BuildOS: fetch t
 1. On a machine with registry access, download the package file and compute its SHA-256 digest:
 
    ```sh
-   npm pack build-os@0.1.0
-   shasum -a 256 build-os-0.1.0.tgz
+   npm pack build-os@0.2.0
+   shasum -a 256 build-os-0.2.0.tgz
    ```
 
-   On Windows, use `certutil -hashfile build-os-0.1.0.tgz SHA256` instead of `shasum`.
+   On Windows, use `certutil -hashfile build-os-0.2.0.tgz SHA256` instead of `shasum`.
 
 2. Compare the digest with the published one. `SECURITY.md` in the package, section "How to Check a Release", says where it is and how to check the provenance too. Do not use a file whose digest differs.
 3. Copy the file to the machine without registry access and install it from the file:
 
    ```sh
-   npm install -g --offline ./build-os-0.1.0.tgz
+   npm install -g --offline ./build-os-0.2.0.tgz
    ```
 
    The package has no dependencies, so nothing else is needed.
@@ -451,7 +451,7 @@ Some company networks block the npm registry. You can still use BuildOS: fetch t
    buildos init
    ```
 
-When a `buildos` command is installed like this and its version is the one in `.os/manifest.json`, the project wrappers run it, without the registry (see "Update and roll back" below). When the versions differ, the wrappers run the pinned version through `npx`, which needs the registry or the npm cache. To run one command straight from the file instead, without installing: `npx -y --offline --package ./build-os-0.1.0.tgz -- buildos <command>`.
+When a `buildos` command is installed like this and its version is the one in `.os/manifest.json`, the project wrappers run it, without the registry (see "Update and roll back" below). When the versions differ, the wrappers run the pinned version through `npx`, which needs the registry or the npm cache. To run one command straight from the file instead, without installing: `npx -y --offline --package ./build-os-0.2.0.tgz -- buildos <command>`.
 
 ---
 
@@ -459,7 +459,7 @@ When a `buildos` command is installed like this and its version is the one in `.
 
 The version in `.os/manifest.json` always decides which BuildOS the project wrapper runs. A global install (as in the offline steps above) is used only when it is an npm install of exactly that version; see the last item.
 
-- **To update**, change `"buildos_version"` to the new version, for example `"0.1.1"`, and run `.os/scripts/buildos version` to check. Read the release notes first: when a version changes skills, change the skills too. From `0.1.0` to `0.2.0`, see below.
+- **To update**, change `"buildos_version"` to the new version, for example `"0.2.1"`, and run `.os/scripts/buildos version` to check. Read the release notes first: when a version changes skills, change the skills too. From `0.1.0` to `0.2.0`, see below.
 - **To roll back**, set it back to the earlier exact version, for example `"0.1.0"`. You do not need to change or remove a global install. When the skills changed between the two versions, put back the earlier skills too. From `0.2.0` to `0.1.0`, see "Roll back from 0.2.0 to 0.1.0" below. The wrapper accepts only an exact version, never `latest` or a range.
 - **With a global install** (`npm install -g`, as in the offline steps), the wrapper runs that installed `buildos` only when it is an npm install of the version in the manifest. On a machine without registry access, after you change the manifest, install the same version, `npm install -g build-os@<version>` (or the file), so the wrapper can run it without the registry. Until then, the wrapper runs the pinned version through `npx`.
 

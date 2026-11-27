@@ -7198,3 +7198,293 @@ From `toolkits/buildos/` unless noted, macOS arm64, Node 26.13.1, npm 11.20.0, P
 
 Head `78c7d07`: every check passed (23 passed, 3 skipped: the real-list deny-list job of each of the two deny-list runs, which runs on the default branch only, and the CodeRabbit check). `buildos-ci` run 45965719017 (pull request) and run 45965711977 (push), each with the test, no-Python, and smoke jobs on macOS, Linux, and Windows, the no-Python image job, the Make Docs contract job, the OSV scan, and the cross-OS pack comparison; `buildos-smoke` run 45965718978; `buildos-deny-list` runs 45965718993 and 45965712124 (invented list). Unit tests in run 45965719017: macOS 2,578 (2,566 passed, 12 skipped), Windows 2,437 (2,311 passed, 126 skipped, POSIX-only), 0 failed; the golden harness 299 on each (Windows: 294 passed, 5 skipped). On the Windows runner the Command Prompt example test passed: it splits the line by the Command Prompt rules in Node.js and runs the words; it does not start Command Prompt. The record commit after it fixes one code comment (a `\\` shown as two backslashes in `fitgap.ts`) and adds `### Maintainer` to the history record.
 
+
+## Version 0.2.0 and the Release Runbook (2026-11-27)
+
+W1 R7 P9 t13, first part, on the branch `release/0.2.0-version`. It sets the version to `0.2.0`, puts the `0.2.0` release notes in their final form, lists every open follow-up with its place before or after the release, and writes the release runbook. It follows the pattern of the `0.1.0` version change (`df3ff9b`, pull request 1: the version in `package.json` and `package-lock.json`, the evidence, and a history record). Nothing is published: no dry-run branch, tag, release, stage, `buildos-release` run, merge, or settings change, and `release-candidates.json` is unchanged (the `0.1.0` entry stays; the `0.2.0` entry comes from the dry-run tarball, step d below). The branch is stacked on pull request 10 (`feat/capability-matrix-command`, head `5f87063`), which is stacked on pull request 9 (`fix/f-p8-11-printed-commands`, head `f93be66`); neither is merged into `main` (`4dd86ce`) on 2026-11-27.
+
+### Version 0.2.0 (Files)
+
+| File | Change |
+| --- | --- |
+| `toolkits/buildos/package.json`, `toolkits/buildos/package-lock.json` | `version` `0.2.0` (the two root entries of the lockfile) |
+| `toolkits/buildos/test/package.test.ts` | The release version of the "finding 3" wrapper tests (`RELEASE`) and its comment: `0.2.0` |
+| `README.md`, `toolkits/buildos/README.md` (the npm page; it ships in the package) | `npx -y build-os@0.2.0 init`, `npm install -g build-os@0.2.0`, `npm pack build-os@0.2.0`, the file name `build-os-0.2.0.tgz`; the root README links the release notes for both versions |
+| `guide/content/03-before-you-start.md`, `04-install-and-configure-your-instance.md`, `19-a-worked-walkthrough.md` | The current-version commands and outputs: `init`, the printed Make Docs choice lines, the `.os/manifest.json` pin example, the `version` output, and the offline install. Kept as `0.1.0` on purpose: the upgrade and rollback steps (they install a clean `0.1.0` copy and roll back to it) and the rollback example. The update example is now `0.2.1`. The guide app `guide/BuildOS-Guide.html` was rebuilt |
+| `docs/assets/user/upgrade-an-existing-buildos-project.md` | The adoption commands and the pin example: `0.2.0`; the update item points to the guide's "From 0.1.0 to 0.2.0" |
+| `toolkits/buildos/SECURITY.md` | "How to Check a Release" and the Release Procedure examples use `0.2.0` and `v0.2.0`. Kept: "from version `0.1.0`" in the scope line and the rollback examples (`0.1.0` is the earlier version there) |
+| `toolkits/buildos/RELEASE_NOTES.md` | The final `0.2.0` notes (below); in the `0.1.0` known limits, "The unpublished `0.2.0` draft implements" became "`0.2.0` adds" |
+
+No version constant in `src/` names the package version: a release build stamps it (`BUILDOS_RELEASE_VERSION`, `scripts/build.ts`), and a plain build reports `dev`. `CONVERTER_ID = "buildos-intake/0.1.0"` in `src/core/intake/convert/convert.ts` is the Go-parity converter name in every converted file's front matter, not the package version, so it stays (its goldens hold it).
+
+The smoke workflow's default input stays `0.1.0`. `.github/workflows/buildos-smoke.yml` reads the public registry and runs on a pull request that touches it, so a default of `0.2.0` would fail until `0.2.0` is published; no document says that the default tracks the latest published version. After publication it moves to `0.2.0` with its test (`test/release-workflow.test.ts`, "default 0.1.0"), step k below.
+
+### Release Notes (Final Form)
+
+`toolkits/buildos/RELEASE_NOTES.md`, section `0.2.0`, with the status line in the form the `0.1.0` notes had before publication ("Status: draft. This version is not published yet. The maintainer removes this line when the release is approved and published."). Sections: What is new; Fix commands run as printed; Changed for 0.1.0 users; Removed; Upgrade a project from 0.1.0; Legacy command names end in 0.3.0; Known limits; Check the package; Roll back. The draft sentence "The version is not set and nothing is published" is gone, and so is the draft's separate "Export and spreadsheets" section (its CSV note is under "Changed for 0.1.0 users"). The draft had no "Not in this draft yet" item.
+
+Each statement was checked against the code or a record of this branch: the four commands and the `capability-matrix` subcommands (`buildos help`, `src/cli/commands/`); `--allow-outside-root` on `fitgap`, `export azure-boards`, and `capability-matrix`, and fixed project paths for `extract bulk` (SD-04, SD-05, SD-24); the printed `npx -y build-os@0.2.0 …` form and the pin (a release-stamped build of this branch: `init --skip-make-docs` wrote `"buildos_version": "0.2.0"`, `entities validate --mode strict` printed `action: npx -y build-os@0.2.0 entities rebuild-index --root '<folder>' --mode strict --apply`, and an unknown command printed `Run npx -y build-os@0.2.0 help for command syntax.`); the Windows label words (`shellLabel` in `src/core/shared/run-command.ts`); the exit mapping (SD-01 in `test/golden/skills/divergences.json`); PE-021 to PE-023 (`test/golden/parity-exceptions.json`, the three exceptions added after `v0.1.0`); the removed files (`git diff --stat v0.1.0 -- system/`: 15 files, of which 6 are deleted); the not-tested items (F-P9-01, F-P9-10, the upgrade test of [P9 Stage 3 Review Round 2](#p9-stage-3-review-round-2-2026-11-26), and the adapter example of [Review Round 3 and the Final Fix Pass (Pull Request 10)](#review-round-3-and-the-final-fix-pass-pull-request-10-2026-11-27)). Two statements depend on later facts and must be checked at publication: the SD-26 bullet (owner question Q1; option A is built) and the F-P9-01 limit ("no person has opened one in Microsoft Excel or LibreOffice yet").
+
+### Open Items Before and After the Release
+
+"Before" means it must be done before the npm stage approval of `0.2.0` (step j), by the phase files, the owner decisions, or this runbook; "before step a" means before the version commit is merged and dry-run. Statuses are as of 2026-11-27. Corrected in review round 1 of pull request 11: the P8 rows are part of the P8 exit gate that holds t13, so they are "before" (step 0), not "not a `0.2.0` gate".
+
+| ID | Status | Before or after the release | Who |
+| --- | --- | --- | --- |
+| Pull requests 9 and 10 | Reviewed; wait for the owner's merge | Before: this branch is stacked on them | Owner merges; the orchestrator merges `main` into this branch |
+| F-P8-06 (lazy-load the PDF reader, new `PERF-001` recheck) | Open | After: "a later release" (owner decision 2026-11-25, answer 5) | Agent, in a later release |
+| F-P8-07 (remove the legacy names and project scripts) | Open | After: in `0.3.0` (`Q-016`) | Agent, in `0.3.0` |
+| F-P8-08 (Windows long-line estimate of the `npx` fallback) | Open | After: no phase file or decision puts it before | Agent |
+| F-P8-09 (rollback `0.2.0` to `0.1.0` through `npx` on three systems) | Open | After publication (it needs `0.2.0` on the registry); a pre-approval check on the tarball is step h3 (rehearsed on a local pack, [Rehearsal of Step h3](#rehearsal-of-step-h3-2026-11-27)) | Agent |
+| F-P8-10 (doubled Windows backslashes) | Fixed in `0.2.0` (PE-023) | Closes after publication, when the `0.2.0` smoke runs step 10 | Agent |
+| F-P8-11 (bare `buildos` in printed commands) | Fixed in `0.2.0` (PE-023) | Closes after publication, when the `0.2.0` smoke runs step 10 | Agent |
+| F-P8-12 (`PERF-002` child `PATH`) | Fixed (P9 Stage 3) | Closed | None |
+| F-P8-13 (smoke legacy-notice check) | Fixed (P9 Stage 3) | Closed | None |
+| F-P9-01 (open a `buildos fitgap` workbook in Excel and LibreOffice) | Open | Before step a: done, or waived by the owner (step 0) | A person; the owner waives |
+| Human Experience Review (one `buildos fitgap` workbook beside the script's) | Open | Before step a, with F-P9-01: done, or waived by the owner (step 0) | A person (the orchestrator decided that it needs one); the owner waives |
+| F-P9-02 (CSV formula-prefix note) | Done | Closed | None |
+| F-P9-03 (`extract bulk withdraw`) | Open | After: only if adopters need it | Agent, if asked |
+| F-P9-04 (`capability-matrix` command) | Built (pull request 10) | Before: pull request 10 must merge | Owner merges |
+| F-P9-05 (whitespace warning; Win32 case-folded path shortcut on case-sensitive folders) | Open, no fix asked | After | Agent |
+| F-P9-06 (dispatcher's two output forms for an unexpected error) | Open | After | Agent |
+| F-P9-07 (parity test counts a removed file as untouched) | Open | After: no result is wrong today (SD-20 approves the one known case) | Agent |
+| F-P9-08 (`buildos update`) | Open | After: W2 (`R-003`) | Agent, in W2 |
+| F-P9-09 (`design promote` opening words name a root-relative file) | Open | After | Agent |
+| F-P9-10 (`bin-links=false` routes tested only in `sh` on macOS) | Open; stated in the known limits | After | Agent, on Windows |
+| F-P9-11 (no cap on the sum of reads over a pattern) | Open | After | Agent |
+| F-P9-12 (`buildos fitgap` integer and empty-pattern parity) | Open | After: its own side-by-side pass | Agent |
+| F-P9-13 (`--out` through a dangling link before its last name) | Open | After | Agent |
+| F-P9-14 (`buildos fitgap` minus values) | Open | After: its own side-by-side pass | Agent |
+| F-P9-15 (new: smoke a release tarball before approval) | Open | Before step a (orchestrator decision of 2026-11-27, below; the owner may overrule), in its own pull request | Agent builds; owner merges |
+| SD-26 (owner question Q1: a system code with a pattern character) | Open; option A is built and in the notes | Before: option B changes the code and the notes | Owner decides |
+| Windows label wording (PE-023) | Built; needs no new decision unless the owner wants another wording ([F-P8-11 Printed Commands](#f-p8-11-printed-commands-2026-11-26)) | Before, if the owner wants another wording (it changes printed text in the tarball) | Owner confirms |
+| P8 t17 and A73 (a chat app and a restricted network, `R-012`) | Open; owner decision open | Before step a: done by the owner, or an owner exception (step 0) | Owner |
+| P8 t25 (the `0.1.0` publication decision; A75's order missed) | Open; owner decision open | Before step a: the owner's answer (step 0) | Owner |
+| P8 A71 (the 5 smoke-output differences) | Waits for the owner's acceptance; owner decision open | Before step a: the owner's answer (step 0) | Owner |
+| P8 t16 and A72 (rollback by pin to a published earlier version) | Open; owner decision open | Cannot close before the `0.2.0` publication (it needs `0.2.0` on the registry, F-P8-09); before step a: an owner exception that says so (step 0); closes at step k | Owner (exception); agent (step k) |
+| F-P8-01 (retry after a partial draft upload) | Open | Only if `attach` fails half-way (step f) | Owner deletes the asset by hand |
+| F-P8-04 (esbuild install-script exception) | Checked 2026-11-27: `esbuild` 0.28.2 still declares `postinstall` (`hasInstallScript` in the lockfile), so the exception stays | Each release, step c | Agent |
+| F-P8-05 (facts that depend on the release) | Listed below for `0.2.0` | At publication, step k | Agent |
+
+### A Staged Version Cannot Be Installed Before Approval
+
+npm's documentation: `npm stage publish` "places that version of the package into the registry in a state where it's not available for public access" (`npm help stage`, npm 11.20.0), and "the staged version and its contents are not publicly available until a maintainer approves the staged package" (docs.npmjs.com, Staged publishing, read on 2026-11-27). npm documents `npm stage download <stage-id>` "for inspection" (no 2FA; the package's writer only) and documents no install of a staged version. `SECURITY.md` already says: "A staged package is not public." The `0.1.0` records hold no install of a staged version: the owner approved the stage before the Stage 4 checks, and they ran on the published package under the owner decision of 2026-11-26 ([Post-Publication Checks of 0.1.0](#post-publication-checks-of-010-2026-11-26)).
+
+So the `buildos-smoke` workflow and `npx -y build-os@0.2.0` cannot reach a staged, unapproved `0.2.0`: both read the public registry. Before approval, the smoke runs on the release tarball instead. It has the same bytes as the staged package: the `stage` job stages exactly the release asset, after it checks the asset against the reviewed entry and the release run's own rebuild ([Release Procedure](../../../toolkits/buildos/SECURITY.md#release-procedure)), and the maintainer can prove it for the stage with `npm stage download <stage-id>` and a SHA-256 (step h1). The dry-run artifact's tarball is the same file again: the reviewed entry is computed from it (step d). So the tarball smoke can run as early as step c, before anything is fixed, and this runbook recommends that.
+
+`scripts/published-smoke.ts` has no tarball input: every step runs `npx -y build-os@<version>` against the registry, and the project wrapper falls back to the same fetch. A tarball input changes each `npx` step (`npx -y --package <tarball> -- buildos …`), adds a local install so the wrapper steps run the pinned version without the registry, makes step 10 run the printed `npx -y build-os@<version>` command against that local install, and needs a workflow input that downloads and checks the file. That is more than a few lines, so it is not built here. New follow-up F-P9-15: give `scripts/published-smoke.ts` a `--tarball <file> --sha256 <hex>` input (the same 13 or 15 steps on the local file, with no registry fetch of `build-os`) and `.github/workflows/buildos-smoke.yml` an input that downloads the tarball of a named `buildos-release` dry run (`actions: read`, no secret) and checks its SHA-256 before the steps, with tests in `test/release-workflow.test.ts` and `test/post-publication-scripts.test.ts`. It must merge before the commit that the dry run builds (step a), because the tag commit may differ from the reviewed commit only in the ledger. The orchestrator decided on 2026-11-27 to build it (below; the owner may overrule).
+
+`PERF-002` measures `npx -y build-os@<version> version` with an empty npm cache against the registry, and its instrument fetches `https://registry.npmjs.org/build-os/-/build-os-<version>.tgz` (`scripts/measure-npx-first-run.ts`). It cannot run on a staged version either. The `PERF-002` profile expires "at the next release that changes the package size", and its requalification authority is "the work phase of that release", which is P9; P9's testing decisions have Performance Testing `not-needed-now`. Before approval, the tarball size against `0.1.0` (1,070,295 bytes, 173 files) is known from step c, and no `0.2.0` performance measurement exists. The orchestrator decided on 2026-11-27 on one pass after publication (below; the owner may overrule).
+
+### Trusted Publishing and Settings Before the Release
+
+The trusted publisher for `build-os` exists (First Publication steps 4 and 5, 2026-11-26, owner-reported), and the first publish through it succeeded (`build-os@0.1.0`, release run 45894295344). npm's documentation (docs.npmjs.com, Trusted publishers, read on 2026-11-27): "A newly created trusted publisher configuration must complete its first successful publish within 2 days", and the first successful publish "validates the configuration and binds it to the repository's immutable identity". It names no expiry after that. So nothing in the trust setup expires before `0.2.0`. Its fields must match exactly ("All fields are case-sensitive and must be exact"): this branch keeps the workflow file `.github/workflows/buildos-release.yml` and the environment `buildos-npm-stage` (checked: the `stage` job's `environment: buildos-npm-stage`). Before step f, the owner reads the configuration (an agent never runs `npm trust`): `npm trust list build-os` must show GitHub Actions, `brucewaynedecoy/build-os`, `buildos-release.yml`, `buildos-npm-stage`, staged publishing only. The owner's npm account needs two-factor authentication for the stage approval. The `deny-list` and `stage` jobs of each prepare and release run check again that the rulesets are active with the needed rules and that the environments limit their refs. They cannot check two settings: who may bypass a ruleset (GitHub returns the bypass list only to a user with write access to the ruleset, which the job token is not) and the repository setting for release immutability (it needs the Administration permission). `scripts/release-github.ts` prints this limit in its `rulesets` result. The `stage` job checks only that the published release is immutable. So the owner checks both settings at step f, before publishing the draft. The dry-run artifact is kept 3 days, so steps b to d, h2, and h3 fit in 3 days.
+
+### Who Starts the Dry Run (the 0.1.0 Records)
+
+`SECURITY.md` and `toolkits/buildos/AGENTS.md` say "No agent publishes, stages, tags, creates a release, runs `npm trust`, or changes repository or npm settings". They do not name the dry run, and the trust rule lets anyone with write access push a branch. A dry run holds no secret and stages nothing (`resolve` and `verify` only). The records: the `0.1.0` dry run [45888733182](https://github.com/brucewaynedecoy/build-os/actions/runs/45888733182) was a `workflow_dispatch` from `main` on `20f941a` (purpose `dry-run`, candidates `self`), and GitHub names `brucewaynedecoy` as its actor and triggering actor (`gh api repos/brucewaynedecoy/build-os/actions/runs/45888733182`, read on 2026-11-27); no record says whether the owner or the orchestrator started it, and an agent here uses the owner's `gh` login, so GitHub's actor cannot tell them apart. In the earlier repository, the dry runs on `release-dry-run/980b67a` and the planted-failure branches were pushed and reported by the orchestrator ([P8 CI Runs and Dry Run on 980b67a](#p8-ci-runs-and-dry-run-on-980b67a)), and the branch was deleted after its run. Following those records, an agent may start the `0.2.0` dry run when the owner says go, and records who started it. The owner then accepts the tarball (step d).
+
+### Release Runbook for 0.2.0
+
+Every step names who does it. "Agent" steps need the owner's go. No agent publishes, stages, tags, creates or publishes a release, approves a deployment or a stage, runs `npm trust`, records an owner decision that the owner has not made, or changes a setting. Do the steps in this order; the order that was missed for `0.1.0` (the npm approval before the checks) is prevented here by the owner, not by a tool: step j has three preconditions that the owner checks at that step. Nothing technical stops an early approval. After step g, a maintainer can approve the stage with 2FA at once, in the CLI or on npmjs.com, and npm does not look at h1 to h5 or at step i. The workflow only stages and prints instructions. npm's documentation describes an explicit approval, and gives no auto-approval and no expiry date for a stage. So step j is an owner-enforced gate. In commands, `<M>` is the full SHA of the `main` commit that the dry run builds (the merge commit of this pull request, or a later `main` commit, step 0), `<short>` its first 7 characters, `<run>` a run ID, `<attempt>` its run attempt, and `$D` a new empty folder outside the repository (`D=$(mktemp -d)`). Each command says where it runs: "the repository root" or `toolkits/buildos/` of a clean checkout of `<M>`, or "any folder" when it reads only `$D` and the network.
+
+Corrected in review round 1 of pull request 11 (2026-11-27): step 0 now holds the P8 exit gate, h2 has one route (F-P9-15), h4 and h5 say what did not run, and the commands of steps b, c, e, h1, and h3 are exact. See [Review Round 1 (Pull Request 11)](#review-round-1-pull-request-11-2026-11-27).
+
+0. Preconditions (owner and orchestrator). All of these are true before step a:
+   - Pull requests 9 and 10 are merged; the orchestrator merges `main` into this branch, and its CI is green.
+   - F-P9-15 is merged, in its own pull request (orchestrator decision of 2026-11-27, [below](#orchestrator-decisions-2026-11-27); the owner may overrule).
+   - The owner has answered SD-26 (Q1).
+   - The P8 exit gate. The P9 phase file holds t13 for the P8 exit gate and the maintainer ([Entry Gate](09-skill-script-commands-0-2-0.md#entry-gate)). So the release needs one of two things: P8 is closed, or the owner records a dated exception that names each open item below with the owner's decision on it. Each item is one owner decision. No agent records a decision that the owner has not made. Without P8 closure or this exception, the release stops before step a. The gate text of the phase files does not change.
+
+     | Item | The owner decision and its question | Status on 2026-11-27 |
+     | --- | --- | --- |
+     | P8 t25 | Do you accept the retrospective publication review of 2026-11-26 ([Retrospective Publication Review (t24)](#retrospective-publication-review-t24)) as the publication approval of `build-os@0.1.0`: yes or no? A75's order stays missed either way ([Question for t25](#question-for-t25)). | owner decision open |
+     | P8 A71 | Do you accept the five output differences, rows 2, 3, 6a, 8, and 9 of the [comparison](#comparison-with-the-p6-reviewed-output): yes or no? | owner decision open |
+     | P8 t17 and A73 | The chat-app and restricted-network trial ([Owner Checklist for t17 (R-012)](#owner-checklist-for-t17-r-012)): do you do it before `0.2.0`, or do you record an owner exception to release `0.2.0` without it? | owner decision open |
+     | P8 t16 and A72 | The public rollback proof (F-P8-09) needs `0.2.0` on the registry, so it depends on the `0.2.0` publication itself and cannot close before it. Do you record an owner exception to release `0.2.0` with t16 and A72 open until step k? The exception says that the proof depends on this publication. | owner decision open |
+     | F-P9-01 and the Human Experience Review | A person opens one `buildos fitgap` workbook in Microsoft Excel and in LibreOffice, and compares a `buildos fitgap` workbook with the workbook of `fitgap.py` (sheets, headings, owner names, and colors). Is it done before `0.2.0`, or do you waive it? If it is done, the F-P9-01 limit in `RELEASE_NOTES.md` is updated in a pull request that merges before step a, so the reviewed commit and the GitHub Release body (extracted at step e) hold the new text. If it is waived, the limit stays as written. | owner decision open |
+
+   - After the dry run, anything that merges into `main` needs a new dry run and a new review of the new commit, with one exception: the reviewed ledger-only merge of step d (it changes only `toolkits/buildos/release-candidates.json`, and the identity gate allows exactly that difference). The identity gate requires that the reviewed source commit is an ancestor of the tag commit and that their files differ only in the ledger's bytes (`SECURITY.md`, Release Gates, "Tag, version, and reviewed entry"). So the reviewed commit need not be the merge commit of this pull request: a later `main` commit works when it gets its own dry run (step b) and its own review (steps c and d).
+1. Step a, merge this pull request (owner). Squash-merge it. Then, from the repository root, `git fetch origin`, and `git rev-parse origin/main` prints `<M>`; `git show origin/main:toolkits/buildos/package.json` says `"version": "0.2.0"`.
+2. Step b, the dry run on `<M>` (agent, after the owner's go; or the owner). From the repository root, one of:
+   - the push route: `git push origin <M>:refs/heads/release-dry-run/<short>` (a push to a `release-dry-run/` branch is a dry run with candidates `self`);
+   - or the dispatch route, while `main` is still `<M>`: `gh workflow run buildos-release.yml --repo brucewaynedecoy/build-os --ref main -f purpose=dry-run -f tag= -f candidates=self -f plant=none` (the `0.1.0` route; an empty tag means `v` plus the `package.json` version). It makes no branch.
+
+   Read it with `gh run list --repo brucewaynedecoy/build-os --workflow buildos-release.yml --limit 3` and `gh run view <run> --repo brucewaynedecoy/build-os`: `Resolve the release commit` and `Release gates (candidate build, no secret)` pass; attach, the real deny list, discard, and stage are skipped. Record the run ID, the head SHA (`<M>`), the route, and who started it. Only if the push route made the branch, delete it after step d: `git push origin --delete release-dry-run/<short>`.
+3. Step c, inspect the tarball (agent prepares, owner reads), within 3 days of step b (the artifact is kept 3 days). From any folder:
+
+   ```sh
+   gh run view <run> --repo brucewaynedecoy/build-os --json attempt --jq .attempt
+   gh run download <run> --repo brucewaynedecoy/build-os --name buildos-release-<run>-<attempt> --dir "$D/artifact"
+   ls "$D/artifact"
+   shasum -a 256 "$D/artifact/build-os-0.2.0.tgz"
+   tar -tzvf "$D/artifact/build-os-0.2.0.tgz"
+   npm diff --diff=build-os@0.1.0 --diff="$D/artifact/build-os-0.2.0.tgz" > "$D/diff-0.1.0-0.2.0.txt"
+   mkdir "$D/scratch"
+   npm install --offline --ignore-scripts --no-save --prefix "$D/scratch" "$D/artifact/build-os-0.2.0.tgz"
+   "$D/scratch/node_modules/.bin/buildos" version --json
+   "$D/scratch/node_modules/.bin/buildos" help
+   ```
+
+   The first command prints `<attempt>`. The SHA-256 equals `tarball_sha256` in `release-build.json`; `version --json` reports `0.2.0` and `<M>`; `help` lists `extract`, `fitgap`, `export`, and `capability-matrix`; the tarball has 5 bins and no dependency field; record its size and file count (h4). Read the SBOM (`buildos-0.2.0.cdx.json`: `metadata.component` holds the SHA-256 and `<M>`; the `required` components are the rows of SECURITY.md "Bundled npm Packages" and "Other Bundled Code") and the job summary (every gate). In `toolkits/buildos/` of a clean checkout of `<M>`, after `npm ci --ignore-scripts`: the real-list deny-list scan of the tarball, with the list outside the repository, `node scripts/check-deny-list.mjs --root ../.. --tarball "$D/artifact/build-os-0.2.0.tgz" --list-file <list file>` (0 matches), and F-P8-04, `node -e 'console.log(require("./node_modules/esbuild/package.json").scripts)'`. In the same 3 days, on the same bytes as the later stage: h2 and h3 (step h), so that a failure stops the release before anything is fixed.
+4. Step d, the owner accepts, then the reviewed entry (agent prepares the pull request; owner reviews and merges). The owner records the acceptance (date and words). Then, from the repository root, a branch from `<M>`: `git switch -c release/0.2.0-reviewed-candidate <M>`, and `git rev-parse HEAD` prints `<M>`. In `toolkits/buildos/`:
+
+   ```sh
+   node scripts/release-candidate.ts compute --tarball "$D/artifact/build-os-0.2.0.tgz" --build "$D/artifact/release-build.json" --reviewed-by brucewaynedecoy --reviewed-on <YYYY-MM-DD> --evidence "Release dry run <run> (brucewaynedecoy/build-os, commit <short>) passed. The owner inspected the tarball from that run and accepted it as reviewed: <n> files, 5 bins, no dependencies, offline install and run, real deny-list scan with 0 matches."
+   ```
+
+   Add the printed entry by hand after the `0.1.0` entry of `candidates` in `release-candidates.json`. Then `node scripts/release-candidate.ts check` and `node scripts/release-candidate.ts verify --tag v0.2.0 --tarball "$D/artifact/build-os-0.2.0.tgz"` pass, and, from the repository root, `git diff --name-only <M>` prints only `toolkits/buildos/release-candidates.json`. Commit type `chore` (this pull request may change one file only, so it has no history record), for example `chore: [W1 R7 P9] BuildOS Node and TypeScript CLI Rewrite - Reviewed release candidate 0.2.0`. An independent review passes it; the owner merges it. Its merge commit is `<L>`. If another commit reached `main` between `<M>` and `<L>`, the identity gate still passes only when `<M>` is an ancestor of `<L>` and the files differ only in the ledger; otherwise go back to step b on the new commit (step 0).
+5. Step e, the tag and the draft release (owner). From the repository root: `git fetch origin`, then `git rev-parse origin/main` prints `<L>`, and `git diff --name-only <M> <L>` prints only `toolkits/buildos/release-candidates.json`. Create the tag `v0.2.0` on `<L>` as `v0.1.0` was (a tag on the commit): `git tag v0.2.0 <L>` and `git push origin refs/tags/v0.2.0`. Then take the notes from the tag, so that the release body is bound to the tag, without the draft status line, and make the draft:
+
+   ```sh
+   git show v0.2.0:toolkits/buildos/RELEASE_NOTES.md | awk '/^## 0\.2\.0$/{p=1;next} /^## /{p=0} p' | grep -v '^Status: draft' > "$D/notes-0.2.0.md"
+   grep '^##' "$D/notes-0.2.0.md"
+   grep -c '^Status: draft' "$D/notes-0.2.0.md"
+   gh release create v0.2.0 --repo brucewaynedecoy/build-os --draft --verify-tag --title "BuildOS 0.2.0" --notes-file "$D/notes-0.2.0.md"
+   ```
+
+   The `awk` filter takes the lines after the heading `## 0.2.0` up to the next `## ` heading (`## 0.1.0`), and `grep -v` drops the status line. The second command prints exactly the nine section headings, in this order: `### What is new`, `### Fix commands run as printed`, `### Changed for 0.1.0 users`, `### Removed`, `### Upgrade a project from 0.1.0`, `### Legacy command names end in 0.3.0`, `### Known limits`, `### Check the package`, `### Roll back`; no `## ` line. The third prints `0`. `test/release-notes.test.ts` runs this exact filter (it reads the line from this runbook and from `SECURITY.md`) on the notes file, tagged in a scratch repository, and checks the same result, so a later heading change cannot break the release body without a failing test.
+6. Step f, the prepare run, the draft review, and the settings check (owner). First `npm trust list build-os` (above). Then `gh workflow run buildos-release.yml --repo brucewaynedecoy/build-os --ref main -f purpose=prepare -f tag=v0.2.0 -f candidates=committed -f plant=none`. Every gate, the ruleset and environment checks, the real deny list, and `attach` pass. Review the draft: `gh release download v0.2.0 --repo brucewaynedecoy/build-os --dir "$D/draft"`; it holds exactly `build-os-0.2.0.tgz` and `buildos-0.2.0.cdx.json`; `shasum -a 256 "$D/draft/build-os-0.2.0.tgz"` equals the `v0.2.0` entry, and `cmp "$D/draft/build-os-0.2.0.tgz" "$D/artifact/build-os-0.2.0.tgz"` prints nothing. Read the job summary. If `attach` uploaded the tarball and then failed (F-P8-01), delete that asset by hand and run prepare again. Then the two settings that no job can check (the prepare run's `rulesets` result names this limit; the release run's `stage` job checks only that the published release is immutable), before step g: `gh api repos/brucewaynedecoy/build-os/immutable-releases` prints `"enabled": true`; Settings > Rules > Rulesets shows `main` and `release tags` as Active, and each Bypass list holds only the expected actor of `SECURITY.md` "Sole Maintainer or Two Maintainers" (`main`: the Repository admin role, For pull requests only; `release tags`: the Repository admin role, Always allow). The owner gives the agent the result for the evidence. If one is not as expected, stop: do not publish the draft.
+7. Step g, publish the draft and approve the staging job (owner). Only when step 0 is complete and h2 and h3 passed in the step c window. Publish the draft (the release page, or `gh release edit v0.2.0 --repo brucewaynedecoy/build-os --draft=false`). The release run starts; when it waits at `Stage on npm (approval with 2FA needed)`, approve the `buildos-npm-stage` deployment in GitHub (Actions > the run > Review deployments > Approve and deploy). The job logs `build-os@0.2.0 (staged with id <stage-id>)` and the signed provenance statement with its transparency-log index. The package is now STAGED on npm, not published: nobody can install it yet. Record the run ID, the stage ID, and the log index. Do not run `npm stage approve` now.
+8. Step h, the checks before the npm approval (agent, except where it says owner). Each result goes into the evidence before step i, with its run ID or record.
+   - h1, the stage is the reviewed file (owner, signed in to npm). `npm stage list build-os` lists `<stage-id>`; `npm stage view <stage-id>` shows version `0.2.0` and the dist-tag `latest`. npm documents no workflow-run or tag field in `npm stage view`, so the binding to release run `<run>` and tag `v0.2.0` comes from the transparency log, in this order. First `npm stage download <stage-id>`; `shasum -a 256` of the downloaded file equals the `v0.2.0` entry. Then look up the file's SHA-512 in the log's index (any folder):
+
+     ```sh
+     H=$(shasum -a 512 <downloaded file> | cut -d' ' -f1)
+     curl -sS -X POST https://rekor.sigstore.dev/api/v1/index/retrieve -H 'Content-Type: application/json' -d "{\"hash\":\"sha512:$H\"}"
+     curl -sS https://rekor.sigstore.dev/api/v1/log/entries/<uuid>
+     ```
+
+     The first `curl` prints the UUIDs of the log entries for that hash. One of them must be the entry that the `stage` job's log names (the job prints `https://search.sigstore.dev/?logIndex=<index>`; the second `curl` prints the `logIndex` of a UUID). Open that entry and read its signing certificate: it names `https://github.com/brucewaynedecoy/build-os/.github/workflows/buildos-release.yml@refs/tags/v0.2.0` and the run `https://github.com/brucewaynedecoy/build-os/actions/runs/<run>/attempts/<attempt>`. The log entry itself holds hashes and the certificate, not the signed statement with the package name, so the lookup by the file's own SHA-512 is what binds the entry to this file. This sequence was checked on `0.1.0` on 2026-11-27: the lookup by the SHA-512 of the registry tarball gave two entries, and the entry with log index 4134502337 has a certificate that names the workflow at `refs/tags/v0.1.0` and run 45894295344, attempt 1. The owner gives the agent the digests, the UUID, and the log index. Public `npx` and `npm install` cannot fetch the unapproved version; a maintainer can install the downloaded tarball locally (`npm install --offline --ignore-scripts --no-save --prefix <folder> <file>`).
+   - h2, the smoke on three systems, on the release tarball (Linux, macOS, and Windows, Node 24; agent). The route is F-P9-15 (step 0): the `buildos-smoke` workflow runs the smoke steps on the tarball of dry run `<run>`, after it checks its SHA-256, on the three systems. It runs in the step c window, while the dry-run artifact still exists (3 days after step b); the stage holds the same bytes (h1, and the release run's digest gates). Each step's real output is compared with the P6 reviewed output ([Comparison With the P6 Reviewed Output](#comparison-with-the-p6-reviewed-output)), and each difference is named: the version strings, the 5 recorded differences (rows 2, 3, 6a, 8, and 9), the printed fix commands of `0.2.0` (PE-023; step 10 runs the printed `npx -y build-os@0.2.0 entities rebuild-index …` command, here against the tarball), and any other difference, which stops the release until it is explained and accepted. Without F-P9-15, the release does not go to step g.
+   - h3, rollback by pin on the tarball (macOS or Linux, `sh`; agent), in the step c window:
+
+     ```sh
+     mkdir "$D/h3" "$D/h3/proj"
+     cd "$D/h3/proj"
+     git init -q -b main
+     npx -y build-os@0.1.0 init --skip-make-docs
+     ```
+
+     The project is a disposable git repository, because the guide's backup step commits (set a user name and email in it if git has none). Then the guide's chapter 4 "From 0.1.0 to 0.2.0", steps 1 to 7, as written, with two changes: in step 2, `npx -y --package "$D/artifact/build-os-0.2.0.tgz" -- buildos init --root ../buildos-upgrade/new --skip-make-docs` replaces the `0.2.0` line; in step 6, the npm install of `0.2.0` is `npm install --offline --ignore-scripts --no-save --prefix . "$D/artifact/build-os-0.2.0.tgz"`. Every check of step 7 passes, and `.os/scripts/buildos version` prints `version: 0.2.0` (from the local install). Then "Roll back from 0.2.0 to 0.1.0", steps 1, 2, 3, and 5, not step 4: for this check the local `0.2.0` install stays in `node_modules`. The assertion: with the pin back at `0.1.0` and `node_modules/build-os` still `0.2.0` (`node -p "require('./node_modules/build-os/package.json').version"` prints `0.2.0`), `.os/scripts/buildos version` prints `version: 0.1.0`, because the wrapper refuses the local `0.2.0` install (it is not the pinned version) and runs `0.1.0` through `npx`; `command -v buildos` prints nothing (no other `buildos` on `PATH`). The step 5 comparisons print nothing. A rehearsal on a local pack of this branch passed ([Rehearsal of Step h3](#rehearsal-of-step-h3-2026-11-27)). The public rollback through `npx` on three systems (F-P8-09) waits for step k.
+   - h4, size and performance before approval (agent). What runs: the tarball size and file count against `0.1.0` (1,070,295 bytes, 173 files; the `0.2.0` values from step c), and the `PERF-001` status (`pass` on 2026-11-24 for `0.1.0`, profile v1.1; no `0.2.0` recheck, and F-P8-06, the lazy load, is after the release). What does not run: `PERF-002`. Its instrument measures only a published package (`scripts/measure-npx-first-run.ts` fetches the tarball from the public registry), so before approval there is no `0.2.0` performance measurement. The orchestrator decided on 2026-11-27 on one `PERF-002` pass on the published `0.2.0` after publication (step k; [below](#orchestrator-decisions-2026-11-27); the owner may overrule). The owner accepts this omission by name in step i.
+   - h5, the publication review for the owner (agent). It lists what actually ran, each with its run ID or record, and lists each item that did not run as "not run", with the reason. The items of P8 t24 (A81 asks for the same): the tarball digest (the ledger entry, dry run `<run>`, the release asset of the prepare run, the stage download of h1); the provenance (the `stage` job's provenance record and transparency-log entry, h1); the SBOM; the scans (`npm audit` and OSV in the release run's `verify` job); the deny-list result (the real-list `deny-list` jobs of the prepare and release runs, and step c); the eval gate (the release run's `verify` job); the smoke results (h2: the `buildos-smoke` run ID, the three systems, and each named difference); the rollback check (h3); the performance outcomes (h4: the size against `0.1.0` and the `PERF-001` status ran; the `PERF-002` pass of `0.2.0` did not run before approval); the settings check of step f; `SECURITY.md`; and the closed `D-005`. Plus the step 0 owner decisions with their dates, and the open-items table above with each item's state on the day. Not run before approval, by design: the `PERF-002` pass, the smoke on the published version, F-P8-09, and (under its step 0 exception) t16 and A72; each is listed as not run.
+9. Step i, the recorded publication approval (owner). The owner reads the review of h5 and gives a dated approval in words. The approval names each accepted omission of h5, for example: "I approve the publication of build-os@0.2.0, stage <stage-id>, SHA-256 <digest>. I accept that these did not run before this approval: the PERF-002 measurement of 0.2.0 (one pass after publication, step k), the smoke on the published version, the public rollback F-P8-09, and t16 and A72 under my exception of <date>." The agent records it in the evidence as an owner decision with its date. Without it, step j does not happen. If a check failed, the owner rejects the stage instead (`npm stage reject <stage-id>`, 2FA).
+10. Step j, approve the stage (owner, 2FA). Only when all three are true: h1 to h5 are recorded, step i is recorded, and `npm stage list build-os` shows the same stage ID. Then `npm stage approve <stage-id>` (or Approve in npmjs.com account settings > Staged Packages).
+11. Step k, after publication (agent; owner where it says so). From any folder:
+
+    ```sh
+    npm view build-os@0.2.0 version dist.shasum dist.integrity dist.attestations.provenance.predicateType --json
+    npm view build-os dist-tags --json
+    npm pack build-os@0.2.0
+    shasum -a 256 build-os-0.2.0.tgz
+    ```
+
+    In a new empty folder: `npm init -y`, `npm install --ignore-scripts build-os@0.2.0`, `npm audit signatures` (a verified signature and a verified attestation). `latest` is `0.2.0`; if not, the owner runs `npm dist-tag add build-os@0.2.0 latest` (2FA). Then the smoke on the published version on three systems: `gh workflow run buildos-smoke.yml --repo brucewaynedecoy/build-os --ref main -f version=0.2.0` (15 steps on Linux and macOS, 14 on Windows; step 10 runs the printed fix command, which closes F-P8-11 and F-P8-10). Then F-P8-09 (rollback `0.2.0` to `0.1.0` through `npx` on three systems), which also closes t16 and A72 when it passes. Then the `PERF-002` pass, in this order: (1) a new `PERF-002` profile version, written and committed before any measurement; (2) the execution packet rendered from it; (3) the measurement; (4) the review; (5) the package-size decision. Then the evidence record (run IDs, stage ID, publication time, digests, who did each step). Last, in one documentation pull request: remove the status line of the `0.2.0` notes, move the smoke workflow default to `0.2.0` with its test, check each fact below, and tick t9 to t13 only by the checkbox rule.
+
+### Facts That Depend on the 0.2.0 Release (F-P8-05)
+
+| Place | Fact | Today |
+| --- | --- | --- |
+| `README.md`, `toolkits/buildos/README.md`, guide chapters 03, 04, 19, `docs/assets/user/upgrade-an-existing-buildos-project.md` | `npx -y build-os@0.2.0 …`, `npm install -g build-os@0.2.0`, `npm pack build-os@0.2.0`, file name `build-os-0.2.0.tgz` | `0.2.0` is not on npm |
+| `SECURITY.md` How to Check a Release; `RELEASE_NOTES.md` Check the package | The `0.2.0` signature, attestation, SBOM file `buildos-0.2.0.cdx.json`, and the `v0.2.0` ledger entry | No `v0.2.0` entry, tag, or release |
+| `RELEASE_NOTES.md` | The status line; the SD-26 bullet; the F-P9-01 limit | Draft; SD-26 open; F-P9-01 open |
+| `.github/workflows/buildos-smoke.yml` and its test | Default `0.1.0` | Moves to `0.2.0` after publication |
+| `SECURITY.md` Summary and Scan Record | Scans "on 2026-11-24" | The release evidence records the `0.2.0` scans (the release run's `verify` job), as the Scan Record says |
+
+### Orchestrator Decisions (2026-11-27)
+
+The owner's orchestrator decided these on 2026-11-27, after review round 1 of pull request 11. They are orchestrator decisions, not owner decisions; the owner may overrule each one.
+
+1. The smoke before the npm approval (h2): follow-up F-P9-15 is built in a separate pull request before step a, so that the `buildos-smoke` workflow can test a release tarball on Linux, macOS, and Windows before the npm approval. The earlier option B (a manual smoke on one macOS machine) is removed from the runbook. Without F-P9-15, the release does not go to step g.
+2. `PERF-002` for `0.2.0` (h4): one pass on the published `0.2.0` after publication (step k), under a new profile version written and committed before any measurement. Its instrument can only measure a published package, so before approval there is no `0.2.0` performance measurement; the tarball grew from 1,070,295 bytes (173 files) to 1,141,583 bytes (168 files; a clean release-stamped pack of this branch, [Review Round 1 (Pull Request 11)](#review-round-1-pull-request-11-2026-11-27)), so the `PERF-002` profile has expired. The publication review says so (h5), and the owner accepts the omission by name (step i).
+
+### Owner Decisions Needed (0.2.0 Release)
+
+1. The P8 exit gate items of step 0: t25, A71, t17 and A73, t16 and A72, and F-P9-01 with the Human Experience Review. Each one is one owner decision, with its question in the step 0 table. Each reads "owner decision open" on 2026-11-27.
+2. SD-26 (Q1), still open from pull request 10: (A) keep the stop for a system code with a pattern character; (B) read the code as plain text. Recommendation: A (built, and the release notes say so).
+3. Whether to overrule either orchestrator decision above.
+
+The Windows label wording of PE-023 needs no decision unless the owner wants another wording; the recorded wording is `run this in Command Prompt: <command>`.
+
+### Check Results (Version 0.2.0)
+
+From `toolkits/buildos/` unless noted, macOS arm64, Node 26.13.1, npm 11.20.0, Python 3.14.10, on the working tree of this branch before the commit.
+
+| Check | Result |
+| --- | --- |
+| `npm ci --ignore-scripts`; `npm run typecheck`; `npm run build` | exit 0 each |
+| `node dist/buildos.js version --json` | a plain build reports `dev` and `unknown` by design (`scripts/build.ts`). Corrected in review round 1 of pull request 11: a release-stamped build needs both `BUILDOS_RELEASE_VERSION=0.2.0` and `BUILDOS_SOURCE_REVISION=<commit>`; with only the first, it reports `0.2.0` and `source_revision` `unknown` |
+| `npm test` (sandbox off, for the tests that open a local port) | exit 0; 2,890 tests, 2,877 passed, 0 failed, 13 skipped |
+| `node scripts/release-dry-run.ts --allow-dirty` (invented deny list; `osv-scanner` 2.7.1 `darwin_arm64`, release checksum checked) | exit 0, every gate passed: identity, digest (build B equals build A), version `0.2.0`, tests (typecheck; unit 2,566 passed, 0 failed; golden 298 passed, 0 failed), installed (the golden comparison from the installed release-stamped tarball, expecting `0.2.0`: 167 passed, 0 failed), eval (12 of 12), audit (0 at every level), osv (exit 0, 0 findings), deny-list (0 matches, 0 home folder paths, 168 of 168 package files read), sbom (57 components, valid CycloneDX 1.5), provenance (a warning in a dry run, as designed). It never stages |
+| `npm pack --dry-run --json` | `build-os` `0.2.0`, 168 files, 1,141,587 bytes packed, 4,606,451 unpacked, from the working tree before the commit, which was not a clean release-stamped build. Corrected in review round 1 of pull request 11: a clean release-stamped pack of `a577bc9` has 168 files, 1,141,583 bytes packed, 4,606,445 unpacked |
+| `node scripts/check-no-python.ts` | exit 0, no exception (59 files read) |
+| `node test/golden/skills/capture.ts --script <s> --check --python <venv>/bin/python` (openpyxl 3.1.5 and et_xmlfile 2.0.0 from wheels downloaded with `--require-hashes`, SHA-256 equal to `capture-record.json`, in a throwaway virtual environment) | exit 0 each: bulk-extract 35, fitgap 15, azure-boards 11, capability-matrix 20 cases |
+| `node scripts/check-deny-list.mjs --root ../.. --pack .` with the real list, after the build and after the last edit | 0 matches, 0 home folder paths, 168 of 168 package files read |
+| From the repository root: `make-docs project paths validate`; `make-docs check prd` | exit 0 (valid, 0 failing findings); exit 0 (no diagnostics) |
+| `cd guide && node tools/build-guide.mjs` | wrote `BuildOS-Guide.html` from 22 documents |
+
+### Review Round 1 (Pull Request 11, 2026-11-27)
+
+An independent review of head `a577bc9` gave FAIL. The package gates passed; the findings were in the release runbook, the release notes, and `SECURITY.md`. Each is fixed in this branch with docs, plus one test that reads them. No product behaviour, release workflow, `release-candidates.json`, acceptance-criteria text, or gate text changed; A81 stays open. Pull requests 9 and 10 are not merged into `main` on 2026-11-27, so the stack stays as it is.
+
+| Finding | Fix |
+| --- | --- |
+| 1 (blocker): step 0 bypassed the P8 exit gate | Step 0 now needs P8 closure or a dated owner exception that names each open item, with one owner decision and its question each: t25, A71, t17 and A73, t16 and A72, F-P9-01 with the Human Experience Review. Each reads "owner decision open". The open-items table moves the P8 rows to "before step a". The phase files' gate text is unchanged. |
+| 2 (blocker): h5 could claim checks that did not run | h2 has one route, F-P9-15 (orchestrator decision of 2026-11-27), run in the step c window while the dry-run artifact exists, with the comparison against the P6 reviewed output and each difference named; option B is gone, and without F-P9-15 the release does not go to step g. "F-P9-15 merged" is a step 0 precondition. h4 says what runs (the size against `0.1.0`, the `PERF-001` status) and what does not (`PERF-002`, one pass after publication, orchestrator decision of 2026-11-27). h5 lists what ran with run IDs and each item not run; step i's approval names each accepted omission. Step k orders the deferred `PERF-002` work: profile, packet, measurement, review, size decision. |
+| 3 (should-fix): identity and settings | Step 0: anything that merges after the dry run needs a new dry run and review of the new commit; the reviewed commit need not be the merge commit of this pull request. The trusted-publishing paragraph and step f state that no job checks the bypass actors or the release-immutability setting; step f adds the owner's check of both before the draft is published. `SECURITY.md` Release Procedure step 4 has the same check. |
+| 4 (should-fix): release notes | "What is new": `capability-matrix` writes nothing when it stops; a failed write puts every changed file back (exit `5`), or exits `10` and names each file left. "Changed for 0.1.0 users": the `fitgap merge` crash with two marks with no ID exits `4` (SD-11); each file is written whole, and a file that cannot be put back exits `10`. Known limits: the `extract bulk` lock file (SD-09), F-P8-08, F-P9-11, F-P9-12 with F-P9-14, and F-P9-13, one line each. |
+| 5 (should-fix): `SECURITY.md` | "How to Check a Release": the provenance result is what npm gives for a published version; `0.1.0` is the published version today, and the `0.2.0` commands fail until its publication. Release Procedure step 2: the draft release takes the notes extracted from the tag, with the runbook's filter. |
+| Commands | Step b deletes `release-dry-run/<short>` only after the push route. Step c gets `<attempt>` from `gh run view <run> --json attempt`, and each command names its folder (the scanner runs from `toolkits/buildos/`). Step e extracts the notes from the tag at the repository root, checks the nine headings and the dropped status line, and `test/release-notes.test.ts` runs that filter. h1 binds the stage to the run and tag through the `stage` job's provenance record and transparency-log entry, then `npm stage download` and a hash; public `npx` cannot fetch the unapproved version. h3 starts with a disposable git repository and keeps the local `0.2.0` install for the rollback assertion. |
+| Build stamp | A release-stamped local build needs both `BUILDOS_RELEASE_VERSION` and `BUILDOS_SOURCE_REVISION` (`scripts/build.ts`); with only the first, `source_revision` is `unknown`. The Check Results row is corrected. The pack size of that row came from the working tree before the commit; a clean stamped pack of `a577bc9` (below) has 168 files and 1,141,583 bytes, as the reviewer found. |
+
+#### Clean Release-Stamped Pack of a577bc9
+
+In a scratch copy of `a577bc9` (`git archive HEAD`), in `toolkits/buildos/`: `npm ci --ignore-scripts` (exit 0); `BUILDOS_RELEASE_VERSION=0.2.0 BUILDOS_SOURCE_REVISION=a577bc9d92bd23f1331b498fe7a8daa9a495fd82 npm run build` (exit 0); `node dist/buildos.js version --json` reports `0.2.0` and `a577bc9d92bd23f1331b498fe7a8daa9a495fd82`; `npm pack --json`: `build-os-0.2.0.tgz`, 168 files, 1,141,583 bytes, 4,606,445 unpacked, SHA-256 `acd3c844cff243ab1db2d74e6ea30e1d8934bebafea63966d0f1d63b731177f6`. The packed `dist/buildos.js` reports the same version and source revision. This is a local pack, not the release tarball: the reference build is the dry run on the GitHub runner (step b).
+
+#### Rehearsal of Step h3 (2026-11-27)
+
+A rehearsal, not the release check: it ran on the local pack above (`<tgz>`), not on the dry-run tarball. macOS arm64, Node 26.13.1, npm 11.20.0, `sh`, a new npm cache, in a new scratch folder with the project folder `proj`; `command -v buildos` printed nothing. Each command ran from `proj`, and each exited 0. The `0.1.0` commands fetched `build-os@0.1.0` from the public registry.
+
+| Step | Command | Result |
+| --- | --- | --- |
+| Setup | `git init -q -b main`, then a local user name and email | A disposable git repository |
+| Setup | `npx -y build-os@0.1.0 init --skip-make-docs` | `.os/manifest.json` has `"buildos_version": "0.1.0"` |
+| Guide step 1 | `git add -A && git commit -q -m "Before BuildOS 0.2.0"`; `mkdir ../buildos-upgrade`; `mkdir ../buildos-upgrade/backup ../buildos-upgrade/old ../buildos-upgrade/new`; `cp .os/manifest.json ../buildos-upgrade/backup/manifest.json`; `cp -R .os/skills ../buildos-upgrade/backup/os-skills` | Done |
+| Guide step 2 | `npx -y build-os@0.1.0 init --root ../buildos-upgrade/old --skip-make-docs`; `npx -y --package=<tgz> -- buildos init --root ../buildos-upgrade/new --skip-make-docs` (in place of the `0.2.0` line) | Both copies made |
+| Guide step 3 | The five `git --no-pager diff --no-index --stat ../buildos-upgrade/old/...` commands | Each printed nothing (no own changes) |
+| Guide step 4 | The `rm -rf` and the five `cp` commands, as written | Done |
+| Guide step 6 | The manifest edit (with `sed`), then `npm install --offline --ignore-scripts --no-save --prefix . <tgz>` | `"buildos_version": "0.2.0"`; `node_modules/build-os` is `0.2.0` |
+| Guide step 7 | `.os/scripts/buildos version`; `.os/scripts/buildos help`; `.os/scripts/buildos export azure-boards adapters`; `.os/scripts/buildos capability-matrix --help`; the five diffs against `../buildos-upgrade/new/` | `version: 0.2.0`; `help` lists `extract`, `fitgap`, `export`, and `capability-matrix`; the adapters list holds `dynamics-365-ce`; the help exits 0; each diff printed nothing |
+| Rollback steps 1 to 3 | The two `cp` commands of step 1, then the `rm -rf` and four `cp -R` commands of step 2, as written (no app folder, so step 3 has nothing to do) | `"buildos_version": "0.1.0"` |
+| Rollback step 4 | Not done, on purpose | `node -p "require('./node_modules/build-os/package.json').version"` prints `0.2.0` |
+| Rollback step 5 | `.os/scripts/buildos version`; the diffs against `../buildos-upgrade/backup/os-skills/` for the four skills and `AGENTS.md` | `version: 0.1.0`: with the pin at `0.1.0`, the wrapper refused the local `0.2.0` install and ran `0.1.0` through `npx`; each diff printed nothing |
+| End | `git status --porcelain` | Printed nothing: the project is back at its committed state (`node_modules/` is ignored by the `.gitignore` that `init` wrote) |
+
+#### Checks (Review Round 1, Pull Request 11)
+
+From `toolkits/buildos/` unless noted, macOS arm64, Node 26.13.1, npm 11.20.0.
+
+| Check | Result |
+| --- | --- |
+| `npm ci --ignore-scripts`; `npm run typecheck`; `npm run build` | exit 0 each |
+| `node --test test/release-notes.test.ts` | 2 passed, 0 failed. With `## 0.1.0` or `### Roll back` renamed in a scratch edit of the notes, 1 failed each time (the edit was undone) |
+| `npm test` (sandbox off, for the tests that open a local port) | exit 0; 2,892 tests, 2,879 passed, 0 failed, 13 skipped |
+| `node scripts/check-deny-list.mjs --root ../.. --pack .` with the real list, after the build | 0 matches, 0 home folder paths, 168 of 168 package files read |
+| From the repository root: `make-docs project paths validate`; `make-docs check prd` | exit 0 (valid, 0 failing findings); exit 0 (no diagnostics) |
+| The notes filter of step e on the working-tree notes | The nine `###` headings in order, no `## ` line, no status line |
+
+No guide source changed, so the guide was not rebuilt.
+
+## Review Round 2 (Pull Request 11, 2026-11-27)
+
+Review round 2 of pull request 11 gave four findings on the runbook and the notes. The orchestrator fixed them; they are text only.
+
+| Finding | Disposition |
+| --- | --- |
+| 1 (blocker) step h1 asked the owner to read the tarball's SHA-512 in the transparency-log entry, which does not hold it (the entry has envelope and payload hashes and the signing certificate) | Step h1 now hashes the stage download, looks up that SHA-512 in the log's index, requires the entry that the `stage` job's log names, and reads the workflow, tag, and run in its certificate. Verified on `0.1.0` (log index 4134502337, run 45894295344). |
+| 2 (should-fix) the rule "anything that merges needs a new dry run" also covered the required ledger merge of step d | Step 0 exempts that one reviewed ledger-only merge. |
+| 3 (should-fix) the runbook said an early npm approval "cannot happen" | The runbook now says that step j is an owner-enforced gate: after step g nothing technical stops an approval, and npm documents no auto-approval and no stage expiry. |
+| 4 (should-fix) the release notes said `capability-matrix` exits `10` only when it cannot put a file back | The notes now say: when the rollback or the cleanup is incomplete (a file that cannot be put back, or a temporary file or new folder that cannot be removed). |
+
+Reviewer's own run on `a4f3d9c`: install, typecheck, and build passed; `npm test` 2,892 tests, 2,879 passed, 13 skipped, 0 failed; the notes-extraction tests passed and failed as expected after a heading change on a scratch copy; hygiene scans found 0 matches. The five owner decisions of step 0 and A81 stay open.

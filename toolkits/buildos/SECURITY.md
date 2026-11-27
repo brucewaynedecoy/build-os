@@ -20,7 +20,7 @@ The rules behind this document are in PRD 20 BuildOS CLI and Distribution (`docs
 
 ## How to Check a Release
 
-These steps use the version `0.1.0` as the example. Use the version you install. They need Node.js 24 or newer and network access to the npm registry. The commands were checked with npm 11.19.1, the npm that comes with Node.js 24.22.3. `npm audit signatures` checks provenance attestations only with a current npm, so update npm first when your npm is older.
+These steps use the version `0.2.0` as the example. Use the version you install. They need Node.js 24 or newer and network access to the npm registry. The commands were checked with npm 11.19.1, the npm that comes with Node.js 24.22.3. `npm audit signatures` checks provenance attestations only with a current npm, so update npm first when your npm is older.
 
 ### 1. Check the registry signature and the provenance
 
@@ -30,7 +30,7 @@ npm checks signatures and provenance for installed packages, so install the pack
 mkdir buildos-check
 cd buildos-check
 npm init -y
-npm install --ignore-scripts build-os@0.1.0
+npm install --ignore-scripts build-os@0.2.0
 npm audit signatures
 ```
 
@@ -39,27 +39,27 @@ The output must say that the package has a verified registry signature and a ver
 Then read the provenance statement:
 
 ```sh
-npm view build-os@0.1.0 dist.attestations.provenance.predicateType
+npm view build-os@0.2.0 dist.attestations.provenance.predicateType
 ```
 
-It prints `https://slsa.dev/provenance/v1`. The npm package page shows the same provenance: the source repository `github.com/brucewaynedecoy/build-os`, the workflow `.github/workflows/buildos-release.yml`, and the commit of the release tag `v0.1.0`. npm makes provenance only for a public repository; the release workflow stops before staging when the repository is not public.
+For a published version it prints `https://slsa.dev/provenance/v1`, and the npm package page shows the same provenance: the source repository `github.com/brucewaynedecoy/build-os`, the workflow `.github/workflows/buildos-release.yml`, and the commit of the release tag. Today the published version is `0.1.0` (`npm view build-os@0.1.0 dist.attestations.provenance.predicateType` prints that value, and its page names the tag `v0.1.0`). `0.2.0` is not published yet: until it is, npm has no `build-os@0.2.0` and these commands for `0.2.0` fail. After its publication they must give the same result, with the tag `v0.2.0`. npm makes provenance only for a public repository; the release workflow stops before staging when the repository is not public.
 
 ### 2. Check the tarball digest
 
 Download the published tarball and compute its SHA-256:
 
 ```sh
-npm pack build-os@0.1.0
-shasum -a 256 build-os-0.1.0.tgz
+npm pack build-os@0.2.0
+shasum -a 256 build-os-0.2.0.tgz
 ```
 
-On Linux, `sha256sum build-os-0.1.0.tgz` gives the same value. On Windows, run `certutil -hashfile build-os-0.1.0.tgz SHA256` in Command Prompt.
+On Linux, `sha256sum build-os-0.2.0.tgz` gives the same value. On Windows, run `certutil -hashfile build-os-0.2.0.tgz SHA256` in Command Prompt.
 
-The value must equal `tarball_sha256` in the entry for the tag `v0.1.0` in `toolkits/buildos/release-candidates.json` in the BuildOS repository, and the `SHA-256` hash of `metadata.component` in the SBOM. The entry also names the reviewed source commit and the exact build environment (runner image, Node.js, and npm versions). The release workflow stages that exact file (the tarball attached to the release), so the registry copy has the same bytes.
+The value must equal `tarball_sha256` in the entry for the tag `v0.2.0` in `toolkits/buildos/release-candidates.json` in the BuildOS repository, and the `SHA-256` hash of `metadata.component` in the SBOM. The entry also names the reviewed source commit and the exact build environment (runner image, Node.js, and npm versions). The release workflow stages that exact file (the tarball attached to the release), so the registry copy has the same bytes.
 
 ### 3. Read the SBOM
 
-Each GitHub Release has the CycloneDX 1.5 SBOM as the file `buildos-<version>.cdx.json`, next to the tarball `build-os-<version>.tgz`, for example `buildos-0.1.0.cdx.json` on the release page for the tag `v0.1.0` (`https://github.com/brucewaynedecoy/build-os/releases/tag/v0.1.0`). How to read it:
+Each GitHub Release has the CycloneDX 1.5 SBOM as the file `buildos-<version>.cdx.json`, next to the tarball `build-os-<version>.tgz`, for example `buildos-0.2.0.cdx.json` on the release page for the tag `v0.2.0` (`https://github.com/brucewaynedecoy/build-os/releases/tag/v0.2.0`). How to read it:
 
 - `metadata.component` is the package itself: `hashes` holds the tarball SHA-256, and the property `buildos:source_revision` holds the source commit.
 - A component with scope `required` is code in the package. Its property `buildos:delivery` says how it ships: bundled into `dist/buildos.js`, or Go code ported to TypeScript and bundled (no Go code ships).
@@ -70,7 +70,7 @@ Each GitHub Release has the CycloneDX 1.5 SBOM as the file `buildos-<version>.cd
 To list the code in the package:
 
 ```sh
-node -e 'const s=require("./buildos-0.1.0.cdx.json");for(const c of s.components)if(c.scope==="required")console.log(c.name,c.version)'
+node -e 'const s=require("./buildos-0.2.0.cdx.json");for(const c of s.components)if(c.scope==="required")console.log(c.name,c.version)'
 ```
 
 ```text
@@ -110,9 +110,15 @@ A prepare or release run refuses a planted failure.
 GitHub's procedure for an immutable release is: create the release as a draft, attach every asset to the draft, then publish it. After that, the release's tag and assets cannot change. The BuildOS procedure follows it:
 
 1. The maintainer sets the version, makes a dry run on the reference runner, inspects its tarball, and commits the `reviewed` entry to `toolkits/buildos/release-candidates.json` (header of `scripts/release-candidate.ts`).
-2. The maintainer creates the tag `v<version>` on that commit (on the default branch) and a draft GitHub Release for it, for example `gh release create v0.1.0 --draft --verify-tag --title "BuildOS 0.1.0" --notes-file toolkits/buildos/RELEASE_NOTES.md`.
-3. The maintainer runs the workflow from the default branch: Actions > buildos-release > Run workflow, purpose `prepare`, tag `v0.1.0`, candidates `committed`, plant `none` (or `gh workflow run buildos-release.yml --ref main -f purpose=prepare -f tag=v0.1.0 -f candidates=committed -f plant=none`). Every gate runs, then the real deny list, then `attach`.
-4. The maintainer reviews the draft: downloads `build-os-<version>.tgz` and `buildos-<version>.cdx.json` from it, checks that the tarball SHA-256 equals the reviewed entry, and reads the job summary. Then the maintainer publishes the draft. With release immutability on, its tag and assets are now fixed.
+2. The maintainer creates the tag `v<version>` on that commit (on the default branch) and a draft GitHub Release for it. The release body is the section of that version only, taken from the notes file at the tag, without the draft status line. For example, from the repository root:
+
+   ```sh
+   git show v0.2.0:toolkits/buildos/RELEASE_NOTES.md | awk '/^## 0\.2\.0$/{p=1;next} /^## /{p=0} p' | grep -v '^Status: draft' > notes-0.2.0.md
+   gh release create v0.2.0 --draft --verify-tag --title "BuildOS 0.2.0" --notes-file notes-0.2.0.md
+   ```
+
+3. The maintainer runs the workflow from the default branch: Actions > buildos-release > Run workflow, purpose `prepare`, tag `v0.2.0`, candidates `committed`, plant `none` (or `gh workflow run buildos-release.yml --ref main -f purpose=prepare -f tag=v0.2.0 -f candidates=committed -f plant=none`). Every gate runs, then the real deny list, then `attach`.
+4. The maintainer reviews the draft: downloads `build-os-<version>.tgz` and `buildos-<version>.cdx.json` from it, checks that the tarball SHA-256 equals the reviewed entry, and reads the job summary. No job can read two settings (see [Release Trust Boundary](#release-trust-boundary)), so the maintainer checks them now: release immutability is on (`gh api repos/brucewaynedecoy/build-os/immutable-releases` prints `"enabled": true`), and the rulesets `main` and `release tags` are Active with only the bypass actors of [Sole Maintainer or Two Maintainers](#sole-maintainer-or-two-maintainers) (Settings > Rules > Rulesets, each ruleset's Bypass list). Then the maintainer publishes the draft. With release immutability on, its tag and assets are now fixed.
 5. The release run starts. Its `verify` job rebuilds the tagged commit on the reference runner and must get the reviewed digest again. When it reaches `stage`, GitHub waits: a required reviewer of the environment `buildos-npm-stage` approves the job (Actions > the run > Review deployments > Approve and deploy). Only then does the job start and get its OIDC token.
 6. The `stage` job checks the rulesets, downloads the tarball and the SBOM from the published release, checks both, and stages the tarball on npm. The maintainer approves the stage on npm with two-factor authentication, only after the recorded publication approval.
 

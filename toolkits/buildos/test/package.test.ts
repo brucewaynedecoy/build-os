@@ -45,7 +45,7 @@ const ENTRIES = ["dist/buildos.js", ...LEGACY.map(([name]) => `dist/${name}.js`)
 /**
  * W1 R7 P8 pin-first review round 2, finding 4: the staged package and its
  * bundle have this deliberate fixture version, whatever the checkout's
- * package.json says (0.0.0-dev before the release bump, 0.1.0 after it).
+ * package.json says (0.0.0-dev before the release bump, the release version such as 0.2.0 after it).
  * Every pin and version assertion below comes from it.
  */
 const FIXTURE_VERSION = "0.0.0-fixture.1";
@@ -477,7 +477,7 @@ describe("project wrappers with real npm installs (pin-first review rounds 1 and
 
   // Finding 3: after the release bump, package.json says the release while a plain `npm run build` reports dev.
   describe("finding 3: a package.json version that differs from the bundle's own version", () => {
-    const RELEASE = "0.1.0";
+    const RELEASE = "0.2.0";
     let devBuild: string;
     let releaseTarball: string;
     before(

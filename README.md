@@ -11,7 +11,7 @@ You need Node.js 24 or newer. Nothing else: no build step, no Python, no manual 
 Set up a project. In the project folder, run:
 
 ```sh
-npx -y build-os@0.1.0 init
+npx -y build-os@0.2.0 init
 ```
 
 `buildos init` asks one question first: set up the optional Make Docs companion too? When no one can answer in the terminal (as with most agents), it stops with exit code `10`, changes nothing, and prints the question and the two exact commands to run, one for each answer. Then it adds the BuildOS files next to the files that are already there. In a new setup it does not replace your files: when one of its files would replace one of yours, it stops with exit code `10` and changes nothing. In your `AGENTS.md`, `CLAUDE.md`, and `.gitignore` it adds only its own marked section. Adopting a project that the earlier Go tools set up replaces their wrapper and skill files; the [guide](guide/content/04-install-and-configure-your-instance.md) has the details and the limits of its undo.
@@ -32,7 +32,7 @@ Read next:
 - The [BuildOS user guide](guide/README.md), starting with [Install and configure your instance](guide/content/04-install-and-configure-your-instance.md). It covers setup without registry access, updates, and rollback.
 - The npm package page text: [`toolkits/buildos/README.md`](toolkits/buildos/README.md).
 - For security reviewers: [`toolkits/buildos/SECURITY.md`](toolkits/buildos/SECURITY.md), with every outside package, the SBOM, provenance, and the release checks.
-- The [`0.1.0` release notes](toolkits/buildos/RELEASE_NOTES.md).
+- The [release notes](toolkits/buildos/RELEASE_NOTES.md) for `0.2.0` and `0.1.0`.
 
 ## Repository Model
 
