@@ -238,10 +238,13 @@ class Promotion {
   readonly layout: BuildOsLayout;
   readonly hooks: PromoteHooks;
   readonly now: () => Date;
+  /** F-P8-11 review round 3 (finding 1): true when the root is the current folder, so a root-relative path names the file there. */
+  readonly rootIsCurrentFolder: boolean;
 
   constructor(context: DesignContext, repoRootFlag: string) {
     const probe = new GoFiles(context, ".");
     this.files = new GoFiles(context, repoRootFlag === "" ? "." : probe.absolute(repoRootFlag));
+    this.rootIsCurrentFolder = repoRootFlag === "" || probe.absolute(repoRootFlag) === probe.absolute(".");
     this.layout = BuildOsLayout.detect(this.files);
     this.now = context.now ?? (() => new Date());
     this.hooks = {
@@ -461,7 +464,7 @@ function requireDesignRouterInputs(p: Promotion, promptFile: string): Map<InputK
       const displayPath = p.layout.rel(rel);
       const got = read(rel);
       if ("data" in got) {
-        if (goTrimSpaceBytes(got.data).length === 0) throw makeDocsInputStop(p, label, displayPath, "empty");
+        if (goTrimSpaceBytes(got.data).length === 0) throw makeDocsInputStop(p, label, displayPath, "empty", p.rootIsCurrentFolder ? undefined : p.layout.path(rel));
         inputs.set(key, { label, rel: displayPath, source: current === undefined ? "router" : "make-docs-2.0.9", body: got.data });
         continue;
       }
@@ -523,7 +526,7 @@ const COPIED_PROJECT_NOTE = 'If this project folder was copied or moved, Make Do
  * without a `make-docs` install), written for `sh`, or for Command Prompt on
  * Windows, as the message says.
  */
-function makeDocsInputStop(p: Promotion, label: string, displayPath: string, state: "missing" | "empty"): InputError {
+function makeDocsInputStop(p: Promotion, label: string, displayPath: string, state: "missing" | "empty", file?: string): InputError {
   const contentRoot = p.layout.systemRoot();
   const missing =
     state === "missing"
@@ -551,7 +554,10 @@ function makeDocsInputStop(p: Promotion, label: string, displayPath: string, sta
   }
   const setup = npxMakeDocsDisplay(contentRoot, p.files.osPlatform);
   const run = runWords(p.files.osPlatform, setup, "run this");
-  const first = state === "empty" ? `delete ${displayPath}, then ` : "";
+  // F-P8-11 review round 3 (finding 1): with --repo-root, the file to delete is the one under the resolved
+  // root (`file`), not `displayPath`, which the reader would find in the current folder. With no --repo-root,
+  // the current folder is the root, so `displayPath` names that file.
+  const first = state === "empty" ? `delete ${file ?? displayPath}, then ` : "";
   const [status, todo, code] =
     state === "empty"
       ? [setUp ? "" : "Make Docs is not set up in this folder.", "To get the Make Docs file back", "make_docs_input_empty"]

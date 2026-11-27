@@ -119,9 +119,12 @@ export const LEGACY_VALIDATOR_PATH = ".os/scripts/validate_config.py";
  * The wrapper checks the folder it is run in, so the note names the project
  * folder (F-P8-11 review round 2, finding 1): an adoption with --root from
  * another folder must not send the adopter to validate the wrong folder.
+ * A dry run only plans the wrapper, so the command is for after adoption
+ * completes (F-P8-11 review round 3, finding 2): one wording, true for the
+ * dry run and the applied run.
  */
 export function legacyValidatorNote(root: string): string {
-  return `${LEGACY_VALIDATOR_PATH} is the old Python config check. BuildOS no longer uses it: in the project folder ${root}, run .os/scripts/buildos validate instead (on Windows, .os\\scripts\\buildos.cmd validate). Where .os/scripts/AGENTS.md or your own notes name the old script, use that command instead. BuildOS left the file as it is. You can delete it.`;
+  return `${LEGACY_VALIDATOR_PATH} is the old Python config check. BuildOS no longer uses it. After adoption completes, in the project folder ${root}, run .os/scripts/buildos validate instead (on Windows, .os\\scripts\\buildos.cmd validate). Where .os/scripts/AGENTS.md or your own notes name the old script, use that command instead. BuildOS left the file as it is. You can delete it.`;
 }
 
 export interface PlanInput {

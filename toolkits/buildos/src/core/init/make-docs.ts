@@ -57,7 +57,8 @@ export function npxMakeDocsDisplay(target: string, platform: string): string {
 
 export type MakeDocsOutcome =
   | { status: "set_up"; command: string }
-  | { status: "failed"; command: string; reason: string; detail?: string };
+  /** `started`: whether a Make Docs process started (finished or not); false for a launch failure (F-P8-11 review round 3, finding 3). */
+  | { status: "failed"; command: string; reason: string; detail?: string; started: boolean };
 
 /** Make Docs setup can download Make Docs first, so it gets ten minutes. */
 const SETUP_TIMEOUT_MS = 10 * 60 * 1000;
@@ -65,10 +66,10 @@ const SETUP_TIMEOUT_MS = 10 * 60 * 1000;
 export function runMakeDocsSetup(port: ProcessPort, target: string, platform: string): MakeDocsOutcome {
   const command = makeDocsCommand(port, target, platform);
   if (command === undefined) {
-    return { status: "failed", command: npxMakeDocsDisplay(target, platform), reason: "Make Docs could not start, because this computer has neither make-docs nor npx" };
+    return { status: "failed", command: npxMakeDocsDisplay(target, platform), reason: "Make Docs could not start, because this computer has neither make-docs nor npx", started: false };
   }
   const result = port.run(command.program, command.args, { cwd: target, timeoutMs: SETUP_TIMEOUT_MS });
-  if (result.failure !== undefined) return { status: "failed", command: command.display, reason: "Make Docs could not start or finish", detail: result.failure };
+  if (result.failure !== undefined) return { status: "failed", command: command.display, reason: "Make Docs could not start or finish", detail: result.failure, started: result.started !== false };
   const status = setupStatus(result.stdout);
   if (result.exitCode === 0 && status === "complete") return { status: "set_up", command: command.display };
   const detail = errorDetail(result.stderr) ?? (status === undefined ? undefined : `setup status: ${status}`);
@@ -77,6 +78,7 @@ export function runMakeDocsSetup(port: ProcessPort, target: string, platform: st
     command: command.display,
     reason: result.exitCode === 0 ? "Make Docs did not finish its setup" : `Make Docs stopped with exit code ${result.exitCode === null ? "none" : String(result.exitCode)}`,
     ...(detail === undefined ? {} : { detail }),
+    started: true,
   };
 }
 

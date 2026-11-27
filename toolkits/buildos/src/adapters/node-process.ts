@@ -67,14 +67,14 @@ export function cmdQuote(arg: string): string | undefined {
 }
 
 export function runProgram(program: string, args: readonly string[], options: { cwd: string; timeoutMs?: number }, env: NodeJS.ProcessEnv): ProcessResult {
-  if (refusesBuildos(program)) return { exitCode: null, stdout: "", stderr: "", failure: "the BuildOS CLI never starts itself" };
+  if (refusesBuildos(program)) return { exitCode: null, stdout: "", stderr: "", failure: "the BuildOS CLI never starts itself", started: false };
   let file = program;
   let argv = [...args];
   let verbatim = false;
   if (WINDOWS && /^\.(?:cmd|bat)$/i.test(extname(program))) {
     const quoted = [program, ...args].map(cmdQuote);
     if (quoted.some((q) => q === undefined)) {
-      return { exitCode: null, stdout: "", stderr: "", failure: "a path holds a character that Windows cmd.exe cannot pass safely (%, !, or a quote)" };
+      return { exitCode: null, stdout: "", stderr: "", failure: "a path holds a character that Windows cmd.exe cannot pass safely (%, !, or a quote)", started: false };
     }
     file = join(env["SystemRoot"] ?? env["SYSTEMROOT"] ?? "C:\\Windows", "System32", "cmd.exe");
     argv = ["/d", "/s", "/c", `"${quoted.join(" ")}"`];
@@ -92,7 +92,14 @@ export function runProgram(program: string, args: readonly string[], options: { 
   });
   if (result.error !== undefined) {
     const code = (result.error as NodeJS.ErrnoException).code;
-    return { exitCode: null, stdout: result.stdout ?? "", stderr: result.stderr ?? "", failure: code === "ETIMEDOUT" ? "it took too long and was stopped" : `it could not start (${code ?? result.error.message})` };
+    // F-P8-11 review round 3 (finding 3): Node gives pid 0 when the program never started (ENOENT, EACCES); a timeout has a real pid.
+    return {
+      exitCode: null,
+      stdout: result.stdout ?? "",
+      stderr: result.stderr ?? "",
+      failure: code === "ETIMEDOUT" ? "it took too long and was stopped" : `it could not start (${code ?? result.error.message})`,
+      ...(result.pid ? {} : { started: false as const }),
+    };
   }
   if (result.status === null) return { exitCode: null, stdout: result.stdout, stderr: result.stderr, failure: `it was stopped by signal ${String(result.signal)}` };
   return { exitCode: result.status, stdout: result.stdout, stderr: result.stderr };

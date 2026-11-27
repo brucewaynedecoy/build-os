@@ -343,13 +343,20 @@ export interface ClashResult extends StoppedResult {
 
 /** The first words of a stop: "Nothing was changed." only when Make Docs did not run. */
 function stopPrefix(makeDocs: MakeDocsReport | undefined): string {
-  if (makeDocs === undefined || makeDocs.status === "skipped" || makeDocs.status === "not_started") return "Nothing was changed.";
-  return makeDocs.status === "set_up" ? "Make Docs was set up, but BuildOS changed nothing." : "Make Docs ran but did not finish its setup, and BuildOS changed nothing.";
+  if (!makeDocsRan(makeDocs)) return "Nothing was changed.";
+  return makeDocs?.status === "set_up" ? "Make Docs was set up, but BuildOS changed nothing." : "Make Docs ran but did not finish its setup, and BuildOS changed nothing.";
 }
 
-/** True when Make Docs ran in this run (set up, or ran and did not finish): a retry must not run it a second time. */
+/**
+ * True when Make Docs ran in this run (set up, or a process started and did
+ * not finish): a retry must not run it a second time. F-P8-11 review round
+ * 3 (finding 3): a launch failure (no process started) is not a run, so its
+ * retry keeps the adopter's own command, with --make-docs. The three states:
+ * not requested (no report, or skipped) and launch failure give `SAME_INIT`;
+ * a started process gives `SAME_INIT_AFTER_MAKE_DOCS`.
+ */
 export function makeDocsRan(makeDocs: MakeDocsReport | undefined): boolean {
-  return makeDocs !== undefined && (makeDocs.status === "set_up" || makeDocs.status === "failed");
+  return makeDocs !== undefined && (makeDocs.status === "set_up" || (makeDocs.status === "failed" && makeDocs.started));
 }
 
 /** The retry words after Make Docs ran (F-P8-11 review round 2, finding 2). */
@@ -528,7 +535,8 @@ export type MakeDocsReport =
   | { choice: "not_decided"; status: "not_started"; note: string }
   | { choice: "yes"; status: "not_started" | "set_up"; command: string }
   | { choice: "no"; status: "skipped"; later: string; later_command?: string }
-  | { choice: "yes"; status: "failed"; reason: string; detail?: string; tip?: string; retry_note?: string; retry_command: string };
+  /** `started`: whether a Make Docs process started (F-P8-11 review round 3, finding 3); false for a launch failure, where Make Docs did not run. */
+  | { choice: "yes"; status: "failed"; reason: string; detail?: string; tip?: string; retry_note?: string; retry_command: string; started: boolean };
 
 /**
  * Shown when Make Docs failed and the folder already had its own root
@@ -607,6 +615,7 @@ export function makeDocsReport(outcome: MakeDocsOutcome | "skipped", command: st
     ...(outcome.detail === undefined ? {} : { detail: outcome.detail }),
     ...(blocked ? { retry_note: MAKE_DOCS_RETRY_NOTE } : {}),
     retry_command: outcome.command,
+    started: outcome.started,
   };
 }
 
@@ -682,7 +691,7 @@ export function failedResult(prepared: PreparedInit, why: string, notRestored: N
       ? "BuildOS could not finish its setup. It undid its own changes, but it could not make sure that every undo was saved to disk."
       : "BuildOS could not finish its setup, and it could not undo all of its own changes.";
   if (makeDocs?.status === "set_up") summary += " Make Docs was set up before this, and it stays set up.";
-  else if (makeDocs?.status === "failed") summary += " Make Docs ran before this, but it did not finish its setup.";
+  else if (makeDocs?.status === "failed") summary += makeDocs.started ? " Make Docs ran before this, but it did not finish its setup." : " Make Docs could not start before this.";
   const tip = undone
     ? `Fix the problem shown in "Why", then ${sameInit(makeDocs)}.`
     : onlyUnsure

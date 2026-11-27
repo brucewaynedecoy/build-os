@@ -93,7 +93,7 @@ describe("finding 1: the adoption note names the project folder the wrapper must
       const result = await init(elsewhere, ["--root", project, "--skip-make-docs", ...(json ? ["--json"] : [])]);
       assert.equal(result.exit, 0, shape(result.stdout));
       const note = legacyValidatorNote(project);
-      assertIncludes(note, `in the project folder ${project}, run .os/scripts/buildos validate instead`);
+      assertIncludes(note, `After adoption completes, in the project folder ${project}, run .os/scripts/buildos validate instead`);
       assert.ok(!note.includes(elsewhere), "the note does not name the current folder");
       if (json) {
         assert.equal(result.json!.root, project);
@@ -112,7 +112,7 @@ describe("finding 2: after Make Docs ran, every retry advice of init carries the
     assert.equal(sameInit(), SAME_INIT);
     assert.equal(sameInit({ choice: "no", status: "skipped", later: "x" }), SAME_INIT);
     const setUp: MakeDocsReport = { choice: "yes", status: "set_up", command: "make-docs setup" };
-    const failed: MakeDocsReport = { choice: "yes", status: "failed", reason: "r", retry_command: "make-docs setup" };
+    const failed: MakeDocsReport = { choice: "yes", status: "failed", reason: "r", retry_command: "make-docs setup", started: true };
     for (const report of [setUp, failed]) {
       assert.equal(sameInit(report), SAME_INIT_AFTER_MAKE_DOCS);
       assert.equal(retryAdvice("Move it away. Then run the same init command again.", report), `Move it away. Then r${SAME_INIT_AFTER_MAKE_DOCS.slice(1)}.`);

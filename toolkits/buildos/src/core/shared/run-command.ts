@@ -11,9 +11,13 @@
  * run: the copy fails the same way later, also with the setting off and
  * through the project wrapper, until it is removed (`npm cache npx ls`, then
  * `npm cache npx rm <key>`), while a copy cached with its link runs with
- * `bin-links=false` too. The project wrapper (`.os/scripts/buildos`,
- * `.os\scripts\buildos.cmd`) turns bin links on for its own `npx` run, so
- * it runs the same arguments when no such copy is cached.
+ * `bin-links=false` too. After the removal, the next fetch must have bin
+ * links on, or it caches a bad copy again (F-P8-11 review round 3, finding
+ * 4): `npm_config_bin_links=true` in front of the command for that one run,
+ * or the same arguments after the project wrapper (`.os/scripts/buildos`),
+ * which turns bin links on for its own `npx` run. Both routes exit 0 in
+ * `sh` on macOS with npm 11.20.0 and a new cache, and the printed command
+ * then runs with `bin-links=false` set.
  *
  * Edge cases (each has a test in test/run-command.test.ts):
  *

@@ -20,7 +20,6 @@ import {
   makeDocsReport,
   notWritableResult,
   retryAdvice,
-  sameInit,
   plannedResult,
   plannedSharedFiles,
   prepareInit,
@@ -211,7 +210,8 @@ async function runInit(args: readonly string[], context: CommandContext, options
         return out.stopped(changed, { code: "init_changed_during_setup", severity: "error", message: `${changed.summary} ${changed.changed.map((c) => c.path).join(", ")}`, correction: changed.tip });
       }
       const late = unwritableFolders(ready);
-      if (late.length > 0) throw new WriteError(`buildos init cannot write in ${late.map((f) => f.path).join(", ")}: ${late[0]!.error}`, { code: "init_folder_not_writable", correction: `Allow your user to write in these folders, then ${sameInit(report)}.` });
+      // F-P8-11 review round 3 (follow-up note): `failed` applies the retry words (`retryAdvice`) to this correction once.
+      if (late.length > 0) throw new WriteError(`buildos init cannot write in ${late.map((f) => f.path).join(", ")}: ${late[0]!.error}`, { code: "init_folder_not_writable", correction: `Allow your user to write in these folders, then ${SAME_INIT}.` });
     } else {
       report = makeDocsReport("skipped", laterCommand, prepared.plan);
     }

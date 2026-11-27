@@ -14,6 +14,12 @@ export interface ProcessResult {
   stderr: string;
   /** Why the program could not start or finish, in plain words, when it could not. */
   failure?: string;
+  /**
+   * `false` when no process started: the run was refused before a start, or
+   * the system could not start the program (F-P8-11 review round 3, finding
+   * 3). Absent when a process started, whether it finished or not.
+   */
+  started?: false;
 }
 
 export interface ProcessPort {
