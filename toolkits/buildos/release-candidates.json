@@ -14,6 +14,20 @@
       "reviewed_by": "brucewaynedecoy",
       "reviewed_on": "2026-11-26",
       "review_evidence": "Release dry run 45888733182 (brucewaynedecoy/build-os, commit 20f941a) passed. The owner inspected the tarball from that run and accepted it as reviewed: 173 files, 5 bins, no dependencies, offline install and run, real deny-list scan with 0 matches."
+    },
+    {
+      "kind": "reviewed",
+      "version": "0.2.0",
+      "tag": "v0.2.0",
+      "tarball_name": "build-os-0.2.0.tgz",
+      "tarball_sha256": "baf54ebf0717a56bf1bb8ac0391adc7559b16375b90f59f4e4b79865a3f20da0",
+      "source_commit": "6f395c16193dee78f88e68a8b5ac56344e0bf028",
+      "node_version": "v24.22.3",
+      "npm_version": "11.19.1",
+      "runner_image": "ubuntu-24.04",
+      "reviewed_by": "brucewaynedecoy",
+      "reviewed_on": "2026-11-27",
+      "review_evidence": "Release dry run 46020963025 (brucewaynedecoy/build-os, commit 6f395c1) passed. The owner inspected the tarball from that run and accepted it as reviewed: 168 files, 5 bins, no dependencies, offline install and run, real deny-list scan with 0 matches, tarball smoke run 46021631698 passed on Linux, macOS, and Windows."
     }
   ]
 }
