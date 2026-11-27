@@ -7597,3 +7597,24 @@ What npm records was read in the npm of CI, npm 11.19.1 (pacote 21.5.1, cacache 
 So tarball mode has 20 steps on Linux and macOS and 19 on Windows for `0.2.0`, and 18 and 17 for a `0.1.0` tarball (whose step 10 checks the bare form and runs nothing).
 
 The two hand-started `0.1.0` runs of [CI Run (F-P9-15)](#ci-run-f-p9-15) (45980577022 and 45980854201) wrote reports whose `tarball_mode.proves` held the fixed sentence that step 10 ran the printed fix through a shell, while their step 10 ran nothing (finding 2). Their step results stand; that sentence of their reports is wrong, and reports made after this fix do not have it.
+
+### Check Results (Pull Request 12, Review Round 1)
+
+From `toolkits/buildos/` unless noted, macOS arm64, Node 26.13.1, npm 11.20.0, on `385972f`. The npm of CI was read for the cache and npx layouts: npm 11.19.1, packed from the registry, has the same `pacote`, `cacache`, `libnpmexec`, and `@npmcli/run-script` code as npm 11.20.0.
+
+| Check | Result |
+| --- | --- |
+| `npm ci --ignore-scripts`; `npm run typecheck`; `npm run build` | exit 0 each |
+| `npm test` (sandbox off, for the tests that open a local port) | exit 0; 2,924 tests, 2,911 passed, 0 failed, 13 skipped |
+| `npm pack --dry-run --json` | 168 files (unchanged) |
+| `node scripts/check-deny-list.mjs --root ../.. --pack .` with the real list, after the build | 0 matches, 0 home folder paths, 168 of 168 package files read |
+| From the repository root: `make-docs project paths validate`; `make-docs check prd` | exit 0 (valid, 0 failing findings); exit 0 (no diagnostics) |
+| The tarball smoke on a clean release build of `385972f` (`node scripts/release-build.ts --out <folder>`: source revision `385972fdce049326d39e22c95bcde96638229aaa`, not dirty; `build-os-0.2.0.tgz`, 1,143,360 bytes, SHA-256 `4869eed2d6b08e1f983ff5af3bb53905691e20d8e8da21c794037aa300cd5a8b`) | exit 0, passed, 20 of 20 steps; `tarball_mode.proves` holds the four claims, `not_proven` and `not_run` are empty; the npx install and the project install each hold the tarball's 168 files; the cache index holds only `pacote:tarball:file:.../build-os-0.2.0.tgz` entries with the tarball's integrity; the JSON and Markdown reports hold no path of the runner |
+| The tarball smoke on the published `0.1.0` tarball (the `v0.1.0` release asset, SHA-256 `54a8cd01f0165226927a74e5108dd37327323bd3db1905fdb6323c7373b21e8e`, equal to its ledger entry) | exit 0, passed, 18 of 18 steps; `tarball_mode.proves` holds three claims and none about step 10; `not_run` holds "Step 10 ran no printed command: 0.1.0 prints a bare buildos (the known defect F-P8-11, fixed in 0.2.0); the step does not run it" (finding 2 on real output) |
+| The registry smoke: `node scripts/published-smoke.ts --version 0.1.0 --out <folder>` (sandbox off, public registry) | exit 0, passed, 13 of 13 steps |
+
+No `release-dry-run.ts` ran: no release gate reads the smoke scripts or the smoke workflow, and the package file list is unchanged. No guide source changed, so the guide was not rebuilt.
+
+### CI Run (Pull Request 12, Review Round 1)
+
+Pull request 12, head `385972f`. The `buildos-smoke` run [45987081661](https://github.com/brucewaynedecoy/build-os/actions/runs/45987081661) (event `pull_request`) passed every job: `check the inputs`; the registry mode on `0.1.0`, 13 of 13 steps on Linux and macOS and 12 of 12 on Windows; and the tarball mode on a release build of the tree (source `local-pack`, Node 24.22.3, npm 11.19.1), 20 of 20 steps on Linux and macOS and 19 of 19 on Windows. In the downloaded macOS and Windows reports, `passed` is `true`, `tarball_mode.proves` holds the four claims, `not_proven` and `not_run` are empty, step 10's check labels hold `--root '{PROJECT}'` (Windows: `--root "{PROJECT}"`), and no line holds a runner path (finding 3 on real output). The two fetch jobs were skipped, as they are on a pull request; the download by artifact ID (finding 4) runs only in a hand-started run (runbook steps c and h2). `buildos-ci` runs [45987071289](https://github.com/brucewaynedecoy/build-os/actions/runs/45987071289) (push) and [45987081640](https://github.com/brucewaynedecoy/build-os/actions/runs/45987081640) (pull request) passed, with the tests on Linux, macOS, and Windows (the new real-npm and stubbed-script tests included), and `buildos-deny-list` runs 45987071333 (push) and 45987081624 (pull request) passed: 29 checks passed, 5 skipped (the two real-list deny-list jobs, the two fetch jobs, and CodeRabbit). This docs commit changes no file in the smoke workflow's pull request paths, so `buildos-smoke` does not run again on it; run 45987081661 is the smoke of the last code commit.

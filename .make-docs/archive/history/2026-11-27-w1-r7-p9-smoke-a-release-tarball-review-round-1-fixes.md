@@ -34,6 +34,8 @@ Deferred obligations and Unassisted Goal Testing: `not-needed-now`; no `O-###` o
 
 Follow-up (same day): the cache-check step of the report shows each tarball file key of the npm cache by its file name only (`pacote:tarball:file:.../build-os-0.2.0.tgz`), because npm records the path relative to the folder that read the file, and that relative path names runner folders; a failed check still prints the full key, cleaned.
 
+Checks and CI (same day): on `385972f`, `npm test` passed (2,924 tests, 0 failed), a tarball smoke on a clean release build passed 20 of 20 steps on macOS, a tarball smoke on the published `0.1.0` tarball passed 18 of 18 with step 10 reported as not run, and the registry smoke on `0.1.0` passed 13 of 13. In pull request 12, `buildos-smoke` run 45987081661 passed the registry mode on `0.1.0` and the tarball mode on a release build of the tree on Linux and macOS (20 of 20) and Windows (19 of 19), and its reports hold no runner path. See [Check Results (Pull Request 12, Review Round 1)](../../../docs/work/2026-11-23-w1-r7-buildos-node-typescript-cli-rewrite/evidence.md#check-results-pull-request-12-review-round-1).
+
 ## Documentation
 
 ### Project
