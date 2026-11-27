@@ -517,6 +517,8 @@ If you changed `.os/scripts/buildos.cmd` yourself, step 3 replaces your change. 
    npx -y build-os@0.2.1 init --root ..\buildos-upgrade-0.2.1\new --skip-make-docs
    ```
 
+   Without registry access, this command can stop with `ENOTCACHED`. Use the `0.2.1` file from "Install without access to the npm registry" above instead: `npx -y --offline --package <file> -- buildos init --root ../buildos-upgrade-0.2.1/new --skip-make-docs`, where `<file>` is the path of `build-os-0.2.1.tgz` (in Command Prompt, write the folder as `..\buildos-upgrade-0.2.1\new`).
+
 3. **Replace the wrapper:**
 
    ```sh
@@ -555,7 +557,7 @@ The rollback puts back version `0.2.0` and its wrapper. It also puts back the ex
 1. **Put back the version.**
 
    - **You changed only the version** (macOS or Linux, steps 4 and 5 only): you made no backup and no work folder, so copy nothing. In `.os/manifest.json`, change `"buildos_version"` from `"0.2.1"` back to `"0.2.0"`. Change no other field.
-   - **Someone else did the upgrade** (for example, a teammate committed it), or your work folder is not there any more: copy nothing from a work folder. Put back the two files from git: `git checkout <commit>~1 -- .os/manifest.json .os/scripts/buildos.cmd`, where `<commit>` is the commit that changed the version to `0.2.1` (`git log -- .os/manifest.json` lists it).
+   - **Someone else did the upgrade** (for example, a teammate committed it), or your work folder is not there any more: copy nothing from a work folder. Put back the two files from git, from a commit before the upgrade: `git checkout <commit> -- .os/manifest.json .os/scripts/buildos.cmd`. If the upgrade is not committed, `<commit>` is `HEAD`. If it is committed, run `git log --oneline -- .os/manifest.json .os/scripts/buildos.cmd`. It lists the commits that changed the two files, newest first. The commits of the upgrade (one or two) are at the top. `<commit>` is the first commit below them.
    - **You did steps 1 to 5 in this project**, and the work folder that step 1 made is still there: put back the two files from its backup. If you used another name for the work folder, use that name.
 
      ```sh
@@ -570,8 +572,11 @@ The rollback puts back version `0.2.0` and its wrapper. It also puts back the ex
      copy ..\buildos-upgrade-0.2.1\backup\buildos.cmd .os\scripts\buildos.cmd
      ```
 
-2. **Put back the npm install,** in every case: if you installed `0.2.1` with npm (in the project's `node_modules` folder, or a global install), install `0.2.0` there again. This applies also to an install from a file on a machine without registry access: install the `0.2.0` file in the same way. The wrapper does not use a `0.2.1` install for the version `0.2.0`; it runs `0.2.0` through `npx`, and without the registry npm stops with `ENOTCACHED`.
-3. **Check.** `.os/scripts/buildos version` (in Command Prompt: `.os\scripts\buildos.cmd version`) prints `version: 0.2.0`. If you put back the files from the backup: `git --no-pager diff --no-index --stat ../buildos-upgrade-0.2.1/backup/buildos.cmd .os/scripts/buildos.cmd` prints nothing. If you put them back from git: `git --no-pager diff <commit>~1 -- .os/manifest.json .os/scripts/buildos.cmd` prints nothing.
+2. **Put back the npm install,** in every case: if you installed `0.2.1` with npm (in the project's `node_modules` folder, or a global install), install `0.2.0` there again. This applies also to an install from a file on a machine without registry access: install the `0.2.0` file in the same way. The wrapper does not use a `0.2.1` install for the version `0.2.0`; it runs `0.2.0` through `npx`. Without the registry, npm can then stop with `ENOTCACHED`: whether it does depends on what the npm cache holds.
+3. **Check.** In every case, both must be true:
+
+   - `.os/scripts/buildos version` (in Command Prompt: `.os\scripts\buildos.cmd version`) prints `version: 0.2.0`.
+   - `grep F-P9-17 .os/scripts/buildos.cmd` (in Command Prompt: `findstr F-P9-17 .os\scripts\buildos.cmd`) prints nothing. Only the wrapper of `0.2.1` holds this text. If it prints a line, the new wrapper is still there: do step 1 again.
 
 ### From 0.1.0 to 0.2.0
 

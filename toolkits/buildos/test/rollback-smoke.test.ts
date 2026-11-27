@@ -351,13 +351,13 @@ describe("the guide's 0.2.0 to 0.2.1 section (the F-P9-17 wrapper copy)", () => 
     const rollback = part.slice(part.indexOf("#### Roll back from 0.2.1 to 0.2.0"));
     const copy = rollback.indexOf("cp ../buildos-upgrade-0.2.1/backup/manifest.json .os/manifest.json");
     assert.ok(copy > 0);
-    for (const s of ["**You changed only the version**", "**Someone else did the upgrade**", "git checkout <commit>~1 -- .os/manifest.json .os/scripts/buildos.cmd"]) {
+    for (const s of ["**You changed only the version**", "**Someone else did the upgrade**", "git checkout <commit> -- .os/manifest.json .os/scripts/buildos.cmd"]) {
       assert.ok(rollback.indexOf(s) > 0 && rollback.indexOf(s) < copy, s);
     }
     const notesRollback = notes021.slice(notes021.indexOf("### Roll back\n"));
     const notesCopy = notesRollback.indexOf("copy ..\\buildos-upgrade-0.2.1\\backup\\manifest.json .os\\manifest.json");
     assert.ok(notesCopy > 0);
-    for (const s of ["If you changed only the pin (macOS or Linux), you made no backup and no work folder, so copy nothing.", "If someone else did the upgrade", "git checkout <commit>~1 -- .os/manifest.json .os/scripts/buildos.cmd"]) {
+    for (const s of ["If you changed only the pin (macOS or Linux), you made no backup and no work folder, so copy nothing.", "If someone else did the upgrade", "git checkout <commit> -- .os/manifest.json .os/scripts/buildos.cmd"]) {
       assert.ok(notesRollback.indexOf(s) > 0 && notesRollback.indexOf(s) < notesCopy, s);
     }
     // An offline npm install must go back to 0.2.0 too, in every case.
@@ -373,6 +373,63 @@ describe("the guide's 0.2.0 to 0.2.1 section (the F-P9-17 wrapper copy)", () => 
     }
     assert.ok(part.includes("`git --no-pager diff --no-index ../buildos-upgrade-0.2.1/new/.os/scripts/buildos.cmd .os/scripts/buildos.cmd` shows the full difference"));
     assert.ok(notes021.includes("`git --no-pager diff --no-index ..\\buildos-upgrade-0.2.1\\new\\.os\\scripts\\buildos.cmd .os\\scripts\\buildos.cmd`, and make sure that it shows only your own changes"));
+  });
+
+  // Review round 2 of pull request 17, findings 1, 2, and 4.
+  const between = (doc: string, from: string, to: string) => {
+    const a = doc.indexOf(from);
+    const b = doc.indexOf(to, a + from.length);
+    assert.ok(a >= 0 && b > a, `${from} ... ${to}`);
+    return doc.slice(a, b);
+  };
+  const notesRollbackText = notes021.slice(notes021.indexOf("### Roll back\n"));
+
+  it("the git rollback restores both files from a commit before the whole upgrade, HEAD when it is not committed, in the guide and the notes", () => {
+    for (const doc of [part.slice(part.indexOf("#### Roll back from 0.2.1 to 0.2.0")), notesRollbackText]) {
+      assert.ok(!doc.includes("<commit>~1"), "no parent of one upgrade commit");
+      assert.ok(doc.includes("`git checkout <commit> -- .os/manifest.json .os/scripts/buildos.cmd`"));
+      assert.ok(doc.includes("If the upgrade is not committed, `<commit>` is `HEAD`."));
+      assert.ok(doc.includes("git log --oneline -- .os/manifest.json .os/scripts/buildos.cmd"));
+      assert.ok(doc.includes("the commits of the upgrade (one or two) are at the top") || doc.includes("The commits of the upgrade (one or two) are at the top."));
+      assert.ok(doc.includes("is the first commit below them."));
+    }
+  });
+
+  it("the rollback check proves that the old wrapper is back, in sh and in Command Prompt, in every case, in the guide and the notes", () => {
+    const wrapper = readFileSync(join(repoRoot, "system", ".os", "scripts", "buildos.cmd"), "utf8");
+    assert.equal(wrapper.split("F-P9-17").length - 1, 1, "the 0.2.1 wrapper holds the marker once");
+    // The guide's rollback check is the end of the section (part stops at "### From 0.1.0 to 0.2.0").
+    const guideCheck = part.slice(part.indexOf("3. **Check.** In every case, both must be true:"));
+    assert.ok(guideCheck.length > 0 && part.indexOf("3. **Check.** In every case, both must be true:") > part.indexOf("#### Roll back from 0.2.1 to 0.2.0"));
+    const notesCheck = notesRollbackText.slice(notesRollbackText.indexOf("Check, in every case:"));
+    assert.ok(notesRollbackText.indexOf("Check, in every case:") > 0);
+    for (const doc of [guideCheck, notesCheck]) {
+      assert.ok(doc.includes("prints `version: 0.2.0`"));
+      assert.ok(doc.includes("`grep F-P9-17 .os/scripts/buildos.cmd`"));
+      assert.ok(doc.includes("`findstr F-P9-17 .os\\scripts\\buildos.cmd`"));
+      assert.ok(doc.includes(") prints nothing."));
+      assert.ok(!doc.includes("git --no-pager diff"), "no diff that a wrong revision also passes");
+    }
+  });
+
+  it("the Windows probe expects exit code 2, and the rollback reinstalls 0.2.0, within their steps, in the guide and the notes", () => {
+    const guideProbe = between(part, "   - On Windows, in Command Prompt, also after your own changes", "   Then commit.");
+    assert.ok(guideProbe.includes("the third line prints `2`. With the old wrapper it prints `0`."));
+    assert.ok(notes021.includes("```\n\nThe second line prints an error, and the third prints `2` (the old wrapper gives `0`)."));
+    const guideReinstall = between(part, "2. **Put back the npm install,** in every case:", "3. **Check.**");
+    const notesReinstall = between(notesRollbackText, "In every case, if you installed `0.2.1` with npm", "Check, in every case:");
+    for (const doc of [guideReinstall, notesReinstall]) {
+      assert.ok(doc.includes("install `0.2.0` there again."));
+      assert.ok(!/keep|leave/i.test(doc), "no instruction to keep the 0.2.1 install");
+      assert.ok(doc.includes("npm can then stop with `ENOTCACHED`: whether it does depends on what the npm cache holds."));
+    }
+  });
+
+  it("the clean copy has an offline form with the 0.2.1 file, in the guide and the notes", () => {
+    const offline = "`npx -y --offline --package <file> -- buildos init --root ";
+    assert.ok(between(part, "2. **Get a clean copy of `0.2.1`:**", "3. **Replace the wrapper:**").includes(`${offline}../buildos-upgrade-0.2.1/new --skip-make-docs\``));
+    assert.ok(notes021.includes(`${offline}..\\buildos-upgrade-0.2.1\\new --skip-make-docs\``));
+    for (const doc of [part, notes021]) assert.ok(doc.includes("can stop with `ENOTCACHED`. Use the `0.2.1` file"));
   });
 
   it("the notes' update and rollback hold the guide's commands, in the same order, in sh and in Command Prompt", () => {
