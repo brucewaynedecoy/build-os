@@ -19,7 +19,9 @@ import { ALL_COMMANDS, ancestorInstalls, buildosNames, cacheProblems, changedLin
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = resolve(packageRoot, "..", "..");
-const guideText = readFileSync(join(repoRoot, "guide", "content", "04-install-and-configure-your-instance.md"), "utf8");
+// Line ends are read as LF: git checks out guide/content/ with the system's line ends (CRLF on a
+// Windows runner), and the section finders below match \n (as guide-walk.test.ts and guide-examples.test.ts do).
+const guideText = readFileSync(join(repoRoot, "guide", "content", "04-install-and-configure-your-instance.md"), "utf8").replace(/\r\n/g, "\n");
 const start = guideText.indexOf("### From 0.1.0 to 0.2.0");
 const end = guideText.indexOf("> **Not available yet.** There is no `buildos update` command yet.", start);
 const section = guideText.slice(start, end);
