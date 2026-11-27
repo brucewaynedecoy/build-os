@@ -157,20 +157,17 @@ export interface SharedFileProblem {
   fix: string;
 }
 
-/** The init command that each fix says to run again: `buildos init` for a source build, else the runnable form (PE-023, src/core/shared/run-command.ts). */
-export const SOURCE_INIT = "buildos init";
-
-const markerFix = (again: string) => `Delete the buildos lines that are not part of one BuildOS section, or delete all of them. Then run \`${again}\` again.`;
-const changedFix = (again: string) => `Move your own text outside the buildos lines, or delete the buildos lines. Then run \`${again}\` again.`;
-const encodingFix = (again: string) => `Save the file as UTF-8 text, or move it away. Then run \`${again}\` again.`;
+const MARKER_FIX = "Delete the buildos lines that are not part of one BuildOS section, or delete all of them. Then run the same init command again.";
+const CHANGED_FIX = "Move your own text outside the buildos lines, or delete the buildos lines. Then run the same init command again.";
+const ENCODING_FIX = "Save the file as UTF-8 text, or move it away. Then run the same init command again.";
 
 /** The stop for a file that BuildOS would replace and that has more than one hard link (W1 R7 P6 review round 3). */
-export function hardLinkProblem(path: string, links: number, again: string = SOURCE_INIT): SharedFileProblem {
+export function hardLinkProblem(path: string, links: number): SharedFileProblem {
   return {
     path,
     problem: "hard_link",
     message: `${path} is shared with ${links === 2 ? "another file name" : `${links - 1} other file names`} through a hard link. BuildOS replaces files and would break that link, so the names would no longer share their text.`,
-    fix: `Make it a file with one name: copy it, delete the original, and give the copy the original name. Or move it away. Then run \`${again}\` again.`,
+    fix: "Make it a file with one name: copy it, delete the original, and give the copy the original name. Or move it away. Then run the same init command again.",
   };
 }
 
@@ -251,7 +248,6 @@ export function planSharedFiles(
   read: (path: string) => SharedRead,
   hash: HashPort,
   refresh = false,
-  again: string = SOURCE_INIT,
 ): { plans: SharedFilePlan[]; problems: SharedFileProblem[]; clashes: { path: string; found: "folder" | "other" }[] } {
   const plans: SharedFilePlan[] = [];
   const problems: SharedFileProblem[] = [];
@@ -282,7 +278,7 @@ export function planSharedFiles(
           path: found.path,
           problem: "link",
           message: `${found.path} is a link that does not lead to another of these shared files in this folder. BuildOS does not change a file through a link.`,
-          fix: `Put a regular file in place of the link, or move the link away. Then run \`${again}\` again.`,
+          fix: "Put a regular file in place of the link, or move the link away. Then run the same init command again.",
         });
       }
     } else if (now.tooLarge) {
@@ -292,7 +288,7 @@ export function planSharedFiles(
           path: found.path,
           problem: "too_large",
           message: `${found.path} is larger than ${SHARED_FILE_MAX_BYTES / (1024 * 1024)} MiB, so BuildOS does not read it.`,
-          fix: `Make the file smaller, or move it away. Then run \`${again}\` again.`,
+          fix: "Make the file smaller, or move it away. Then run the same init command again.",
         });
       }
     } else {
@@ -301,13 +297,13 @@ export function planSharedFiles(
       if (encoding !== undefined) {
         // BuildOS never writes such a file, so it holds no BuildOS section to refresh.
         if (refresh) skip(found.path, "unsupported_encoding");
-        else problems.push({ path: found.path, problem: "unsupported_encoding", message: encodingMessage(found.path, encoding), fix: encodingFix(again) });
+        else problems.push({ path: found.path, problem: "unsupported_encoding", message: encodingMessage(found.path, encoding), fix: ENCODING_FIX });
         continue;
       }
       // W1 R7 P6 review round 3: every file is decided from its whole scan, also in a rerun.
       const merged = mergeSection(spec, before, body, hash);
       if ("problem" in merged) {
-        problems.push({ path: found.path, problem: merged.problem, line: merged.line, message: problemMessage(spec, found.path, merged), fix: problemFix(merged.problem, again) });
+        problems.push({ path: found.path, problem: merged.problem, line: merged.line, message: problemMessage(spec, found.path, merged), fix: problemFix(merged.problem) });
         continue;
       }
       // A rerun refreshes only a valid section that is there.
@@ -317,7 +313,7 @@ export function planSharedFiles(
       }
       // Only a file that BuildOS will write: an unchanged file keeps every byte and every link.
       if (merged.action !== "unchanged" && now.links > 1) {
-        problems.push(hardLinkProblem(found.path, now.links, again));
+        problems.push(hardLinkProblem(found.path, now.links));
         continue;
       }
       plans.push({
@@ -358,12 +354,12 @@ function encodingMessage(path: string, encoding: "UTF-32" | "UTF-16" | "zero byt
     : `${path} is saved as ${encoding} text. BuildOS changes only UTF-8 text, so it did not change this file.`;
 }
 
-const crFix = (again: string) => `Save the file with LF or CRLF line endings. Then run \`${again}\` again.`;
+const CR_FIX = "Save the file with LF or CRLF line endings. Then run the same init command again.";
 
-function problemFix(problem: SharedProblemCode, again: string): string {
-  if (problem === "section_changed") return changedFix(again);
-  if (problem === "cr_line_endings") return crFix(again);
-  return markerFix(again);
+function problemFix(problem: SharedProblemCode): string {
+  if (problem === "section_changed") return CHANGED_FIX;
+  if (problem === "cr_line_endings") return CR_FIX;
+  return MARKER_FIX;
 }
 
 function problemMessage(spec: SharedFileSpec, path: string, merged: { problem: SharedProblemCode; line: number }): string {

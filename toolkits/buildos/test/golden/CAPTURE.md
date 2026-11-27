@@ -100,6 +100,7 @@ PE-023 (owner decision 2026-11-26, F-P8-11 and F-P8-10) changes the printed fix 
 
 - `buildos entities rebuild-index --root <Go %q root> --mode <mode> --apply` becomes `<program> entities rebuild-index --root <quoted root> --mode <mode> --apply`. The quoted root is `'<root>'` on Linux and macOS and `"<root>"` with each `\` written once on Windows.
 - `Run buildos help for command syntax.` becomes `Run <program> help for command syntax.`.
+- On Windows only, a rebuild command on a human `action:` line (the text as printed, never a JSON string) gets the shell label: `  action: run this in Command Prompt: <command>`, with `, with delayed expansion off` after `Command Prompt` when the command holds a `!` (F-P8-11 review round 1). The `label` list names the one case: `entities-validate-missing-index-strict` on win32.
 
 `<program>` is `buildos` for the goldens' development identity and `npx -y build-os@<version>` for a release identity (`BUILDOS_GOLDEN_EXPECT_VERSION`). `compare.test.ts` applies the rule to every selected golden and fails when a form occurs in a case that PE-023 does not list for the running system, or not in a listed one. The entity edge seeds and the `$PWD` seeds get the same rule with `buildos` (`seedWithPrintedCommands`). No golden file changes.
 

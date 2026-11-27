@@ -148,7 +148,7 @@ export function validateProject(input: ValidateInput): Validated {
     count === 0
       ? "No problems found."
       : truncated
-        ? `Found at least ${count} problems. BuildOS stopped after ${count}; fix these first, then run ${runCommand(run, ["validate"])} again.`
+        ? `Found at least ${count} problems. BuildOS stopped after ${count}; fix these first, then run the same validate command again.`
         : `Found ${count} ${count === 1 ? "problem" : "problems"}.`;
   return {
     root,

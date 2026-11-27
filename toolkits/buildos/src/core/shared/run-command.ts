@@ -2,8 +2,15 @@
  * The commands BuildOS prints for the adopter to run (F-P8-11 and F-P8-10,
  * parity exception PE-023; owner decision of 2026-11-26). A command printed
  * as a fix to copy and run starts with `npx -y build-os@<running version>`,
- * which runs on every system with Node.js and no global install. Every such
- * command is built here.
+ * which needs no global install. Every such command is built here. Limit
+ * (F-P8-11 review round 1, finding 4): with the npm setting
+ * `bin-links=false`, npx puts the package into its cache without its `bin`
+ * link and cannot start `build-os` (`sh: build-os: command not found`, exit
+ * 127), and that cached copy fails the same way later, also through the
+ * project wrapper, until it is removed (`npm cache npx ls`, then
+ * `npm cache npx rm <key>`). The project wrapper (`.os/scripts/buildos`,
+ * `.os\scripts\buildos.cmd`) turns the setting on for its own `npx` run, so
+ * it runs the same arguments when no such copy is cached.
  *
  * Edge cases (each has a test in test/run-command.test.ts):
  *
@@ -27,8 +34,12 @@
  *   and each `%` is outside the quotes as `^%`. Other words are quoted only
  *   when they hold a character outside the safe set (`quoteArg` in
  *   src/core/init/make-docs.ts). The Windows form is the Command Prompt
- *   form, as for every shown command; PowerShell runs it as shown when the
- *   folder name holds no `$`, backtick, or `%` and npm's `npx` shim may run.
+ *   form (with delayed expansion off, its default), as for every shown
+ *   command. PowerShell reads `$`, a backtick, and typographic quotation
+ *   marks in its own way, so the human `action:` line on Windows says which
+ *   shell it is for (`shellLabel`; F-P8-11 review round 1, finding 1). A
+ *   JSON field holds the command alone: POSIX `sh` on Linux and macOS,
+ *   Command Prompt with delayed expansion off on Windows.
  */
 
 import { quoteAlways, quoteArg } from "../init/make-docs.ts";
@@ -68,6 +79,27 @@ export function printedRun(version: string, platform: string): PrintedRun {
 
 /** The source-build style: plain `buildos`, POSIX quoting. The default where no style is given. */
 export const SOURCE_RUN: PrintedRun = { program: [PROGRAM_NAME], platform: "posix" };
+
+/** The words that the Command Prompt form starts with in human text on Windows (as `buildos init` says it). */
+export const COMMAND_PROMPT_LABEL = "run this in Command Prompt";
+
+/**
+ * The shell label of a printed command in human text: on Windows, `run this
+ * in Command Prompt`, and `, with delayed expansion off` when the command
+ * holds a `!` (with delayed expansion on, Command Prompt reads `!name!` as a
+ * variable even inside double quotes). On other systems none: the command
+ * is for `sh`, as everywhere in BuildOS's output.
+ */
+export function shellLabel(run: PrintedRun, command: string): string | undefined {
+  if (run.platform !== "win32") return undefined;
+  return command.includes("!") ? `${COMMAND_PROMPT_LABEL}, with delayed expansion off` : COMMAND_PROMPT_LABEL;
+}
+
+/** `command` as the human `action:` text: `<label>: <command>` on Windows (`shellLabel`), else the command alone. */
+export function labelledCommand(run: PrintedRun, command: string): string {
+  const label = shellLabel(run, command);
+  return label === undefined ? command : `${label}: ${command}`;
+}
 
 /** The whole command, as a user would type it: the program, then `words`, each quoted for the platform. */
 export function runCommand(run: PrintedRun, words: readonly CommandWord[]): string {

@@ -40,7 +40,7 @@ import type { FsDirEntry, FsPort } from "../shared/fs-port.ts";
 import type { HashPort } from "../shared/hash-port.ts";
 import { MANIFEST_PATH, SKILLS_DIR, WRAPPER_FILES, type PackageContent } from "./content.ts";
 import { MANIFEST_MAX_BYTES, parseManifest, type ProjectManifest } from "./manifest.ts";
-import { hardLinkProblem, hasMakeDocsSection, planSharedFiles, ROUTER_PATHS, SHARED_FILE_MAX_BYTES, SHARED_PATHS, sharedReader, SOURCE_INIT, type FoundEntry, type SharedFilePlan, type SharedFileProblem, type SharedRead } from "./shared-files.ts";
+import { hardLinkProblem, hasMakeDocsSection, planSharedFiles, ROUTER_PATHS, SHARED_FILE_MAX_BYTES, SHARED_PATHS, sharedReader, type FoundEntry, type SharedFilePlan, type SharedFileProblem, type SharedRead } from "./shared-files.ts";
 
 export type InitSetup = "new_project" | "adoption" | "rerun";
 
@@ -112,8 +112,12 @@ export interface InitNote {
 /** The legacy Python validator of a Go-era project. Adoption leaves it as it is. */
 export const LEGACY_VALIDATOR_PATH = ".os/scripts/validate_config.py";
 
-/** P7-R1-09: the note when adoption finds the legacy validator. */
-export const LEGACY_VALIDATOR_NOTE = `${LEGACY_VALIDATOR_PATH} is the old Python config check. BuildOS no longer uses it: run buildos validate (.os/scripts/buildos validate) instead. Where .os/scripts/AGENTS.md or your own notes name the old script, use buildos validate instead. BuildOS left the file as it is. You can delete it.`;
+/**
+ * P7-R1-09: the note when adoption finds the legacy validator. It names the
+ * project wrapper alone, with no version in it, so it stays true after an
+ * upgrade (F-P8-11 review round 1, finding 5): adoption writes the wrapper.
+ */
+export const LEGACY_VALIDATOR_NOTE = `${LEGACY_VALIDATOR_PATH} is the old Python config check. BuildOS no longer uses it: run .os/scripts/buildos validate instead (on Windows, .os\\scripts\\buildos.cmd validate). Where .os/scripts/AGENTS.md or your own notes name the old script, use that command instead. BuildOS left the file as it is. You can delete it.`;
 
 export interface PlanInput {
   fs: FsPort;
@@ -121,15 +125,12 @@ export interface PlanInput {
   content: PackageContent;
   /** The `.os/manifest.json` text. */
   manifest: string;
-  /** The init command each fix says to run again (PE-023). Defaults to `buildos init`. */
-  again?: string;
 }
 
 type EntryKind = FsDirEntry["kind"] | "missing";
 
 export function planInit(input: PlanInput): InitPlan {
   const look = lookup(input.fs);
-  const again = input.again ?? SOURCE_INIT;
   // W1 R7 P6 review round 3: each root shared file is read at most once per plan.
   const read = sharedReader(input.fs, look);
   const rootRouters = look("AGENTS.md").kind !== "missing" || look("CLAUDE.md").kind !== "missing";
@@ -138,9 +139,9 @@ export function planInit(input: PlanInput): InitPlan {
   if (look(".os").kind === "directory") {
     const manifest = look(MANIFEST_PATH);
     if (manifest.kind !== "missing") {
-      const installed = readManifest(input.fs, manifest, again);
+      const installed = readManifest(input.fs, manifest);
       if ("problem" in installed) return { setup: "rerun", entries: [], shared: [], clashes: [], problems: [installed], rootRouters, ...routers };
-      const planned = planSharedFiles(bodies, look, read, input.hash, true, again);
+      const planned = planSharedFiles(bodies, look, read, input.hash, true);
       return { setup: "rerun", entries: [], shared: planned.plans, clashes: [], problems: planned.problems, rootRouters, ...routers, installed: installed.manifest };
     }
   }
@@ -184,11 +185,11 @@ export function planInit(input: PlanInput): InitPlan {
           path: found.path,
           problem: "replace_too_large",
           message: `${found.path} is larger than ${SHARED_FILE_MAX_BYTES / (1024 * 1024)} MiB, so BuildOS cannot keep a copy to put back if setup fails.`,
-          fix: `Move the file away, then run \`${again}\` again.`,
+          fix: "Move the file away, then run the same init command again.",
         });
       } else if (before.links > 1) {
         // W1 R7 P6 review rounds 3 and 4: the replace would break the hard link (of a file, or of a link itself), so it stops before Make Docs runs.
-        replaceProblems.push(hardLinkProblem(found.path, before.links, again));
+        replaceProblems.push(hardLinkProblem(found.path, before.links));
       } else {
         // W1 R7 P6 review round 3: a replaced file keeps its own permission bits, and its owner can run it (a link gets the package mode).
         const mode = before.kind === "file" ? before.mode | 0o100 : file.mode;
@@ -199,7 +200,7 @@ export function planInit(input: PlanInput): InitPlan {
   let shared: SharedFilePlan[] = [];
   const problems: InitProblem[] = [...replaceProblems];
   if (setup === "new_project") {
-    const planned = planSharedFiles(bodies, look, read, input.hash, false, again);
+    const planned = planSharedFiles(bodies, look, read, input.hash);
     shared = planned.plans;
     problems.push(...planned.problems);
     clashes.push(...planned.clashes);
@@ -265,17 +266,17 @@ function routerOwners(look: (path: string) => FoundEntry, read: (path: string) =
   return { foreignRouters, missingRouters };
 }
 
-const manifestFixValid = (again: string) => `Put back a good copy of .os/manifest.json. To have BuildOS adopt this folder again instead, move .os/manifest.json away. Then run \`${again}\` again.`;
+const MANIFEST_FIX_VALID = "Put back a good copy of .os/manifest.json. To have BuildOS adopt this folder again instead, move .os/manifest.json away. Then run the same init command again.";
 
 /** `.os/manifest.json` read once with a bound, under the manifest contract (`parseManifest`), or why it cannot be. */
-function readManifest(fs: FsPort, found: FoundEntry, again: string): { manifest: ProjectManifest } | InitProblem {
+function readManifest(fs: FsPort, found: FoundEntry): { manifest: ProjectManifest } | InitProblem {
   if (found.kind !== "file") {
     const what = found.kind === "directory" ? "a folder" : found.kind === "symlink" ? "a link" : "not a regular file";
     return {
       path: found.path,
       problem: "manifest_not_a_file",
       message: `${found.path} is ${what}, so BuildOS cannot tell how this folder was set up.`,
-      fix: `Move it away, then run \`${again}\` again.`,
+      fix: "Move it away, then run the same init command again.",
     };
   }
   const read = fs.readFileLimited(found.path, MANIFEST_MAX_BYTES);
@@ -285,7 +286,7 @@ function readManifest(fs: FsPort, found: FoundEntry, again: string): { manifest:
     path: found.path,
     problem: "manifest_not_valid",
     message: `${found.path} is not a valid BuildOS manifest, so BuildOS cannot tell how this folder was set up.`,
-    fix: manifestFixValid(again),
+    fix: MANIFEST_FIX_VALID,
   };
 }
 

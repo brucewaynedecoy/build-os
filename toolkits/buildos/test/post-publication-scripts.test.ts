@@ -70,3 +70,27 @@ describe("F-P8-13: published-smoke.ts checks raw output and cleans only the repo
     assert.doesNotMatch(text.slice(at), /\n {2}steps,\n/);
   });
 });
+
+describe("F-P8-11 review round 1 (finding 3): the smoke step runs a printed fix command only when it is exactly the expected one", () => {
+  const text = readFileSync(join(SCRIPTS, "published-smoke.ts"), "utf8");
+  const step = text.slice(text.indexOf("// 10. A printed fix command"), text.indexOf("for (const s of steps) s.ok"));
+
+  it("the whole printed command is compared with the expected one before anything is spawned", () => {
+    assert.match(step, /const expected = expectedRebuild\(project\);/);
+    assert.match(step, /check\(json, `result\.index\.remediation_command is exactly \$\{expected\}`, printed === expected\);/);
+    const guard = step.indexOf("if (printed !== expected) {");
+    const spawn = step.indexOf('run("the printed fix command');
+    assert.ok(guard > 0 && spawn > guard, "the guard comes before the run");
+    assert.ok(step.slice(guard, spawn).includes("} else {"), "the run is in the else branch of the guard");
+    assert.equal(step.match(/\brun\(/g)?.length ?? 0, 2, "the only runs are the two shell forms of the matched command");
+  });
+
+  it("expectedRebuild states the program, the arguments, and the quoting on its own", () => {
+    const body = text.slice(text.indexOf("function expectedRebuild("), text.indexOf("function npxRun("));
+    assert.doesNotMatch(body, /import|runCommand|quoteAlways/);
+    // Run the function body as written, for both systems.
+    const make = (windows: boolean) => new Function("WINDOWS", "version", `${body.replace(/: string\)/, ")").replace(/\): string \{/, ") {")}; return expectedRebuild;`)(windows, "0.2.0") as (root: string) => string;
+    assert.equal(make(false)("/tmp/a b/it's"), "npx -y build-os@0.2.0 entities rebuild-index --root '/tmp/a b/it'\\''s' --mode compat --apply");
+    assert.equal(make(true)("C:\\T\\a%b\\"), 'npx -y build-os@0.2.0 entities rebuild-index --root "C:\\T\\a"^%"b\\\\" --mode compat --apply');
+  });
+});

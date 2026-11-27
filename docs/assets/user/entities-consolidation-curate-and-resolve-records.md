@@ -172,7 +172,7 @@ Set the paths explicitly. `<buildos>` is the BuildOS command at the exact versio
    <buildos> entities rebuild-index --root <copied-root> --mode strict --check
    ```
 
-   If the check says the index is missing or stale, use the exact recovery command in the diagnostic. From BuildOS `0.2.0`, the command starts with `npx -y build-os@<version>`, where `<version>` is the version that printed it, so you can run it as printed. In BuildOS `0.1.0` the command starts with a bare `buildos`, which needs a global install; with `0.1.0`, run it with `<buildos>` in place of `buildos`, so the recovery uses the version you selected (a global install can be another version). Its operation is equivalent to:
+   If the check says the index is missing or stale, use the exact recovery command in the diagnostic. From BuildOS `0.2.0`, the command starts with `npx -y build-os@<version>`, where `<version>` is the version that printed it. Run it in the shell it is written for (see [Run a Printed Command](#run-a-printed-command)). In BuildOS `0.1.0` the command starts with a bare `buildos`, which needs a global install; with `0.1.0`, run it with `<buildos>` in place of `buildos`, so the recovery uses the version you selected (a global install can be another version). Its operation is equivalent to:
 
    ```sh
    <buildos> entities rebuild-index --root <copied-root> --mode strict --apply
@@ -250,7 +250,21 @@ To rehearse rollback, restore the entire copied `.os/data/` and `.os/indexes/` s
 
 Prefer proving rollback into a new `<restored-root>` rather than deleting or overwriting the failed rehearsal. If a future live migration fails, stop using redirect-unaware tools, preserve the failure output and affected root, and follow the separately approved rollback procedure from the copied-root rehearsal. Do not delete losing rows or hand-edit the generated resolution index.
 
-Exit code `6` is a special safe stop: canonical data committed, but index rebuilding failed. Do not restore only one file or rerun consolidation blindly. Preserve the output and run the exact `rebuild-index` recovery command reported by the tool against the same approved root. From `0.2.0` it starts with `npx -y build-os@<version>` and runs as printed; with `0.1.0`, run it with `<buildos>` in place of its leading `buildos`, as in step 10 of the Copied-Root Workflow.
+Exit code `6` is a special safe stop: canonical data committed, but index rebuilding failed. Do not restore only one file or rerun consolidation blindly. Preserve the output and run the exact `rebuild-index` recovery command reported by the tool against the same approved root. From `0.2.0` it starts with `npx -y build-os@<version>`; run it as [Run a Printed Command](#run-a-printed-command) says. With `0.1.0`, run it with `<buildos>` in place of its leading `buildos`, as in step 10 of the Copied-Root Workflow.
+
+## Run a Printed Command
+
+From BuildOS `0.2.0`, the recovery command in a diagnostic starts with `npx -y build-os@<version>`. The same text is in the JSON fields `remediation_command`, `recovery_command`, and `correction`. Each holds the command alone.
+
+- Linux and macOS: the command is for a POSIX shell (`sh`, `bash`, or `zsh`). Run it as printed. The folder is in single quotes, so the shell changes nothing in it.
+- Windows: the command is for Command Prompt with its default settings (delayed expansion off). The `action:` line says so: `action: run this in Command Prompt: <command>`. When the command holds a `!`, the label ends with `, with delayed expansion off`. Copy only the text after the label, and run it in Command Prompt.
+- Windows PowerShell and PowerShell 7: do not paste the command there. PowerShell reads `$`, a backtick, and typographic quotation marks in its own way. In a folder name with `$` or a backtick, PowerShell can change the folder or run other text. Instead, type `cmd` and press Enter. This opens Command Prompt in the same window. Paste the command and press Enter. Then type `exit` to go back to PowerShell.
+
+Limits:
+
+- With the npm setting `bin-links=false`, the `npx` form stops with `build-os: command not found` (exit 127). npx then keeps a copy without its link in its cache, and that copy fails the same way later, also after you change the setting. Type the same arguments after the project wrapper instead (`.os/scripts/buildos`, or `.os\scripts\buildos.cmd` on Windows): it turns that setting on for its own `npx` run. If npx already has the copy without its link, remove it first: `npm cache npx ls` lists the keys, and `npm cache npx rm <key>` removes the one for `build-os@<version>`.
+- The printed command names the version of the program that printed it. For a published release, that is the same package. A build from source prints `buildos`, because no npm version names it.
+- BuildOS prints no PowerShell form of the command.
 
 ## Troubleshooting
 

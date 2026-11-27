@@ -813,6 +813,8 @@ export interface PrintedCommandClass {
   program: { source_build: string; release: string };
   rebuild: { go: string; ours: string; cases: Record<"darwin" | "linux" | "win32", string[]>; edge: string[]; pwd: string[] };
   usage: { go: string; ours: string; cases: string[] };
+  /** F-P8-11 review round 1 (finding 1): the shell label of the human `action:` line on Windows. */
+  label: { go: string; ours: string; platform: "win32"; cases: string[] };
 }
 
 /** The PE-023 class, or throws when parity-exceptions.json has none. */
@@ -867,19 +869,36 @@ export function printedPath(path: string, platform: string): string {
   return `'${path.replace(/'/g, "'\\''")}'`;
 }
 
-const GO_REBUILD = /buildos entities rebuild-index --root ("(?:[^"\\]|\\.)*") --mode (strict|compat) --apply/g;
+const GO_REBUILD = /(  action: )?buildos entities rebuild-index --root ("(?:[^"\\]|\\.)*") --mode (strict|compat) --apply/g;
 const GO_USAGE = "Run buildos help for command syntax.";
 
 /** Counts of the PE-023 forms that applyPrintedCommands replaced. */
 export interface PrintedCommandHits {
   rebuild: number;
   usage: number;
+  /** Human `action:` lines on Windows that got the shell label. */
+  label: number;
 }
 
-function printedText(text: string, program: string, platform: string, hits: PrintedCommandHits): string {
-  const rebuilt = text.replace(GO_REBUILD, (_m, quoted: string, mode: string) => {
+/**
+ * PE-023 label rule (F-P8-11 review round 1, finding 1), stated here on its
+ * own: on Windows, a human `action:` line that is the rebuild command reads
+ * `  action: run this in Command Prompt: <command>`, with `, with delayed
+ * expansion off` after `Command Prompt` when the command holds a `!`. Only
+ * in the text as printed: a JSON string holds the command alone.
+ */
+function windowsLabel(command: string): string {
+  return command.includes("!") ? "run this in Command Prompt, with delayed expansion off" : "run this in Command Prompt";
+}
+
+function printedText(text: string, program: string, platform: string, hits: PrintedCommandHits, human: boolean): string {
+  const rebuilt = text.replace(GO_REBUILD, (_m, action: string | undefined, quoted: string, mode: string) => {
     hits.rebuild++;
-    return `${program} entities rebuild-index --root ${printedPath(goUnquote(quoted), platform)} --mode ${mode} --apply`;
+    const command = `${program} entities rebuild-index --root ${printedPath(goUnquote(quoted), platform)} --mode ${mode} --apply`;
+    if (action === undefined) return command;
+    if (!human || platform !== "win32") return `${action}${command}`;
+    hits.label++;
+    return `${action}${windowsLabel(command)}: ${command}`;
   });
   const parts = rebuilt.split(GO_USAGE);
   hits.usage += parts.length - 1;
@@ -894,11 +913,13 @@ function printedText(text: string, program: string, platform: string, hits: Prin
  * for command syntax.` becomes `Run <program> help for command syntax.`.
  * Each is replaced in the text as printed and inside each JSON string,
  * which is decoded first and encoded again with Go's escaping (the string
- * must be in Go encoding/json form). Nothing else changes.
+ * must be in Go encoding/json form). On Windows, a rebuild command on a
+ * human `action:` line in the text as printed also gets the shell label
+ * (`windowsLabel`). Nothing else changes.
  */
 export function applyPrintedCommands(text: string, program: string, platform: string): { text: string; hits: PrintedCommandHits } {
-  const hits: PrintedCommandHits = { rebuild: 0, usage: 0 };
-  const raw = printedText(text, program, platform, hits);
+  const hits: PrintedCommandHits = { rebuild: 0, usage: 0, label: 0 };
+  const raw = printedText(text, program, platform, hits, true);
   const out = raw.replace(JSON_STRING, (token) => {
     let value: string;
     try {
@@ -906,7 +927,7 @@ export function applyPrintedCommands(text: string, program: string, platform: st
     } catch {
       return token;
     }
-    const next = printedText(value, program, platform, hits);
+    const next = printedText(value, program, platform, hits, false);
     if (next === value) return token;
     if (`"${goJsonEscape(value)}"` !== token) throw new Error(`PE-023: JSON string ${token} is not in Go encoding/json form`);
     return `"${goJsonEscape(next)}"`;
@@ -916,12 +937,13 @@ export function applyPrintedCommands(text: string, program: string, platform: st
 
 /** PE-023 applied to a golden's stdout and stderr (see applyPrintedCommands), with the total hits. */
 export function withPrintedCommands(golden: Observation, program: string, platform: string): { observation: Observation; hits: PrintedCommandHits } {
-  const total: PrintedCommandHits = { rebuild: 0, usage: 0 };
+  const total: PrintedCommandHits = { rebuild: 0, usage: 0, label: 0 };
   const stamp = (data: Buffer): Buffer => {
     if (!isUtf8(data)) return data;
     const { text, hits } = applyPrintedCommands(data.toString("utf8"), program, platform);
     total.rebuild += hits.rebuild;
     total.usage += hits.usage;
+    total.label += hits.label;
     return Buffer.from(text, "utf8");
   };
   return { observation: { ...golden, stdout: stamp(golden.stdout), stderr: stamp(golden.stderr) }, hits: total };

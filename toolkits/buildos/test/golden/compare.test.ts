@@ -272,6 +272,8 @@ describe("golden parity", () => {
       // PE-023: the printed fix commands, exactly in the listed cases.
       const { observation: golden, hits } = withPrintedCommands(identified, program, process.platform);
       assert.equal(hits.rebuild > 0, (printed.rebuild.cases[printedPlatform] ?? []).includes(testCase.id), `PE-023 rebuild form: ${hits.rebuild} in the golden of ${testCase.id}, which PE-023 ${(printed.rebuild.cases[printedPlatform] ?? []).includes(testCase.id) ? "lists" : "does not list"} for ${process.platform}`);
+      const labelled = printedPlatform === printed.label.platform && printed.label.cases.includes(testCase.id);
+      assert.equal(hits.label > 0, labelled, `PE-023 shell label: ${hits.label} in the golden of ${testCase.id}, which PE-023 ${labelled ? "lists" : "does not list"} for ${process.platform}`);
       assert.equal(hits.usage > 0, printed.usage.cases.includes(testCase.id), `PE-023 usage form: ${hits.usage} in the golden of ${testCase.id}, which PE-023 ${printed.usage.cases.includes(testCase.id) ? "lists" : "does not list"}`);
       const run = runCase(testCase, runner);
       // PE-016: a legacy name writes one notice line first; it is checked and removed here.

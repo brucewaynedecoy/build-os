@@ -21,7 +21,7 @@ import {
 import type { Diagnostic } from "../../core/shared/diagnostics.ts";
 import { createEnvelope, serializeEnvelope, type Envelope, type WriteStatus } from "../../core/shared/envelope.ts";
 import { goMarshalIndent, type GoJsonValue } from "../../core/shared/go-json.ts";
-import { runProgram } from "../../core/shared/run-command.ts";
+import { labelledCommand, printedRun, runCommand, type PrintedRun } from "../../core/shared/run-command.ts";
 import { formatDiagnosticsHuman } from "../diagnostics.ts";
 import type { CommandContext, Domain } from "../domain.ts";
 import { EXIT_CODES, exitCodeFor } from "../exit-codes.ts";
@@ -98,15 +98,23 @@ function parseOptions(command: string, commandName: string, args: readonly strin
   return options;
 }
 
-/** Go `writeHuman`: the header, each diagnostic, then the result as `json.MarshalIndent` (HTML escaped). */
-function formatGoHuman(envelope: Envelope, result: GoJsonValue): string {
+/**
+ * Go `writeHuman`: the header, each diagnostic, then the result as
+ * `json.MarshalIndent` (HTML escaped). PE-023 (F-P8-11 review round 1,
+ * finding 1): an `action:` line that is the printed rebuild command says on
+ * Windows which shell it is for (`labelledCommand`); the JSON fields, also
+ * the ones in the body here, hold the command alone.
+ */
+export function formatGoHuman(envelope: Envelope, result: GoJsonValue, run: PrintedRun): string {
   const header = formatEnvelopeHuman({ ...envelope, result: null });
   const body = result === null ? "" : `${goMarshalIndent(result, true)}\n`;
-  return `${header}${formatDiagnosticsHuman(envelope.diagnostics)}${body}`;
+  const rebuild = `${runCommand(run, ["entities", "rebuild-index", "--root"])} `;
+  const action = (correction: string) => (correction.startsWith(rebuild) ? labelledCommand(run, correction) : correction);
+  return `${header}${formatDiagnosticsHuman(envelope.diagnostics, action)}${body}`;
 }
 
 function run(command: string, options: EntityOptions, context: CommandContext, hooks: Partial<EntityHooks> | undefined): EntityCommandResult {
-  const entityContext: EntityContext = { cwd: context.io.cwd, openFs: context.openFs, program: runProgram(context.buildInfo.version), ...(hooks === undefined ? {} : { hooks }) };
+  const entityContext: EntityContext = { cwd: context.io.cwd, openFs: context.openFs, program: printedRun(context.buildInfo.version, process.platform).program, ...(hooks === undefined ? {} : { hooks }) };
   switch (command) {
     case "resolve":
       return resolveCommand(entityContext, options.root, options.mode, options.id);
@@ -164,8 +172,8 @@ export function createEntitiesDomain(hooks?: Partial<EntityHooks>): Domain {
       let stdout = "";
       let stderr = "";
       if (options.json) stdout = serializeEnvelope(envelope);
-      else if (failure !== undefined) stderr = formatGoHuman(envelope, outcome.payload);
-      else stdout = formatGoHuman(envelope, outcome.payload);
+      else if (failure !== undefined) stderr = formatGoHuman(envelope, outcome.payload, printedRun(context.buildInfo.version, process.platform));
+      else stdout = formatGoHuman(envelope, outcome.payload, printedRun(context.buildInfo.version, process.platform));
       return { command: commandName, json: options.json, rendered: { stdout, stderr, exitCode } };
     },
   };

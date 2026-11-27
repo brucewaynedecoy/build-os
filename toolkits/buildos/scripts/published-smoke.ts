@@ -28,13 +28,19 @@
 // Step 10 (F-P8-11, PE-023; owner decision 2026-11-26): the printed fix
 // command. `entities validate --json` in the project of step 3 (which has no
 // entity index yet) prints the rebuild command in
-// `result.index.remediation_command`; the step checks that the human
-// `action:` line holds the same text. For 0.1.0 the text starts with a bare
+// `result.index.remediation_command`. For 0.1.0 the text starts with a bare
 // `buildos` (the known defect F-P8-11, fixed in 0.2.0), so the step checks
-// that form and does not run it. For any other version the text must start
-// with `npx -y build-os@<version> `, and the step runs it as printed through
-// the system shell (`sh -c`, or Command Prompt on Windows), then runs
-// `entities validate` again, which must print no index warning. So the
+// that form and that the human `action:` line holds the same text, and does
+// not run it. For any other version the step states on its own the exact
+// command for this project (`expectedRebuild`: the program
+// `npx -y build-os@<version>`, the arguments, and the root quoted for the
+// shell) and the exact human `action:` line (on Windows with its label,
+// `run this in Command Prompt: `), and compares the whole printed text with
+// them. Only when the printed command is exactly the expected one does it
+// run it through the system shell (`sh -c`, or Command Prompt on Windows),
+// then run `entities validate` again, which must print no index warning; a
+// mismatch fails the step and nothing is run (F-P8-11 review round 1,
+// finding 3). So the
 // step count is 13 on Linux and macOS (12 on Windows, which has one wrapper
 // step for Node.js missing) for 0.1.0, and 15 (14) for a later version:
 // version 2, init 2, intake 1, entities validate 1, validate 1, legacy name
@@ -187,6 +193,24 @@ function check(step: Step, what: string, ok: boolean): void {
   step.checks.push({ check: what, ok });
 }
 
+/**
+ * The exact rebuild command that a BuildOS release prints for `root` (PE-023),
+ * stated here on its own and not taken from BuildOS: `npx -y build-os@<version>
+ * entities rebuild-index --root <root> --mode compat --apply`, with the root
+ * in POSIX single quotes (a `'` as `'\\''`), or on Windows in Command Prompt
+ * double quotes, each `%` outside them as `^%` and a backslash run before a
+ * closing quote doubled.
+ */
+function expectedRebuild(root: string): string {
+  const quoted = WINDOWS
+    ? root
+        .split("%")
+        .map((part) => `"${part.replace(/(\\+)$/, "$1$1")}"`)
+        .join("^%")
+    : `'${root.replace(/'/g, "'\\''")}'`;
+  return `npx -y build-os@${version} entities rebuild-index --root ${quoted} --mode compat --apply`;
+}
+
 function npxRun(name: string, args: string[], expected: number, cwd: string): Step {
   const full = ["-y", `build-os@${version}`, ...args];
   return run(name, `npx ${full.join(" ")}`, npx.file, [...npx.prefix, ...full], expected, cwd, { shell: npx.shell });
@@ -323,18 +347,27 @@ const project = newFolder("project");
     // Reported by the checks below.
   }
   const human = steps.find((s) => s.name === "entities validate");
-  check(json, "result.index.remediation_command holds a rebuild-index command", printed.includes(" entities rebuild-index --root ") && printed.endsWith(" --mode compat --apply"));
-  check(json, "the human action: line of step 5 holds the same command", human !== undefined && human.stdout.split("\n").includes(`  action: ${printed}`));
+  const humanLines = human === undefined ? [] : human.stdout.split("\n");
   if (version === "0.1.0") {
+    check(json, "result.index.remediation_command holds a rebuild-index command", printed.includes(" entities rebuild-index --root ") && printed.endsWith(" --mode compat --apply"));
+    check(json, "the human action: line of step 5 holds the same command", humanLines.includes(`  action: ${printed}`));
     check(json, "0.1.0 prints a bare buildos (the known defect F-P8-11, fixed in 0.2.0); the step does not run it", printed.startsWith("buildos entities rebuild-index --root "));
   } else {
-    check(json, `the command starts with npx -y build-os@${version}`, printed.startsWith(`npx -y build-os@${version} entities rebuild-index --root `));
-    const step = WINDOWS
-      ? run("the printed fix command, as printed, in Command Prompt", printed, process.env["ComSpec"] ?? "cmd.exe", [`/d /s /c "${printed}"`], 0, project, { verbatim: true })
-      : run("the printed fix command, as printed, in sh", printed, "/bin/sh", ["-c", printed], 0, project);
-    check(step, "stdout says entities.rebuild-index: ok and the write was applied", step.stdout.startsWith("entities.rebuild-index: ok\n") && step.stdout.includes("write status: applied\n"));
-    const after = npxRun("entities validate after the printed fix command", ["entities", "validate", "--root", project, "--mode", "compat"], 0, project);
-    check(after, "no index warning", after.stdout.startsWith("entities.validate: ok\n") && !after.stdout.includes("index_stale") && !after.stderr.includes("index_stale"));
+    const expected = expectedRebuild(project);
+    const line = WINDOWS ? `  action: run this in Command Prompt${expected.includes("!") ? ", with delayed expansion off" : ""}: ${expected}` : `  action: ${expected}`;
+    check(json, `result.index.remediation_command is exactly ${expected}`, printed === expected);
+    check(json, `the human action: line of step 5 is exactly ${line.trim()}`, humanLines.includes(line));
+    // Finding 3: printed text that is not exactly the expected command is never run.
+    if (printed !== expected) {
+      check(json, "the printed command did not match, so the step stopped and ran nothing", false);
+    } else {
+      const step = WINDOWS
+        ? run("the printed fix command, as printed, in Command Prompt", printed, process.env["ComSpec"] ?? "cmd.exe", [`/d /s /c "${printed}"`], 0, project, { verbatim: true })
+        : run("the printed fix command, as printed, in sh", printed, "/bin/sh", ["-c", printed], 0, project);
+      check(step, "stdout says entities.rebuild-index: ok and the write was applied", step.stdout.startsWith("entities.rebuild-index: ok\n") && step.stdout.includes("write status: applied\n"));
+      const after = npxRun("entities validate after the printed fix command", ["entities", "validate", "--root", project, "--mode", "compat"], 0, project);
+      check(after, "no index warning", after.stdout.startsWith("entities.validate: ok\n") && !after.stdout.includes("index_stale") && !after.stderr.includes("index_stale"));
+    }
   }
 }
 

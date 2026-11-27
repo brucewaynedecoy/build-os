@@ -18,7 +18,7 @@ import type { CommandContext, CommandOutcome, Domain } from "../domain.ts";
 import { EXIT_CODES } from "../exit-codes.ts";
 import { parseCommandFlags } from "../parse.ts";
 import { UsageError } from "../usage-error.ts";
-import { printedRun, runCommand, SOURCE_RUN, type PrintedRun } from "../../core/shared/run-command.ts";
+import { printedRun } from "../../core/shared/run-command.ts";
 
 const COMMAND = "buildos validate";
 const FLAGS = { root: "string", json: "boolean" } as const;
@@ -66,7 +66,7 @@ function runValidate(args: readonly string[], context: CommandContext): CommandO
   if (json) {
     const diagnostics: Diagnostic[] = passed
       ? []
-      : [{ code: "validation_failed", severity: "error", message: result.summary, correction: `Fix each finding in result.findings, then run ${runCommand(run, ["validate"])} again.` }];
+      : [{ code: "validation_failed", severity: "error", message: result.summary, correction: "Fix each finding in result.findings, then run the same validate command again." }];
     const envelope = createEnvelope({
       ok: passed,
       command: "validate",
@@ -80,11 +80,11 @@ function runValidate(args: readonly string[], context: CommandContext): CommandO
     });
     return { rendered: { stdout: serializeEnvelope(envelope), stderr: "", exitCode }, command: "validate", json: true };
   }
-  return { rendered: { stdout: humanReport(root, result, run), stderr: "", exitCode }, command: "validate", json: false };
+  return { rendered: { stdout: humanReport(root, result), stderr: "", exitCode }, command: "validate", json: false };
 }
 
 /** The human report. */
-export function humanReport(root: string, result: ValidateResult, run: PrintedRun = SOURCE_RUN): string {
+export function humanReport(root: string, result: ValidateResult): string {
   const { checked } = result;
   const playbooks = checked.frontmatter_files.length;
   const lines = [
@@ -102,7 +102,7 @@ export function humanReport(root: string, result: ValidateResult, run: PrintedRu
     for (const finding of findings) lines.push(`  ${finding.field}: ${finding.message} [${finding.code}]`);
     lines.push("");
   }
-  lines.push(`Fix each problem, then run ${runCommand(run, ["validate"])} again.`);
+  lines.push("Fix each problem, then run the same validate command again.");
   return `${lines.join("\n")}\n`;
 }
 

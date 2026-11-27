@@ -15,7 +15,7 @@ import {
   clashResult,
   commandShell,
   failedResult,
-  initAgain,
+  SAME_INIT,
   MAKE_DOCS_LIMIT,
   MAKE_DOCS_NOT_RUN,
   makeDocsReport,
@@ -51,7 +51,7 @@ import type { Diagnostic } from "../../core/shared/diagnostics.ts";
 import { createEnvelope, serializeEnvelope, type WriteStatus } from "../../core/shared/envelope.ts";
 import { FsWriteFailure, isCoreError, WriteError } from "../../core/shared/errors.ts";
 import type { ProcessPort } from "../../core/shared/process-port.ts";
-import { printedRun, type PrintedRun } from "../../core/shared/run-command.ts";
+import { printedRun } from "../../core/shared/run-command.ts";
 import { nodeHash } from "../../adapters/node-hash.ts";
 import { createNodeProcessPort } from "../../adapters/node-process.ts";
 import { loadPackageContent } from "../../adapters/package-content.ts";
@@ -164,7 +164,7 @@ async function runInit(args: readonly string[], context: CommandContext, options
 
   // Every folder BuildOS writes in must allow a new entry, checked before Make Docs runs.
   const notWritable = unwritableFolders(prepared);
-  if (notWritable.length > 0) return out.stopped(notWritableResult(prepared, notWritable), notWritableDiagnostic(notWritable, run), EXIT_CODES.io);
+  if (notWritable.length > 0) return out.stopped(notWritableResult(prepared, notWritable), notWritableDiagnostic(notWritable), EXIT_CODES.io);
 
   // With a question, the plan shows the shared files before the answer; with a flag, only the result lists them.
   out.showPlan(choice === "ask");
@@ -210,11 +210,11 @@ async function runInit(args: readonly string[], context: CommandContext, options
         return out.stopped(changed, { code: "init_changed_during_setup", severity: "error", message: `${changed.summary} ${changed.changed.map((c) => c.path).join(", ")}`, correction: changed.tip });
       }
       const late = unwritableFolders(ready);
-      if (late.length > 0) throw new WriteError(`buildos init cannot write in ${late.map((f) => f.path).join(", ")}: ${late[0]!.error}`, { code: "init_folder_not_writable", correction: `Allow your user to write in these folders, then run ${initAgain(run)} again.` });
+      if (late.length > 0) throw new WriteError(`buildos init cannot write in ${late.map((f) => f.path).join(", ")}: ${late[0]!.error}`, { code: "init_folder_not_writable", correction: `Allow your user to write in these folders, then ${SAME_INIT}.` });
     } else {
       report = makeDocsReport("skipped", laterCommand, prepared.plan);
     }
-    applyInit(ready.plan, ready.fs, initAgain(ready.run));
+    applyInit(ready.plan, ready.fs);
   } catch (error) {
     return out.failed(ready, error, report);
   }
@@ -242,12 +242,12 @@ function osWords(code: string): string {
   return code;
 }
 
-function notWritableDiagnostic(folders: readonly { path: string; error: string }[], run: PrintedRun): Diagnostic {
+function notWritableDiagnostic(folders: readonly { path: string; error: string }[]): Diagnostic {
   return {
     code: "init_folder_not_writable",
     severity: "error",
     message: `buildos init cannot write in ${folders.map((f) => `${f.path} (${f.error})`).join(", ")}`,
-    correction: `Allow your user to write in these folders, then run ${initAgain(run)} again.`,
+    correction: `Allow your user to write in these folders, then ${SAME_INIT}.`,
   };
 }
 
@@ -265,7 +265,7 @@ function clashDiagnostic(prepared: PreparedInit, result: ClashResult): Diagnosti
     code: "init_paths_exist",
     severity: "error",
     message: `${prepared.plan.clashes.length} path(s) that buildos init must add already exist: ${prepared.plan.clashes.map((c) => c.path).join(", ")}`,
-    correction: `Move or back up these files, then run ${initAgain(prepared.run)} again.`,
+    correction: `Move or back up these files, then ${SAME_INIT}.`,
   };
 }
 

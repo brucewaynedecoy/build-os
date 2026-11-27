@@ -14,7 +14,7 @@ import { sep } from "node:path";
 import { nodeHash } from "../../adapters/node-hash.ts";
 import { BULK_SUBCOMMANDS, runBulk } from "../../core/extract/bulk.ts";
 import { PyException } from "../../core/shared/py-text.ts";
-import { printedRun } from "../../core/shared/run-command.ts";
+import { printedRun, runCommand, SOURCE_RUN, type PrintedRun } from "../../core/shared/run-command.ts";
 import { READ_LIMITS } from "../../core/shared/read-limits.ts";
 import type { CommandContext, CommandOutcome, Domain } from "../domain.ts";
 import { StdinTooLargeError } from "../io.ts";
@@ -57,7 +57,9 @@ Exit codes:
   10 a write failed and BuildOS could not put back every change
 `;
 
-export const EXTRACT_HELP = `Usage:
+/** The `extract` help. Its direction to the bulk help names the runnable program of this build (PE-023); the usage line keeps `buildos`. */
+export function extractHelp(run: PrintedRun): string {
+  return `Usage:
   buildos extract bulk [--root <folder>] [--json] <subcommand> [arguments]
 
 Extraction work.
@@ -66,13 +68,17 @@ Operations:
   bulk   source reviews of a bulk extraction (status, next, show, start,
          template, check, stage, stage-update, replace-row, decide, publish)
 
-Run "buildos extract bulk --help" for the subcommands.
+Run "${runCommand(run, ["extract", "bulk", "--help"])}" for the subcommands.
 `;
+}
+
+export const EXTRACT_HELP = extractHelp(SOURCE_RUN);
 
 export const extractDomain: Domain = {
   name: "extract",
   summary: "Track the source reviews of a bulk extraction",
   help: EXTRACT_HELP,
+  helpFor: (version) => extractHelp(printedRun(version, process.platform)),
   run: runExtract,
 };
 
@@ -99,7 +105,6 @@ function runExtract(args: readonly string[], context: CommandContext): CommandOu
     now: context.now ?? (() => new Date()),
     sep,
     owner: { pid: process.pid, host: hostname() },
-    run: printedRun(context.buildInfo.version, process.platform),
     readStdin: () => {
       if (context.io.readStdin === undefined) return "";
       try {

@@ -9,7 +9,7 @@
  */
 
 import { runAzureBoards } from "../../core/export/azure-boards/export.ts";
-import { printedRun } from "../../core/shared/run-command.ts";
+import { printedRun, runCommand, SOURCE_RUN, type PrintedRun } from "../../core/shared/run-command.ts";
 import type { CommandContext, CommandOutcome, Domain } from "../domain.ts";
 import { UsageError } from "../usage-error.ts";
 import { renderSkillRun, takeSharedFlags, wantsHelp, wantsJson, type SkillOutcome } from "./skill-output.ts";
@@ -45,7 +45,9 @@ Exit codes:
   5  a write failed
 `;
 
-export const EXPORT_HELP = `Usage:
+/** The `export` help. Its direction to the azure-boards help names the runnable program of this build (PE-023); the usage line keeps `buildos`. */
+export function exportHelp(run: PrintedRun): string {
+  return `Usage:
   buildos export azure-boards <emit|validate|template|adapters> [options]
 
 Exports BuildOS work to a work tracker.
@@ -53,13 +55,17 @@ Exports BuildOS work to a work tracker.
 Targets:
   azure-boards   Azure Boards import CSV files
 
-Run "buildos export azure-boards --help" for its options.
+Run "${runCommand(run, ["export", "azure-boards", "--help"])}" for its options.
 `;
+}
+
+export const EXPORT_HELP = exportHelp(SOURCE_RUN);
 
 export const exportDomain: Domain = {
   name: "export",
   summary: "Export work to a tracker (Azure Boards CSV)",
   help: EXPORT_HELP,
+  helpFor: (version) => exportHelp(printedRun(version, process.platform)),
   run: runExport,
 };
 

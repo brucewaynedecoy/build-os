@@ -95,7 +95,7 @@ describe("P6-R3-02: the first plan's view of each path is carried through the se
     const human = await init(dir, ["--make-docs"], { process: stub.port });
     assert.equal(human.exit, 10, shape(human.stdout));
     assert.ok(human.stdout.includes(
-        "\nStopped. Make Docs was set up, but BuildOS changed nothing. While Make Docs ran, 1 path that BuildOS must write changed, so BuildOS did not write over it.\n\nThis path changed while Make Docs ran:\n  .os/scripts/buildos (it was not there before Make Docs ran, and now it is)\n\nMake Docs: set up.\n\nCheck this path, then run `buildos init` again. Make Docs already ran, so add --skip-make-docs when you run buildos init again.\n",
+        "\nStopped. Make Docs was set up, but BuildOS changed nothing. While Make Docs ran, 1 path that BuildOS must write changed, so BuildOS did not write over it.\n\nThis path changed while Make Docs ran:\n  .os/scripts/buildos (it was not there before Make Docs ran, and now it is)\n\nMake Docs: set up.\n\nCheck this path, then run the same init command again. Make Docs already ran, so when you run it again, use --skip-make-docs and not --make-docs.\n",
       ), shape(human.stdout));
     assertSame(readFileSync(join(dir, ".os", "scripts", "buildos"), "utf8"), "#!/bin/sh\necho another writer\n");
     assertSame(existsSync(join(dir, ".os", "manifest.json")), false);
@@ -126,7 +126,7 @@ describe("P6-R3-03: a file that BuildOS would replace and that has more than one
     assert.equal(human.exit, 10, shape(human.stdout));
     assert.equal(stub.runs(), 0, "Make Docs must not run");
     assert.ok(human.stdout.endsWith(
-        "AGENTS.md is shared with another file name through a hard link. BuildOS replaces files and would break that link, so the names would no longer share their text.\nTo fix it: Make it a file with one name: copy it, delete the original, and give the copy the original name. Or move it away. Then run `buildos init` again.\n",
+        "AGENTS.md is shared with another file name through a hard link. BuildOS replaces files and would break that link, so the names would no longer share their text.\nTo fix it: Make it a file with one name: copy it, delete the original, and give the copy the original name. Or move it away. Then run the same init command again.\n",
       ), shape(human.stdout));
     const json = await init(dir, ["--skip-make-docs", "--json"]);
     assertSame(json.json.result.problems[0].problem, "hard_link");
@@ -337,7 +337,7 @@ describe("P6-R3-12 and P6-R3-13: the undo journal and its report", () => {
     assert.equal(human.exit, 10, shape(human.stdout));
     assertOutputMatches(
       human.stdout,
-      /\nFailed\. BuildOS could not finish its setup\. It undid its own changes, but it could not make sure that every undo was saved to disk\.\nWhy: injected failure\.\n\nBuildOS put these paths back, but could not make sure the change was saved to disk:\n {2}AGENTS\.md\n\nCheck that each path listed holds what it held before, fix the problem shown in "Why", then run `buildos init` again\.\n$/,
+      /\nFailed\. BuildOS could not finish its setup\. It undid its own changes, but it could not make sure that every undo was saved to disk\.\nWhy: injected failure\.\n\nBuildOS put these paths back, but could not make sure the change was saved to disk:\n {2}AGENTS\.md\n\nCheck that each path listed holds what it held before, fix the problem shown in "Why", then run the same init command again\.\n$/,
     );
     assertSame(readFileSync(join(dir, "AGENTS.md"), "utf8"), "# Mine\n");
   });

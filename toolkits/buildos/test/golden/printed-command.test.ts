@@ -60,13 +60,16 @@ describe("PE-023 printed fix commands: the lists are exact", () => {
     it(`the rebuild and usage cases on ${platform} are exactly where the forms occur`, () => {
       const rebuild: string[] = [];
       const usage: string[] = [];
+      const label: string[] = [];
       for (const testCase of manifest.cases) {
         const selection = selectGolden(testCase, platform);
         if (selection.status === "missing-golden") continue;
         const { hits } = withPrintedCommands(readGoldenDir(selection.dir), release, platform);
         if (hits.rebuild > 0) rebuild.push(testCase.id);
         if (hits.usage > 0) usage.push(testCase.id);
+        if (hits.label > 0) label.push(testCase.id);
       }
+      assert.deepEqual(label, platform === printed.label.platform ? printed.label.cases : [], "the shell label");
       assert.deepEqual(rebuild, printed.rebuild.cases[platform as "darwin" | "linux" | "win32"]);
       assert.deepEqual(usage, printed.usage.cases);
     });
@@ -105,7 +108,8 @@ describe("PE-023 printed fix commands: the rule changes only the command text", 
     const win = readGoldenDir(goldenOf("entities-validate-missing-index-strict", "win32")).stderr.toString("utf8");
     const ours = applyPrintedCommands(win, release, "win32").text;
     assert.ok(win.includes('--root "{ROOT}\\\\root" --mode strict --apply\n'), "Go doubles the backslash");
-    assert.ok(ours.includes('  action: npx -y build-os@0.2.0 entities rebuild-index --root "{ROOT}\\root" --mode strict --apply\n'));
+    assert.ok(ours.includes('  action: run this in Command Prompt: npx -y build-os@0.2.0 entities rebuild-index --root "{ROOT}\\root" --mode strict --apply\n'), "the labelled action line");
+    assert.equal(applyPrintedCommands(win, release, "win32").hits.label, 1);
     assert.ok(ours.includes('"remediation_command": "npx -y build-os@0.2.0 entities rebuild-index --root \\"{ROOT}\\\\root\\" --mode strict --apply"'));
   });
 
@@ -114,6 +118,18 @@ describe("PE-023 printed fix commands: the rule changes only the command text", 
     assert.notEqual(goText, expected, "Go's text");
     assert.notEqual(applyPrintedCommands(goText, "buildos", "linux").text, expected, "a release build that prints bare buildos");
     assert.notEqual(goText.replaceAll("buildos entities rebuild-index", "npx -y build-os@0.2.0 entities rebuild-index"), expected, "the right program with Go's %q root");
+  });
+
+  it("the shell label: only on Windows, only on a human action: line, and with delayed expansion off when the command holds a !", () => {
+    const line = '  action: buildos entities rebuild-index --root "C:\\\\a!b" --mode compat --apply\n';
+    assert.equal(applyPrintedCommands(line, "buildos", "win32").text, '  action: run this in Command Prompt, with delayed expansion off: buildos entities rebuild-index --root "C:\\a!b" --mode compat --apply\n');
+    assert.equal(applyPrintedCommands(line, "buildos", "linux").text, "  action: buildos entities rebuild-index --root 'C:\\a!b' --mode compat --apply\n", "no label on POSIX");
+    const json = '"correction": "buildos entities rebuild-index --root \\"C:\\\\\\\\x\\" --mode compat --apply"\n';
+    const ours = applyPrintedCommands(json, "buildos", "win32");
+    assert.equal(ours.hits.label, 0, "a JSON string gets no label");
+    assert.ok(!ours.text.includes("Command Prompt"));
+    const golden = readGoldenDir(goldenOf("entities-validate-missing-index-strict", "win32")).stderr.toString("utf8");
+    assert.notEqual(applyPrintedCommands(golden, release, "win32").text, applyPrintedCommands(golden, release, "win32").text.replace("action: run this in Command Prompt: ", "action: "), "an action line without the label does not match");
   });
 
   it("the usage form changes only for a release build", () => {
@@ -127,7 +143,7 @@ describe("PE-023 printed fix commands: the rule changes only the command text", 
       for (const g of e.golden) {
         if (g.actual === null) continue;
         const { hits } = applyPrintedCommands(g.actual, release, g.platform ?? "linux");
-        assert.deepEqual(hits, { rebuild: 0, usage: 0 }, `${e.id} ${g.case} ${g.field}`);
+        assert.deepEqual(hits, { rebuild: 0, usage: 0, label: 0 }, `${e.id} ${g.case} ${g.field}`);
       }
     }
   });

@@ -210,7 +210,7 @@ describe("P6-R1-01, P6-R2-01, and P6-R3-01: marker lines without a valid integri
     const human = await init(dir, ["--skip-make-docs"]);
     assert.equal(human.exit, 10);
     assert.ok(human.stdout.endsWith(
-        "AGENTS.md line 3 starts a BuildOS section that was changed by hand, or that is an example. BuildOS replaces only a section that it wrote and that no one changed, so it did not change this file.\nTo fix it: Move your own text outside the buildos lines, or delete the buildos lines. Then run `buildos init` again.\n",
+        "AGENTS.md line 3 starts a BuildOS section that was changed by hand, or that is an example. BuildOS replaces only a section that it wrote and that no one changed, so it did not change this file.\nTo fix it: Move your own text outside the buildos lines, or delete the buildos lines. Then run the same init command again.\n",
       ), shape(human.stdout));
     const json = await init(dir, ["--skip-make-docs", "--json"]);
     assert.equal(json.exit, 10);
@@ -425,7 +425,7 @@ describe("P6-R1-10: unsupported encodings stop before any write", () => {
       const human = await init(dir, ["--skip-make-docs"]);
       assert.equal(human.exit, 10);
       assertOutputMatches(human.stdout, message);
-      assertOutputMatches(human.stdout, /To fix it: Save the file as UTF-8 text, or move it away\. Then run `buildos init` again\./);
+      assertOutputMatches(human.stdout, /To fix it: Save the file as UTF-8 text, or move it away\. Then run the same init command again\./);
       const json = await init(dir, ["--skip-make-docs", "--json"]);
       assertSame(json.json.result.problems[0].problem, "unsupported_encoding");
       assertSame(new Uint8Array(readFileSync(join(dir, "AGENTS.md"))), bytes);
@@ -558,7 +558,7 @@ describe("P6-R1-04: the setup BuildOS planned does not change behind its back", 
       assertOutputDoesNotMatch(human.stdout, /Nothing was changed/);
       assertOutputMatches(human.stdout, /\nStopped\. Make Docs was set up, but BuildOS changed nothing\. BuildOS planned to set up a new project, but after Make Docs ran, the folder looks like /);
       assertOutputMatches(human.stdout, /\nMake Docs: set up\.\n/);
-      assertOutputMatches(human.stdout, /add --skip-make-docs when you run buildos init again/);
+      assertOutputMatches(human.stdout, /when you run it again, use --skip-make-docs and not --make-docs/);
       assert.equal(existsSync(join(dir, "assets")), false);
       const dir2 = folder();
       const json = await init(dir2, ["--make-docs", "--json"], { process: makeDocs(action).port });
@@ -588,7 +588,7 @@ describe("P6-R1-03: permissions are checked before Make Docs runs, and the Make 
     const human = await init(dir, ["--make-docs"], { process: stub.port });
     assert.equal(human.exit, 5);
     assert.equal(stub.runs, 0, "Make Docs must not run");
-    assertSame(human.stdout, `Project folder: ${dir}\nStopped. Nothing was changed. BuildOS cannot write in 1 folder that it must add files to.\n\nBuildOS cannot write in these folders:\n  assets/ (permission denied)\n\nAllow your user to write in these folders, then run \`buildos init\` again.\n`);
+    assertSame(human.stdout, `Project folder: ${dir}\nStopped. Nothing was changed. BuildOS cannot write in 1 folder that it must add files to.\n\nBuildOS cannot write in these folders:\n  assets/ (permission denied)\n\nAllow your user to write in these folders, then run the same init command again.\n`);
     const json = await init(dir, ["--make-docs", "--json"], { process: stub.port });
     assert.equal(json.exit, 5);
     assertSame(json.json.result.reason, "folder_not_writable");
@@ -613,7 +613,7 @@ describe("P6-R1-03: permissions are checked before Make Docs runs, and the Make 
     };
     const human = await init(dir, ["--make-docs"], { openFs, process: makeDocs((target) => mkdirSync(join(target, "docs"))).port });
     assert.equal(human.exit, 1);
-    assertOutputMatches(human.stdout, /\n\nFailed\. BuildOS could not finish its setup, so it undid its own changes\. Make Docs was set up before this, and it stays set up\.\nWhy: injected failure\.\n\nMake Docs: set up\.\n\nFix the problem shown in "Why", then run `buildos init` again\. Make Docs already ran, so add --skip-make-docs when you run buildos init again\.\n$/);
+    assertOutputMatches(human.stdout, /\n\nFailed\. BuildOS could not finish its setup, so it undid its own changes\. Make Docs was set up before this, and it stays set up\.\nWhy: injected failure\.\n\nMake Docs: set up\.\n\nFix the problem shown in "Why", then run the same init command again\. Make Docs already ran, so when you run it again, use --skip-make-docs and not --make-docs\.\n$/);
     assert.deepEqual(readdirSync(dir), ["docs"]);
     const dir2 = folder();
     const json = await init(dir2, ["--make-docs", "--json"], { openFs, process: makeDocs().port });

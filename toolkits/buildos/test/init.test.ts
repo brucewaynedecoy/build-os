@@ -39,7 +39,7 @@ const windows = process.platform === "win32";
 const RUN = windows ? "run this in Command Prompt" : "run";
 const FIXTURE = join(import.meta.dirname, "fixtures", "init", "go-era-project");
 const SYSTEM = join(import.meta.dirname, "..", "..", "..", "system");
-const TIP = "Move or back up these files, then run `buildos init` again.";
+const TIP = "Move or back up these files, then run the same init command again.";
 
 let scratch: string;
 let cli: string;
@@ -305,7 +305,7 @@ describe("buildos init: the legacy Python validator (W1 R7 P7 t16)", () => {
 
   // W1 R7 P7 review round 1 (P7-R1-09): the user is told that the old script is no longer used.
   it("an adoption that finds it says so in plain words, in the human and JSON output, the dry run too, and changes nothing about it", () => {
-    const note = ".os/scripts/validate_config.py is the old Python config check. BuildOS no longer uses it: run buildos validate (.os/scripts/buildos validate) instead. Where .os/scripts/AGENTS.md or your own notes name the old script, use buildos validate instead. BuildOS left the file as it is. You can delete it.";
+    const note = ".os/scripts/validate_config.py is the old Python config check. BuildOS no longer uses it: run .os/scripts/buildos validate instead (on Windows, .os\\scripts\\buildos.cmd validate). Where .os/scripts/AGENTS.md or your own notes name the old script, use that command instead. BuildOS left the file as it is. You can delete it.";
     const make = (name: string): { dir: string; legacy: string } => {
       const dir = folder(name);
       cpSync(FIXTURE, dir, { recursive: true });
@@ -532,7 +532,7 @@ describe("buildos init: injected terminal answers (t18, t24)", () => {
 
 describe("buildos init: shared files AGENTS.md, CLAUDE.md, .gitignore (owner decision 2026-11-24)", () => {
   const BOM = "\uFEFF";
-  const PROBLEM_FIX = "To fix it: Delete the buildos lines that are not part of one BuildOS section, or delete all of them. Then run `buildos init` again.";
+  const PROBLEM_FIX = "To fix it: Delete the buildos lines that are not part of one BuildOS section, or delete all of them. Then run the same init command again.";
 
   /** Removes what BuildOS added, except the shared files, so `init` sees a new project again. */
   function removeBuildOs(dir: string): void {
@@ -653,7 +653,7 @@ describe("buildos init: shared files AGENTS.md, CLAUDE.md, .gitignore (owner dec
     writeFileSync(join(dir, ".gitignore"), Buffer.alloc(SHARED_FILE_MAX_BYTES + 1, 0x61));
     const human = init(dir, ["--skip-make-docs"]);
     assert.equal(human.exit, 10);
-    assertOutputMatches(human.stdout, /\n\.gitignore is larger than 4 MiB, so BuildOS does not read it\.\nTo fix it: Make the file smaller, or move it away\. Then run `buildos init` again\.\n$/);
+    assertOutputMatches(human.stdout, /\n\.gitignore is larger than 4 MiB, so BuildOS does not read it\.\nTo fix it: Make the file smaller, or move it away\. Then run the same init command again\.\n$/);
     assert.deepEqual(readdirSync(dir), [".gitignore"]);
   });
 
@@ -691,7 +691,7 @@ describe("buildos init: shared files AGENTS.md, CLAUDE.md, .gitignore (owner dec
     const before = snapshot(other);
     const human = init(other, ["--skip-make-docs"]);
     assert.equal(human.exit, 10);
-    assertSame(human.stdout, `Project folder: ${other}\nStopped. Nothing was changed. BuildOS cannot safely add its section to 1 file.\n\nAGENTS.md is a link that does not lead to another of these shared files in this folder. BuildOS does not change a file through a link.\nTo fix it: Put a regular file in place of the link, or move the link away. Then run \`buildos init\` again.\n`);
+    assertSame(human.stdout, `Project folder: ${other}\nStopped. Nothing was changed. BuildOS cannot safely add its section to 1 file.\n\nAGENTS.md is a link that does not lead to another of these shared files in this folder. BuildOS does not change a file through a link.\nTo fix it: Put a regular file in place of the link, or move the link away. Then run the same init command again.\n`);
     assertSameTree(snapshot(other), before, "project tree");
     assertSame(readFileSync(outside, "utf8"), "outside\n");
   });
@@ -720,7 +720,7 @@ describe("buildos init: shared files AGENTS.md, CLAUDE.md, .gitignore (owner dec
     const domain = createInitDomain({ loadContent: () => loadSourceContent(SYSTEM), now: () => new Date("2026-11-24T00:00:00Z") });
     const exit = await run(["init", "--skip-make-docs"], io, { domains: [domain], openFs });
     assert.equal(exit, 1);
-    assertOutputMatches(io.stdout(), /\nFailed\. BuildOS could not finish its setup, so it undid its own changes\.\nWhy: injected write failure\.\n\nFix the problem shown in "Why", then run `buildos init` again\.\n$/);
+    assertOutputMatches(io.stdout(), /\nFailed\. BuildOS could not finish its setup, so it undid its own changes\.\nWhy: injected write failure\.\n\nFix the problem shown in "Why", then run the same init command again\.\n$/);
     assertSameTree(snapshot(dir), before, "project tree");
     assertSame(readFileSync(join(dir, "AGENTS.md"), "utf8"), agents);
   });
