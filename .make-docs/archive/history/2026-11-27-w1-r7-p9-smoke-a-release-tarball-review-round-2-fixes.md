@@ -31,6 +31,8 @@ Stacked on pull request 11 (`release/0.2.0-version`), pull request 10 (`feat/cap
 
 Follow-up (same day): the name of the step 10 shell step in tarball mode says "the launch check after step 10 names the program", so no fixed step name holds the word "ran", and a test checks that name.
 
+Follow-up (same day, CI): on Windows, npm's `npx.cmd` shim starts `npm-prefix.js` of the npm install before `npx-cli.js`, so the launch check of the printed command in `buildos-smoke` run 45994727376 failed on that record. The launch check now counts `npm-prefix.js` in npm's `bin` folder as npm's own program, like `npm-cli.js` and `npx-cli.js`, and a test has that record.
+
 Deferred obligations and Unassisted Goal Testing: `not-needed-now`; no `O-###` or `NUAT-###` applies. Guide coverage: `no-change`; no guide source changed.
 
 ## Documentation

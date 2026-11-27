@@ -747,7 +747,8 @@ describe("F-P9-15: which executable ran (review round 2 of pull request 12, find
     assert.deepEqual(launcherProblems("route", [{ name: "buildos", files: [{ where: "w", kind: "file", resolved: "/r/c/node_modules/build-os/dist/buildos.js" }] }], want, false), ["route: the launcher w is a regular file, not npm's symbolic link"]);
     assert.deepEqual(launcherProblems("route", [], want, false), ["route: no launcher was read for the bin buildos"]);
     assert.deepEqual(launcherProblems("route", [{ name: "buildos", files: [{ where: "w", kind: "symlink", resolved: "/R/C/node_modules/build-os/dist/buildos.js" }] }], want, false).length, 1, "case-sensitive off Windows");
-    const records = launchRecords('{"argv1":"/n/npx","real":"/n/lib/node_modules/npm/bin/npx-cli.js"}\nnot json\n{"argv1":"/x","real":"/x/buildos.js"}\n');
+    const records = launchRecords('{"argv1":"/n/npx","real":"/n/lib/node_modules/npm/bin/npx-cli.js"}\n{"argv1":"p","real":"C:\\\\n\\\\node_modules\\\\npm\\\\bin\\\\npm-prefix.js"}\nnot json\n{"argv1":"/x","real":"/x/buildos.js"}\n');
+    assert.equal(records[1]!.real, "C:\\n\\node_modules\\npm\\bin\\npm-prefix.js", "npm's npx.cmd shim on Windows starts npm-prefix.js first; it is npm's own program");
     assert.deepEqual(launchProblems("s", records, ["/r/c/node_modules/build-os/dist/buildos.js"], [], false), [
       'step "s": a Node.js process ran (no main script), whose real path could not be read',
       'step "s": a Node.js process ran /x/buildos.js, not /r/c/node_modules/build-os/dist/buildos.js',

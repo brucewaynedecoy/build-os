@@ -511,9 +511,14 @@ export function launchRecords(text: string): LaunchRecord[] {
   return out;
 }
 
-/** True for npm's own command line program (npm-cli.js or npx-cli.js of an npm install), which starts before the program of a step. */
+/**
+ * True for npm's own programs in the `bin` folder of an npm install, which
+ * start before the program of a step: `npm-cli.js` and `npx-cli.js`, and on
+ * Windows `npm-prefix.js`, which npm's `npx.cmd` shim starts first to find
+ * the global prefix (seen in CI run 45994727376).
+ */
 export function isNpmCli(real: string): boolean {
-  return /[\\/]node_modules[\\/]npm[\\/]bin[\\/]np[mx]-cli\.js$/i.test(real);
+  return /[\\/]node_modules[\\/]npm[\\/]bin[\\/](np[mx]-cli|npm-prefix)\.js$/i.test(real);
 }
 
 /**
