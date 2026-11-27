@@ -74,6 +74,7 @@ import {
   npxFolderProblems,
   parseSmokeArgs,
   readTarballIdentity,
+  reportCacheKey,
   sha256Hex,
   strayProblems,
   TARBALL_MODE_LIMITS,
@@ -541,7 +542,7 @@ if (source.kind === "tarball" && identity !== undefined) {
     { check: "no other build-os folder is below the temporary root (the global prefix {TMP}/npm-prefix included)", problems: stray },
   ]);
   const entries = readCacheIndex(cache);
-  evidenceStep("registry guard (tarball mode): the npm cache holds only the tarball", "cache-guard", "no process; it reads the npm cache index {TMP}/npm-cache/_cacache/index-v5 and the cache content", entries.map((e) => `${clean(e.key)} ${e.integrity ?? "(no integrity)"}\n`).join(""), [
+  evidenceStep("registry guard (tarball mode): the npm cache holds only the tarball", "cache-guard", "no process; it reads the npm cache index {TMP}/npm-cache/_cacache/index-v5 and the cache content", entries.map((e) => `${clean(reportCacheKey(e.key))} ${e.integrity ?? "(no integrity)"}\n`).join(""), [
     { check: `the npm cache index holds at least one entry, and every entry is a pacote:tarball:file: entry for ${name} with the integrity ${id.integrity} (no registry response)`, problems: cacheIndexProblems(entries, id, name).map((p) => clean(p)) },
     { check: `the cache content for that integrity has the tarball's SHA-256 ${id.sha256}`, problems: cacheContentProblems(id, cacheContentSha256(cache, id.integrity)) },
   ]);

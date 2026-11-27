@@ -38,6 +38,7 @@ import {
   npxFolderProblems,
   parseSmokeArgs,
   readTarballIdentity,
+  reportCacheKey,
   sha256Hex,
   sha512Integrity,
   strayProblems,
@@ -345,6 +346,10 @@ describe("F-P9-15: the registry guard and the provenance checks (review round 1 
       "the npm cache entry pacote:tarball:file:C:\\t\\build-os-0.2.0.tgz has the integrity sha512-bad, not the tarball's sha512-good",
     ]);
     assert.deepEqual(cacheIndexProblems([], identity, "build-os-0.2.0.tgz"), ["the npm cache index is empty: no evidence that npm read the tarball"]);
+    // The report shows a tarball file key by its file name only (finding 3: the relative path names runner folders).
+    assert.equal(reportCacheKey("pacote:tarball:file:../../../../runner-folder/build-os-0.2.0.tgz"), "pacote:tarball:file:.../build-os-0.2.0.tgz");
+    assert.equal(reportCacheKey("pacote:tarball:file:C:\\a\\build-os-0.2.0.tgz"), "pacote:tarball:file:.../build-os-0.2.0.tgz");
+    assert.equal(reportCacheKey("make-fetch-happen:request-cache:https://registry.npmjs.org/build-os"), "make-fetch-happen:request-cache:https://registry.npmjs.org/build-os");
     assert.deepEqual(cacheContentProblems(identity, identity.sha256), []);
     assert.equal(cacheContentProblems(identity, undefined).length, 1);
     assert.equal(cacheContentProblems(identity, "c".repeat(64)).length, 1);

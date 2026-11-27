@@ -247,6 +247,11 @@ export function lastPathPart(path: string): string {
 
 const FILE_KEY = "pacote:tarball:file:";
 
+/** A cache key for the report: a tarball file key shows only its file name, because npm records the path relative to the folder that read it, which names runner folders. */
+export function reportCacheKey(key: string): string {
+  return key.startsWith(FILE_KEY) ? `${FILE_KEY}.../${lastPathPart(key.slice(FILE_KEY.length))}` : key;
+}
+
 /**
  * The problems of the npm cache index: no entry at all (no positive
  * evidence that npm read the tarball), an entry that is not a tarball file

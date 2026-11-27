@@ -32,6 +32,8 @@ Stacked on pull request 11 (`release/0.2.0-version`), pull request 10 (`feat/cap
 
 Deferred obligations and Unassisted Goal Testing: `not-needed-now`; no `O-###` or `NUAT-###` applies. Guide coverage: `no-change`; no guide source changed.
 
+Follow-up (same day): the cache-check step of the report shows each tarball file key of the npm cache by its file name only (`pacote:tarball:file:.../build-os-0.2.0.tgz`), because npm records the path relative to the folder that read the file, and that relative path names runner folders; a failed check still prints the full key, cleaned.
+
 ## Documentation
 
 ### Project
