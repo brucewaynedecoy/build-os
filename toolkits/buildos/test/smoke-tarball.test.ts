@@ -26,13 +26,14 @@ import { basename, delimiter, dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { after, describe, it } from "node:test";
 import { expectedActionLine, expectedRebuild, printedFixStep, type RanStep } from "../scripts/printed-fix-step.ts";
-import { cacheContentSha256, findBuildOsFolders, MAX_DEPTH, readCacheIndex, readInstalledCopy, readLaunchers, readNpxFolders } from "../scripts/smoke-evidence.ts";
+import { cacheContentSha256, canonicalShims, findBuildOsFolders, MAX_DEPTH, readCacheIndex, readInstalledCopy, readLaunchers, readNpxFolders } from "../scripts/smoke-evidence.ts";
 import {
+  ABSOLUTE_PATH_MARK,
+  ABSOLUTE_PATH_PATTERNS,
   BLOCKED_REGISTRY,
   cacheContentProblems,
   cacheIndexEntries,
   cacheIndexProblems,
-  cmdShimTarget,
   comparisonStatement,
   copyProblems,
   guardedEnv,
@@ -41,14 +42,19 @@ import {
   launchRecords,
   legacyNpxArgs,
   npxArgs,
+  npmPrograms,
   npxFolderProblems,
   parseSmokeArgs,
-  PREFLIGHT_STDOUT,
+  pathKey as comparePathKey,
+  PREFLIGHT_KEYS,
+  preflightStdout,
+  PROBE_LIMIT,
   PROBE_LOG_VARIABLE,
   PROBE_SOURCE,
-  ps1ShimTarget,
+  probeNodeOptions,
   readTarballIdentity,
   reportCacheKey,
+  scrubAbsolutePaths,
   sha256Hex,
   sha512Integrity,
   strayProblems,
@@ -183,6 +189,7 @@ interface Layout {
   work: string;
   project: string;
   tarball: string;
+  probe: string;
   identity: TarballIdentity;
   env: NodeJS.ProcessEnv;
 }
@@ -201,7 +208,7 @@ function layout(bytes: Uint8Array = fixtureTarball(), callerEnv: NodeJS.ProcessE
   const tarball = join(temp(), "build-os-0.2.0.tgz");
   writeFileSync(tarball, bytes);
   const env = guardedEnv({ ...callerEnv, npm_config_ignore_scripts: "true", npm_config_update_notifier: "false", npm_config_fund: "false", npm_config_audit: "false" }, { cache, prefix, probe });
-  return { root, cache, prefix, work, project, tarball, identity: readTarballIdentity(bytes), env };
+  return { root, cache, prefix, work, project, tarball, probe, identity: readTarballIdentity(bytes), env };
 }
 
 let logCount = 0;
@@ -231,7 +238,7 @@ function evidence(l: Layout) {
   const npxDir = folders.find((f) => f.hasBuildOs)?.dir;
   const index = readCacheIndex(l.cache);
   const entries = index.entries;
-  const found = findBuildOsFolders(l.root);
+  const found = findBuildOsFolders(l.root, [join(l.cache, "_cacache"), join(l.cache, "_logs")], WINDOWS);
   return {
     entries,
     cache: [...index.incomplete, ...cacheIndexProblems(entries, l.identity, name), ...cacheContentProblems(l.identity, cacheContentSha256(l.cache, l.identity.integrity))],
@@ -245,9 +252,17 @@ function evidence(l: Layout) {
 const WINDOWS = process.platform === "win32";
 /** The bin file of the package in `<base>/node_modules/build-os` for a bin name of the fixture. */
 const binFile = (base: string, rel = "dist/buildos.js") => join(base, "node_modules", "build-os", ...rel.split("/"));
+/** The selected npm installation of these tests, as published-smoke.ts selects it: the real path of the npm folder next to this Node.js. */
+const NPM_ROOT = () => realpathSync.native(dirname(dirname(npmCli("npm"))));
+/** The npm programs that the launch check allows, as published-smoke.ts passes them. */
+const NPM_PROGRAMS = () => npmPrograms(NPM_ROOT(), WINDOWS);
+/** The canonical Windows shims of a layout's bins, made with this npm's cmd-shim, as published-smoke.ts makes them in the preflight. */
+async function canonicalOf(l: Layout) {
+  return canonicalShims(NPM_ROOT(), join(temp(), "shims"), l.identity.binFiles, l.identity.binBodies);
+}
 /** The launcher problems of a route, as published-smoke.ts checks them. */
-function launcherCheck(base: string, names: string[], l: Layout): string[] {
-  return launcherProblems("route", readLaunchers(join(base, "node_modules", ".bin"), names, WINDOWS, (p) => p), new Map(names.map((n) => [n, binFile(base, l.identity.binFiles.get(n))])), WINDOWS);
+async function launcherCheck(base: string, names: string[], l: Layout): Promise<string[]> {
+  return launcherProblems("route", readLaunchers(join(base, "node_modules", ".bin"), names, WINDOWS, (p) => p, WINDOWS ? await canonicalOf(l) : undefined), new Map(names.map((n) => [n, binFile(base, l.identity.binFiles.get(n))])), WINDOWS);
 }
 
 /** A fixture tarball with other bytes (same name and version, another bin text). */
@@ -265,14 +280,15 @@ function fakeBuildosBin(dir: string): void {
 }
 
 describe("F-P9-15: the registry guard and the provenance checks (review round 1 of pull request 12, finding 1)", () => {
-  it("drops the caller's npm offline, prefer, registry, cache, prefix, and bin-links settings and NODE_OPTIONS in any spelling, and sets offline, the blocked registry, the new cache, the new global prefix, bin links on, and the launch probe", () => {
+  it("drops the caller's npm offline, prefer, registry, cache, prefix, bin-links, and node-options settings and NODE_OPTIONS in any spelling, and sets offline, the blocked registry, the new cache, the new global prefix, bin links on, and the launch probe in NODE_OPTIONS and npm's node-options", () => {
     const env = guardedEnv(
-      { PATH: "/bin", NPM_CONFIG_REGISTRY: "https://registry.npmjs.org/", npm_config_prefer_online: "true", "npm_config_prefer-offline": "true", npm_config_OFFLINE: "false", NPM_CONFIG_CACHE: "/seeded-cache", npm_config_cache: "/c", NPM_CONFIG_PREFIX: "/global", NPM_CONFIG_BIN_LINKS: "false", "npm_config_bin-links": "false", npm_config_Bin_Links: "0", node_options: "--require /evil.cjs", SMOKE_LAUNCH_LOG: "/old" },
+      { PATH: "/bin", NPM_CONFIG_REGISTRY: "https://registry.npmjs.org/", npm_config_prefer_online: "true", "npm_config_prefer-offline": "true", npm_config_OFFLINE: "false", NPM_CONFIG_CACHE: "/seeded-cache", npm_config_cache: "/c", NPM_CONFIG_PREFIX: "/global", NPM_CONFIG_BIN_LINKS: "false", "npm_config_bin-links": "false", npm_config_Bin_Links: "0", node_options: "--require /evil.cjs", SMOKE_LAUNCH_LOG: "/old", npm_config_node_options: "--no-warnings", "NPM_CONFIG_NODE-OPTIONS": "--no-warnings", npm_config_Node_Options: "x" },
       { cache: "/new-cache", prefix: "/new-prefix", probe: "C:\\probe dir\\p\"x.cjs" },
     );
-    assert.deepEqual(env, { PATH: "/bin", npm_config_offline: "true", npm_config_registry: BLOCKED_REGISTRY, npm_config_cache: "/new-cache", npm_config_prefix: "/new-prefix", npm_config_bin_links: "true", NODE_OPTIONS: '--require "C:\\\\probe dir\\\\p\\"x.cjs"' });
+    const probeOptions = '--require "C:\\\\probe dir\\\\p\\"x.cjs"';
+    assert.deepEqual(env, { PATH: "/bin", npm_config_offline: "true", npm_config_registry: BLOCKED_REGISTRY, npm_config_cache: "/new-cache", npm_config_prefix: "/new-prefix", npm_config_bin_links: "true", NODE_OPTIONS: probeOptions, npm_config_node_options: probeOptions });
     assert.equal(BLOCKED_REGISTRY, "http://127.0.0.1:9/");
-    assert.equal(PREFLIGHT_STDOUT, `offline=true\nregistry=${BLOCKED_REGISTRY}\nbin-links=true\n`);
+    assert.equal(preflightStdout("/p/probe.cjs"), `offline=true\nregistry=${BLOCKED_REGISTRY}\nbin-links=true\nnode-options=--require "/p/probe.cjs"\n`);
     // Without a probe, NODE_OPTIONS is the caller's.
     assert.equal(guardedEnv({ NODE_OPTIONS: "--no-warnings" }, { cache: "/c", prefix: "/p" })["NODE_OPTIONS"], "--no-warnings");
   });
@@ -366,7 +382,7 @@ describe("F-P9-15: the registry guard and the provenance checks (review round 1 
   });
 
   it("stubs: every index entry that is not a tarball file entry, names another file, has another integrity, or is not an entry fails, and so does missing or other cache content", () => {
-    const identity: TarballIdentity = { sha256: "b".repeat(64), integrity: "sha512-good", name: "build-os", version: "0.2.0", bins: {}, binFiles: new Map(), files: new Map(), nonFileEntries: [] };
+    const identity: TarballIdentity = { sha256: "b".repeat(64), integrity: "sha512-good", name: "build-os", version: "0.2.0", bins: {}, binFiles: new Map(), binBodies: new Map(), files: new Map(), nonFileEntries: [] };
     const entries = cacheIndexEntries([
       `abc\t${JSON.stringify({ key: "pacote:tarball:file:/t/build-os-0.2.0.tgz", integrity: "sha512-good" })}\n`,
       `def\t${JSON.stringify({ key: "make-fetch-happen:request-cache:https://registry.npmjs.org/build-os", integrity: "sha512-x" })}\nghi\tnot json\n`,
@@ -375,17 +391,22 @@ describe("F-P9-15: the registry guard and the provenance checks (review round 1 
     assert.equal(entries.length, 5);
     assert.deepEqual(cacheIndexProblems([entries[0]!], identity, "build-os-0.2.0.tgz"), []);
     assert.deepEqual(cacheIndexProblems(entries, identity, "build-os-0.2.0.tgz"), [
-      "the npm cache holds an entry that is not a tarball file entry: make-fetch-happen:request-cache:https://registry.npmjs.org/build-os",
+      // Review round 3, finding 5: an unexpected key shows only its kind, never its text.
+      "the npm cache holds an entry that is not a tarball file entry: make-fetch-happen:request-cache:(the rest of the key is not shown)",
       "the npm cache holds an entry that is not a tarball file entry: (an index line that is not an entry)",
-      // Review round 2, finding 4: an error shows a tarball file key by its file name only, as the normal output does.
-      "the npm cache holds an entry for another file: pacote:tarball:file:.../other.tgz",
+      "the npm cache holds an entry for another file: pacote:tarball:file:(another file; its name is not shown)",
       "the npm cache entry pacote:tarball:file:.../build-os-0.2.0.tgz has the integrity sha512-bad, not the tarball's sha512-good",
     ]);
     assert.deepEqual(cacheIndexProblems([], identity, "build-os-0.2.0.tgz"), ["the npm cache index is empty: no evidence that npm read the tarball"]);
-    // The report shows a tarball file key by its file name only (finding 3: the relative path names runner folders).
-    assert.equal(reportCacheKey("pacote:tarball:file:../../../../runner-folder/build-os-0.2.0.tgz"), "pacote:tarball:file:.../build-os-0.2.0.tgz");
-    assert.equal(reportCacheKey("pacote:tarball:file:C:\\a\\build-os-0.2.0.tgz"), "pacote:tarball:file:.../build-os-0.2.0.tgz");
-    assert.equal(reportCacheKey("make-fetch-happen:request-cache:https://registry.npmjs.org/build-os"), "make-fetch-happen:request-cache:https://registry.npmjs.org/build-os");
+    // The report shows the tarball's own file key by its file name only (the relative path names runner folders), and any other key by its kind only (review round 3, finding 5).
+    assert.equal(reportCacheKey("pacote:tarball:file:../../../../runner-folder/build-os-0.2.0.tgz", "build-os-0.2.0.tgz"), "pacote:tarball:file:.../build-os-0.2.0.tgz");
+    assert.equal(reportCacheKey("pacote:tarball:file:C:\\a\\build-os-0.2.0.tgz", "build-os-0.2.0.tgz"), "pacote:tarball:file:.../build-os-0.2.0.tgz");
+    assert.equal(reportCacheKey("pacote:tarball:file:/srv/ci-work/x/other.tgz", "build-os-0.2.0.tgz"), "pacote:tarball:file:(another file; its name is not shown)");
+    assert.equal(reportCacheKey("make-fetch-happen:request-cache:https://registry.npmjs.org/build-os", "build-os-0.2.0.tgz"), "make-fetch-happen:request-cache:(the rest of the key is not shown)");
+    assert.equal(reportCacheKey("/opt/hostedtoolcache/odd key", "build-os-0.2.0.tgz"), "(a key of an unknown kind; it is not shown)");
+    // Review round 3, finding 5: the last scrub of the report, for any absolute path that the cleaning left (POSIX and Windows drive paths; placeholders and URLs stay).
+    assert.deepEqual(scrubAbsolutePaths("ran /opt/hostedtoolcache/node/24/x64/lib/node_modules/npm/bin/npx-cli.js, then C:\\hostedtoolcache\\windows\\node\\npx-cli.js and \"/srv/ci-work/x\""), { text: `ran ${ABSOLUTE_PATH_MARK}, then ${ABSOLUTE_PATH_MARK} and "${ABSOLUTE_PATH_MARK}"`, removed: 3 });
+    assert.deepEqual(scrubAbsolutePaths("{NPM}/bin/npx-cli.js {TMP}/project https://nodejs.org http://127.0.0.1:9/ sha512-ab/cd+/e== node_modules/.bin/buildos"), { text: "{NPM}/bin/npx-cli.js {TMP}/project https://nodejs.org http://127.0.0.1:9/ sha512-ab/cd+/e== node_modules/.bin/buildos", removed: 0 });
     assert.deepEqual(cacheContentProblems(identity, identity.sha256), []);
     assert.equal(cacheContentProblems(identity, undefined).length, 1);
     assert.equal(cacheContentProblems(identity, "c".repeat(64)).length, 1);
@@ -436,7 +457,14 @@ describe("F-P9-15: the report claims only what ran (review round 1 of pull reque
   });
 });
 
-/** A preload module that stubs every process start of published-smoke.ts and logs it; `npm config get offline registry bin-links` prints STUB_PREFLIGHT_STDOUT, and the project install leaves a cache index entry for another file. */
+/**
+ * A preload module that stubs every process start of published-smoke.ts and
+ * logs it; `npm config get offline registry bin-links node-options` prints
+ * STUB_PREFLIGHT_STDOUT (with "auto", the expected text for the probe that
+ * the call's environment names), a start of a Node.js script writes the
+ * launch record that the real probe would write, and the project install
+ * leaves a cache index entry for another file whose key holds a runner path.
+ */
 const PRELOAD = `import { createRequire, syncBuiltinESMExports } from "node:module";
 const require = createRequire(import.meta.url);
 const cp = require("node:child_process");
@@ -444,12 +472,15 @@ const fs = require("node:fs");
 cp.spawnSync = (file, args = [], opts = {}) => {
   const all = [file, ...args].join(" ");
   fs.appendFileSync(process.env.STUB_LOG, all + "\\n");
-  const out = / config get offline registry bin-links$/.test(all) ? process.env.STUB_PREFLIGHT_STDOUT : "";
+  const env = opts.env || {};
+  const auto = "offline=true\\nregistry=http://127.0.0.1:9/\\nbin-links=true\\nnode-options=" + env.npm_config_node_options + "\\n";
+  const out = / config get offline registry bin-links node-options$/.test(all) ? (process.env.STUB_PREFLIGHT_STDOUT === "auto" ? auto : process.env.STUB_PREFLIGHT_STDOUT) : "";
+  if (file === process.execPath && env.SMOKE_LAUNCH_LOG && typeof args[0] === "string" && fs.existsSync(args[0])) fs.appendFileSync(env.SMOKE_LAUNCH_LOG, JSON.stringify({ argv1: args[0], real: fs.realpathSync.native(args[0]) }) + "\\n");
   // Finding 4: an npm install call leaves a cache index entry whose key names a runner folder by a relative path, as npm records it.
   if (/ install --offline /.test(all) && opts.env && opts.env.npm_config_cache) {
     const dir = opts.env.npm_config_cache + "/_cacache/index-v5/aa/bb";
     fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(dir + "/cc", "x\\t" + JSON.stringify({ key: "pacote:tarball:file:../../runner-work/example.tgz", integrity: "sha512-other" }) + "\\n");
+    fs.writeFileSync(dir + "/cc", "x\\t" + JSON.stringify({ key: "pacote:tarball:file:../../runner-work/example.tgz", integrity: "sha512-other" }) + "\\n" + "y\\t" + JSON.stringify({ key: "make-fetch-happen:request-cache:/srv/ci-work/work/x", integrity: "sha512-other" }) + "\\n");
   }
   return { status: 0, signal: null, pid: 0, output: [], stdout: opts.encoding ? out : Buffer.from(out), stderr: opts.encoding ? "" : Buffer.alloc(0) };
 };
@@ -489,7 +520,7 @@ function pathForms(path: string): string[] {
 
 describe("F-P9-15: the script's preflight stop and its report (review round 1 of pull request 12, findings 1 to 3)", () => {
   it("a failed preflight stops the run before step 1: one step in the report, no npx or install started, and nothing claimed", () => {
-    const s = stubbedSmoke("0.2.0", "offline=true\nregistry=http://127.0.0.1:9/\nbin-links=false\n");
+    const s = stubbedSmoke("0.2.0", "offline=true\nregistry=http://127.0.0.1:9/\nbin-links=false\nnode-options=--no-warnings\n");
     assert.equal(s.r.status, 1, s.r.stderr);
     assert.match(s.r.stdout, /FAILED \(0 of 1 steps\)\n {2}STOPPED: the registry guard preflight failed/);
     const report = JSON.parse(s.json) as { passed: boolean; stopped?: string; steps: { role?: string }[]; tarball_mode: { proves: string[]; not_run: string[] } };
@@ -500,13 +531,13 @@ describe("F-P9-15: the script's preflight stop and its report (review round 1 of
     assert.deepEqual(report.tarball_mode.not_run, ["Step 10 did not run."]);
     const calls = s.log.trim().split("\n");
     assert.equal(calls.length, 2, s.log);
-    assert.ok(calls[0]!.endsWith(" config get offline registry bin-links") && calls[1]!.endsWith(" --version"), s.log);
+    assert.ok(calls[0]!.endsWith(" config get offline registry bin-links node-options") && calls[1]!.endsWith(" --version"), s.log);
     assert.match(s.md, /\nStopped: the registry guard preflight failed/);
   });
 
   for (const version of ["0.2.0", "0.1.0"]) {
     it(`${version}: the report holds no path under the temporary root or the home folder (check labels included), and never claims a step that did not run`, () => {
-      const s = stubbedSmoke(version, PREFLIGHT_STDOUT);
+      const s = stubbedSmoke(version, "auto");
       assert.equal(s.r.status, 1, "stubbed processes print nothing, so checks fail");
       const report = JSON.parse(s.json) as { steps: { name: string; role?: string; checks: { check: string; ok: boolean }[] }[]; tarball_mode: { proves: string[]; not_proven: string[]; not_run: string[]; compares: string } };
       for (const text of [s.json, s.md]) for (const p of [...pathForms(s.tmp), ...pathForms(homedir())]) assert.ok(!text.includes(p), `the report holds ${p}`);
@@ -525,10 +556,21 @@ describe("F-P9-15: the script's preflight stop and its report (review round 1 of
       // Review round 2, finding 4: a failed cache check (an entry for another file, recorded by a relative path) shows the key by its file name only.
       const cacheStep = report.steps.find((x) => x.role === "cache-guard")!;
       assert.ok(cacheStep.checks.some((c) => !c.ok), "the cache check failed");
+      // Review round 3, finding 5: an unexpected key shows only its kind, never its text.
       for (const text of [s.json, s.md]) {
-        assert.ok(!text.includes("runner-work"), "the report holds the relative runner path of a cache key");
-        assert.ok(text.includes("the npm cache holds an entry for another file: pacote:tarball:file:.../example.tgz"), "the failure names the file");
+        assert.ok(!text.includes("runner-work") && !text.includes("example.tgz") && !text.includes("/srv/ci-work"), "the report holds the text of an unexpected cache key");
+        assert.ok(text.includes("the npm cache holds an entry for another file: pacote:tarball:file:(another file; its name is not shown)"), "the failure names the kind");
+        assert.ok(text.includes("the npm cache holds an entry that is not a tarball file entry: make-fetch-happen:request-cache:(the rest of the key is not shown)"), "the failure names the kind");
       }
+      // Review round 3, finding 5: no absolute path of any kind (POSIX or a Windows drive path; the placeholders are exempt), and the cleaning alone removed them: the last scrub found none.
+      for (const text of [s.json, s.md]) for (const pattern of ABSOLUTE_PATH_PATTERNS) assert.deepEqual([...text.matchAll(pattern)].map((m) => text.slice(Math.max(0, m.index - 30), m.index + 50)), [], `${pattern}`);
+      assert.equal((JSON.parse(s.json) as { absolute_paths_removed: number }).absolute_paths_removed, 0);
+      assert.equal(s.json.split(ABSOLUTE_PATH_MARK).length, 2, "the mark is named once, in paths_replaced, and replaced nothing");
+      assert.ok(!s.md.includes(ABSOLUTE_PATH_MARK));
+      // The preflight's own npm process is observed and named by the {NPM} placeholder.
+      const launchers = (JSON.parse(s.json) as { launchers: { npm_programs: string[]; observed: { step: string; entry_scripts: string[] }[] } }).launchers;
+      assert.ok(launchers.npm_programs.length >= 2 && launchers.npm_programs.every((p) => p.startsWith("{NPM}")), launchers.npm_programs.join(", "));
+      assert.ok(launchers.observed.length > 0 && launchers.observed.every((o) => o.entry_scripts.every((e) => e.startsWith("{NPM}") || e.startsWith("{TMP}"))), JSON.stringify(launchers.observed));
       assert.match(report.tarball_mode.compares, /^Each install is compared with the tarball by the bytes \(SHA-256\) of each regular file/);
     });
   }
@@ -546,8 +588,14 @@ describe("F-P9-15: the order of the checks in published-smoke.ts", () => {
     const first = text.indexOf("// 0. Tarball mode only: the registry guard is on");
     const step1 = text.indexOf("// 1. version, human and JSON.");
     assert.ok(first > 0 && first < step1);
-    assert.match(text.slice(first, step1), /"config", "get", "offline", "registry", "bin-links"\]/);
-    assert.match(text.slice(first, step1), /, step\.stdout === PREFLIGHT_STDOUT\);\n {2}if \(!step\.checks\.every\(\(c\) => c\.ok\)\) finish\("the registry guard preflight failed/);
+    assert.match(text.slice(first, step1), /\[\.\.\.npm\.prefix, "config", "get", \.\.\.PREFLIGHT_KEYS\]/);
+    assert.deepEqual(PREFLIGHT_KEYS, ["offline", "registry", "bin-links", "node-options"]);
+    assert.match(text.slice(first, step1), /, step\.stdout === preflightStdout\(probe\)\);\n/);
+    assert.match(text.slice(first, step1), /\n {2}if \(!step\.checks\.every\(\(c\) => c\.ok\)\) finish\("the registry guard preflight failed/);
+    // Review round 3, finding 1: one npm installation, selected once; the launch checks allow only its exact program files.
+    assert.match(text, /\nconst allowedNpm = npmRoot !== undefined \? npmPrograms\(npmRoot, WINDOWS\) : \[\];\n/);
+    assert.equal(text.match(/launchChecks\([^\n]*, allowedNpm\);/g)?.length, 3, "the direct steps and the two npm routes of step 10");
+    assert.match(text, /launchChecks\(steps\.filter\(\(s\) => s\.role === "wrapper"\), \(\) => \[projectBin\], \[helperReal\]\);/);
     const npxCheck = text.indexOf("// Tarball mode only, after step 7 and before the project install exists");
     assert.ok(npxCheck > text.indexOf("// 7. One legacy name") && npxCheck < text.indexOf("// 8. The project wrapper with Node.js missing"));
     const last = text.indexOf("// Tarball mode only, after step 10:");
@@ -572,7 +620,7 @@ describe("F-P9-15: the order of the checks in published-smoke.ts", () => {
   });
 
   it("the report records the mode, the package source, the tarball's file name, SHA-256, integrity, and version, the claims made from the steps, and the fixed limits", () => {
-    assert.match(text, /\n {4}mode: source\.kind,\n {4}package_source: packageSource,\n {4}tarball: tarballRecord,\n {4}\.\.\.\(claims !== null && identity !== undefined \? \{ tarball_mode: \{ \.\.\.claims, compares: comparisonStatement\(identity\), does_not_prove: TARBALL_MODE_LIMITS\.does_not_prove \}, launchers: launcherRecord \} : \{\}\),\n/);
+    assert.match(text, /\n {4}mode: source\.kind,\n {4}package_source: packageSource,\n {4}tarball: tarballRecord,\n {4}\.\.\.\(claims !== null && identity !== undefined \? \{ tarball_mode: \{ \.\.\.claims, compares: comparisonStatement\(identity\), does_not_prove: TARBALL_MODE_LIMITS\.does_not_prove \}, launchers \} : \{\}\),\n/);
     assert.match(text, /const claims = identity !== undefined \? tarballClaims\(reported, \{ version, sha256: identity\.sha256, integrity: identity\.integrity \}\) : null;/);
     assert.match(text, /\{ file: basename\(source\.file\), sha256: identity\.sha256, integrity: identity\.integrity, name: identity\.name, version: identity\.version, file_count: identity\.files\.size, non_file_entries: identity\.nonFileEntries, bin_sha256: identity\.bins \}/);
     assert.ok(TARBALL_MODE_LIMITS.does_not_prove.some((line) => line.includes("npx -y build-os@<version> fetches the package from the public registry") && line.includes("runbook step k")));
@@ -614,7 +662,7 @@ describe("F-P9-15: step 10 in tarball mode", () => {
     assert.deepEqual(r.failed, []);
     assert.equal(r.shellRuns.length, 1);
     assert.equal(r.shellRuns[0]!.command, "npx -y build-os@0.2.0 entities rebuild-index --root '/tmp/smoke/project' --mode compat --apply");
-    assert.match(r.shellRuns[0]!.name, /^the printed fix command, as printed, in sh \(tarball mode, registry blocked: the launch check after step 10 names the program; the registry fetch of this literal command is proven only after publication, runbook step k\)$/);
+    assert.match(r.shellRuns[0]!.name, /^the printed fix command, as printed, in sh \(tarball mode, registry blocked: the launch check after step 10 records the entry scripts that the launch probe observed; the registry fetch of this literal command is proven only after publication, runbook step k\)$/);
     assert.equal(stubbed({}).shellRuns[0]!.name, "the printed fix command, as printed, in sh");
     assert.doesNotMatch(r.shellRuns[0]!.name, /\b(ran|started)\b/, "finding 3: the name states no result");
   });
@@ -654,34 +702,56 @@ function removeLauncher(binDir: string, name: string): void {
 
 const CAN_CHMOD = process.platform !== "win32" && process.getuid?.() !== 0;
 
-describe("F-P9-15: which executable ran (review round 2 of pull request 12, finding 1)", () => {
-  it("real npm: bin links off in the caller's environment (any spelling) and in the caller's npm config file are forced on; the launchers of both routes resolve into the verified copies, and the probe shows the package's bin file ran", () => {
+describe("F-P9-15: the launchers and the entry scripts that the launch probe observed (review round 2 of pull request 12, finding 1; round 3, findings 1 to 3)", () => {
+  /** `npm config get` of the preflight keys, as published-smoke.ts runs it. */
+  const get = (l: Layout, env: NodeJS.ProcessEnv) => spawnSync(process.execPath, [npmCli("npm"), "config", "get", "offline", "registry", "bin-links", "node-options"], { cwd: l.work, env, encoding: "utf8" }).stdout.replace(/\r\n/g, "\n");
+
+  it("real npm: bin links off in the caller's environment (any spelling) and in the caller's npm config file are forced on; the launchers of both routes are npm's and point into the verified copies, and the probe observed the package's bin file", async () => {
     const userconfig = join(temp(), "npmrc");
     writeFileSync(userconfig, "bin-links=false\n");
     const l = layout(fixtureTarball(), { ...process.env, NPM_CONFIG_BIN_LINKS: "false", "npm_config_bin-links": "false", npm_config_userconfig: userconfig });
-    const get = (env: NodeJS.ProcessEnv) => spawnSync(process.execPath, [npmCli("npm"), "config", "get", "offline", "registry", "bin-links"], { cwd: l.work, env, encoding: "utf8" }).stdout.replace(/\r\n/g, "\n");
-    assert.equal(get(l.env), PREFLIGHT_STDOUT, "the preflight reads bin-links=true");
+    assert.equal(get(l, l.env), preflightStdout(l.probe), "the preflight reads bin-links=true and the probe's node-options");
     const withoutForce = { ...l.env };
     delete withoutForce["npm_config_bin_links"];
-    assert.match(get(withoutForce), /bin-links=false\n$/, "the caller's config file says false; only the forced value makes it true");
+    assert.match(get(l, withoutForce), /\nbin-links=false\n/, "the caller's config file says false; only the forced value makes it true");
     const r = npxTarball(l);
     assert.equal(r.status, 0, r.stderr);
     assert.equal(r.stdout.replace(/\r\n/g, "\n"), "stub\n");
     const npxDir = readNpxFolders(l.cache, (p) => p)[0]!.dir;
-    assert.deepEqual(launchProblems("version", lastLaunches(), [binFile(npxDir)], [], WINDOWS), []);
+    assert.deepEqual(launchProblems("version", lastLaunches(), [binFile(npxDir)], NPM_PROGRAMS(), WINDOWS), []);
     assert.ok(lastLaunches().some((x) => x.real !== null && x.real.endsWith(join("build-os", "dist", "buildos.js"))));
-    assert.deepEqual(launcherCheck(npxDir, ["buildos", "buildos-intake"], l), []);
+    assert.deepEqual(await launcherCheck(npxDir, ["buildos", "buildos-intake"], l), []);
     assert.equal(installIntoProject(l).status, 0);
-    assert.deepEqual(launcherCheck(l.project, ["build-os", "buildos"], l), []);
+    assert.deepEqual(await launcherCheck(l.project, ["build-os", "buildos"], l), []);
   });
 
-  it("real npm: without the forced value, an npx install with bin links off has no launcher: the run fails (the review's exit 127), and the launcher and probe checks name the cause", () => {
+  it("real npm, finding 3: a caller's node-options in an npm config file and in the environment (any spelling) is replaced by the probe, and the probe observed the bin; without the forced value npm replaces the bin process's NODE_OPTIONS and the probe observes only npx", () => {
+    const userconfig = join(temp(), "npmrc");
+    writeFileSync(userconfig, "node-options=--no-warnings\n");
+    const l = layout(fixtureTarball(), { ...process.env, npm_config_userconfig: userconfig, npm_config_node_options: "--no-warnings", "NPM_CONFIG_NODE-OPTIONS": "--no-warnings" });
+    assert.equal(get(l, l.env), preflightStdout(l.probe));
+    assert.equal(l.env["npm_config_node_options"], probeNodeOptions(l.probe));
+    const r = npxTarball(l);
+    assert.equal(r.stdout.replace(/\r\n/g, "\n"), "stub\n", r.stderr);
+    const npxDir = readNpxFolders(l.cache, (p) => p)[0]!.dir;
+    assert.deepEqual(launchProblems("version", lastLaunches(), [binFile(npxDir)], NPM_PROGRAMS(), WINDOWS), []);
+    // Without the forced value, the caller's npmrc wins, as the review saw (20 of 20 fell to 18 of 20).
+    const withoutForce = { ...l.env };
+    delete withoutForce["npm_config_node_options"];
+    assert.match(get(l, withoutForce), /\nnode-options=--no-warnings\n$/);
+    assert.equal(npxTarball(l, l.tarball, withoutForce).stdout.replace(/\r\n/g, "\n"), "stub\n");
+    assert.deepEqual(launchProblems("version", lastLaunches(), [binFile(npxDir)], NPM_PROGRAMS(), WINDOWS), [`step "version": the launch probe observed no Node.js process with the entry script ${binFile(npxDir)}`]);
+    const allowed = new Set(NPM_PROGRAMS().map((p) => comparePathKey(p, WINDOWS)));
+    assert.ok(lastLaunches().length > 0 && lastLaunches().every((x) => x.real !== null && allowed.has(comparePathKey(x.real, WINDOWS))), "the probe observed only npm's own program");
+  });
+
+  it("real npm: without the forced value, an npx install with bin links off has no launcher: the run fails (the review's exit 127), and the launcher and probe checks name the cause", async () => {
     const l = layout();
     const r = npx(l, l.work, ["-y", `--package=${l.tarball}`, "--", "buildos"], { ...l.env, npm_config_bin_links: "false" });
     assert.notEqual(r.status, 0, r.stdout);
     const npxDir = readNpxFolders(l.cache, (p) => p)[0]!.dir;
-    assert.deepEqual(launchProblems("version", lastLaunches(), [binFile(npxDir)], [], WINDOWS), [`step "version": no Node.js process ran ${binFile(npxDir)}`]);
-    const problems = launcherCheck(npxDir, ["buildos"], l);
+    assert.deepEqual(launchProblems("version", lastLaunches(), [binFile(npxDir)], NPM_PROGRAMS(), WINDOWS), [`step "version": the launch probe observed no Node.js process with the entry script ${binFile(npxDir)}`]);
+    const problems = await launcherCheck(npxDir, ["buildos"], l);
     assert.ok(problems.length > 0 && problems.every((p) => /^route: the launcher .*buildos(\.cmd|\.ps1)? is missing$/.test(p)), problems.join("\n"));
   });
 
@@ -694,70 +764,88 @@ describe("F-P9-15: which executable ran (review round 2 of pull request 12, find
     removeLauncher(binDir, "buildos");
     if (WINDOWS) await cmdShim()(fake, join(binDir, "buildos"));
     else symlinkSync(fake, join(binDir, "buildos"));
-    const problems = launcherCheck(npxDir, ["buildos"], l);
-    assert.ok(problems.length > 0 && problems.every((p) => p.includes(`resolves to ${realpathSync.native(fake)}`) || p.toLowerCase().includes(realpathSync.native(fake).toLowerCase())), problems.join("\n"));
-    assert.ok(problems.every((p) => p.endsWith(`not to the package's bin file ${binFile(npxDir)}`)), problems.join("\n"));
+    const problems = await launcherCheck(npxDir, ["buildos"], l);
+    if (WINDOWS) {
+      assert.equal(problems.length, 3, problems.join("\n"));
+      for (const p of problems) assert.match(p, /^route: the shim .*buildos(\.cmd|\.ps1)? is not byte-equal to the shim that the selected npm's cmd-shim writes for the package's bin file /);
+    } else {
+      assert.deepEqual(problems, [`route: the launcher ${join(binDir, "buildos")} resolves to ${realpathSync.native(fake)}, not to the package's bin file ${binFile(npxDir)}`]);
+    }
     const r = npxTarball(l);
     assert.equal(r.stdout.replace(/\r\n/g, "\n"), "fake\n", "the replaced launcher ran: the output checks alone cannot tell");
-    const ran = launchProblems("version", lastLaunches(), [binFile(npxDir)], [], WINDOWS);
-    assert.ok(ran.some((p) => p.startsWith('step "version": a Node.js process ran ') && p.toLowerCase().includes(realpathSync.native(fake).toLowerCase())), ran.join("\n"));
-    assert.ok(ran.includes(`step "version": no Node.js process ran ${binFile(npxDir)}`), ran.join("\n"));
+    const ran = launchProblems("version", lastLaunches(), [binFile(npxDir)], NPM_PROGRAMS(), WINDOWS);
+    assert.ok(ran.some((p) => p.startsWith('step "version": the launch probe observed the entry script ') && p.toLowerCase().includes(realpathSync.native(fake).toLowerCase())), ran.join("\n"));
+    assert.ok(ran.includes(`step "version": the launch probe observed no Node.js process with the entry script ${binFile(npxDir)}`), ran.join("\n"));
   });
 
-  it("real npm: a launcher removed after the install fails the launcher check of the project route, and names the launcher", () => {
+  it("real npm: a launcher removed after the install fails the launcher check of the project route, and names the launcher", async () => {
     const l = layout();
     assert.equal(installIntoProject(l).status, 0);
     removeLauncher(join(l.project, "node_modules", ".bin"), "build-os");
-    const problems = launcherCheck(l.project, ["build-os", "buildos"], l);
+    const problems = await launcherCheck(l.project, ["build-os", "buildos"], l);
     assert.ok(problems.length > 0, "a problem");
     for (const p of problems) assert.match(p, /^route: the launcher .*build-os(\.cmd|\.ps1)? is missing$/);
   });
 
-  it("Windows shims, on every system: npm's own cmd-shim output resolves to its target (compared case-insensitively), and a shim with another or a second target fails", async () => {
+  it("Windows shims, on every system (finding 2): the shims that npm's cmd-shim writes for the bin file are byte-equal to the canonical ones and pass; a shim with the target only in a comment, a shim for another target, and a missing shim fail and are named", async () => {
+    const l = layout();
     const base = temp();
-    const target = join(base, "node_modules", "build-os", "dist", "buildos.js");
+    const target = binFile(base);
     mkdirSync(dirname(target), { recursive: true });
-    writeFileSync(target, BIN);
+    writeFileSync(target, l.identity.binBodies.get("dist/buildos.js")!);
     const binDir = join(base, "node_modules", ".bin");
-    mkdirSync(binDir);
     await cmdShim()(target, join(binDir, "buildos"));
-    const cmd = readFileSync(join(binDir, "buildos.cmd"), "utf8");
-    const ps1 = readFileSync(join(binDir, "buildos.ps1"), "utf8");
-    assert.equal(cmdShimTarget(cmd), "..\\build-os\\dist\\buildos.js");
-    assert.equal(ps1ShimTarget(ps1), "../build-os/dist/buildos.js");
-    const read = readLaunchers(binDir, ["buildos"], true, (p) => p);
-    assert.deepEqual(read[0]!.files.map((x) => x.kind), ["cmd", "ps1"]);
-    assert.deepEqual(launcherProblems("route", read, new Map([["buildos", target]]), true), []);
-    assert.deepEqual(launcherProblems("route", read, new Map([["buildos", target.toUpperCase()]]), true), [], "case-insensitive on Windows");
-    // Fixture texts: the older %~dp0 form, a second target, and another target.
-    assert.equal(cmdShimTarget('@"%~dp0\\..\\build-os\\dist\\buildos.js" %*\r\n'), "..\\build-os\\dist\\buildos.js");
-    assert.equal(cmdShimTarget(`${cmd}\r\n"%dp0%\\..\\other\\x.js" %*\r\n`), undefined);
-    assert.equal(ps1ShimTarget(`${ps1}\n& "$basedir/../other/x.js" $args\n`), undefined);
-    assert.equal(cmdShimTarget("@echo fake\r\n"), undefined);
-    writeFileSync(join(binDir, "buildos.cmd"), cmd.split("..\\build-os\\dist\\buildos.js").join("..\\..\\..\\elsewhere\\buildos.js"));
-    writeFileSync(join(binDir, "buildos.ps1"), `${ps1}\n& "$basedir/../other/x.js" $args\n`);
-    const bad = launcherProblems("route", readLaunchers(binDir, ["buildos"], true, (p) => p), new Map([["buildos", target]]), true);
-    assert.equal(bad.length, 2, bad.join("\n"));
-    assert.match(bad[0]!, /buildos\.cmd resolves to .*elsewhere.buildos\.js, not to the package's bin file /);
-    assert.match(bad[1]!, /buildos\.ps1 names no single target \(the shim text names no single target\)$/);
+    const canonical = await canonicalOf(l);
+    assert.deepEqual([...canonical.get("buildos")!.keys()], ["", ".cmd", ".ps1"]);
+    const check = () => launcherProblems("route", readLaunchers(binDir, ["buildos"], true, (p) => p, canonical), new Map([["buildos", target]]), true);
+    assert.deepEqual(readLaunchers(binDir, ["buildos"], true, (p) => p, canonical)[0]!.files.map((x) => [basename(x.where), x.kind, x.equal]), [["buildos", "shim", true], ["buildos.cmd", "shim", true], ["buildos.ps1", "shim", true]]);
+    assert.deepEqual(check(), []);
+    // The target only in a comment: the round 2 parser returned it; the byte comparison fails.
+    const cmd = readFileSync(join(binDir, "buildos.cmd"));
+    writeFileSync(join(binDir, "buildos.cmd"), '@echo fake\r\nREM "%dp0%\\..\\build-os\\dist\\buildos.js"\r\n');
+    const commentOnly = check();
+    assert.equal(commentOnly.length, 1, commentOnly.join("\n"));
+    assert.match(commentOnly[0]!, /^route: the shim .*buildos\.cmd is not byte-equal to the shim that the selected npm's cmd-shim writes for the package's bin file .* \(its \d+ bytes differ from the canonical \d+ bytes\)$/);
+    writeFileSync(join(binDir, "buildos.cmd"), cmd);
+    writeFileSync(join(binDir, "buildos.ps1"), `${readFileSync(join(binDir, "buildos.ps1"), "utf8")}\n# & "$basedir/../build-os/dist/buildos.js" $args\n`);
+    assert.equal(check().length, 1, "a comment added to a real shim fails");
+    // A shim for another target (npm's own writer, pointed elsewhere): all three differ.
+    await cmdShim()(fakeScript(), join(binDir, "buildos"));
+    assert.equal(check().length, 3, check().join("\n"));
+    rmSync(join(binDir, "buildos"));
+    assert.ok(check().includes(`route: the launcher ${join(binDir, "buildos")} is missing`));
   });
 
-  it("stubs: on macOS and Linux a launcher that is a regular file is not npm's link; a launch log line that is not a record, and a program outside the copy, fail", () => {
+  it("stubs (finding 1): npm programs are the exact files of the selected npm installation; another npm installation's npx-cli.js, a file outside the copy, and an unreadable record fail; on macOS and Linux a backslash is an ordinary character; a regular file is not npm's link", () => {
+    assert.deepEqual(npmPrograms("/n/lib/node_modules/npm", false), ["/n/lib/node_modules/npm/bin/npm-cli.js", "/n/lib/node_modules/npm/bin/npx-cli.js"]);
+    assert.deepEqual(npmPrograms("C:\\n\\node_modules\\npm", true), ["C:\\n\\node_modules\\npm\\bin\\npm-cli.js", "C:\\n\\node_modules\\npm\\bin\\npx-cli.js", "C:\\n\\node_modules\\npm\\bin\\npm-prefix.js"]);
+    assert.equal(comparePathKey("/a\\b", false), "/a\\b");
+    assert.notEqual(comparePathKey("/a\\b", false), comparePathKey("/a/b", false), "POSIX: a\\b is one name");
+    assert.equal(comparePathKey("C:\\A\\B\\", true), comparePathKey("c:/a/b", true), "Windows: either separator, any case");
     const want = new Map([["buildos", "/r/c/node_modules/build-os/dist/buildos.js"]]);
     assert.deepEqual(launcherProblems("route", [{ name: "buildos", files: [{ where: "w", kind: "file", resolved: "/r/c/node_modules/build-os/dist/buildos.js" }] }], want, false), ["route: the launcher w is a regular file, not npm's symbolic link"]);
     assert.deepEqual(launcherProblems("route", [], want, false), ["route: no launcher was read for the bin buildos"]);
-    assert.deepEqual(launcherProblems("route", [{ name: "buildos", files: [{ where: "w", kind: "symlink", resolved: "/R/C/node_modules/build-os/dist/buildos.js" }] }], want, false).length, 1, "case-sensitive off Windows");
-    const records = launchRecords('{"argv1":"/n/npx","real":"/n/lib/node_modules/npm/bin/npx-cli.js"}\n{"argv1":"p","real":"C:\\\\n\\\\node_modules\\\\npm\\\\bin\\\\npm-prefix.js"}\nnot json\n{"argv1":"/x","real":"/x/buildos.js"}\n');
-    assert.equal(records[1]!.real, "C:\\n\\node_modules\\npm\\bin\\npm-prefix.js", "npm's npx.cmd shim on Windows starts npm-prefix.js first; it is npm's own program");
-    assert.deepEqual(launchProblems("s", records, ["/r/c/node_modules/build-os/dist/buildos.js"], [], false), [
-      'step "s": a Node.js process ran (no main script), whose real path could not be read',
-      'step "s": a Node.js process ran /x/buildos.js, not /r/c/node_modules/build-os/dist/buildos.js',
-      'step "s": no Node.js process ran /r/c/node_modules/build-os/dist/buildos.js',
+    assert.equal(launcherProblems("route", [{ name: "buildos", files: [{ where: "w", kind: "symlink", resolved: "/R/C/node_modules/build-os/dist/buildos.js" }] }], want, false).length, 1, "case-sensitive off Windows");
+    assert.equal(launcherProblems("route", [{ name: "buildos", files: [{ where: "w", kind: "symlink", resolved: "/r/c/node_modules/build-os/dist\\buildos.js" }] }], want, false).length, 1, "a backslash is not a separator off Windows");
+    const npm = npmPrograms("/n/lib/node_modules/npm", false);
+    const records = launchRecords('{"argv1":"/n/npx","real":"/n/lib/node_modules/npm/bin/npx-cli.js"}\n{"argv1":"o","real":"/other/lib/node_modules/npm/bin/npx-cli.js"}\nnot json\n{"argv1":"/x","real":"/x/buildos.js"}\n');
+    assert.deepEqual(launchProblems("s", records, ["/r/c/node_modules/build-os/dist/buildos.js"], npm, false), [
+      `step "s": the launch probe observed the entry script /other/lib/node_modules/npm/bin/npx-cli.js, which is not /r/c/node_modules/build-os/dist/buildos.js and not an allowed program (${npm.join(", ")})`,
+      'step "s": the launch probe observed a Node.js process with the entry script (none), whose real path could not be read',
+      `step "s": the launch probe observed the entry script /x/buildos.js, which is not /r/c/node_modules/build-os/dist/buildos.js and not an allowed program (${npm.join(", ")})`,
+      'step "s": the launch probe observed no Node.js process with the entry script /r/c/node_modules/build-os/dist/buildos.js',
     ]);
-    assert.deepEqual(launchProblems("s", launchRecords('{"argv1":"h","real":"/p/.os/scripts/pinned-version.cjs"}\n{"argv1":"b","real":"/r/c/node_modules/build-os/dist/buildos.js"}\n'), ["/r/c/node_modules/build-os/dist/buildos.js"], ["/p/.os/scripts/pinned-version.cjs"], false), []);
+    // npm-prefix.js counts on Windows only, and only in the selected installation (seen in CI run 45994727376).
+    const prefixRecord = launchRecords('{"argv1":"p","real":"C:\\\\N\\\\node_modules\\\\npm\\\\bin\\\\npm-prefix.js"}\n{"argv1":"b","real":"c:\\\\r\\\\node_modules\\\\build-os\\\\dist\\\\buildos.js"}\n');
+    assert.deepEqual(launchProblems("s", prefixRecord, ["C:\\r\\node_modules\\build-os\\dist\\buildos.js"], npmPrograms("c:\\n\\node_modules\\npm", true), true), []);
+    assert.equal(launchProblems("s", prefixRecord, ["C:\\r\\node_modules\\build-os\\dist\\buildos.js"], npmPrograms("c:\\other\\node_modules\\npm", true), true).length, 1);
+    // The wrapper's helper: the exact file only.
+    const helper = "/p/.os/scripts/pinned-version.cjs";
+    assert.deepEqual(launchProblems("s", launchRecords('{"argv1":"h","real":"/p/.os/scripts/pinned-version.cjs"}\n{"argv1":"b","real":"/r/c/node_modules/build-os/dist/buildos.js"}\n'), ["/r/c/node_modules/build-os/dist/buildos.js"], [helper], false), []);
+    assert.equal(launchProblems("s", launchRecords('{"argv1":"h","real":"/q/.os/scripts/pinned-version.cjs"}\n{"argv1":"b","real":"/r/c/node_modules/build-os/dist/buildos.js"}\n'), ["/r/c/node_modules/build-os/dist/buildos.js"], [helper], false).length, 1, "another project's helper fails");
   });
 
-  it("the launch probe writes one record per Node.js process to the step's log and nothing to stdout or stderr", () => {
+  it("the launch probe writes one record per Node.js process to the step's log and nothing to stdout or stderr; every claim and limit that rests on it states what it cannot observe", () => {
     const dir = temp();
     const probe = join(dir, "probe dir", "probe.cjs");
     mkdirSync(dirname(probe));
@@ -770,6 +858,17 @@ describe("F-P9-15: which executable ran (review round 2 of pull request 12, find
     assert.equal(r.stdout, "out");
     assert.equal(r.stderr, "");
     assert.deepEqual(launchRecords(readFileSync(log, "utf8")).map((x) => x.real), [realpathSync.native(script)]);
+    // A Node.js process started with a cleared environment is not observed.
+    writeFileSync(log, "");
+    spawnSync(process.execPath, [script], { env: { [PROBE_LOG_VARIABLE]: log }, encoding: "utf8" });
+    assert.equal(readFileSync(log, "utf8"), "");
+    assert.equal(PROBE_LIMIT, "A process that is not Node.js, or a Node.js process started with a cleared environment (without the probe in NODE_OPTIONS), is not observed.");
+    const c = tarballClaims(outcomes(), TARBALL);
+    const observed = c.proves.filter((p) => p.includes("launch probe observed"));
+    assert.equal(observed.length, 3);
+    for (const line of observed) assert.ok(line.includes("the entry scripts of the Node.js processes that the launch probe observed") && line.includes(PROBE_LIMIT), line);
+    for (const line of [...c.proves, ...TARBALL_MODE_LIMITS.does_not_prove]) assert.doesNotMatch(line, /which executable|the program of each|shows that the program/, line);
+    assert.ok(TARBALL_MODE_LIMITS.does_not_prove.some((line) => line.startsWith("Every executable that a step ran.") && line.includes(PROBE_LIMIT)));
   });
 });
 
@@ -781,7 +880,7 @@ describe("F-P9-15: what the install comparison covers (review round 2 of pull re
     assert.deepEqual(evidence(l).projectCopy, ["__proto__", "constructor", "toString"].map((n) => `the project install (project): ${n} is not in the tarball`));
     const id = readTarballIdentity(fixtureTarball({}, { "package/constructor": "c\n", "package/__proto__": "p\n" }));
     assert.ok(id.files.has("constructor") && id.files.has("__proto__"));
-    const copy = { where: "w", files: new Map([...id.files].filter(([k]) => k !== "constructor" && k !== "__proto__")), incomplete: [], lock: { version: "0.2.0", resolved: "file:../build-os-0.2.0.tgz", integrity: id.integrity } };
+    const copy = { where: "w", files: new Map([...id.files].filter(([k]) => k !== "constructor" && k !== "__proto__")), dirs: ["dist"], incomplete: [], lock: { version: "0.2.0", resolved: "file:../build-os-0.2.0.tgz", integrity: id.integrity } };
     assert.deepEqual(copyProblems("c", copy, id, "build-os-0.2.0.tgz"), ["c (w): constructor is missing", "c (w): __proto__ is missing"]);
   });
 
@@ -814,6 +913,38 @@ describe("F-P9-15: what the install comparison covers (review round 2 of pull re
     }
   });
 
+  it("real npm (review round 3, finding 4): npm makes no folder that holds no tarball file, so an extra empty folder, or a nested one, in either install fails and is named", () => {
+    const l = layout();
+    assert.equal(npxTarball(l).status, 0);
+    assert.equal(installIntoProject(l).status, 0);
+    assert.deepEqual(evidence(l).projectCopy, [], "a normal install has only the tarball's folders");
+    assert.deepEqual(readInstalledCopy(l.project, "project")!.dirs, ["dist"]);
+    mkdirSync(join(l.project, "node_modules", "build-os", "empty"));
+    mkdirSync(join(l.project, "node_modules", "build-os", "dist", "a", "b"), { recursive: true });
+    assert.deepEqual(evidence(l).projectCopy, ["the project install (project): the folder dist/a/ is not in the tarball (no tarball file is below it)", "the project install (project): the folder dist/a/b/ is not in the tarball (no tarball file is below it)", "the project install (project): the folder empty/ is not in the tarball (no tarball file is below it)"]);
+    const npxDir = readNpxFolders(l.cache, (p) => p)[0]!.dir;
+    mkdirSync(join(npxDir, "node_modules", "build-os", "node_modules"));
+    assert.deepEqual(evidence(l).npxCopy, ["the npx install (npx): the folder node_modules/ is not in the tarball (no tarball file is below it)"]);
+  });
+
+  it("real npm (review round 3, finding 4): the folder search skips only this run's npm cache store and logs, by exact path: a build-os below project/_logs, or below a folder named _cacache elsewhere, fails; on Windows the names match in any case", () => {
+    const l = layout();
+    assert.equal(installIntoProject(l).status, 0);
+    assert.deepEqual(evidence(l).stray, []);
+    const hidden = [join(l.project, "_logs", "node_modules", "build-os"), join(l.root, "work", "_cacache", "node_modules", "build-os")];
+    for (const dir of hidden) mkdirSync(dir, { recursive: true });
+    assert.deepEqual(evidence(l).stray, hidden.sort().map((d) => `another build-os folder is below the temporary root: ${d}`));
+    for (const dir of hidden) rmSync(dirname(dirname(dir)), { recursive: true });
+    // In the run's own cache store, a build-os folder is not searched (npm keeps only content there).
+    mkdirSync(join(l.cache, "_cacache", "node_modules", "build-os"), { recursive: true });
+    assert.deepEqual(evidence(l).stray, []);
+    // Windows: other case during the discovery itself.
+    const odd = join(l.root, "work", "NODE_MODULES", "Build-OS");
+    mkdirSync(odd, { recursive: true });
+    assert.deepEqual(findBuildOsFolders(l.root, [join(l.cache, "_cacache"), join(l.cache, "_logs")], true).found.filter((f) => f.startsWith(join(l.root, "work"))), [odd]);
+    assert.deepEqual(findBuildOsFolders(l.root, [join(l.cache, "_cacache"), join(l.cache, "_logs")], false).found.filter((f) => f.startsWith(join(l.root, "work"))), [], "names match exactly off Windows");
+  });
+
   it("real npm: a symbolic link in the install where the tarball has a regular file fails, and says so", { skip: WINDOWS && "symbolic links need a privilege on Windows" }, () => {
     const l = layout();
     assert.equal(installIntoProject(l).status, 0);
@@ -825,7 +956,7 @@ describe("F-P9-15: what the install comparison covers (review round 2 of pull re
 
   it("the report states what is compared and what is not, with the tarball's own count of entries that are not regular files", () => {
     const id = readTarballIdentity(fixtureTarball());
-    assert.equal(comparisonStatement(id), "Each install is compared with the tarball by the bytes (SHA-256) of each regular file, by its package-relative path: each of the tarball's 3 regular files must be in the install as a regular file with the same bytes (a symbolic link or another kind there fails), the install may hold no other entry of any kind, and a part of the install that cannot be read fails the comparison. File modes, owners, and times are not compared. The tarball holds no entry that is not a regular file or a folder (no symbolic link, no hard link).");
+    assert.equal(comparisonStatement(id), "Each install is compared with the tarball by the bytes (SHA-256) of each regular file, by its package-relative path: each of the tarball's 3 regular files must be in the install as a regular file with the same bytes (a symbolic link or another kind there fails), the install may hold no other entry of any kind (no other file, link, or folder; a folder that holds no tarball file, also an empty one, fails), and a part of the install that cannot be read fails the comparison. File modes, owners, and times are not compared. The tarball holds no entry that is not a regular file or a folder (no symbolic link, no hard link).");
     const withLink = readTarballIdentity(tarGzRaw([ustarEntry("package/package.json", JSON.stringify({ name: "build-os", version: "0.2.0", bin: { buildos: "dist/buildos.js" } })), ustarEntry("package/dist/buildos.js", BIN), ustarEntry("package/dist/link.js", "", { typeFlag: "2", linkName: "buildos.js" }), Buffer.alloc(1024)]));
     assert.deepEqual(withLink.nonFileEntries, ["package/dist/link.js (symlink)"]);
     assert.match(comparisonStatement(withLink), /The tarball holds 1 entries that are not regular files or folders: package\/dist\/link\.js \(symlink\); they are not compared\.$/);

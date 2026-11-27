@@ -9,15 +9,21 @@
 // part silently. A folder or entry that cannot be read, an entry of another
 // kind, and a folder below the depth limit are recorded, and the check that
 // reads them fails and names the path.
+//
+// Review round 3 of pull request 12, finding 2: the one write of this
+// module is canonicalShims, which runs the selected npm's own cmd-shim into
+// a new scratch folder that the caller gives (outside the smoke's temporary
+// root) and removes it again.
 
-import { lstatSync, readdirSync, readFileSync, readlinkSync, realpathSync } from "node:fs";
-import { basename, dirname, join, resolve, win32 } from "node:path";
+import { createRequire } from "node:module";
+import { lstatSync, mkdirSync, readdirSync, readFileSync, readlinkSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { basename, dirname, join, resolve } from "node:path";
 import {
   cacheIndexEntries,
-  cmdShimTarget,
   NOT_REGULAR_MARK,
-  ps1ShimTarget,
+  pathKey,
   sha256Hex,
+  SHIM_EXTENSIONS,
   SYMLINK_MARK,
   type CacheEntry,
   type InstalledCopy,
@@ -44,11 +50,11 @@ function readJson(path: string): unknown {
   }
 }
 
-type Kind = "file" | "symlink" | "other";
+type Kind = "file" | "symlink" | "other" | "dir";
 
 /**
- * Every entry below `dir`, by its relative path with `/` separators; a
- * symbolic link is not followed. Each part that cannot be read (the folder
+ * Every entry below `dir`, by its relative path with `/` separators (a
+ * folder too, before its entries); a symbolic link is not followed. Each part that cannot be read (the folder
  * itself, an entry, a folder deeper than MAX_DEPTH) goes to `incomplete` as
  * its relative path and the reason; a missing `dir` is not a problem here
  * (the caller decides).
@@ -74,6 +80,7 @@ function walk(dir: string, visit: (rel: string, path: string, kind: Kind) => voi
     }
     if (st.isSymbolicLink()) visit(r, path, "symlink");
     else if (st.isDirectory()) {
+      visit(r, path, "dir");
       if (depth + 1 > MAX_DEPTH) incomplete.push(`${r}: the folder is deeper than ${MAX_DEPTH} levels and was not read`);
       else walk(path, visit, incomplete, r, depth + 1);
     } else if (st.isFile()) visit(r, path, "file");
@@ -88,6 +95,7 @@ export function readCacheIndex(cache: string): { entries: CacheEntry[]; incomple
   walk(
     join(cache, "_cacache", "index-v5"),
     (rel, path, kind) => {
+      if (kind === "dir") return;
       if (kind !== "file") {
         incomplete.push(`${rel}: not a regular file`);
         return;
@@ -121,11 +129,13 @@ export function readInstalledCopy(base: string, where: string): InstalledCopy | 
   if (!isDir(dir)) return undefined;
   // A Map: a file named like an inherited object key is an own entry (finding 2).
   const files = new Map<string, string>();
+  const dirs: string[] = [];
   const incomplete: string[] = [];
   walk(
     dir,
     (rel, path, kind) => {
-      if (kind === "symlink") files.set(rel, SYMLINK_MARK);
+      if (kind === "dir") dirs.push(rel);
+      else if (kind === "symlink") files.set(rel, SYMLINK_MARK);
       else if (kind === "other") files.set(rel, NOT_REGULAR_MARK);
       else {
         try {
@@ -144,7 +154,7 @@ export function readInstalledCopy(base: string, where: string): InstalledCopy | 
   const packages = (readJson(join(base, "node_modules", ".package-lock.json")) as { packages?: Record<string, InstalledCopy["lock"]> } | undefined)?.packages ?? {};
   const keys = Object.keys(packages).filter((k) => k === "node_modules/build-os" || k.endsWith("/node_modules/build-os"));
   const key = Object.hasOwn(packages, "node_modules/build-os") ? "node_modules/build-os" : keys.length === 1 ? keys[0]! : undefined;
-  return { where, files, incomplete: incomplete.map((p) => `${where}/${p}`), lock: key !== undefined ? packages[key] : undefined };
+  return { where, files, dirs, incomplete: incomplete.map((p) => `${where}/${p}`), lock: key !== undefined ? packages[key] : undefined };
 }
 
 /** Every folder below `<cache>/_npx`: its path, its `_npx.packages`, and whether it holds a build-os install. Every entry counts, whatever it holds (finding 2). */
@@ -161,10 +171,19 @@ export function readNpxFolders(cache: string, clean: (path: string) => string): 
     .map((dir) => ({ dir, where: clean(dir), packages: (readJson(join(dir, "package.json")) as { _npx?: { packages?: unknown } } | undefined)?._npx?.packages, hasBuildOs: isDir(join(dir, "node_modules", "build-os")) }));
 }
 
-/** Every `node_modules/build-os` folder below `root` (symbolic links are not followed; the npm cache's own store is skipped), and each part that could not be read. */
-export function findBuildOsFolders(root: string): { found: string[]; incomplete: string[] } {
+/**
+ * Every `node_modules/build-os` folder below `root` (symbolic links are not
+ * followed), and each part that could not be read. Only the folders in
+ * `skip` are not searched: the exact paths of this run's npm cache store and
+ * log folders (review round 3 of pull request 12, finding 4), compared by
+ * pathKey; a folder of the same name elsewhere is searched. On Windows the
+ * names `node_modules` and `build-os` are matched case-insensitively.
+ */
+export function findBuildOsFolders(root: string, skip: readonly string[], windows: boolean): { found: string[]; incomplete: string[] } {
   const found: string[] = [];
   const incomplete: string[] = [];
+  const skipped = new Set(skip.map((p) => pathKey(p, windows)));
+  const same = (a: string, b: string): boolean => (windows ? a.toLowerCase() === b.toLowerCase() : a === b);
   const visit = (dir: string, depth: number): void => {
     let names: string[];
     try {
@@ -182,8 +201,8 @@ export function findBuildOsFolders(root: string): { found: string[]; incomplete:
         incomplete.push(`${path}: the entry cannot be read (${(e as NodeJS.ErrnoException).code ?? "error"})`);
         continue;
       }
-      if (!st.isDirectory() || name === "_cacache" || name === "_logs") continue;
-      if (name === "build-os" && basename(dir) === "node_modules") found.push(path);
+      if (!st.isDirectory() || skipped.has(pathKey(path, windows))) continue;
+      if (same(name, "build-os") && same(basename(dir), "node_modules")) found.push(path);
       if (depth + 1 > MAX_DEPTH) incomplete.push(`${path}: the folder is deeper than ${MAX_DEPTH} levels and was not read`);
       else visit(path, depth + 1);
     }
@@ -193,14 +212,51 @@ export function findBuildOsFolders(root: string): { found: string[]; incomplete:
 }
 
 /**
+ * The canonical Windows shims of each bin (review round 3 of pull request
+ * 12, finding 2): the files that the selected npm's own cmd-shim module
+ * (`<npm root>/node_modules/cmd-shim`, the module that npm's bin-links uses
+ * on Windows) writes for that bin, in a scratch folder with the same
+ * relative layout as an install: `node_modules/.bin/<name>` for the bin file
+ * `node_modules/build-os/<path>`, which holds the tarball's bytes. cmd-shim's
+ * output depends only on the relative path from the shim's folder to the bin
+ * file and on the bin file's first line (its `#!` line), and both are the
+ * same as in an install, so nothing is normalized before the byte
+ * comparison. Returns, per bin name, the bytes of each shim file by its
+ * extension (SHIM_EXTENSIONS). The scratch folder must not exist; it is
+ * removed again.
+ */
+export async function canonicalShims(npmRoot: string, scratch: string, bins: ReadonlyMap<string, string>, bodies: ReadonlyMap<string, Uint8Array>): Promise<Map<string, Map<string, Uint8Array>>> {
+  const cmdShim = createRequire(join(npmRoot, "package.json"))(join(npmRoot, "node_modules", "cmd-shim")) as (from: string, to: string) => Promise<void>;
+  const out = new Map<string, Map<string, Uint8Array>>();
+  mkdirSync(scratch);
+  try {
+    for (const [name, rel] of bins) {
+      const body = bodies.get(rel);
+      if (body === undefined) continue;
+      const base = join(scratch, name);
+      const target = join(base, "node_modules", "build-os", ...rel.split("/"));
+      mkdirSync(dirname(target), { recursive: true });
+      writeFileSync(target, body);
+      const to = join(base, "node_modules", ".bin", name);
+      await cmdShim(target, to);
+      out.set(name, new Map(SHIM_EXTENSIONS.map((ext) => [ext, readFileSync(`${to}${ext}`)] as const)));
+    }
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+  return out;
+}
+
+/**
  * The launcher of each bin name in the npm bin folder `binDir`
  * (`<install>/node_modules/.bin`). On macOS and Linux: `<binDir>/<name>`,
- * which npm makes as a symbolic link, resolved to its real path. On Windows:
- * the `.cmd` shim (what Command Prompt and npm's run-script start) and the
- * PowerShell shim, each resolved from the target that its text names,
- * against the shim's folder (cmd-shim 8 in npm 11).
+ * which npm makes as a symbolic link, resolved to its real path. On Windows
+ * (review round 3 of pull request 12, finding 2): each of the three shims
+ * that npm's cmd-shim writes (`<name>`, `<name>.cmd`, and `<name>.ps1`),
+ * compared byte for byte with the canonical shims of that bin
+ * (canonicalShims); no target is parsed from the text.
  */
-export function readLaunchers(binDir: string, names: readonly string[], windows: boolean, clean: (path: string) => string): LauncherRead[] {
+export function readLaunchers(binDir: string, names: readonly string[], windows: boolean, clean: (path: string) => string, canonical?: ReadonlyMap<string, ReadonlyMap<string, Uint8Array>>): LauncherRead[] {
   return names.map((name) => {
     if (!windows) {
       const file = join(binDir, name);
@@ -232,21 +288,19 @@ export function readLaunchers(binDir: string, names: readonly string[], windows:
       }
     }
     const files: LauncherRead["files"] = [];
-    for (const [ext, kind, parse, sep] of [
-      [".cmd", "cmd", cmdShimTarget, "\\"],
-      [".ps1", "ps1", ps1ShimTarget, "/"],
-    ] as const) {
+    for (const ext of SHIM_EXTENSIONS) {
       const file = join(binDir, `${name}${ext}`);
-      let text: string;
+      let bytes: Buffer;
       try {
-        text = readFileSync(file, "utf8");
+        bytes = readFileSync(file);
       } catch {
         files.push({ where: clean(file), kind: "missing" });
         continue;
       }
-      const target = parse(text);
-      if (target === undefined) files.push({ where: clean(file), kind, reason: "the shim text names no single target" });
-      else files.push({ where: clean(file), kind, resolved: win32.resolve(binDir, target.split(sep).join("\\")) });
+      const want = canonical?.get(name)?.get(ext);
+      if (want === undefined) files.push({ where: clean(file), kind: "shim", equal: false, reason: "no canonical shim was generated for this bin" });
+      else if (Buffer.compare(bytes, Buffer.from(want)) === 0) files.push({ where: clean(file), kind: "shim", equal: true });
+      else files.push({ where: clean(file), kind: "shim", equal: false, reason: `its ${bytes.length} bytes differ from the canonical ${want.length} bytes` });
     }
     return { name, files };
   });

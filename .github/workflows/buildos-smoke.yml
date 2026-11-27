@@ -72,9 +72,12 @@ on:
 permissions:
   contents: read
 
+# A pull-request run cancels the older run of the same ref. A hand-started
+# run has its own group, keyed by its run ID, so two hand-started runs never
+# cancel each other (review round 3 of pull request 12, finding 6).
 concurrency:
-  group: buildos-smoke-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.event_name == 'pull_request' && format('buildos-smoke-pr-{0}', github.ref) || format('buildos-smoke-dispatch-{0}', github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   # Every input is checked here, before any other job uses it. The values

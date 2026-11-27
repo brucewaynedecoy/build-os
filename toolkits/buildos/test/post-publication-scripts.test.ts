@@ -65,7 +65,9 @@ describe("F-P8-13: published-smoke.ts checks raw output and cleans only the repo
 
   it("the report and the Markdown summary are built from the cleaned copy (check labels included, PR 12 review round 1 finding 3), only in finish(), which runs after every check", () => {
     const body = text.slice(text.indexOf("function finish(stopped?: string): never {"), text.indexOf("\n}\n", text.indexOf("function finish(")));
-    assert.ok(body.includes("const reported = steps.map((s) => ({ ...s, stdout: clean(s.stdout, stepFolder.get(s)), stderr: clean(s.stderr, stepFolder.get(s)), checks: s.checks.map((c) => ({ ...c, check: clean(c.check, stepFolder.get(s)) })) }));"), body);
+    // Review round 3 of pull request 12, finding 5: the cleaned copy, then the last scrub of any absolute path left.
+    assert.ok(body.includes("const reported = scrub(steps.map((s) => ({ ...s, stdout: clean(s.stdout, stepFolder.get(s)), stderr: clean(s.stderr, stepFolder.get(s)), checks: s.checks.map((c) => ({ ...c, check: clean(c.check, stepFolder.get(s)) })) })));"), body);
+    assert.ok(body.includes("const launchers = scrub(launcherRecord);"), body);
     assert.match(body, /\n {4}steps: reported,\n/);
     assert.match(body, /\n {2}for \(const s of reported\) \{\n {4}md\.push\(/);
     assert.doesNotMatch(body, /\n {4}steps,\n/);

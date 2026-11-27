@@ -536,6 +536,17 @@ describe("smoke workflow: read-only, no secret, pinned, three systems, registry 
     assert.doesNotMatch(on, /\n {2}push:|\n {2}release:|pull_request_target/);
   });
 
+  it("review round 3 of pull request 12, finding 6: a pull-request run cancels the older run of its ref; each hand-started run has its own group (its run ID), so two never cancel each other", () => {
+    assert.ok(
+      text.includes(
+        "\nconcurrency:\n  group: ${{ github.event_name == 'pull_request' && format('buildos-smoke-pr-{0}', github.ref) || format('buildos-smoke-dispatch-{0}', github.run_id) }}\n  cancel-in-progress: ${{ github.event_name == 'pull_request' }}\n\njobs:\n",
+      ),
+      text.slice(text.indexOf("concurrency:"), text.indexOf("jobs:")),
+    );
+    assert.equal(text.match(/^concurrency:/gm)?.length, 1, "one concurrency block, at the workflow level");
+    assert.doesNotMatch(code, /group: buildos-smoke-\$\{\{ github\.ref \}\}/, "no group keyed by the ref alone");
+  });
+
   it("holds contents: read for the workflow; only fetch-run adds actions: read; no secret, no environment, no id-token, and the token only in fetch-run", () => {
     assert.match(text, /\npermissions:\n {2}contents: read\n\n/);
     assert.equal(text.match(/permissions:/g)?.length, 2);
