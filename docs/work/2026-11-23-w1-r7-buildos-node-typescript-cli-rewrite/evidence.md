@@ -7954,13 +7954,20 @@ What is still open: Linux and Windows. F-P8-09 asks for three systems, so it is 
 
 ### First-Run npx for 0.2.0 (PERF-002, P9)
 
-Not measured. The `PERF-002` pass for `0.2.0` is open (orchestrator decision of 2026-11-27, [Orchestrator Decisions (2026-11-27)](#orchestrator-decisions-2026-11-27); the owner may overrule). It is a separate task, in this order:
+The `PERF-002` pass for `0.2.0` (orchestrator decision of 2026-11-27, [Orchestrator Decisions (2026-11-27)](#orchestrator-decisions-2026-11-27); the owner may overrule), in the order of runbook step k: (1) the profile, `PERF-002` version 2, written and committed in `28e9f14` before any measurement; (2) this execution packet, committed before the pass; (3) the measurement; (4) the review; (5) the package-size decision.
 
-1. A new `PERF-002` profile version, under [`## PERF-002 Profile`](08-release-0-1-0.md#perf-002-profile), written and committed before any measurement. The version 1 profile expired: the package size changed (1,070,295 bytes, 173 files, to 1,144,483 bytes, 168 files).
-2. The execution packet, rendered from the committed profile, with its digest.
-3. The measurement on the published `build-os@0.2.0` (`scripts/measure-npx-first-run.ts --version 0.2.0 --tarball-sha256 baf54ebf0717a56bf1bb8ac0391adc7559b16375b90f59f4e4b79865a3f20da0`), within the profile's budget.
-4. The review (one cycle).
-5. The package-size decision.
+#### Execution Packet (PERF-002 Version 2)
+
+- Profile: [`## PERF-002 Profile`](08-release-0-1-0.md#perf-002-profile), version 2, committed in `28e9f14` before any `PERF-002` measurement of `0.2.0`.
+- Profile digest: `sha256:da6352c87566e1b8921309dc65eabeb70de5a587573b616318256ef6f788e680`, computed with `awk '/^## PERF-002 Profile$/{p=1} p{print} p&&/^\| Support Links /{exit}' 08-release-0-1-0.md | shasum -a 256` (the section from its heading to the end of the Lineage And Traceability table).
+- Package: the published `build-os@0.2.0`; registry tarball SHA-256 `baf54ebf0717a56bf1bb8ac0391adc7559b16375b90f59f4e4b79865a3f20da0`, the `v0.2.0` reviewed entry.
+- Instrument: `toolkits/buildos/scripts/measure-npx-first-run.ts`, SHA-256 `881347c4c7e00aa0e15426065d2db05538d3b1047da054872494a28dc8eb4e05`, with `scripts/node-first-path.ts`, SHA-256 `6010c8e4aba23e96e52936dcc8495995bb8da8200a93616d8cfb9cc718e36522`; both unchanged since `4dd86ce`.
+- Machine: Apple M2 Pro, 10 cores, 16 GiB, macOS 27.2.1 on arm64, AC power; Node 24.22.3 and npm 11.19.1 (the official `node-v24.22.3-darwin-arm64.tar.gz`, SHA-256 checked against the nodejs.org `SHASUMS256.txt`, unpacked into a temporary folder; the machine's own Node is 26.13.1).
+- Command for the pass: `node scripts/measure-npx-first-run.ts --version 0.2.0 --tarball-sha256 baf54ebf0717a56bf1bb8ac0391adc7559b16375b90f59f4e4b79865a3f20da0 --repetitions 10`, from `toolkits/buildos/`, with that Node.js, outside the agent's network sandbox.
+- Budget event: `PERF-002-P9-B1` (2 passes, 0 correction attempts, 1 review cycle, 2 hours, 1 machine, 0 USD).
+- Target: none.
+
+Result: not measured yet when this packet was committed.
 
 ### Retrospective Publication Review (0.2.0)
 
