@@ -2,8 +2,6 @@
 
 ## 0.2.0
 
-Status: draft. This version is not published yet. The maintainer removes this line when the release is approved and published.
-
 `0.2.0` moves the tools that four skills ran as scripts into BuildOS commands, so no skill needs Python, and it makes every command that BuildOS prints for you to run work as printed, with no global install.
 
 ### What is new
