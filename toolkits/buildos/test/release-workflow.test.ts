@@ -523,9 +523,9 @@ describe("smoke workflow: read-only, no secret, pinned, three systems, registry 
     for (const dir of temps) rmSync(dir, { recursive: true, force: true });
   });
 
-  it("runs by hand with a source choice (default registry, version default 0.2.0, the latest published version), and on a pull request only for its own files", () => {
+  it("runs by hand with a source choice (default registry, version default 0.2.1, the latest published version), and on a pull request only for its own files", () => {
     assert.match(on, /\n {6}source:\n[^]*?default: "registry"\n {8}type: choice\n {8}options: \[registry, release-run, release-tag, rollback\]\n/);
-    assert.match(on, /\n {6}version:\n[^]*?default: "0\.2\.0"\n/);
+    assert.match(on, /\n {6}version:\n[^]*?default: "0\.2\.1"\n/);
     for (const input of ["release_run", "release_run_attempt", "release_tag", "tarball_sha256"]) assert.match(on, new RegExp(`\\n {6}${input}:\\n {8}description: `), input);
     assert.ok(
       on.includes(
@@ -618,7 +618,7 @@ describe("smoke workflow: read-only, no secret, pinned, three systems, registry 
       return { status: r.status, out: readFileSync(out, "utf8"), stdout: r.stdout };
     };
     assert.deepEqual(runIt({}), { status: 0, out: 'source=registry\nmodes=["registry"]\nversion=0.1.0\n', stdout: "" });
-    assert.equal(runIt({ EVENT: "pull_request", SOURCE: "" }).out, 'source=local-pack\nmodes=["registry","local-pack","rollback"]\nversion=0.2.0\n');
+    assert.equal(runIt({ EVENT: "pull_request", SOURCE: "" }).out, 'source=local-pack\nmodes=["registry","local-pack","rollback"]\nversion=0.2.1\n');
     // F-P9-16: the rollback source takes no run, tag, or SHA-256.
     assert.equal(runIt({ SOURCE: "rollback", VERSION: "0.2.0" }).out, 'source=rollback\nmodes=["rollback"]\n');
     assert.equal(runIt({ SOURCE: "release-run", RUN: "45894295344", ATTEMPT: "2", SHA256: sha }).out, `source=release-run\nmodes=["tarball"]\nrelease_run=45894295344\nrelease_run_attempt=2\nsha256=${sha}\n`);

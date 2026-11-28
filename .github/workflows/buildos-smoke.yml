@@ -27,7 +27,7 @@
 name: buildos-smoke
 
 # A maintainer runs it by hand. A pull request runs it only when its own
-# files change: the registry mode on 0.2.0, the rollback mode, and the tarball mode on a release
+# files change: the registry mode on 0.2.1, the rollback mode, and the tarball mode on a release
 # build packed from the pull request's own tree (source local-pack), so the
 # tarball mode is tested on three systems before a release needs it.
 on:
@@ -40,9 +40,9 @@ on:
         type: choice
         options: [registry, release-run, release-tag, rollback]
       version:
-        description: "registry only: the published build-os version (for example 0.2.0)"
+        description: "registry only: the published build-os version (for example 0.2.1)"
         required: false
-        default: "0.2.0"
+        default: "0.2.1"
         type: string
       release_run:
         description: "release-run only: the run ID of a buildos-release run (digits)"
@@ -116,7 +116,7 @@ jobs:
           fail() { echo "::error::$1"; exit 1; }
           semver='^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'
           if [ "$EVENT" = "pull_request" ]; then
-            { echo "source=local-pack"; echo 'modes=["registry","local-pack","rollback"]'; echo "version=0.2.0"; } >> "$GITHUB_OUTPUT"
+            { echo "source=local-pack"; echo 'modes=["registry","local-pack","rollback"]'; echo "version=0.2.1"; } >> "$GITHUB_OUTPUT"
             exit 0
           fi
           case "$SOURCE" in
