@@ -2,8 +2,6 @@
 
 ## 0.2.1
 
-Status: draft. This version is not published yet. The maintainer removes this line when the release is approved and published.
-
 `0.2.1` fixes the exit code of the project wrapper on Windows. Nothing else changes: the commands, their output, and the skills are the same as in `0.2.0`.
 
 ### Fixed

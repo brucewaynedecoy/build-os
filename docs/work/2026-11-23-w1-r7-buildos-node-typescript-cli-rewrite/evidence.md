@@ -8882,14 +8882,14 @@ Not changed by the first commit: `SECURITY.md` (since review round 1, only its t
 
 | Place | Fact | Today |
 | --- | --- | --- |
-| `README.md`, `toolkits/buildos/README.md`, guide chapters 03, 04, 19, `docs/assets/user/upgrade-an-existing-buildos-project.md` | `npx -y build-os@0.2.1 …`, `npm install -g build-os@0.2.1`, `npm pack build-os@0.2.1`, file name `build-os-0.2.1.tgz` | Not true until `0.2.1` is published: npm has no `0.2.1` |
-| Guide chapter 4, "From 0.1.0 to 0.2.0" (and `test/rollback-smoke.test.ts`) | "BuildOS `0.2.1` fixes the wrapper" | True only after `0.2.1` is published |
-| Guide chapter 4, "From 0.2.0 to 0.2.1" and "Roll back from 0.2.1 to 0.2.0"; `RELEASE_NOTES.md`, "Update a project from 0.2.0" and "Roll back"; the upgrade doc's update item | A clean `npx -y build-os@0.2.1 init` copy holds the fixed `buildos.cmd`; the checks print `version: 0.2.1`, and `echo %ERRORLEVEL%` prints `2` after `cmd /d /c .os\scripts\buildos.cmd no-such-command` | Not run with the registry: `0.2.1` is not published. The fixed wrapper is `system/.os/scripts/buildos.cmd` on `main`, and `buildos init` copies it byte for byte. The `sh` steps ran on macOS with a release build of this branch in place of the registry `0.2.1` ([Review Round 1 (Pull Request 17)](#review-round-1-pull-request-17-2026-11-27), and the corrected steps in [Review Round 2 (Pull Request 17)](#review-round-2-pull-request-17-2026-11-27)); the Command Prompt steps have run in no shell yet |
-| `RELEASE_NOTES.md`, "Known limits" | "The Command Prompt forms of the `0.2.0` to `0.2.1` steps above have not run yet." | True today; check it before the tag |
-| `RELEASE_NOTES.md`, the `0.2.1` status line | Draft | Removed when `0.2.1` is published |
-| `RELEASE_NOTES.md`, "Check the package" | The `0.2.1` signature, attestation, SBOM file `buildos-0.2.1.cdx.json`, and the `v0.2.1` ledger entry | Not true until the reviewed entry, the tag, and the release exist |
-| `.github/workflows/buildos-smoke.yml` and its test; `SECURITY.md` examples | Default and examples `0.2.0` | Unchanged here; after publication, the release process decides |
-| `SECURITY.md`, "How to Check a Release" and the `buildos-smoke` source list | "`0.2.0` ... was the `latest` version on 2026-11-27"; "`0.2.0` (the latest published version on 2026-11-27 ...)" | Dated in review round 1 of pull request 17, so both stay true. After publication, `latest` is `0.2.1`: the release process decides whether these sentences and the examples move to `0.2.1` |
+| `README.md`, `toolkits/buildos/README.md`, guide chapters 03, 04, 19, `docs/assets/user/upgrade-an-existing-buildos-project.md` | `npx -y build-os@0.2.1 …`, `npm install -g build-os@0.2.1`, `npm pack build-os@0.2.1`, file name `build-os-0.2.1.tgz` | True since 2026-11-28: `0.2.1` is on npm, `latest`; `npx -y build-os@0.2.1` ran in the registry smoke on three systems (run 46110976311), and `npm pack build-os@0.2.1` gives `build-os-0.2.1.tgz` with the reviewed SHA-256 ([Publication Record for 0.2.1](#publication-record-for-021-2026-11-28)). No text changes |
+| Guide chapter 4, "From 0.1.0 to 0.2.0" (and `test/rollback-smoke.test.ts`) | "BuildOS `0.2.1` fixes the wrapper" | True since 2026-11-28. The registry tarball holds `package/dist/system/.os/scripts/buildos.cmd`, byte-equal (`cmp`) to `system/.os/scripts/buildos.cmd` on `main`. No text changes |
+| Guide chapter 4, "From 0.2.0 to 0.2.1" and "Roll back from 0.2.1 to 0.2.0"; `RELEASE_NOTES.md`, "Update a project from 0.2.0" and "Roll back"; the upgrade doc's update item | A clean `npx -y build-os@0.2.1 init` copy holds the fixed `buildos.cmd`; the checks print `version: 0.2.1`, and `echo %ERRORLEVEL%` prints `2` after `cmd /d /c .os\scripts\buildos.cmd no-such-command` | Partly checked. The registry `0.2.1` holds the fixed wrapper (row above), and its `buildos version --json` reports `0.2.1` and source revision `206d3f8`. The Command Prompt steps have still run in no shell by hand. No text changes |
+| `RELEASE_NOTES.md`, "Known limits" | "The Command Prompt forms of the `0.2.0` to `0.2.1` steps above have not run yet." | Still true on 2026-11-28. No text changes: the notes are also the immutable GitHub Release body |
+| `RELEASE_NOTES.md`, the `0.2.1` status line | Draft | Removed in the publication-record pull request. The `0.2.1` section now equals the body of the GitHub Release `v0.2.1` |
+| `RELEASE_NOTES.md`, "Check the package" | The `0.2.1` signature, attestation, SBOM file `buildos-0.2.1.cdx.json`, and the `v0.2.1` ledger entry | True since 2026-11-28: `npm audit signatures` reports a verified registry signature and a verified attestation; the immutable release has `buildos-0.2.1.cdx.json`; the `v0.2.1` entry is in `release-candidates.json` at `427a0ac`. No text changes |
+| `.github/workflows/buildos-smoke.yml` and its test; `SECURITY.md` examples | Default and examples `0.2.0` | The `version` default and the pull-request registry version move to `0.2.1`, with `test/release-workflow.test.ts`. The `rollback` source stays `0.1.0` to `0.2.0`: `scripts/rollback-steps.ts` (`FROM_VERSION`, `TO_VERSION`) runs only the guide's "From 0.1.0 to 0.2.0" steps. The `SECURITY.md` check examples stay `0.2.0`: they say "Use the version you install" |
+| `SECURITY.md`, "How to Check a Release" and the `buildos-smoke` source list | "`0.2.0` ... was the `latest` version on 2026-11-27"; "`0.2.0` (the latest published version on 2026-11-27 ...)" | The first stays: it is dated, so it stays true. The second moves to `0.2.1` (the latest published version on 2026-11-28), because the pull-request smoke now runs `0.2.1` |
 
 The release steps for `0.2.1` waited for the owner's decision on the release process (the owner asked for the Make Docs pattern; a separate task proposes it). The owner decided on 2026-11-27: see [Release Route for 0.2.1](#release-route-for-021-2026-11-27).
 
@@ -9122,3 +9122,56 @@ On 2026-11-27, macOS, from `toolkits/buildos/` and the repository root, the sand
 | `make-docs project markdown validate` | 184 findings, the same count as before the pass; none new |
 
 No golden capture ran. No workflow was started by hand.
+
+## Publication Record for 0.2.1 (2026-11-28)
+
+`build-os@0.2.1` was published on npm on 2026-11-28 at 05:03:46.859Z, with provenance, through the real prepare and release runs of the [Release Checklist for 0.2.1](#release-checklist-for-021). It is `latest`. This record is the "after publication" part of that checklist and its documentation pull request, on the branch `docs/0.2.1-publication-record` from `main` at `095325e`. "Verified" means that the implementer ran the named read-only command on 2026-11-28 (UTC) for this record and saw the result. Other facts come from the orchestrator and were not checked again.
+
+### What Ran
+
+| Step | Result |
+| --- | --- |
+| Owner step 1, acceptance | The owner (GitHub account `brucewaynedecoy`) replied "Accept" on 2026-11-27 to the orchestrator's summary. The summary named `build-os-0.2.1.tgz`, its full SHA-256 `73ea59827776423fbf7f6d1ac0d5f5dacabfdfab9c50f8cfd8e51a1da3eb3802` (1,144,995 bytes, 168 files), and said that the reply is the approval to release this exact file. See departure 1 below |
+| `<H1>`, `<H2>`, merge, tag | `<H1>` `206d3f8055328cb4b928dbdf2979fbfbc348e7bd` (source); `<H2>` `427a0ac601bb5aca3610ea931708c39c185c7bf2` (ledger). Pull request 17 merged as the merge commit `095325e4b0093e5f35b54e9d0c89c25b26f65234`, which is the tag `v0.2.1` |
+| Agent step 1, dry run of `<H1>` | Run [46086695159](https://github.com/brucewaynedecoy/build-os/actions/runs/46086695159), push to `release-dry-run/0.2.1`, head `206d3f8`, success (verified) |
+| Agent step 3, smoke on that tarball | Run [46087046122](https://github.com/brucewaynedecoy/build-os/actions/runs/46087046122), success (verified): Linux 20 of 20, macOS 20 of 20, Windows 19 of 19 |
+| Agent steps 7 and 8, `<H2>` | `committed` dry run [46102091150](https://github.com/brucewaynedecoy/build-os/actions/runs/46102091150), head `427a0ac`, success (verified); the independent review of `<H2>` had no findings |
+| Owner step 4, prepare | Run [46103132744](https://github.com/brucewaynedecoy/build-os/actions/runs/46103132744), head `095325e`, success (verified): the real deny-list scan passed, and the two assets were attached to the draft |
+| Owner step 5, release | GitHub Release `v0.2.1` published 2026-11-28T03:51:43Z, "BuildOS 0.2.1", `immutable: true`, exactly two assets: `build-os-0.2.1.tgz` (1,144,995 bytes, `sha256:73ea5982…3eb3802`) and `buildos-0.2.1.cdx.json` (64,656 bytes, `sha256:de735ab8…40de6d5`) (verified). Release run [46104848225](https://github.com/brucewaynedecoy/build-os/actions/runs/46104848225), attempt 1, head `095325e`, success (verified). Its `stage` job log: `+ build-os@0.2.1 (staged with id 0e448efb-92cd-4115-b2bb-37f107c2ab5d)`, and the provenance statement at `logIndex=4154848190` (verified) |
+| Agent step 9, smoke on the release asset | Run [46105325074](https://github.com/brucewaynedecoy/build-os/actions/runs/46105325074), head `095325e`, success on the three systems (verified), before the owner approved the stage |
+| Owner step 6, approval | The orchestrator said "approve" after agent step 9. The owner then ran `npm stage approve`. So this time the approval came in the checklist's order. The owner did not run the stage checks of step 6 and did not report step 7: see departure 2 below |
+| After publication, registry checks | `npm pack build-os@0.2.1`: 1,144,995 bytes, SHA-256 `73ea5982…3eb3802`, equal to the `v0.2.1` ledger entry (verified). `npm view build-os dist-tags`: `latest` is `0.2.1` (verified). In a new folder, `npm init -y`, `npm install --ignore-scripts build-os@0.2.1`, `npm audit signatures`: "1 package has a verified registry signature", "1 package has a verified attestation" (verified); `buildos version --json` reports `0.2.1` and source revision `206d3f8055328cb4b928dbdf2979fbfbc348e7bd` (verified) |
+| After publication, Rekor lookup | Below, verified |
+| After publication, registry smoke | Run [46110976311](https://github.com/brucewaynedecoy/build-os/actions/runs/46110976311), `source=registry`, `version=0.2.1`, success (verified): `check the inputs` and the three smoke jobs (Linux, macOS, Windows, Node 24) passed, the two fetch jobs were skipped |
+| After publication, `PERF-002` | Below, verified |
+
+### Transparency Log Lookup (0.2.1)
+
+The same commands as for `0.2.0` ([Transparency Log Lookup](#transparency-log-lookup-runbook-h1-done-after-publication)), on the registry tarball, with the version changed. The lookup by its SHA-512 `77f8c6acc000913b036d6c289f3fcbffd039d6a9426ef7cfecaf0e3fdcedc6b0a92c7374a6cdbc12f118945764bd9a1639f788ad686a78a5a30609ac9c033e8f` gave two entries (verified):
+
+| UUID | Log index | Integrated time | Signer |
+| --- | --- | --- | --- |
+| `108e9186e8c5677ae41e5d5ee94d7afaf9c27d1a2b917ba0dc086613d0ebc301e1b8b8dbdd099867` | 4154848190 | 2026-11-28T03:56:34Z | A Fulcio certificate (issuer `sigstore-intermediate`) whose identity is `https://github.com/brucewaynedecoy/build-os/.github/workflows/buildos-release.yml@refs/tags/v0.2.1` and whose run extension names run 46104848225 |
+| `108e9186e8c5677aecea8ad8e15315e381378b1415e01dfcb6741e087572a2c3da9f50dfdecb4044` | 4155695536 | 2026-11-28T05:03:49Z | npm's publish attestation key (a public key, no certificate) |
+
+The entry with log index 4154848190 is the one that the `stage` job logged. So the published file is bound to the release workflow at `refs/tags/v0.2.1` and run 46104848225.
+
+### First-Run npx for 0.2.1 (PERF-002)
+
+Measured the same way as for `0.2.0` ([First-Run npx for 0.2.0](#first-run-npx-for-020-perf-002-p9)): profile `PERF-002` version 2, its digest unchanged (`sha256:da6352c8…f788e680`); the instrument `scripts/measure-npx-first-run.ts` (SHA-256 `881347c4…eb4e05`) and `scripts/node-first-path.ts` (`6010c8e4…e36522`), both unchanged; the same machine (Apple M2 Pro, 10 cores, 16 GiB, macOS 27.2.1 on arm64, AC power); the official Node.js 24.22.3 (`node-v24.22.3-darwin-arm64.tar.gz`, SHA-256 equal to the nodejs.org `SHASUMS256.txt`) with npm 11.19.1. Command, from `toolkits/buildos/`, outside the agent's network sandbox: `node scripts/measure-npx-first-run.ts --version 0.2.1 --tarball-sha256 73ea59827776423fbf7f6d1ac0d5f5dacabfdfab9c50f8cfd8e51a1da3eb3802 --repetitions 10`. It ran from 2026-11-28T05:13:44.385Z to 05:13:58.728Z, exit 0, `child_node` v24.22.3, `tarball_bytes` 1,144,995; 10 repetitions, 0 runs excluded (verified).
+
+| Workload | n | Min | p25 | Median | p75 | Max | IQR |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `cold` (empty npm cache) | 10 | 701.9 | 738.0 | 759.8 | 767.0 | 917.1 | 29.0 |
+| `warm` (cache filled) | 10 | 403.0 | 414.8 | 420.6 | 426.3 | 434.7 | 11.5 |
+| `tarball` (fetch alone) | 10 | 220.4 | 231.5 | 246.5 | 254.1 | 273.3 | 22.6 |
+
+Milliseconds of wall-clock time. Raw `cold` samples, in order: 917.1, 767.8, 760.4, 733.1, 759.2, 751.4, 800.6, 701.9, 764.4, 733.5. The slowest `cold` run, 917.1 ms, is under 2 seconds, so under the profile's decision rule the record recommends no package-size reduction now; the decision is the owner's. Context only, not a comparison: the `0.2.0` pass had a `cold` median of 765.8 ms. No separate execution packet was committed before this pass (see departure 3).
+
+### Departures (0.2.1 Publication)
+
+| Written rule | What happened | Who decided |
+| --- | --- | --- |
+| 1. Owner step 1: reply "accept 0.2.1 <sha256>" | The owner replied with one word, "Accept". The summary that the owner answered named the file and the full SHA-256 and said that the reply is the approval to release this exact file | The owner chose the words. The orchestrator took the reply as owner step 1. Orchestrator decision; the owner may overrule |
+| 2. Owner steps 6 and 7: `npm stage list`, `npm stage view`, `npm stage download` and `shasum` before `npm stage approve`, then `npm view build-os versions dist-tags` | The owner approved the stage without the step 6 checks and did not report step 7. After publication, an agent did the nearest checks: the registry tarball's SHA-256 equals the ledger, `latest` is `0.2.1`, and `npm audit signatures` passed (rows above). What this does not show: the staged file before the approval. The `stage` job checked the digest before staging, and the release asset, the registry tarball, and the ledger have the same SHA-256 | Not decided in advance: the owner did not do the steps. The check after publication is an orchestrator decision; the owner may overrule |
+| 3. `PERF-002`, as for `0.2.0`: the execution packet committed before the pass | The packet facts are in this record, written after the pass, with no separate commit before it. The profile, instrument, machine, and Node.js are the same as for `0.2.0` | Implementer decision, to keep the after-release work small; the owner may overrule |
