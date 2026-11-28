@@ -8590,9 +8590,9 @@ The adopter effect and the severity recommendation of [F-P9-17 After Run 2](#f-p
 - Option 1, a `0.2.1` patch: only the Windows batch wrapper `system/.os/scripts/buildos.cmd` (likely one line, a hypothesis until a Windows test proves it) and its tests change; adopters on Windows get correct exit codes sooner, after a refresh of `.os/scripts/`; it is one more release through the full release process.
 - Option 2, in `0.3.0`: no extra release; Windows adopters keep the wrong exit code until `0.3.0`.
 - Orchestrator's recommendation: open (for the orchestrator to fill in).
-- Owner decision: open.
+- Owner decision (2026-11-27): Option 1, in the owner's words: "Option 1; a small `0.2.1` release soon." The release that carries the fix is `0.2.1`. This question is closed ([0.2.1 Release Preparation](#021-release-preparation-2026-11-27)).
 
-Pull request 16 (2026-11-27): the mechanism is shown on Windows and the fix is in the repository, a two-line change in `system/.os/scripts/buildos.cmd` ([F-P9-17 Mechanism and Fix](#f-p9-17-mechanism-and-fix-pull-request-16-2026-11-27)). This question, the release that carries the fix, stays open.
+Pull request 16 (2026-11-27): the mechanism is shown on Windows and the fix is in the repository, a two-line change in `system/.os/scripts/buildos.cmd` ([F-P9-17 Mechanism and Fix](#f-p9-17-mechanism-and-fix-pull-request-16-2026-11-27)). This question, the release that carries the fix, stayed open until the owner decision above.
 
 ### Facts for the Next Release Notes (Not Changed Here)
 
@@ -8861,5 +8861,264 @@ On 2026-11-27, macOS, from `toolkits/buildos/` and the repository root, the sand
 | `make-docs project markdown validate` | 184 findings, the same count as on `main`; none new |
 | `buildos-ci` run 46066863403 (`d702c32`, the tests only) | failed on `windows-latest` only: 19 new tests (above); passed on Linux and macOS; `test/rollback-smoke.test.ts` "finds both guide sections" passed on Windows |
 | `buildos-ci` run 46068381377 (`de7e8b6`, the fix) | passed on all jobs |
+
+No golden capture ran. No workflow was started by hand.
+
+## 0.2.1 Release Preparation (2026-11-27)
+
+The owner decided the [owner question for F-P9-17](#owner-question-for-f-p9-17) on 2026-11-27, in these words: "Option 1; a small `0.2.1` release soon." So the fix of [F-P9-17](#f-p9-17-mechanism-and-fix-pull-request-16-2026-11-27) ships in `0.2.1`. No other owner decision is recorded here. This pull request, on the branch `release/0.2.1-version` from `main` at `c10655f` (pull request 16 merged), prepares the version files only: nothing is tagged, released, staged, or published, and `toolkits/buildos/release-candidates.json` is unchanged.
+
+What it changes:
+
+- The version: `toolkits/buildos/package.json` and `toolkits/buildos/package-lock.json` say `0.2.1`, and `test/package.test.ts` uses `0.2.1` as the release that package.json names after the bump, as pull request 11 did for `0.2.0`.
+- The docs that name the current version, the same places as for `0.2.0`: `README.md` (and its release-notes link), `toolkits/buildos/README.md`, guide chapters 3, 4 (above "Update and roll back"), and 19, and `docs/assets/user/upgrade-an-existing-buildos-project.md`, which also points to the new guide section. `toolkits/buildos/SECURITY.md` is not changed by the first commit of this pull request (`a32be79`; review round 1 dated its two `latest` sentences, [Review Round 1 (Pull Request 17)](#review-round-1-pull-request-17-2026-11-27), finding 6): its check examples name the published `0.2.0` (they say "Use the version you install"), and its release procedure and its `git show v0.2.0:` extraction line belong to the release process. The commands of the guide's "From 0.1.0 to 0.2.0" steps keep their versions.
+- `toolkits/buildos/RELEASE_NOTES.md`: a `## 0.2.1` section above `## 0.2.0`, with the draft status line, and the sections "Fixed", "Update a project from 0.2.0" (the copy of `.os/scripts/buildos.cmd` from a clean `0.2.1` copy, in Command Prompt and `sh`, with a backup first; macOS and Linux need no copy unless someone uses the project on Windows), "Known limits" (the cases that [What Stays Unproven](#what-stays-unproven) lists, and the Command Prompt forms of the upgrade steps), "Check the package", and "Roll back". The `0.2.0` notes are not changed. `test/release-notes.test.ts` also runs the `0.2.0` filter with only the version changed on a scratch copy tagged `v0.2.1`, and checks the five `0.2.1` headings, the draft line removed, and nothing of `0.2.0`.
+- Guide chapter 4: the new section "From 0.2.0 to 0.2.1" with "Roll back from 0.2.1 to 0.2.0", before "From 0.1.0 to 0.2.0"; the update and rollback items point to it; the Windows sentence of "From 0.1.0 to 0.2.0" says that `0.2.1` fixes the wrapper and that a project gets it only by the copy. `guide/BuildOS-Guide.html` is rebuilt. The rollback smoke reads the guide from "From 0.1.0 to 0.2.0" to the "Not available yet" note, so the new section is outside its text; `scripts/rollback-smoke.ts`, `scripts/rollback-steps.ts`, and the versions they run (`0.1.0` and `0.2.0`) are not changed. `test/rollback-smoke.test.ts` has the new Windows sentence and checks the new section: its place, its backup, its one-file copy, and that each of its Command Prompt lines is the guide's Windows form of its `sh` line.
+- `R-003` in the risk register records the decision.
+
+Not changed by the first commit: `SECURITY.md` (since review round 1, only its two `latest` sentences are dated), the workflows (the smoke default stays `0.2.0` until `0.2.1` is published, as pull request 11 kept `0.1.0`), the release scripts, and the ledger. The follow-up of [The Smokes](#the-smokes) (a failing-command step through this tree's wrapper in the tarball and local-pack modes of `scripts/published-smoke.ts`) stays open for this release.
+
+### Facts That Depend on the 0.2.1 Release
+
+| Place | Fact | Today |
+| --- | --- | --- |
+| `README.md`, `toolkits/buildos/README.md`, guide chapters 03, 04, 19, `docs/assets/user/upgrade-an-existing-buildos-project.md` | `npx -y build-os@0.2.1 …`, `npm install -g build-os@0.2.1`, `npm pack build-os@0.2.1`, file name `build-os-0.2.1.tgz` | Not true until `0.2.1` is published: npm has no `0.2.1` |
+| Guide chapter 4, "From 0.1.0 to 0.2.0" (and `test/rollback-smoke.test.ts`) | "BuildOS `0.2.1` fixes the wrapper" | True only after `0.2.1` is published |
+| Guide chapter 4, "From 0.2.0 to 0.2.1" and "Roll back from 0.2.1 to 0.2.0"; `RELEASE_NOTES.md`, "Update a project from 0.2.0" and "Roll back"; the upgrade doc's update item | A clean `npx -y build-os@0.2.1 init` copy holds the fixed `buildos.cmd`; the checks print `version: 0.2.1`, and `echo %ERRORLEVEL%` prints `2` after `cmd /d /c .os\scripts\buildos.cmd no-such-command` | Not run with the registry: `0.2.1` is not published. The fixed wrapper is `system/.os/scripts/buildos.cmd` on `main`, and `buildos init` copies it byte for byte. The `sh` steps ran on macOS with a release build of this branch in place of the registry `0.2.1` ([Review Round 1 (Pull Request 17)](#review-round-1-pull-request-17-2026-11-27), and the corrected steps in [Review Round 2 (Pull Request 17)](#review-round-2-pull-request-17-2026-11-27)); the Command Prompt steps have run in no shell yet |
+| `RELEASE_NOTES.md`, "Known limits" | "The Command Prompt forms of the `0.2.0` to `0.2.1` steps above have not run yet." | True today; check it before the tag |
+| `RELEASE_NOTES.md`, the `0.2.1` status line | Draft | Removed when `0.2.1` is published |
+| `RELEASE_NOTES.md`, "Check the package" | The `0.2.1` signature, attestation, SBOM file `buildos-0.2.1.cdx.json`, and the `v0.2.1` ledger entry | Not true until the reviewed entry, the tag, and the release exist |
+| `.github/workflows/buildos-smoke.yml` and its test; `SECURITY.md` examples | Default and examples `0.2.0` | Unchanged here; after publication, the release process decides |
+| `SECURITY.md`, "How to Check a Release" and the `buildos-smoke` source list | "`0.2.0` ... was the `latest` version on 2026-11-27"; "`0.2.0` (the latest published version on 2026-11-27 ...)" | Dated in review round 1 of pull request 17, so both stay true. After publication, `latest` is `0.2.1`: the release process decides whether these sentences and the examples move to `0.2.1` |
+
+The release steps for `0.2.1` waited for the owner's decision on the release process (the owner asked for the Make Docs pattern; a separate task proposes it). The owner decided on 2026-11-27: see [Release Route for 0.2.1](#release-route-for-021-2026-11-27).
+
+## Review Round 1 (Pull Request 17) (2026-11-27)
+
+The reviewer's verdict on pull request 17 at `a32be79` was FAIL, with four should-fix findings and two minor findings. The reviewer ran the `sh` steps for real: the upgrade and the rollback work for a stock project, and fresh inits of `0.2.0` and of this branch differ only in `.os/scripts/buildos.cmd`, `.os/scripts/AGENTS.md`, and `.os/manifest.json`. This round fixes the findings on the same branch, with new commits. Nothing is tagged, released, staged, or published; no setting, workflow, release procedure step, or `release-candidates.json` changed; no workflow was started by hand.
+
+| Finding | What the reviewer found | What changed |
+| --- | --- | --- |
+| 1 (should fix) | A pin-only rollback could restore another project's files. The notes and the guide put the backup copies before the exception for macOS and Linux users who changed only the pin; with two sibling projects, following that order replaced the second project's manifest with the first project's backup. An offline npm install that is not put back to `0.2.0` stops with `ENOTCACHED`. | Guide chapter 4, "From 0.2.0 to 0.2.1": the work folder name is shared by sibling projects, the first `mkdir` is the guard, and the later steps and the rollback copy from the work folder only when that command made it for this project. "Roll back from 0.2.1 to 0.2.0" now starts with the cases that have no work folder of this project: only the version changed (copy nothing, set the version back), and someone else did the upgrade or the folder is gone (copy nothing; `git checkout <commit>~1 -- .os/manifest.json .os/scripts/buildos.cmd`). Only then comes the copy from the backup. Step 2 puts back the npm install in every case, also an install from a file without registry access, and names `ENOTCACHED`. `RELEASE_NOTES.md`, "Update a project from 0.2.0" and "Roll back": the same, with the macOS and Linux pin-only paragraph moved before the steps. |
+| 2 (should fix) | The guide's Command Prompt backup block put the guard `mkdir` and both backup copies in one pasteable block; Command Prompt goes on after a failed `mkdir`, and with `COPYCMD=/Y` an earlier backup is overwritten. | The guide's first `mkdir` is a block of its own, in `sh` and in Command Prompt, as in the notes, and both say to run the next commands only when it printed nothing. The other blocks run only after the guard made a new folder, so their `mkdir` and copies cannot meet an earlier backup; the rollback blocks copy only into the project and come after the cases without a backup. |
+| 3 (should fix) | The guide told users to reapply their own wrapper changes and then required an empty diff against the stock wrapper; one `rem` line made the check fail. | Guide step 3 says to make the own change again after the copy; step 5 keeps the empty `--stat` diff only for a project without own changes, and for own changes shows the full `git --no-pager diff --no-index` (git exits `1`) to read and confirm that it shows only those changes; the Windows exit-code check runs also after own changes. The notes say the same. |
+| 4 (should fix) | `echo %ERRORLEVEL%` prints a variable named `ERRORLEVEL` of the calling prompt, even when the child exits `2`. | The guide and the notes show the check as a Command Prompt block of three lines: `set "ERRORLEVEL="`, `cmd /d /c .os\scripts\buildos.cmd no-such-command`, `echo %ERRORLEVEL%`, at the prompt or in a batch file, not inside a block in parentheses. |
+| 5 (minor) | The notes said the Windows rollback smoke ran "once"; runs 2, 3, and 4 passed. | "once" is removed. |
+| 6 (minor) | `SECURITY.md` called `0.2.0` the `latest` version, which is false after `0.2.1`. | `SECURITY.md`, "How to Check a Release": "it was the `latest` version on 2026-11-27"; the `buildos-smoke` source list: "the latest published version on 2026-11-27". The release procedure text is not changed. A row in [Facts That Depend on the 0.2.1 Release](#facts-that-depend-on-the-021-release) names both sentences. |
+
+`test/rollback-smoke.test.ts` ties the guide and the notes: the guard is the first block, alone, in `sh` and in Command Prompt, in both; the rollback names the pin-only and the git cases before the copy from the backup, in both, and says to put back the npm install in every case and names `ENOTCACHED`; both hold the three-line Windows check, and neither the old one-sentence form; the guide's own-change check is the full diff; and the commands of the notes' update and rollback are the guide's commands, in the same order, in `sh` and in Command Prompt. The Command Prompt line check of the guide leaves out the three Windows-only check lines.
+
+### The Real Runs (Pull Request 17, Review Round 1)
+
+On 2026-11-27, macOS, in scratch folders outside the repository. The stand-in for `0.2.1` is a release build of this branch (`node scripts/release-build.ts --allow-dirty`, version `0.2.1`); the guide's `npx -y build-os@0.2.1 init --root <folder> --skip-make-docs` ran as `npx -y --package <tarball> -- buildos init --root <folder> --skip-make-docs`, and the `0.2.1` npm install was a global install of that tarball into a scratch prefix. Each project was made by `npx -y build-os@0.2.0 init --skip-make-docs` and committed in git. All cases passed.
+
+| Case | What ran | Result |
+| --- | --- | --- |
+| A, a stock project, all `sh` steps, then the rollback from the backup | the guard, the backup, the clean copy, the copy, the pin, the `0.2.1` install; the rollback copies and the `0.2.0` install | `version: 0.2.1`; the `--stat` diff against the clean copy empty; only the two files changed. After the rollback: `version: 0.2.0`, the `--stat` diff against the backup empty, and both files byte for byte A's own `0.2.0` files |
+| B, a sibling of A, pin only (macOS), after A made `../buildos-upgrade-0.2.1` | the pin, the `0.2.1` install; the rollback's first case: copy nothing, the pin back, the `0.2.0` install | `version: 0.2.1`, then `version: 0.2.0`; B's manifest is its own and `git status` is clean. The manifests of A and B differ; the old order (`cp ../buildos-upgrade-0.2.1/backup/manifest.json .os/manifest.json` in B) replaced B's manifest with A's backup |
+| C, a second sibling, all steps | the guard on `../buildos-upgrade-0.2.1` (A's folder), then the other name `../buildos-upgrade-0.2.1-2` in every command, and the rollback from it | the guard printed an error, so the run stopped there; with the other name: `version: 0.2.1`, then `version: 0.2.0`, C's own manifest, `git status` clean |
+| D, an own change in `buildos.cmd` (a `rem` line) | all steps; the `rem` line made again after the copy | `version: 0.2.1`; the full diff against the clean copy exits `1` and shows one added line, the `rem` line, and no removed line |
+| E, the git case | a clone of A at its upgrade commit; `git checkout <commit>~1 -- .os/manifest.json .os/scripts/buildos.cmd` | `git --no-pager diff <commit>~1 -- …` empty; `version: 0.2.0` |
+| F, an offline install from a file | `npm install -g --offline` of the `0.2.1` tarball; then the pin back to `0.2.0`, with an empty npm cache and `npm_config_offline=true` | `version: 0.2.1` from the install; with the pin `0.2.0` and no `0.2.0` install: exit `1`, `ENOTCACHED`; after `npm install -g --offline` of the `0.2.0` file: `version: 0.2.0` |
+| G, fresh inits | `0.2.0` from the registry and this branch's build | they differ only in `.os/manifest.json`, `.os/scripts/AGENTS.md`, and `.os/scripts/buildos.cmd` |
+
+The Command Prompt steps did not run: this round has no Windows shell, and the buildos-ci jobs do not run them ("Known limits" in the notes still says so).
+
+### Check Results (Pull Request 17, Review Round 1)
+
+On 2026-11-27, macOS, from `toolkits/buildos/` and the repository root, the sandbox off for the tests.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck`; `node scripts/check-dependencies.ts`, `--installed`; `node scripts/check-no-python.ts` | passed each |
+| `npm test` (unit, golden, and conversion-eval tests) | 2,983 tests: 2,969 passed, 0 failed, 14 skipped |
+| `npm run build`, then `node dist/buildos.js version`; `npm pack --dry-run --json` | passed; 168 files (unchanged) |
+| `node tools/build-guide.mjs` (from `guide/`) | `Wrote BuildOS-Guide.html (704 KB) from 22 documents.`, no warning |
+| The real-list deny-list scan, `node scripts/check-deny-list.mjs --root ../.. --pack .`, with the list in the environment, outside the repository | exit 0: 2,838 files, 0 matches, 168 of 168 package files read |
+| `make-docs project paths validate` | valid, 0 failing findings |
+| `make-docs project markdown validate` | 184 findings, the same count as before the round; none new |
+
+No golden capture ran. No workflow was started by hand.
+
+## Review Round 2 (Pull Request 17) (2026-11-27)
+
+The reviewer's verdict on pull request 17 at `d24e0d9` was FAIL, with three should-fix findings and two minor findings. The fix for sibling projects works. This round fixes the findings on the same branch, with new commits, and keeps the user steps short: one rule per case, no new case. Nothing is tagged, released, staged, or published; no setting, workflow, release script, `SECURITY.md` release rule, or `release-candidates.json` changed; no workflow was started by hand.
+
+| Finding | What the reviewer found | What changed |
+| --- | --- | --- |
+| 1 (should fix) | The git rollback could pick the wrong revision. The reviewer committed the wrapper first and the pin second; `git checkout <commit>~1` of the pin commit left the new wrapper in place, the version check printed `0.2.0`, and the prescribed diff was empty. An upgrade that is not committed has no commit to name. | Guide "Roll back from 0.2.1 to 0.2.0" and the notes' "Roll back": `git checkout <commit> -- .os/manifest.json .os/scripts/buildos.cmd` from a commit before the whole upgrade: `HEAD` when the upgrade is not committed; else `git log --oneline -- .os/manifest.json .os/scripts/buildos.cmd` lists the commits newest first, the upgrade's commits (one or two) are at the top, and `<commit>` is the first commit below them. The check is now the same in every case, also the backup case: the version prints `0.2.0`, and `grep F-P9-17 .os/scripts/buildos.cmd` (Command Prompt: `findstr F-P9-17 .os\scripts\buildos.cmd`) prints nothing. Only the `0.2.1` wrapper holds the text `F-P9-17` (a `rem` line); the `0.2.0` wrapper does not. The two diff checks of the rollback, which a wrong revision also passed, are removed. The marker is `F-P9-17`, not the line `exit /b %ERRORLEVEL%`: Command Prompt expands `%ERRORLEVEL%` in a typed command, so `findstr` would search for another text. |
+| 2 (should fix) | With a cold npm cache and the tarball on the machine, `npx -y build-os@0.2.1 init` fails with `ENOTCACHED` before the copy step. The rollback sentence named `ENOTCACHED` for every case. | Guide step 2 and the notes: without registry access, the clean copy is `npx -y --offline --package <file> -- buildos init --root ../buildos-upgrade-0.2.1/new --skip-make-docs`, with the `0.2.1` file. The rollback sentence says that npm "can then stop with `ENOTCACHED`: whether it does depends on what the npm cache holds". The real run (below) shows why it is not a plain cold-or-warm rule: a cache that the project wrapper itself filled with `0.2.0` works offline, and a cache filled by a plain `npx -y build-os@0.2.0` does not, because the wrapper starts npx with `--prefix` and `--workspaces=false`. The instruction stays one rule: in every case, install `0.2.0` again. |
+| 3 (should fix) | The notes' `sh` own-change check said "in the same way", and its only example used backslashes, which fail in `sh`. | The `sh` line of the notes holds the full command with forward slashes, `git --no-pager diff --no-index ../buildos-upgrade-0.2.1/new/.os/scripts/buildos.cmd .os/scripts/buildos.cmd`, as the guide has it. |
+| 4 (minor) | `test/rollback-smoke.test.ts` passed when both documents said that the Windows probe prints `0`, or that `0.2.1` stays installed in the rollback. | The test reads each step and asserts its expected value there: the guide's Windows check bullet says "the third line prints `2`", the notes' sentence after the block says "the third prints `2`", and the rollback's npm step, in both, says "install `0.2.0` there again" and holds no "keep" or "leave". New tests also check the git rule (no `<commit>~1`, `HEAD`, the `git log` line), the wrapper check in both shells in both documents (and that the `0.2.1` wrapper holds `F-P9-17` once), and the offline clean-copy form. |
+| 5 (minor) | The evidence still listed `SECURITY.md` as not changed. | [0.2.1 Release Preparation](#021-release-preparation-2026-11-27) now says that this described the first commit (`a32be79`), and that review round 1 dated the two `latest` sentences. |
+
+### The Real Runs (Pull Request 17, Review Round 2)
+
+On 2026-11-27, macOS, `sh` (bash), in scratch folders outside the repository. Each project was made by `npx -y build-os@0.2.0 init --skip-make-docs` from the registry and committed in git. The stand-in for `0.2.1` is a release build of this branch (`node scripts/release-build.ts --allow-dirty`, version `0.2.1`, with this round's text changes; the wrapper file is unchanged); its clean copy ran as `npx -y --package <tarball> -- buildos init --root ../buildos-upgrade-0.2.1/new --skip-make-docs`, and the `0.2.1` and `0.2.0` npm installs were global installs of the two tarballs into scratch prefixes on `PATH`. Every case passed.
+
+| Case | What ran | Result |
+| --- | --- | --- |
+| 1, the reviewer's case: the wrapper committed first, the pin second; the git rollback | guide steps 1 to 5, then `git commit` of `buildos.cmd`, then `git commit` of the pin; the rollback's git case | After the upgrade: `version: 0.2.1`, the marker found. `git log --oneline -- .os/manifest.json .os/scripts/buildos.cmd` listed the pin commit, the wrapper commit, and the `0.2.0` commit. The old rule (`<pin commit>~1`) gave `version: 0.2.0` with the marker still found: the new wrapper stayed, as the reviewer saw. The new rule (the first commit below the two upgrade commits, the `0.2.0` commit) gave `version: 0.2.0`, `grep F-P9-17` printed nothing, and both files are byte for byte the project's own `0.2.0` files |
+| 2, the upgrade not committed, the work folder deleted | guide steps 1 to 4 without a commit; `git checkout HEAD -- .os/manifest.json .os/scripts/buildos.cmd` | Before: `version: 0.2.1`, the two files changed. After: `version: 0.2.0`, `grep F-P9-17` printed nothing, both files are the project's own, `git status` clean |
+| 3, offline, cold npm cache, the `0.2.1` file | an empty npm cache and `npm_config_offline=true` throughout; `npx -y build-os@0.2.1 init`; then the guide's offline form of step 2; an offline global install of the `0.2.1` file; the rollback from the backup; the pin `0.2.0` with only the `0.2.1` install; then the offline install of the `0.2.0` file | The registry form: exit `1`, `ENOTCACHED`. The offline form made the clean copy, with the same `buildos.cmd` as the stand-in copy. `version: 0.2.1`. After the rollback copies, with the `0.2.1` install kept: exit `1`, `ENOTCACHED`. After the `0.2.0` install: `version: 0.2.0`, `grep F-P9-17` printed nothing, both files are the project's own |
+| 3b, offline, warm npm cache, the `0.2.1` install kept | the same rollback, offline, with the `0.2.1` install kept, with two caches | A cache filled by the project wrapper's own online run of the pin `0.2.0`: `version: 0.2.0` offline. A cache filled by a plain `npx -y build-os@0.2.0 version`: `ENOTCACHED` offline through the wrapper, while the same plain `npx` command works offline. The wrapper's `npx -y --prefix <project> --workspaces=false build-os@0.2.0` needs more than that cache holds |
+| 4, a stock project, forward and back | all guide steps, then the rollback from the backup | `version: 0.2.1`, the `--stat` diff against the clean copy empty, only the two files changed; after the rollback: `version: 0.2.0`, `grep F-P9-17` printed nothing, both files are the project's own |
+
+The Command Prompt steps did not run: this round has no Windows shell ("Known limits" in the notes still says so). The `findstr` form of the wrapper check has not run.
+
+### Check Results (Pull Request 17, Review Round 2)
+
+On 2026-11-27, macOS, from `toolkits/buildos/` and the repository root, the sandbox off for the tests.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck`; `node scripts/check-dependencies.ts`, `--installed`; `node scripts/check-no-python.ts` | passed each |
+| `npm test` (unit, golden, and conversion-eval tests) | 2,987 tests: 2,973 passed, 0 failed, 14 skipped |
+| `npm run build`, then `node dist/buildos.js version`; `npm pack --dry-run --json` | passed; 168 files (unchanged) |
+| `node tools/build-guide.mjs` (from `guide/`) | `Wrote BuildOS-Guide.html (705 KB) from 22 documents.`, no warning |
+| The real-list deny-list scan, `node scripts/check-deny-list.mjs --root ../.. --pack .`, with the list in the environment, outside the repository | exit 0: 2,838 files, 0 matches, 168 of 168 package files read |
+| `make-docs project paths validate` | valid, 0 failing findings |
+| `make-docs project markdown validate` | 184 findings, the same count as before the round; none new |
+
+`test/release-notes.test.ts` now reads the `0.2.1` extraction line from owner step 3 of the [Release Checklist for 0.2.1](#release-checklist-for-021) and checks that it is the `0.2.0` filter with only the version changed, then runs it on a scratch copy tagged `v0.2.1`. No golden capture ran. No workflow was started by hand.
+
+## Release Route for 0.2.1 (2026-11-27)
+
+### Owner Decision of 2026-11-27 (0.2.1 Release Route)
+
+The orchestrator asked the owner on 2026-11-27: "How do we release 0.2.1? 1. Short checklist now, rebuild after. You get 7 steps. The agents do all checks before your first step. The full workflow rebuild comes after 0.2.1. 2. Rebuild first." The owner answered, word for word: "Option 1." The owner was told that option 1 changes three things from the [Release Runbook for 0.2.0](#release-runbook-for-020): (a) the owner's "accept" reply in owner step 1 counts as the release approval, with no second written approval later; (b) two checks move to after the release: the signing-log (Rekor) check of the staged file and the speed measurement (`PERF-002`); (c) the record goes into the next pull request, with no separate record pull request after the release. No other owner decision is recorded here.
+
+### Release Checklist for 0.2.1
+
+The short route of the decision above. Where a command is the same as in the [Release Runbook for 0.2.0](#release-runbook-for-020), the step names the runbook step, with `0.2.1` for the new version and `0.2.0` for the previous one. `<H1>` is the full SHA of the reviewed head of this pull request, `<H2>` the ledger commit on top of it, `<B>` the full SHA of the `main` commit that `<H1>` is up to date with (`git rev-parse origin/main` at agent step 1), `<run>` and `<attempt>` the run ID and attempt of the `<H1>` dry run, `<sha256>` its tarball SHA-256, and `$D` a new empty folder outside the repository (`D=$(mktemp -d)`). The orchestrator fills in `<H1>`, `<H2>`, and `<B>` with full SHAs when it gives a command block to the owner. Corrected in the final fix pass of pull request 17: see [Review Round 3 (Pull Request 17) and Final Fix Pass](#review-round-3-pull-request-17-and-final-fix-pass-2026-11-27).
+
+Agent steps before owner step 1. Each passes, with its run ID in the evidence, or the release stops.
+
+1. The dry run of `<H1>` (orchestrator). The branch is up to date with `main` at `<B>`, and nothing else merges into `main` until the tag. From the repository root: `git push origin <H1>:refs/heads/release-dry-run/0.2.1`. A push to a `release-dry-run/` branch is a dry run with candidates `self`. Every gate passes (runbook step b).
+2. Inspect the tarball (every check of runbook step c): the SHA-256 equals `tarball_sha256` in `release-build.json`; the file list; `npm diff --diff=build-os@0.2.0 --diff="$D/artifact/build-os-0.2.1.tgz"`; the offline install; `version --json` reports `0.2.1` and `<H1>`; the SBOM; the real-list deny-list scan of the tarball (0 matches); the size and file count against `0.2.0`.
+3. The smoke on three systems on that tarball (runbook step c): `gh workflow run buildos-smoke.yml --repo brucewaynedecoy/build-os --ref main -f source=release-run -f release_run=<run> -f release_run_attempt=<attempt> -f tarball_sha256=<sha256>`; each report has `tarball.version` `0.2.1`.
+4. The upgrade and the rollback with that tarball, in `sh` on macOS or Linux: the guide's "From 0.2.0 to 0.2.1" and "Roll back from 0.2.1 to 0.2.0", in a project made by `npx -y build-os@0.2.0 init --skip-make-docs`, with the guide's offline form of step 2 on that file and an install of that file as the `0.2.1` install. The record says what did not run: the Command Prompt and PowerShell forms, without a Windows machine.
+5. The one-page summary (orchestrator). It gives the owner `<sha256>`, the run IDs of steps 1 to 4, what ran, and what did not run (the Command Prompt and PowerShell forms; the Rekor lookup and `PERF-002`, after publication).
+
+Owner step 1.
+
+1. Read the orchestrator's one-page summary. Reply "accept 0.2.1 <sha256>", with the SHA-256 of the summary. This reply is the owner's acceptance of the tarball (runbook step d) and the recorded publication approval. Without it, no ledger entry is made and nothing is merged.
+
+Agent steps after owner step 1, before owner step 2. Each passes, or the release stops.
+
+6. The ledger entry, as a second commit `<H2>` on this pull request's branch. In `toolkits/buildos/` of a clean checkout of `<H1>`: `node scripts/release-candidate.ts compute --tarball "$D/artifact/build-os-0.2.1.tgz" --build "$D/artifact/release-build.json" --reviewed-by brucewaynedecoy --reviewed-on <the date of the owner's reply> --evidence "<text>"`. The build record names `<H1>`, so the entry's `source_commit` is `<H1>`. Add the printed entry after the `v0.2.0` entry. `node scripts/release-candidate.ts check` and `node scripts/release-candidate.ts verify --tag v0.2.1 --tarball "$D/artifact/build-os-0.2.1.tgz"` pass, and `git diff --name-only <H1> <H2>` prints only `toolkits/buildos/release-candidates.json` (commit type `chore`, no history record, as in runbook step d).
+7. The dry run of `<H2>` with candidates `committed`. A push to a `release-dry-run/` branch always uses `self`, so it is a hand-started run on this pull request's branch, while its head is `<H2>`: `gh workflow run buildos-release.yml --repo brucewaynedecoy/build-os --ref release/0.2.1-version -f purpose=dry-run -f tag=v0.2.1 -f candidates=committed -f plant=none`. Its summary names commit `<H2>` and candidates `committed`, and every gate passes: the identity gate accepts `<H1>`, because `<H1>` is an ancestor of `<H2>` and the two differ only in the ledger (`sourceCommitProblems` in `scripts/release-gate.ts`), and the digest gate rebuilds with the source revision `<H1>` and gets `<sha256>` again. The same holds at the tag only for a merge commit: a squash merge makes a commit that does not have `<H1>` as an ancestor, and the gate stops.
+8. An independent review of `<H2>` (the ledger change only). When it passes, the orchestrator says "merge".
+
+Owner steps 2 to 5.
+
+2. When the orchestrator says "merge": merge this pull request with "Create a merge commit". Never squash.
+3. Tag and draft. From the repository root, in `sh` or zsh, paste the whole block. The orchestrator gives it to you with `<H1>`, `<H2>`, and `<B>` filled in as full SHAs. It stops at the first failed check, before the tag when a merge check fails:
+
+   ```sh
+   (
+     set -e
+     git fetch origin
+     L=$(git rev-parse origin/main)
+     test "$(git rev-parse "$L^2")" = "<H2>"
+     test "$(git rev-parse "$L^1")" = "<B>"
+     git merge-base --is-ancestor "<H1>" "$L"
+     test "$(git diff --name-only "<H1>" "$L")" = "toolkits/buildos/release-candidates.json"
+     git tag v0.2.1 "$L"
+     git push origin refs/tags/v0.2.1
+     D=$(mktemp -d)
+     git show v0.2.1:toolkits/buildos/RELEASE_NOTES.md | awk '/^## 0\.2\.1$/{p=1;next} /^## /{p=0} p' | grep -v '^Status: draft' > "$D/notes-0.2.1.md"
+     test "$(grep '^##' "$D/notes-0.2.1.md" | tr '\n' '|')" = "### Fixed|### Update a project from 0.2.0|### Known limits|### Check the package|### Roll back|"
+     gh release create v0.2.1 --repo brucewaynedecoy/build-os --draft --verify-tag --title "BuildOS 0.2.1" --notes-file "$D/notes-0.2.1.md"
+   )
+   echo "exit code $?"
+   ```
+
+   The last line prints `exit code 0` only when every check passed, the tag is pushed, and the draft exists (`gh` prints its URL). Any other number: stop, and give the orchestrator the output. The checks: the merge commit's second parent is `<H2>` and its first parent is `<B>` (a squash merge has no second parent, so the block stops there, before the tag); `<H1>` is an ancestor; the merge commit differs from `<H1>` only in `toolkits/buildos/release-candidates.json`; the notes have exactly the five headings, in order. The tag push prints the "Bypassed rule violations" notice of the `release tags` ruleset, as for `0.2.0`. The block runs in a subshell, so a failed check does not close your terminal.
+
+4. Start the prepare run: `gh workflow run buildos-release.yml --repo brucewaynedecoy/build-os --ref main -f purpose=prepare -f tag=v0.2.1 -f candidates=committed -f plant=none`. Optional, before it: `npm trust list build-os` (signed in to npm) shows the trusted publisher of runbook step f (see the departures below).
+5. When the orchestrator says "ready" (the agent checked the prepare run, the two draft assets and their digest, and, through the API, release immutability and the rulesets with their bypass actors, as in runbook step f): open the draft on the release page, and look at four things: the tag is `v0.2.1`; the target commit is the merge commit of owner step 3 (the orchestrator gives its first 7 characters); the notes have the five headings of owner step 3 and no "Status: draft" line; it has exactly two assets, `build-os-0.2.1.tgz` and `buildos-0.2.1.cdx.json`. You may also look at Settings > Rules > Rulesets. If one is not as expected, stop: do not publish. Then publish the draft, `gh release edit v0.2.1 --repo brucewaynedecoy/build-os --draft=false`. The release run starts. When it waits at `Stage on npm (approval with 2FA needed)`, approve the `buildos-npm-stage` deployment on the run page (Review deployments > Approve and deploy).
+
+**Stop after owner step 5. Do NOT run `npm stage approve` until the orchestrator says "approve".**
+
+Agent step between owner steps 5 and 6.
+
+9. The smoke on three systems on the release asset (runbook h2, the second run), started on its own and read by its own run ID: `gh workflow run buildos-smoke.yml --repo brucewaynedecoy/build-os --ref main -f source=release-tag -f release_tag=v0.2.1 -f tarball_sha256=<sha256>`. Each report has `passed` `true`, `mode` `tarball`, `tarball.sha256` `<sha256>`, and `tarball.version` `0.2.1`. From the release run's `stage` job log, the agent reads the stage ID (`build-os@0.2.1 (staged with id <stage-id>)`), the SHA-256 that the stage check accepted (it equals `<sha256>`), and the provenance log index. Only when all of this passes does the orchestrator give the owner `<stage-id>` and say "approve".
+
+Owner steps 6 and 7.
+
+6. When the orchestrator says "approve": check the stage, then approve it (runbook h1 and step j). Signed in to npm, in a new empty folder:
+
+   ```sh
+   cd "$(mktemp -d)"
+   npm stage list build-os
+   npm stage view <stage-id>
+   npm stage download <stage-id>
+   ls
+   shasum -a 256 <downloaded file>
+   ```
+
+   `npm stage list` lists `<stage-id>`; `npm stage view` shows version `0.2.1` and the dist-tag `latest`; `ls` shows the downloaded file; its SHA-256 equals `<sha256>`, the SHA-256 of your "accept" reply. Give the orchestrator the output. Only when all four are true: `npm stage approve <stage-id>` (2FA). If one is not true, do not approve, and tell the orchestrator.
+
+7. `npm view build-os versions dist-tags --json`: `versions` holds `0.2.1`, and `latest` is `0.2.1`. If `latest` is not `0.2.1`, run `npm dist-tag add build-os@0.2.1 latest` (2FA).
+
+After publication (agents; the results go into the next pull request), in the order of runbook step k: the registry digest equals the ledger (`npm pack build-os@0.2.1` and its SHA-256); in a new empty folder, `npm init -y`, `npm install --ignore-scripts build-os@0.2.1`, then `npm audit signatures` (a verified signature and a verified attestation); the Rekor lookup of runbook h1, on the registry tarball; the registry smoke on three systems (`-f source=registry -f version=0.2.1`); `PERF-002`; then the documentation pull request: remove the draft status line of the `0.2.1` notes, move the smoke default to `0.2.1` with its test, and check each row of [Facts That Depend on the 0.2.1 Release](#facts-that-depend-on-the-021-release).
+
+### Departures From the Written Rules for 0.2.1
+
+This pull request does not change the written rules: the workflow rebuild after `0.2.1` changes them in its own pull request. Each departure below is for `0.2.1` only and names who decided it. The owner decision of 2026-11-27 ("Option 1.") covers exactly its three recorded changes, (a), (b), and (c). Each other departure is an orchestrator decision, and the owner may overrule it.
+
+| Written rule | For 0.2.1 | Who decided |
+| --- | --- | --- |
+| `SECURITY.md`, Release Procedure step 6 and Maintainer Checklist; `toolkits/buildos/AGENTS.md`, Release and First Publication step 6; A81 and runbook steps i and j: the stage is approved on npm only after the recorded publication approval, which comes after the checks of the stage and names the stage ID | The recorded publication approval is the owner's "accept 0.2.1 <sha256>" reply of owner step 1, before staging. It names the tarball SHA-256, not a stage ID, because no stage exists yet. No second written approval follows. The checks of the stage still come before `npm stage approve`: agent step 9 (the smoke on the release asset and the stage job's log) and owner step 6 (`npm stage list`, `npm stage view`, `npm stage download`, and its SHA-256 against the reply). The agent records the reply in the next pull request | Owner decision of 2026-11-27, change (a) |
+| `SECURITY.md`, Maintainer Checklist: after staging, check the staged package's provenance; runbook h1, the transparency-log (Rekor) lookup; runbook h4: the performance check before the approval | The Rekor lookup runs after publication, on the registry tarball, as it did for `0.2.0`. `PERF-002` runs after publication, as for `0.2.0`: its instrument measures only a published package | Owner decision of 2026-11-27, change (b) |
+| Runbook step k: the publication record, then a documentation pull request | The record goes into the next pull request, with no separate record pull request | Owner decision of 2026-11-27, change (c) |
+| `toolkits/buildos/AGENTS.md`, Release, and the header of `scripts/release-candidate.ts`: the ledger entry in its own pull request with nothing else; runbook steps a and d: the version pull request is merged before the dry run, and the entry comes in a second pull request | One pull request with two commits: `<H1>`, the reviewed head, and `<H2>`, the ledger entry. The identity gate checks commits, not pull requests: `<H1>` is an ancestor of the tag commit and differs from it only in the ledger. Owner step 3 checks this before the tag. The reviewer's rehearsal showed that this route passes the workflow gates | Orchestrator decision; the owner may overrule |
+| `toolkits/buildos/AGENTS.md`, Release, and the header of `scripts/release-candidate.ts`: the dry run on `release-dry-run/<short-sha>` | The dry-run branch is `release-dry-run/0.2.1`. The workflow takes any `release-dry-run/**` branch; a name with `-plant-` would plant a failure | Orchestrator decision; the owner may overrule |
+| Runbook step f (owner): the owner reviews the draft assets and reads `immutable-releases` and the rulesets in Settings | The agent downloads the two draft assets and compares their digest, and reads `gh api repos/brucewaynedecoy/build-os/immutable-releases` and the rulesets with their bypass actors through the API, as the orchestrator did for `0.2.0`. The owner looks at the draft page in owner step 5, and is free to look at Settings > Rules > Rulesets | Orchestrator decision; the owner may overrule |
+| Runbook step f: `npm trust list build-os` before the prepare run | Optional in owner step 4. A broken trust makes the `stage` job fail, and nothing is published, so the check fails safe. For `0.2.0` the owner's CLI was not signed in, and the check was skipped. The owner said on 2026-11-27: "I thought we already trusted BuildOS on npm." | Orchestrator decision; the owner may overrule |
+
+The order of runbook step d is kept, so it needs no departure: the owner accepts the tarball in owner step 1, and only then does the agent compute the entry with `--reviewed-by brucewaynedecoy` and the date of that reply (agent step 6).
+
+## Review Round 3 (Pull Request 17) and Final Fix Pass (2026-11-27)
+
+The reviewer's verdict on pull request 17 at `ee0a4f5` named two blockers and five should-fix findings in the [Release Route for 0.2.1](#release-route-for-021-2026-11-27) and the rollback texts. The reviewer also confirmed, in a rehearsal, that the one-pull-request route passes the workflow gates: the `<H1>` push, the `<H2>` dispatch before the tag exists, prepare, and release; the merge rebuild stamps `<H1>` and reproduces the `<H1>` tarball. The orchestrator ruled on each finding, and this pass follows the rulings, with new commits on the same branch. This is the last pass: the stop rule is three review rounds, then one fix pass, so no review follows. The orchestrator checks the tag block of owner step 3 itself before it gives the block to the owner. Nothing is tagged, released, staged, or published; no setting, workflow, release script, `SECURITY.md` release rule, PRD 20, or `release-candidates.json` changed; no workflow was started by hand; `release-dry-run/0.2.1` was not pushed. No owner decision is added: the only owner words used are those quoted above ("Option 1; a small `0.2.1` release soon."; "Option 1." for the route with its three changes) and the owner's remark about npm trust.
+
+| Finding | The orchestrator's ruling | What changed |
+| --- | --- | --- |
+| 1 (blocker): owner step 6 went from `npm stage list` to `npm stage approve` and dropped checks that the owner did not agree to drop | Restore them, as steps that cannot be missed | After owner step 5, a bold line says that the owner does not run `npm stage approve` until the orchestrator says "approve". Agent step 9, between owner steps 5 and 6: the smoke on three systems on the release asset (`-f source=release-tag -f release_tag=v0.2.1 -f tarball_sha256=<sha256>`, inputs checked against `buildos-smoke.yml`), and the stage ID, the accepted SHA-256, and the provenance log index from the `stage` job's log. Owner step 6: `npm stage list build-os`, `npm stage view <stage-id>` (version `0.2.1`, dist-tag `latest`), `npm stage download <stage-id>` and `shasum -a 256` of the file equal to `<sha256>`, then `npm stage approve <stage-id>`. Only the Rekor lookup and `PERF-002` stay after publication |
+| 2 (blocker): the exceptions table gave the owner decisions that the owner did not make | The owner decision covers exactly (a), (b), and (c); every other departure is "orchestrator decision, the owner may overrule"; `reviewed_by` needs no exception if the order changes | The table has a "Who decided" column: three rows are the owner decision, changes (a), (b), and (c); four rows are orchestrator decisions (the one-pull-request route with two commits, the branch name `release-dry-run/0.2.1`, the agent's API read of the settings and the draft, and `npm trust list` as optional). The order is now: agent steps 1 to 4 on `<H1>`, the one-page summary (agent step 5), the owner's "accept 0.2.1 <sha256>" (owner step 1), then the ledger entry `<H2>` with `--reviewed-on` the date of the reply (agent step 6), its `committed` dry run (7), its review (8), then "merge" (owner step 2). The row for runbook step d is removed: its order is kept |
+| 3 (should fix): `npm trust list build-os` and the draft and settings review | Record the trust check as an orchestrator departure, optional in step 4; owner step 5 says what the owner looks at; the API read is an orchestrator departure | Owner step 4 has the optional line. The departure row gives the reason: a broken trust makes the `stage` job fail and nothing is published, so it fails safe; for `0.2.0` the owner's CLI was not signed in, and the check was skipped; the owner said on 2026-11-27: "I thought we already trusted BuildOS on npm." Owner step 5 names the four things on the draft page (tag, target commit, notes, exactly two assets) and Settings > Rules > Rulesets |
+| 4 (should fix): the tag commands could push a tag that prepare rejects (a squash merge prints the same ledger-only diff), and went on after an unexpected diff | One block that stops at any failed check | Owner step 3 is one block in a subshell with `set -e`: the second parent of `origin/main` is `<H2>`, the first parent is `<B>`, `<H1>` is an ancestor, the diff from `<H1>` is only the ledger; only then the tag and its push; then the notes, the five-heading check, and `gh release create`. The subshell keeps a failed check from closing the owner's terminal, and nothing joins it with `&&` or `\|\|`, which would turn off `set -e`. The orchestrator fills in `<H1>`, `<H2>`, and `<B>` as full SHAs |
+| 5 (should fix): `npm audit signatures` in a new folder fails with "found no installed dependencies to audit" | Add `npm init -y` and `npm install --ignore-scripts build-os@0.2.1` first, as runbook step k | The after-publication list has them |
+| 6 (should fix): `grep F-P9-17` matches only a comment, so a wrapper without comments passes while the fixed wrapper stays | Keep the stock check; for a wrapper with your own changes, compare with the backup or the pre-upgrade git version; a partly committed upgrade needs the commit before its first change | Guide "Roll back from 0.2.1 to 0.2.0" step 3 and the notes' "Roll back": the marker check stays for every case; then, for a wrapper with your own changes, `cmp ../buildos-upgrade-0.2.1/backup/buildos.cmd .os/scripts/buildos.cmd` (Command Prompt: `fc /b ..\buildos-upgrade-0.2.1\backup\buildos.cmd .os\scripts\buildos.cmd`), or `git --no-pager diff --exit-code <commit> -- .os/scripts/buildos.cmd` (the same in Command Prompt). The git rule says "also only in part", and `<commit>` is "the one before the first commit of the upgrade". The guide and the notes say the same |
+| 7 (should fix): the upgrade doc still said to roll back by the pin alone and to leave a global install | Point both bullets to the version-specific rollback of the guide | `docs/assets/user/upgrade-an-existing-buildos-project.md`, "Change the version later": both bullets name the guide's chapter 4 rollback parts |
+
+### The Tag Block in Scratch Repositories (Final Fix Pass)
+
+On 2026-11-27, macOS, in a scratch folder outside the repository, with `gh` replaced by a stub that prints its arguments. A source repository had a base commit `<B>` with `toolkits/buildos/RELEASE_NOTES.md` (this branch's file) and a ledger file, a branch with `<H1>` (one more file) and `<H2>` (the ledger changed). For each case, a new bare `origin` got `<B>` as `main`, a clone merged the branch, and pushed `main`. The block was read from owner step 3 of this file, with the three SHAs filled in, and run with bash and with zsh.
+
+| Case | Shell | `git diff --name-only <H1> origin/main` | Result |
+| --- | --- | --- | --- |
+| Merge commit (`git merge --no-ff`) | bash, zsh | `toolkits/buildos/release-candidates.json` | Every check passed; the tag was pushed to the scratch `origin`; the notes had the five headings in order; the `gh release create … --draft --verify-tag` stub ran; `exit code 0` |
+| Squash merge (`git merge --squash`, then a commit) | bash, zsh | `toolkits/buildos/release-candidates.json` (the same as the merge) | `git rev-parse "$L^2"` failed (no second parent); the block stopped; no tag in the scratch `origin` or the clone; the stub did not run; `exit code 1` |
+
+The new test `test/release-checklist-021.test.ts` runs the same two cases with `sh` and zsh on Linux and macOS, and ties the checklist text to the rulings above.
+
+A first try of this scratch test went wrong and is recorded here. Its temporary folder could not be made in the sandbox, and the script did not stop, so its commands ran in the repository checkout. It made three local commits (with the uncommitted edits of this pass, a changed ledger file, and a scratch bare repository) and moved the local branch name `main` to the first of them. Its pushes to `main` on GitHub were refused by the `main` ruleset, and nothing else reached GitHub: `origin/main` stayed `c10655f`, the remote branch stayed `ee0a4f5`, and no `v0.2.1` tag exists. Before any commit of this pass, the three local commits were removed, the ledger file was restored from `ee0a4f5`, the scratch folders were deleted, and the local `main` was put back to `34fc94b`, its last position in the reflog. The scratch test above then ran in the scratchpad folder, with a guard that refuses to run inside the repository.
+
+### Check Results (Pull Request 17, Final Fix Pass)
+
+On 2026-11-27, macOS, from `toolkits/buildos/` and the repository root, the sandbox off for the tests. The CI runs of this push are on the pull request; this record does not get a later commit, so that the pushed head can be `<H1>`.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck`; `node scripts/check-dependencies.ts`, `--installed`; `node scripts/check-no-python.ts` | passed each |
+| `npm test` (unit, golden, and conversion-eval tests) | 3,001 tests: 2,987 passed, 0 failed, 14 skipped |
+| `npm run build`, then `node dist/buildos.js version`; `npm pack --dry-run --json` | passed; 168 files (unchanged) |
+| `node tools/build-guide.mjs` (from `guide/`) | `Wrote BuildOS-Guide.html (705 KB) from 22 documents.`, no warning |
+| The real-list deny-list scan, `node scripts/check-deny-list.mjs --root ../.. --pack .`, with the list in the environment, outside the repository | exit 0: 2,839 files, 0 matches, 168 of 168 package files read |
+| `make-docs project paths validate` | valid, 0 failing findings |
+| `make-docs project markdown validate` | 184 findings, the same count as before the pass; none new |
 
 No golden capture ran. No workflow was started by hand.

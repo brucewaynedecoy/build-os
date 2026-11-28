@@ -102,3 +102,63 @@ describe("release notes: the 0.2.0 release body extracted at the tag", () => {
     assert.match(out, /^`0\.2\.0` moves the tools/m);
   });
 });
+
+// The 0.2.1 version pull request: the 0.2.1 notes stand above 0.2.0. Review round 2 of pull request 17:
+// the owner chose the short release checklist, and its owner step 3 holds the 0.2.1 extraction line.
+// The line must be the 0.2.0 filter of the runbook and SECURITY.md with only the version changed. This
+// test runs it on a scratch copy tagged v0.2.1, so the 0.2.1 headings stay compatible with it.
+const SECTIONS_021 = ["### Fixed", "### Update a project from 0.2.0", "### Known limits", "### Check the package", "### Roll back"];
+
+describe("release notes: the 0.2.1 release body extracted at the tag, with the 0.2.0 filter for 0.2.1", () => {
+  const command020 = pipeline(evidence, "the release runbook");
+  const command = command020.replace("git show v0.2.0:", "git show v0.2.1:").replace("/^## 0\\.2\\.0$/", "/^## 0\\.2\\.1$/");
+  const checklistLines = evidence.split("\n").map((l) => l.trim()).filter((l) => l.startsWith("git show v0.2.1:toolkits/buildos/RELEASE_NOTES.md | "));
+  // The 0.2.1 notes, with exactly one draft status line, whether or not the real notes still hold it.
+  const withoutDraft = notes.replace(`\n## 0.2.1\n\n${DRAFT_LINE}\n\n`, "\n## 0.2.1\n\n");
+  const fixture021 = withoutDraft.replace("\n## 0.2.1\n\n", `\n## 0.2.1\n\n${DRAFT_LINE}\n\n`);
+  let root: string;
+  const git = (args: string[]) => {
+    const r = spawnSync("git", args, { cwd: root, encoding: "utf8" });
+    assert.equal(r.status, 0, `git ${args.join(" ")}: ${r.stderr}`);
+  };
+  before(() => {
+    root = mkdtempSync(join(tmpdir(), "buildos-notes-021-"));
+    git(["init", "-q", "-b", "main"]);
+    git(["config", "user.email", "fixture@example.invalid"]);
+    git(["config", "user.name", "Fixture"]);
+    git(["config", "commit.gpgsign", "false"]);
+    git(["config", "core.autocrlf", "false"]);
+    mkdirSync(join(root, "toolkits", "buildos"), { recursive: true });
+    writeFileSync(join(root, "toolkits", "buildos", "RELEASE_NOTES.md"), fixture021);
+    git(["add", "."]);
+    git(["commit", "-q", "-m", "notes"]);
+    git(["tag", "v0.2.1"]);
+  });
+  after(() => rmSync(root, { recursive: true, force: true }));
+
+  it("the notes start with 0.2.1, above 0.2.0, and the derived command differs from the 0.2.0 one only in the version", () => {
+    assert.ok(notes.startsWith("# BuildOS Release Notes\n\n## 0.2.1\n\n"));
+    assert.ok(notes.indexOf("\n## 0.2.1\n") < notes.indexOf("\n## 0.2.0\n"));
+    assert.ok(fixture021.includes(`\n## 0.2.1\n\n${DRAFT_LINE}\n`), "the scratch copy holds the draft line");
+    assert.notEqual(command, command020);
+    assert.equal(checklistLines.length, 1, "the 0.2.1 checklist holds exactly one extraction line");
+    assert.equal(checklistLines[0], `${command} > "$D/notes-0.2.1.md"`, "the checklist's line is the 0.2.0 filter with only the version changed");
+    assert.match(command, /^git show v0\.2\.1:toolkits\/buildos\/RELEASE_NOTES\.md \| awk '\/\^## 0\\\.2\\\.1\$\/\{p=1;next\} \/\^## \/\{p=0\} p' \| grep -v '\^Status: draft'$/);
+  });
+
+  it("selects the five 0.2.1 sections in order and drops the draft line, 0.2.0, and 0.1.0", () => {
+    const r = spawnSync("bash", ["-c", command], { cwd: root, encoding: "utf8" });
+    assert.equal(r.status, 0, r.stderr);
+    const out = r.stdout;
+    assert.deepEqual(out.split("\n").filter((l) => l.startsWith("#")), SECTIONS_021);
+    assert.doesNotMatch(out, /^Status: draft/m);
+    assert.doesNotMatch(out, /^## /m);
+    assert.doesNotMatch(out, /`0\.2\.0` moves the tools/);
+    const start = fixture021.indexOf("\n## 0.2.1\n") + "\n## 0.2.1\n".length;
+    const end = fixture021.indexOf("\n## 0.2.0\n");
+    assert.ok(start > 0 && end > start);
+    const expected = fixture021.slice(start, end + 1).split("\n").filter((l) => !l.startsWith("Status: draft")).join("\n");
+    assert.equal(out, expected);
+    assert.match(out, /^`0\.2\.1` fixes the exit code of the project wrapper on Windows\./m);
+  });
+});

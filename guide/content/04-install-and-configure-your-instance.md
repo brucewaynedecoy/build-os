@@ -23,10 +23,10 @@ This page uses a few words that belong to the terminal rather than to BuildOS: e
 Open your project folder in your agent tool and ask the agent to run this command there:
 
 ```sh
-npx -y build-os@0.2.0 init
+npx -y build-os@0.2.1 init
 ```
 
-`npx` comes with Node.js. It fetches the BuildOS package from the npm registry, keeps a copy in npm's own cache folder on your machine (so the next run of the same version is faster), and runs it. It installs no `buildos` command for the whole machine, and the only files it adds to your project are the ones `buildos init` writes. `0.2.0` is the BuildOS version; use the version your team agreed on.
+`npx` comes with Node.js. It fetches the BuildOS package from the npm registry, keeps a copy in npm's own cache folder on your machine (so the next run of the same version is faster), and runs it. It installs no `buildos` command for the whole machine, and the only files it adds to your project are the ones `buildos init` writes. `0.2.1` is the BuildOS version; use the version your team agreed on.
 
 ### The one question: Make Docs
 
@@ -46,18 +46,18 @@ Make Docs is an optional companion tool. It adds docs/ folders for designs, plan
 If the user says no, Make Docs cannot be set up in this folder later with this Make Docs version: it does not set up a folder that has an AGENTS.md or CLAUDE.md file that Make Docs did not write, and BuildOS adds such a file here.
 
 If the user says yes, run:
-  npx -y build-os@0.2.0 init --root <project folder> --make-docs
+  npx -y build-os@0.2.1 init --root <project folder> --make-docs
 If the user says no, run:
-  npx -y build-os@0.2.0 init --root <project folder> --skip-make-docs
+  npx -y build-os@0.2.1 init --root <project folder> --skip-make-docs
 ```
 
 On Windows, the two commands are written for Command Prompt, and the folder is in double quotes:
 
 ```text
 If the user says yes, run this in Command Prompt:
-  npx -y build-os@0.2.0 init --root "<project folder>" --make-docs
+  npx -y build-os@0.2.1 init --root "<project folder>" --make-docs
 If the user says no, run this in Command Prompt:
-  npx -y build-os@0.2.0 init --root "<project folder>" --skip-make-docs
+  npx -y build-os@0.2.1 init --root "<project folder>" --skip-make-docs
 ```
 
 Your agent should ask you the question in plain words and then run the one command for your answer. If you type the command yourself in a terminal, `buildos init` asks `Set up Make Docs in this project? [Y/n]` instead.
@@ -93,7 +93,7 @@ It also writes `.os/manifest.json`, which records the BuildOS version this proje
 ```json
 {
   "schema_version": 1,
-  "buildos_version": "0.2.0",
+  "buildos_version": "0.2.1",
   "initialized_at": "2026-11-24T22:15:17.018Z"
 }
 ```
@@ -144,11 +144,11 @@ The output names the version:
 version: ok
 root: not_applicable
 mode: not_applicable
-version: 0.2.0
+version: 0.2.1
 source revision: <commit>
 write status: not_requested
 {
-  "version": "0.2.0",
+  "version": "0.2.1",
   "source_revision": "<commit>"
 }
 ```
@@ -431,17 +431,17 @@ Some company networks block the npm registry. You can still use BuildOS: fetch t
 1. On a machine with registry access, download the package file and compute its SHA-256 digest:
 
    ```sh
-   npm pack build-os@0.2.0
-   shasum -a 256 build-os-0.2.0.tgz
+   npm pack build-os@0.2.1
+   shasum -a 256 build-os-0.2.1.tgz
    ```
 
-   On Windows, use `certutil -hashfile build-os-0.2.0.tgz SHA256` instead of `shasum`.
+   On Windows, use `certutil -hashfile build-os-0.2.1.tgz SHA256` instead of `shasum`.
 
 2. Compare the digest with the published one. `SECURITY.md` in the package, section "How to Check a Release", says where it is and how to check the provenance too. Do not use a file whose digest differs.
 3. Copy the file to the machine without registry access and install it from the file:
 
    ```sh
-   npm install -g --offline ./build-os-0.2.0.tgz
+   npm install -g --offline ./build-os-0.2.1.tgz
    ```
 
    The package has no dependencies, so nothing else is needed.
@@ -451,7 +451,7 @@ Some company networks block the npm registry. You can still use BuildOS: fetch t
    buildos init
    ```
 
-When a `buildos` command is installed like this and its version is the one in `.os/manifest.json`, the project wrappers run it, without the registry (see "Update and roll back" below). When the versions differ, the wrappers run the pinned version through `npx`, which needs the registry or the npm cache. To run one command straight from the file instead, without installing: `npx -y --offline --package ./build-os-0.2.0.tgz -- buildos <command>`.
+When a `buildos` command is installed like this and its version is the one in `.os/manifest.json`, the project wrappers run it, without the registry (see "Update and roll back" below). When the versions differ, the wrappers run the pinned version through `npx`, which needs the registry or the npm cache. To run one command straight from the file instead, without installing: `npx -y --offline --package ./build-os-0.2.1.tgz -- buildos <command>`.
 
 ---
 
@@ -459,15 +459,130 @@ When a `buildos` command is installed like this and its version is the one in `.
 
 The version in `.os/manifest.json` always decides which BuildOS the project wrapper runs. A global install (as in the offline steps above) is used only when it is an npm install of exactly that version; see the last item.
 
-- **To update**, change `"buildos_version"` to the new version, for example `"0.2.1"`, and run `.os/scripts/buildos version` to check. Read the release notes first: when a version changes skills, change the skills too. From `0.1.0` to `0.2.0`, see below.
-- **To roll back**, set it back to the earlier exact version, for example `"0.1.0"`. You do not need to change or remove a global install. When the skills changed between the two versions, put back the earlier skills too. From `0.2.0` to `0.1.0`, see "Roll back from 0.2.0 to 0.1.0" below. The wrapper accepts only an exact version, never `latest` or a range.
+- **To update**, change `"buildos_version"` to the new version, for example `"0.2.1"`, and run `.os/scripts/buildos version` to check. Read the release notes first: when a version changes skills, change the skills too. From `0.2.0` to `0.2.1` and from `0.1.0` to `0.2.0`, see below.
+- **To roll back**, set it back to the earlier exact version, for example `"0.1.0"`. You do not need to change or remove a global install. When the skills changed between the two versions, put back the earlier skills too. From `0.2.1` to `0.2.0`, see "Roll back from 0.2.1 to 0.2.0" below; from `0.2.0` to `0.1.0`, see "Roll back from 0.2.0 to 0.1.0" below. The wrapper accepts only an exact version, never `latest` or a range.
 - **With a global install** (`npm install -g`, as in the offline steps), the wrapper runs that installed `buildos` only when it is an npm install of the version in the manifest. On a machine without registry access, after you change the manifest, install the same version, `npm install -g build-os@<version>` (or the file), so the wrapper can run it without the registry. Until then, the wrapper runs the pinned version through `npx`.
 
 Commit `.os/manifest.json` with the change, so everyone on the project runs the same version.
 
+### From 0.2.0 to 0.2.1
+
+`0.2.1` fixes one Windows defect. On Windows, the project wrapper `.os\scripts\buildos.cmd` of `0.1.0` and `0.2.0` gives exit code `0` when it is started by `cmd /c` without `call` or by PowerShell, also when the command failed. The wrapper of `0.2.1` gives the exit code of the command. No skill changes. Of the files that `buildos init` copied, only `.os/scripts/buildos.cmd` and its description in `.os/scripts/AGENTS.md` change; you do not need to copy the description. The `.cmd` scripts with the old names start `buildos.cmd`, so they give the right code too when `buildos.cmd` is the new one.
+
+A project does not get the fixed wrapper by itself. A new version in `.os/manifest.json` does not change the files in `.os/scripts/`, and `buildos init` in a project that BuildOS already set up writes no wrapper. So you copy the one file from a clean `0.2.1` copy. If your project is still on `0.1.0`, do "From 0.1.0 to 0.2.0" below first, then these steps.
+
+On macOS and Linux, the wrapper `.os/scripts/buildos` does not have this defect. If no one uses the project on Windows, do only steps 4 and 5. Then you make no backup and no work folder, and to roll back you only set the version back (see the first case of "Roll back from 0.2.1 to 0.2.0" below). If someone uses the project on Windows (for example, the project is in git and a teammate works on Windows), do all the steps in `sh` and commit the new file, so that they get it.
+
+Run the commands in the project folder, while no BuildOS command runs in it: Command Prompt reads a batch file while it runs it, so a wrapper that runs while its file changes can fail. The commands use a work folder, `../buildos-upgrade-0.2.1`, next to the project. Another project in the same parent folder uses the same name, so a folder with this name can hold the backup of another project. The first command of step 1 is the guard: it makes the work folder, or it prints an error when the folder is there already. Do the later steps, and copy from the work folder in the rollback, only when that command made the folder for this project. If it prints an error, stop, and use another name (for example `../buildos-upgrade-0.2.1-2`) in every command of these steps and of the rollback, or delete the old folder when you are sure that no one needs it. Use a new work folder for each project and for each try.
+
+If you changed `.os/scripts/buildos.cmd` yourself, step 3 replaces your change. Your old file is in the backup: after step 3, make your change again in the new file, and do the check for your own changes in step 5.
+
+1. **Make a backup.** Commit your work first (`git add -A`, then `git commit -m "Before BuildOS 0.2.1"`; if git says that there is nothing to commit, that is fine). Then make the work folder, with this command alone:
+
+   ```sh
+   mkdir ../buildos-upgrade-0.2.1
+   ```
+
+   In Command Prompt on Windows:
+
+   ```bat
+   mkdir ..\buildos-upgrade-0.2.1
+   ```
+
+   If this command prints an error, stop (see above). Command Prompt goes on to the next line after a failed command, so run the next commands only when this command printed nothing. Then make the folders for the backup and the clean copy, and copy the version file and the wrapper:
+
+   ```sh
+   mkdir ../buildos-upgrade-0.2.1/backup ../buildos-upgrade-0.2.1/new
+   cp .os/manifest.json ../buildos-upgrade-0.2.1/backup/manifest.json
+   cp .os/scripts/buildos.cmd ../buildos-upgrade-0.2.1/backup/buildos.cmd
+   ```
+
+   In Command Prompt:
+
+   ```bat
+   mkdir ..\buildos-upgrade-0.2.1\backup ..\buildos-upgrade-0.2.1\new
+   copy .os\manifest.json ..\buildos-upgrade-0.2.1\backup\manifest.json
+   copy .os\scripts\buildos.cmd ..\buildos-upgrade-0.2.1\backup\buildos.cmd
+   ```
+
+2. **Get a clean copy of `0.2.1`:**
+
+   ```sh
+   npx -y build-os@0.2.1 init --root ../buildos-upgrade-0.2.1/new --skip-make-docs
+   ```
+
+   In Command Prompt:
+
+   ```bat
+   npx -y build-os@0.2.1 init --root ..\buildos-upgrade-0.2.1\new --skip-make-docs
+   ```
+
+   Without registry access, this command can stop with `ENOTCACHED`. Use the `0.2.1` file from "Install without access to the npm registry" above instead: `npx -y --offline --package <file> -- buildos init --root ../buildos-upgrade-0.2.1/new --skip-make-docs`, where `<file>` is the path of `build-os-0.2.1.tgz` (in Command Prompt, write the folder as `..\buildos-upgrade-0.2.1\new`).
+
+3. **Replace the wrapper:**
+
+   ```sh
+   cp ../buildos-upgrade-0.2.1/new/.os/scripts/buildos.cmd .os/scripts/buildos.cmd
+   ```
+
+   In Command Prompt (when `copy` asks whether to overwrite the file, answer `Yes`):
+
+   ```bat
+   copy ..\buildos-upgrade-0.2.1\new\.os\scripts\buildos.cmd .os\scripts\buildos.cmd
+   ```
+
+   If you changed the old wrapper yourself, make your change again now in `.os/scripts/buildos.cmd`. Your old file is `../buildos-upgrade-0.2.1/backup/buildos.cmd`.
+
+4. **Change the version.** In `.os/manifest.json`, change `"buildos_version"` from `"0.2.0"` to `"0.2.1"`. Change no other field. If you use an npm install of `build-os` (in the project's `node_modules` folder, or a global install, also one from a file on a machine without registry access), install `0.2.1` there too. The wrapper uses an install only when it has the pinned version.
+
+5. **Check.** Each of these must be true:
+
+   - `.os/scripts/buildos version` (in Command Prompt: `.os\scripts\buildos.cmd version`) prints `version: 0.2.1`.
+   - If you did step 3 and made no change of your own: `git --no-pager diff --no-index --stat ../buildos-upgrade-0.2.1/new/.os/scripts/buildos.cmd .os/scripts/buildos.cmd` prints nothing.
+   - If you made your own change again in step 3: `git --no-pager diff --no-index ../buildos-upgrade-0.2.1/new/.os/scripts/buildos.cmd .os/scripts/buildos.cmd` shows the full difference. Read all of it, and make sure that it shows only your own changes. Here git exits with `1`, because the files differ.
+   - On Windows, in Command Prompt, also after your own changes: run these three lines, at the prompt or in a batch file (not inside a block in parentheses). The first line removes a variable named `ERRORLEVEL` from this Command Prompt, if there is one; such a variable hides the exit code from `echo %ERRORLEVEL%`. The second line prints an error that names `unknown command "no-such-command"`, and the third line prints `2`. With the old wrapper it prints `0`.
+
+     ```bat
+     set "ERRORLEVEL="
+     cmd /d /c .os\scripts\buildos.cmd no-such-command
+     echo %ERRORLEVEL%
+     ```
+
+   Then commit. Keep the work folder until you are sure that the new version works for you, then delete it.
+
+#### Roll back from 0.2.1 to 0.2.0
+
+The rollback puts back version `0.2.0` and its wrapper. It also puts back the exit-code defect of the old wrapper on Windows. First find your case in step 1, and do only that case. Copy from a work folder only when you made it yourself for this project, with the first command of step 1 above: a folder with the same name can hold the backup of another project.
+
+1. **Put back the version.**
+
+   - **You changed only the version** (macOS or Linux, steps 4 and 5 only): you made no backup and no work folder, so copy nothing. In `.os/manifest.json`, change `"buildos_version"` from `"0.2.1"` back to `"0.2.0"`. Change no other field.
+   - **Someone else did the upgrade** (for example, a teammate committed it), or your work folder is not there any more: copy nothing from a work folder. Put back the two files from git, from a commit before the upgrade: `git checkout <commit> -- .os/manifest.json .os/scripts/buildos.cmd`. If the upgrade is not committed, `<commit>` is `HEAD`. If it is committed, also only in part (for example, only one of the two files), run `git log --oneline -- .os/manifest.json .os/scripts/buildos.cmd`. It lists the commits that changed the two files, newest first. The commits of the upgrade (one or two) are at the top. `<commit>` is the first commit below them, the one before the first commit of the upgrade.
+   - **You did steps 1 to 5 in this project**, and the work folder that step 1 made is still there: put back the two files from its backup. If you used another name for the work folder, use that name.
+
+     ```sh
+     cp ../buildos-upgrade-0.2.1/backup/manifest.json .os/manifest.json
+     cp ../buildos-upgrade-0.2.1/backup/buildos.cmd .os/scripts/buildos.cmd
+     ```
+
+     In Command Prompt (answer `Yes` when `copy` asks):
+
+     ```bat
+     copy ..\buildos-upgrade-0.2.1\backup\manifest.json .os\manifest.json
+     copy ..\buildos-upgrade-0.2.1\backup\buildos.cmd .os\scripts\buildos.cmd
+     ```
+
+2. **Put back the npm install,** in every case: if you installed `0.2.1` with npm (in the project's `node_modules` folder, or a global install), install `0.2.0` there again. This applies also to an install from a file on a machine without registry access: install the `0.2.0` file in the same way. The wrapper does not use a `0.2.1` install for the version `0.2.0`; it runs `0.2.0` through `npx`. Without the registry, npm can then stop with `ENOTCACHED`: whether it does depends on what the npm cache holds.
+3. **Check.** In every case, both must be true:
+
+   - `.os/scripts/buildos version` (in Command Prompt: `.os\scripts\buildos.cmd version`) prints `version: 0.2.0`.
+   - `grep F-P9-17 .os/scripts/buildos.cmd` (in Command Prompt: `findstr F-P9-17 .os\scripts\buildos.cmd`) prints nothing. Only the wrapper of `0.2.1` holds this text. If it prints a line, the new wrapper is still there: do step 1 again.
+
+   If the wrapper held your own changes, this marker check is not enough: a new wrapper with changes can lack the marker. Then also compare the wrapper with the file that you put back. From the backup: `cmp ../buildos-upgrade-0.2.1/backup/buildos.cmd .os/scripts/buildos.cmd` prints nothing (in Command Prompt: `fc /b ..\buildos-upgrade-0.2.1\backup\buildos.cmd .os\scripts\buildos.cmd` prints `FC: no differences encountered`). From git, with the `<commit>` of step 1: `git --no-pager diff --exit-code <commit> -- .os/scripts/buildos.cmd` prints nothing (the same command in Command Prompt).
+
 ### From 0.1.0 to 0.2.0
 
-`0.2.0` changes four skills and the skills router, `.os/skills/AGENTS.md`. Every other file that `buildos init` copied is the same as in `0.1.0`. The new skills call commands that `0.1.0` does not have, so change the version and these skills together. If you change only one of the two, a skill command stops with `unknown command` (exit code `2`). On Windows, in BuildOS `0.1.0` and `0.2.0`, the project wrapper `.os\scripts\buildos.cmd` and the `.cmd` scripts with the old names give exit code `0` when they are started by `cmd /c` without `call` or by PowerShell, which is how a script or an agent usually starts them. The error text is right, so check the text, not only the code. The fix is in the BuildOS repository and waits for a release. BuildOS has no update command yet, and `buildos init` does not do this for you: in a project that BuildOS already set up, it keeps the version and the skills as they are.
+`0.2.0` changes four skills and the skills router, `.os/skills/AGENTS.md`. Every other file that `buildos init` copied is the same as in `0.1.0`. The new skills call commands that `0.1.0` does not have, so change the version and these skills together. If you change only one of the two, a skill command stops with `unknown command` (exit code `2`). On Windows, in BuildOS `0.1.0` and `0.2.0`, the project wrapper `.os\scripts\buildos.cmd` and the `.cmd` scripts with the old names give exit code `0` when they are started by `cmd /c` without `call` or by PowerShell, which is how a script or an agent usually starts them. The error text is right, so check the text, not only the code. BuildOS `0.2.1` fixes the wrapper, and a project gets the fixed wrapper only when you copy it: see "From 0.2.0 to 0.2.1" above. BuildOS has no update command yet, and `buildos init` does not do this for you: in a project that BuildOS already set up, it keeps the version and the skills as they are.
 
 These are the files that change in `.os/skills/`:
 

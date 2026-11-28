@@ -12,7 +12,7 @@ BuildOS is a folder of plain-text rules, templates, and records that an agent us
 In the project folder, run:
 
 ```sh
-npx -y build-os@0.2.0 init
+npx -y build-os@0.2.1 init
 ```
 
 `buildos init` asks one question: set up the optional Make Docs companion too? When there is no terminal to answer in (as with most agents), it stops with exit code `10`, changes nothing, and prints the question and the two exact commands, one for each answer. Run the one the user chose. `buildos init` adds its files next to the files that are there. In a new setup it does not replace a file: a clash stops it with exit code `10` and nothing written. It adds only its own marked section to `AGENTS.md`, `CLAUDE.md`, and `.gitignore`. `buildos init --dry-run` shows the plan and writes nothing. A project set up with the earlier Go tools is adopted: its data files stay byte for byte, and its Go-era wrapper and skill files are replaced. When a step fails, `buildos init` undoes its own writes and lists any path it could not put back (exit `10`); see [SECURITY.md](SECURITY.md), "Write Safety", for the limits.
@@ -28,7 +28,7 @@ On Windows, use `.os\scripts\buildos.cmd validate` in Command Prompt.
 ## Install globally
 
 ```sh
-npm install -g build-os@0.2.0
+npm install -g build-os@0.2.1
 buildos version
 ```
 
@@ -41,14 +41,14 @@ The pin always decides. A global install is used only when it is an npm install 
 On a machine with registry access, download the tarball and note its SHA-256:
 
 ```sh
-npm pack build-os@0.2.0
-shasum -a 256 build-os-0.2.0.tgz
+npm pack build-os@0.2.1
+shasum -a 256 build-os-0.2.1.tgz
 ```
 
 Compare the value with the published digest (see [SECURITY.md](SECURITY.md), "How to Check a Release"). Copy the file to the other machine and install it from the file:
 
 ```sh
-npm install -g --offline ./build-os-0.2.0.tgz
+npm install -g --offline ./build-os-0.2.1.tgz
 ```
 
 The package has no dependencies, so nothing else is fetched.
