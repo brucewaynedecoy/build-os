@@ -97,8 +97,8 @@ The old names still work and print a notice. The project scripts `.os/scripts/bu
 ```
 
 - To update, set `buildos_version` to the new exact version and run `.os/scripts/buildos version`. Read the release notes first: when a version changes skills, change the skills too. From `0.1.0` to `0.2.0`, four skills and the skills router change; the BuildOS guide, chapter 4, section "From 0.1.0 to 0.2.0", gives the steps and the rollback. From `0.2.0` to `0.2.1`, no skill changes, but a project on Windows needs the fixed wrapper `.os/scripts/buildos.cmd`; the same chapter, section "From 0.2.0 to 0.2.1", gives the steps and the rollback.
-- To roll back, set it to the earlier exact version. A range or a tag such as `latest` is refused (exit code `3`).
-- You do not need to change or remove a global install (`npm install -g`). The pin always decides: a global install is used only when it is an npm install of exactly the pinned version; otherwise the wrapper fetches the pinned version through `npx`.
+- To roll back, follow the rollback part of the guide section for your version: chapter 4, "Roll back from 0.2.1 to 0.2.0" or "Roll back from 0.2.0 to 0.1.0". A version change can also need a file change (the skills for `0.2.0`, the Windows wrapper for `0.2.1`), so do not only set the earlier version. A range or a tag such as `latest` is refused (exit code `3`).
+- For an npm install (in the project's `node_modules` folder, or a global install with `npm install -g`), do what the rollback part of the same guide section says. The pin always decides: an npm install is used only when it is exactly the pinned version; otherwise the wrapper fetches the pinned version through `npx`.
 
 Commit the manifest change so the whole team runs the same version. There is no `buildos update` command yet: a new version does not refresh the contracts, templates, or skills that `buildos init` copied.
 

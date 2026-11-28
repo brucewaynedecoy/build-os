@@ -557,7 +557,7 @@ The rollback puts back version `0.2.0` and its wrapper. It also puts back the ex
 1. **Put back the version.**
 
    - **You changed only the version** (macOS or Linux, steps 4 and 5 only): you made no backup and no work folder, so copy nothing. In `.os/manifest.json`, change `"buildos_version"` from `"0.2.1"` back to `"0.2.0"`. Change no other field.
-   - **Someone else did the upgrade** (for example, a teammate committed it), or your work folder is not there any more: copy nothing from a work folder. Put back the two files from git, from a commit before the upgrade: `git checkout <commit> -- .os/manifest.json .os/scripts/buildos.cmd`. If the upgrade is not committed, `<commit>` is `HEAD`. If it is committed, run `git log --oneline -- .os/manifest.json .os/scripts/buildos.cmd`. It lists the commits that changed the two files, newest first. The commits of the upgrade (one or two) are at the top. `<commit>` is the first commit below them.
+   - **Someone else did the upgrade** (for example, a teammate committed it), or your work folder is not there any more: copy nothing from a work folder. Put back the two files from git, from a commit before the upgrade: `git checkout <commit> -- .os/manifest.json .os/scripts/buildos.cmd`. If the upgrade is not committed, `<commit>` is `HEAD`. If it is committed, also only in part (for example, only one of the two files), run `git log --oneline -- .os/manifest.json .os/scripts/buildos.cmd`. It lists the commits that changed the two files, newest first. The commits of the upgrade (one or two) are at the top. `<commit>` is the first commit below them, the one before the first commit of the upgrade.
    - **You did steps 1 to 5 in this project**, and the work folder that step 1 made is still there: put back the two files from its backup. If you used another name for the work folder, use that name.
 
      ```sh
@@ -577,6 +577,8 @@ The rollback puts back version `0.2.0` and its wrapper. It also puts back the ex
 
    - `.os/scripts/buildos version` (in Command Prompt: `.os\scripts\buildos.cmd version`) prints `version: 0.2.0`.
    - `grep F-P9-17 .os/scripts/buildos.cmd` (in Command Prompt: `findstr F-P9-17 .os\scripts\buildos.cmd`) prints nothing. Only the wrapper of `0.2.1` holds this text. If it prints a line, the new wrapper is still there: do step 1 again.
+
+   If the wrapper held your own changes, this marker check is not enough: a new wrapper with changes can lack the marker. Then also compare the wrapper with the file that you put back. From the backup: `cmp ../buildos-upgrade-0.2.1/backup/buildos.cmd .os/scripts/buildos.cmd` prints nothing (in Command Prompt: `fc /b ..\buildos-upgrade-0.2.1\backup\buildos.cmd .os\scripts\buildos.cmd` prints `FC: no differences encountered`). From git, with the `<commit>` of step 1: `git --no-pager diff --exit-code <commit> -- .os/scripts/buildos.cmd` prints nothing (the same command in Command Prompt).
 
 ### From 0.1.0 to 0.2.0
 

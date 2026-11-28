@@ -391,7 +391,9 @@ describe("the guide's 0.2.0 to 0.2.1 section (the F-P9-17 wrapper copy)", () => 
       assert.ok(doc.includes("If the upgrade is not committed, `<commit>` is `HEAD`."));
       assert.ok(doc.includes("git log --oneline -- .os/manifest.json .os/scripts/buildos.cmd"));
       assert.ok(doc.includes("the commits of the upgrade (one or two) are at the top") || doc.includes("The commits of the upgrade (one or two) are at the top."));
-      assert.ok(doc.includes("is the first commit below them."));
+      assert.ok(doc.includes("is the first commit below them, the one before the first commit of the upgrade."));
+      // Final fix pass of pull request 17, finding 6: a partly committed upgrade also needs the commit before its first change.
+      assert.ok(doc.includes("If it is committed, also only in part (for example, only one of the two files)"));
     }
   });
 
@@ -408,8 +410,24 @@ describe("the guide's 0.2.0 to 0.2.1 section (the F-P9-17 wrapper copy)", () => 
       assert.ok(doc.includes("`grep F-P9-17 .os/scripts/buildos.cmd`"));
       assert.ok(doc.includes("`findstr F-P9-17 .os\\scripts\\buildos.cmd`"));
       assert.ok(doc.includes(") prints nothing."));
-      assert.ok(!doc.includes("git --no-pager diff"), "no diff that a wrong revision also passes");
+      assert.ok(!doc.includes("<commit>~1"), "no diff against the parent of one upgrade commit, which a wrong revision also passes");
+      // Final fix pass of pull request 17, finding 6: the marker check is the stock check; a wrapper with your own
+      // changes is compared with the file that was put back, from the backup or from the <commit> of the git rule.
+      assert.ok(doc.includes("If the wrapper held your own changes, this marker check is not enough: a new wrapper with changes can lack the marker."));
+      assert.ok(doc.includes("`cmp ../buildos-upgrade-0.2.1/backup/buildos.cmd .os/scripts/buildos.cmd` prints nothing"));
+      assert.ok(doc.includes("`fc /b ..\\buildos-upgrade-0.2.1\\backup\\buildos.cmd .os\\scripts\\buildos.cmd` prints `FC: no differences encountered`"));
+      assert.ok(doc.includes("`git --no-pager diff --exit-code <commit> -- .os/scripts/buildos.cmd` prints nothing (the same command in Command Prompt)"));
+      assert.ok(doc.indexOf("If the wrapper held your own changes") > doc.indexOf("`grep F-P9-17 .os/scripts/buildos.cmd`"));
     }
+  });
+
+  it("the upgrade doc sends a rollback and an npm install to the guide's version-specific rollback", () => {
+    const upgradeDoc = readFileSync(join(repoRoot, "docs", "assets", "user", "upgrade-an-existing-buildos-project.md"), "utf8").replace(/\r\n/g, "\n");
+    const change = between(upgradeDoc, "## Change the version later", "## If something goes wrong");
+    assert.ok(change.includes("- To roll back, follow the rollback part of the guide section for your version: chapter 4, \"Roll back from 0.2.1 to 0.2.0\" or \"Roll back from 0.2.0 to 0.1.0\"."));
+    assert.ok(change.includes("so do not only set the earlier version"));
+    assert.ok(change.includes("do what the rollback part of the same guide section says"));
+    assert.ok(!change.includes("You do not need to change or remove a global install"));
   });
 
   it("the Windows probe expects exit code 2, and the rollback reinstalls 0.2.0, within their steps, in the guide and the notes", () => {
